@@ -12,6 +12,7 @@
 use chrono::Local;
 use chrono::TimeZone;
 use serde_json::json;
+use std::str::FromStr;
 use tvm_client::abi::Abi;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::FunctionHeader;
@@ -22,11 +23,10 @@ use tvm_types::base64_decode;
 
 use crate::config::Config;
 use crate::crypto::load_keypair;
-use crate::helpers::TonClient;
 use crate::helpers::create_client_local;
 use crate::helpers::load_abi;
-use crate::helpers::load_ton_address;
 use crate::helpers::now;
+use crate::helpers::{SdkAddress, TonClient};
 
 pub struct EncodedMessage {
     pub message_id: String,
@@ -167,8 +167,9 @@ pub async fn generate_message(
 ) -> Result<(), String> {
     let ton = create_client_local()?;
 
-    let ton_addr =
-        load_ton_address(addr, config).map_err(|e| format!("failed to parse address: {}", e))?;
+    let ton_addr = SdkAddress::from_str(addr)
+        .map_err(|e| format!("failed to parse address: {}", e))?
+        .to_string();
 
     let abi = load_abi(abi, config).await?;
 

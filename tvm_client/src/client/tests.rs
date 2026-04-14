@@ -82,7 +82,7 @@ fn test_invalid_params_error_secret_stripped() {
         ),
         "error",
     );
-    assert!(!error.message.contains(secret));
+    assert!(!error.message().contains(secret));
 }
 
 #[ignore]

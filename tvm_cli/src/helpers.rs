@@ -13,6 +13,7 @@
 //
 
 use std::env;
+use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -137,29 +138,59 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
     Ok(keys)
 }
 
-pub fn load_ton_address(addr: &str, config: &Config) -> Result<(String, Option<String>), String> {
-    // Separator extended format: dapp_hex64::account_hex64
-    if addr.contains("::") {
-        let (dapp, account) = addr.split_once("::").unwrap();
-        if dapp.len() != 64 || !dapp.chars().all(|c| c.is_ascii_hexdigit()) {
-            return Err("dapp_id must be exactly 64 hex characters".to_string());
-        }
-        if account.len() != 64 || !account.chars().all(|c| c.is_ascii_hexdigit()) {
-            return Err("account_id must be exactly 64 hex characters".to_string());
-        }
-        return Ok(addr.to_owned());
+pub struct SdkAddress {
+    pub dapp_id: Option<String>,
+    pub account_id: String,
+}
+
+impl SdkAddress {
+    pub fn validate(s: &str) -> Result<String, String> {
+        Ok(Self::from_str(s)?.to_string())
     }
-    // Compact extended format: 128 contiguous hex chars (first 64 = dapp, last 64 = account)
-    if addr.len() == 128 && addr.chars().all(|c| c.is_ascii_hexdigit()) {
-        return Ok(addr.to_owned());
+}
+// Format:
+// dapp_hex64::account_hex64
+// dapp_hex64:account_hex64
+// wc_int:account_hex64
+// account_hex64
+
+impl FromStr for SdkAddress {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (dapp_id, account_id) = if let Some((dapp, account)) = s.split_once("::") {
+            if dapp.len() != 64 || !dapp.chars().all(|c| c.is_ascii_hexdigit()) {
+                return Err("dapp_id must be exactly 64 hex characters".to_string());
+            }
+            (Some(dapp.to_owned()), account.to_owned())
+        } else if let Some((dapp_or_wc, account)) = s.split_once(":") {
+            if dapp_or_wc.len() == 64 && dapp_or_wc.chars().all(|c| c.is_ascii_hexdigit()) {
+                (Some(dapp_or_wc.to_owned()), account.to_owned())
+            } else {
+                (None, s.to_owned())
+            }
+        } else if s.len() == 128 && s.chars().all(|c| c.is_ascii_hexdigit()) {
+            let (dapp, account) = s.split_at(64);
+            (Some(dapp.to_owned()), account.to_owned())
+        } else {
+            (None, s.to_owned())
+        };
+        let _ = MsgAddressInt::from_str(&account_id).map_err(|e| {
+            format!("Address is specified in the wrong format. Error description: {}", e)
+        })?;
+        Ok(Self { dapp_id, account_id })
     }
-    // Legacy: prepend workchain if absent, then validate.
-    let addr =
-        if addr.find(':').is_none() { format!("{}:{}", config.wc, addr) } else { addr.to_owned() };
-    let _ = MsgAddressInt::from_str(&addr).map_err(|e| {
-        format!("Address is specified in the wrong format. Error description: {}", e)
-    })?;
-    Ok(addr)
+}
+
+impl Display for SdkAddress {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(dapp_id) = &self.dapp_id {
+            f.write_str(&dapp_id)?;
+            f.write_str(":")?;
+        }
+        f.write_str(&self.account_id)?;
+        Ok(())
+    }
 }
 
 pub fn now() -> u32 {

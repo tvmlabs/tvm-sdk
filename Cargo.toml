@@ -56,12 +56,8 @@ opt-level = 3
 opt-level = "s"   # Optimize for size.
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-panic = "abort"   # Abort on panic
+panic = "unwind"  # Keep release-test builds compatible with the test harness.
 strip = true      # Automatically strip symbols from the binary.
-
-[profile.test]
-# IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
-panic = "unwind"
 
 [workspace.dependencies]
 anyhow = "1.0.79"

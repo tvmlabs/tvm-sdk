@@ -84,10 +84,6 @@ impl ExtMessage {
     pub fn set_thread_id(&mut self, thread_id: Option<String>) {
         self.thread_id = thread_id;
     }
-
-    pub fn set_dst_dapp_id(&mut self, dst_dapp_id: Option<String>) {
-        self.dst_dapp_id = dst_dapp_id;
-    }
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]

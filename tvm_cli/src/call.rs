@@ -235,6 +235,7 @@ pub async fn process_message(
     ton: TonClient,
     msg: ParamsOfEncodeMessage,
     config: &Config,
+    dst_dapp_id: Option<&str>,
 ) -> Result<Value, ClientError> {
     let callback = |event| async move {
         if let ProcessingEvent::DidSend {
@@ -247,17 +248,26 @@ pub async fn process_message(
             println!("MessageId: {}", message_id)
         }
     };
+    let dst_dapp_id = dst_dapp_id.map(ToString::to_string);
     let res = if !config.is_json {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: msg.clone(), ..Default::default() },
+            ParamsOfProcessMessage {
+                message_encode_params: msg.clone(),
+                dst_dapp_id: dst_dapp_id.clone(),
+                ..Default::default()
+            },
             callback,
         )
         .await
     } else {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
+            ParamsOfProcessMessage {
+                message_encode_params: msg.clone(),
+                send_events: true,
+                dst_dapp_id,
+            },
             |_| async move {},
         )
         .await

@@ -36,10 +36,9 @@ use super::PipeChain;
 use super::SupportedInterfaces;
 use super::term_signing_box::TerminalSigningBox;
 use crate::config::Config;
-use crate::helpers::TonClient;
 use crate::helpers::create_client;
 use crate::helpers::load_abi;
-use crate::helpers::load_ton_address;
+use crate::helpers::{SdkAddress, TonClient};
 
 const BROWSER_ID: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 /// Stores Debot info needed for DBrowser.
@@ -129,7 +128,7 @@ impl TerminalBrowser {
         call_start: bool,
         autorun: bool,
     ) -> Result<String, String> {
-        let debot_addr = load_ton_address(addr, &self.config)?;
+        let debot_addr = SdkAddress::validate(addr)?;
         let callbacks = Arc::new(Callbacks::new(
             self.client.clone(),
             self.config.clone(),

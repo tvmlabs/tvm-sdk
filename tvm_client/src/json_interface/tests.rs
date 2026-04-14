@@ -103,22 +103,22 @@ fn check_client_error_msg(
     expected_helpers_suggestions: &[&str],
 ) {
     let error = TestClient::new().request_json("abi.encode_message", params).unwrap_err();
-    let tips: Vec<&str> = TipsIterator::new(&error.message).collect();
+    let tips: Vec<&str> = TipsIterator::new(error.message()).collect();
     assert_eq!(
         tips.len(),
         expected_tips.len(),
         "Tips count mismatch. Actual message: {}",
-        error.message
+        error.message()
     );
     for i in 0..expected_tips.len() {
         assert_eq!(
             tips[i], expected_tips[i],
             r#"Expected tip "{}" at position {}, but actual message is: "{}"."#,
-            expected_tips[i], i, error.message,
+            expected_tips[i], i, error.message(),
         )
     }
     if !expected_helpers_suggestions.is_empty() {
-        let actual_classes = error.data["suggest_use_helper_for"].as_array().unwrap();
+        let actual_classes = error.data()["suggest_use_helper_for"].as_array().unwrap();
         assert_eq!(
             actual_classes.len(),
             expected_helpers_suggestions.len(),

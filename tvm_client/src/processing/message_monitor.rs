@@ -1,12 +1,11 @@
 use std::sync::Arc;
 
-use tvm_client_processing::MessageMonitoringParams;
-use tvm_client_processing::MessageMonitoringResult;
-use tvm_client_processing::MonitorFetchWaitMode;
-use tvm_client_processing::MonitoringQueueInfo;
-
 use crate::ClientContext;
 use crate::error::ClientResult;
+use crate::processing::MessageMonitoringParams;
+use crate::processing::MessageMonitoringResult;
+use crate::processing::MonitorFetchWaitMode;
+use crate::processing::MonitoringQueueInfo;
 
 #[derive(Deserialize, Default, ApiType)]
 pub struct ParamsOfMonitorMessages {
@@ -54,7 +53,10 @@ pub fn monitor_messages(
     params: ParamsOfMonitorMessages,
 ) -> ClientResult<()> {
     let monitor = context.message_monitor.clone();
-    monitor.monitor_messages(&params.queue, params.messages)?;
+    monitor.monitor_messages(
+        &params.queue,
+        params.messages.into_iter().map(Into::into).collect(),
+    )?;
     Ok(())
 }
 
@@ -85,10 +87,12 @@ pub async fn fetch_next_monitor_results(
         .message_monitor
         .fetch_next_monitor_results(
             &params.queue,
-            params.wait_mode.unwrap_or(MonitorFetchWaitMode::NoWait),
+            params.wait_mode.unwrap_or(MonitorFetchWaitMode::NoWait).into(),
         )
         .await?;
-    Ok(ResultOfFetchNextMonitorResults { results })
+    Ok(ResultOfFetchNextMonitorResults {
+        results: results.into_iter().map(Into::into).collect(),
+    })
 }
 
 #[derive(Deserialize, ApiType, Default)]
@@ -104,7 +108,7 @@ pub fn get_monitor_info(
     context: Arc<ClientContext>,
     params: ParamsOfGetMonitorInfo,
 ) -> ClientResult<MonitoringQueueInfo> {
-    Ok(context.message_monitor.get_queue_info(&params.queue)?)
+    Ok(context.message_monitor.get_queue_info(&params.queue)?.into())
 }
 
 #[derive(Deserialize, Default, ApiType)]

@@ -21,20 +21,7 @@ use crate::net::BLOCKS_COLLECTION;
 use crate::net::Endpoint;
 use crate::net::OrderBy;
 use crate::net::ParamsOfQueryCollection;
-use crate::net::ParamsOfWaitForCollection;
 use crate::net::SortDirection;
-
-pub const BLOCK_FIELDS: &str = r#"
-    id
-    gen_utime
-    after_split
-    workchain_id
-    shard
-    in_msg_descr {
-        msg_id
-        transaction_id
-    }
-"#;
 
 pub(crate) async fn find_last_shard_block(
     context: &Arc<ClientContext>,
@@ -156,67 +143,3 @@ pub(crate) async fn find_last_shard_block(
     }
 }
 
-pub async fn wait_next_block(
-    context: &Arc<ClientContext>,
-    current: &str,
-    address: &MsgAddressInt,
-    timeout: Option<u32>,
-) -> ClientResult<tvm_sdk::Block> {
-    let client = context.get_server_link()?;
-
-    let block = client
-        .wait_for_collection(
-            ParamsOfWaitForCollection {
-                collection: BLOCKS_COLLECTION.to_string(),
-                filter: Some(json!({
-                    "prev_ref": {
-                        "root_hash": { "eq": current.to_string() }
-                    },
-                    "OR": {
-                        "prev_alt_ref": {
-                            "root_hash": { "eq": current.to_string() }
-                        }
-                    }
-                })),
-                result: BLOCK_FIELDS.to_string(),
-                timeout,
-            },
-            None,
-        )
-        .await?;
-    debug!("{}: block received {:#}", context.env.now_ms() / 1000, block);
-
-    if block["after_split"] == true && !check_shard_match(block.clone(), address)? {
-        client
-            .wait_for_collection(
-                ParamsOfWaitForCollection {
-                    collection: BLOCKS_COLLECTION.to_string(),
-                    filter: Some(json!({
-                        "id": { "ne": block["id"]},
-                        "prev_ref": {
-                            "root_hash": { "eq": current.to_string() }
-                        }
-                    })),
-                    result: BLOCK_FIELDS.to_string(),
-                    timeout,
-                },
-                None,
-            )
-            .await
-            .and_then(|val| {
-                serde_json::from_value(val)
-                    .map_err(|err| Error::invalid_data(format!("Can not parse block: {}", err)))
-            })
-    } else {
-        serde_json::from_value(block)
-            .map_err(|err| Error::invalid_data(format!("Can not parse block: {}", err)))
-    }
-}
-
-fn check_shard_match(
-    shard_descr: serde_json::Value,
-    address: &MsgAddressInt,
-) -> ClientResult<bool> {
-    tvm_sdk::Contract::check_shard_match(shard_descr, address)
-        .map_err(Error::can_not_check_block_shard)
-}

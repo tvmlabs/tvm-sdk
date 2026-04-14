@@ -50,10 +50,10 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
                     &mut suggest_use_helper_for,
                 );
                 for error_message in errors.iter() {
-                    error.message.push_str(&format!("\nTip: {}", error_message));
+                    error.message_mut().push_str(&format!("\nTip: {}", error_message));
                 }
                 if !suggest_use_helper_for.is_empty() {
-                    error.data["suggest_use_helper_for"] = Value::Array(
+                    error.data_mut()["suggest_use_helper_for"] = Value::Array(
                         suggest_use_helper_for
                             .iter()
                             .map(|s| Value::String(s.to_string()))
@@ -61,7 +61,7 @@ fn parse_params<P: DeserializeOwned + ApiType>(params_json: &str) -> ClientResul
                     );
                 }
             } else {
-                error.message.push_str("\nTip: Fix syntax error in the JSON string.");
+                error.message_mut().push_str("\nTip: Fix syntax error in the JSON string.");
             }
 
             Err(error)

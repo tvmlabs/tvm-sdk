@@ -77,7 +77,7 @@ async fn test_get_account() -> ClientResult<()> {
     match account::get_account(client.clone(), params).await {
         Ok(_) => panic!("Expected an error but got Ok"),
         Err(e) => {
-            assert_eq!(e.code, crate::net::ErrorCode::NotFound as u32);
+            assert_eq!(e.code(), crate::net::ErrorCode::NotFound as u32);
         }
     }
 
@@ -86,7 +86,7 @@ async fn test_get_account() -> ClientResult<()> {
     match account::get_account(client.clone(), params).await {
         Ok(_) => panic!("Expected an error but got Ok"),
         Err(e) => {
-            assert_eq!(e.code, crate::net::ErrorCode::InvalidServerResponse as u32);
+            assert_eq!(e.code(), crate::net::ErrorCode::InvalidServerResponse as u32);
         }
     }
 
@@ -98,7 +98,7 @@ async fn test_get_account() -> ClientResult<()> {
     match response {
         Ok(_) => panic!("Expected an error but got Ok"),
         Err(e) => {
-            assert_eq!(e.code, crate::net::ErrorCode::Unauthorized as u32);
+            assert_eq!(e.code(), crate::net::ErrorCode::Unauthorized as u32);
         }
     };
 
@@ -110,7 +110,7 @@ async fn test_get_account() -> ClientResult<()> {
     match response {
         Ok(_) => panic!("Expected an error but got Ok"),
         Err(e) => {
-            assert_eq!(e.code, crate::net::ErrorCode::Unauthorized as u32);
+            assert_eq!(e.code(), crate::net::ErrorCode::Unauthorized as u32);
         }
     };
     handle.abort();

@@ -43,7 +43,7 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
         let message = crate::abi::encode_message(context.clone(), encode_params).await?;
 
         // Send
-        let _ /* ResultOfSendMessage { shard_block_id, sending_endpoints } */ = send_message(
+        let send_result = send_message(
             context.clone(),
             ParamsOfSendMessage {
                 message: message.message.clone(),
@@ -64,8 +64,9 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
                 message: message.message.clone(),
                 send_events: params.send_events,
                 abi: Some(abi.clone()),
-                shard_block_id: "".to_string(), // shard_block_id.clone(),
-                sending_endpoints: Some(vec!["".to_string()] /* sending_endpoints */),
+                shard_block_id: String::new(),
+                sending_endpoints: Some(vec![]),
+                tx_hash: send_result.tx_hash.clone(),
             },
             &callback,
         )
@@ -79,9 +80,9 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
                 return Ok(output);
             }
             Err(err) => {
-                let local_exit_code = &err.data["local_error"]["data"]["exit_code"];
-                let can_retry = err.code == ErrorCode::MessageExpired as u32
-                    && (err.data["local_error"].is_null()
+                let local_exit_code = &err.data()["local_error"]["data"]["exit_code"];
+                let can_retry = err.code() == ErrorCode::MessageExpired as u32
+                    && (err.data()["local_error"].is_null()
                         || local_exit_code == StdContractError::ReplayProtection as i32
                         || local_exit_code == StdContractError::ExtMessageExpired as i32)
                     && can_retry_expired_message(&context, try_index);

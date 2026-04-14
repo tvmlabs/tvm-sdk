@@ -9,7 +9,10 @@ use crate::net;
 use crate::net::construct_rest_api_endpoint;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ApiType)]
-pub struct ClientError {
+pub struct ClientError(Box<ClientErrorInner>);
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ApiType)]
+pub struct ClientErrorInner {
     pub code: u32,
     pub message: String,
     pub traceparent: Option<String>,
@@ -69,17 +72,17 @@ impl<T: Send> AddNetworkUrl for ClientResult<T> {
 #[async_trait::async_trait]
 impl AddNetworkUrl for ClientError {
     async fn add_endpoint(mut self, link: &net::ServerLink, endpoint: &net::Endpoint) -> Self {
-        self.data["config_servers"] = link.config_servers().await.into();
-        self.data["endpoint"] = Value::String(endpoint.query_url.clone());
+        self.data_mut()["config_servers"] = link.config_servers().await.into();
+        self.data_mut()["endpoint"] = Value::String(endpoint.query_url.clone());
         self
     }
 
     async fn add_network_url_from_state(mut self, state: &net::NetworkState) -> Self {
-        self.data["config_servers"] = state.config_servers().await.into();
+        self.data_mut()["config_servers"] = state.config_servers().await.into();
         if let Some(endpoint) = state.query_endpoint().await {
-            self.data["query_url"] = endpoint.query_url.as_str().into();
+            self.data_mut()["query_url"] = endpoint.query_url.as_str().into();
             if let Some(ip_address) = &endpoint.ip_address {
-                self.data["query_ip_address"] = ip_address.as_str().into();
+                self.data_mut()["query_ip_address"] = ip_address.as_str().into();
             }
         }
         self
@@ -90,15 +93,21 @@ impl Display for ClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if f.alternate() {
             write!(f, "{:#}", json!(self))
-        } else if let Some(traceparent) = &self.traceparent {
-            write!(f, "{}; traceparent: {}", self.message, traceparent)
+        } else if let Some(traceparent) = &self.traceparent() {
+            write!(f, "{}; traceparent: {}", self.message(), traceparent)
         } else {
-            write!(f, "{}", self.message)
+            write!(f, "{}", self.message())
         }
     }
 }
 
 impl std::error::Error for ClientError {}
+
+impl From<ClientErrorInner> for ClientError {
+    fn from(inner: ClientErrorInner) -> Self {
+        Self(Box::new(inner))
+    }
+}
 
 impl ClientError {
     pub const ABI: isize = 300;
@@ -111,18 +120,18 @@ impl ClientError {
     pub const TVM: isize = 400;
     pub const UTILS: isize = 700;
 
-    pub fn new(code: u32, message: String, data: Value) -> Self {
+    pub fn new(code: u32, message: impl Into<String>, data: Value) -> Self {
         let mut data = data;
         data["core_version"] = Value::String(core_version());
         if let Some(binding) = binding_config() {
             data["binding_library"] = Value::String(binding.library);
             data["binding_version"] = Value::String(binding.version);
         }
-        Self { code, message, data, traceparent: None }
+        ClientErrorInner { code, message: message.into(), data, traceparent: None }.into()
     }
 
     pub fn with_code_message(code: u32, message: String) -> Self {
-        Self {
+        ClientErrorInner {
             code,
             message,
             data: json!({
@@ -130,28 +139,65 @@ impl ClientError {
             }),
             traceparent: None,
         }
+        .into()
+    }
+
+    pub fn code(&self) -> u32 {
+        self.0.code
+    }
+
+    pub fn set_code(&mut self, code: u32) {
+        self.0.code = code;
+    }
+
+    pub fn message(&self) -> &str {
+        &self.0.message
+    }
+
+    pub fn message_mut(&mut self) -> &mut String {
+        &mut self.0.message
+    }
+
+    pub fn set_message(&mut self, message: String) {
+        *self.message_mut() = message
+    }
+
+    pub fn data(&self) -> &Value {
+        &self.0.data
+    }
+
+    pub fn data_mut(&mut self) -> &mut Value {
+        &mut self.0.data
+    }
+
+    pub fn traceparent(&self) -> &Option<String> {
+        &self.0.traceparent
+    }
+
+    pub fn traceparent_mut(&mut self) -> &mut Option<String> {
+        &mut self.0.traceparent
     }
 
     pub fn add_function(mut self, function: Option<&str>) -> ClientError {
         if let Some(function) = function {
-            self.data["function_name"] = function.into();
+            self.data_mut()["function_name"] = function.into();
         }
 
         self
     }
 
     pub fn add_address(mut self, address: &tvm_block::MsgAddressInt) -> ClientError {
-        self.data["account_address"] = address.to_string().into();
+        self.0.data["account_address"] = address.to_string().into();
         self
     }
 
     pub fn is_unauthorized(&self) -> bool {
-        self.code == net::ErrorCode::Unauthorized as u32
+        self.code() == net::ErrorCode::Unauthorized as u32
     }
 
     pub fn get_redirection_data(&self, use_https: bool) -> (Option<String>, Option<String>) {
         let details = self
-            .data
+            .data()
             .get("node_error")
             .and_then(|ne| ne.get("extensions"))
             .and_then(|e| e.get("details"));
@@ -171,7 +217,7 @@ impl ClientError {
     }
 
     pub fn add_trace(mut self, traceparent: String) -> ClientError {
-        self.traceparent = Some(traceparent);
+        *self.traceparent_mut() = Some(traceparent);
         self
     }
 }
@@ -185,10 +231,10 @@ mod tests {
     use super::*;
 
     fn mock_error(endpoints: Vec<&str>, thread_id: &str) -> ClientError {
-        ClientError {
-            code: 1,
-            message: "Test".to_string(),
-            data: json!({
+        ClientError::new(
+            1,
+            "Test",
+            json!({
                 "node_error": {
                     "extensions": {
                         "details": {
@@ -198,8 +244,7 @@ mod tests {
                     }
                 }
             }),
-            traceparent: None,
-        }
+        )
     }
 
     #[test]
@@ -222,16 +267,16 @@ mod tests {
 
     #[test]
     fn test_get_redirection_data_with_missing_details() {
-        let error = ClientError {
-            code: 1,
-            message: "Test".to_string(),
-            data: json!({
+        let error = ClientError::new(
+            1,
+            "Test",
+            json!({
                 "node_error": {
                     "extensions": {}
                 }
             }),
-            traceparent: None,
-        };
+        );
+
         let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);
@@ -247,12 +292,7 @@ mod tests {
 
     #[test]
     fn test_get_redirection_data_with_no_node_error() {
-        let error = ClientError {
-            code: 1,
-            message: "Test".to_string(),
-            data: json!({}),
-            traceparent: None,
-        };
+        let error = ClientError::new(1, "Test", json!({}));
         let (tid, url) = error.get_redirection_data(true);
         assert_eq!(tid, None);
         assert_eq!(url, None);

@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
 use tvm_block::MsgAddressInt;
-use tvm_sdk::Block;
-use tvm_sdk::MessageId;
 
 use super::ErrorCode;
 use super::fetching::fetch_account;
@@ -29,31 +27,6 @@ pub fn can_retry_network_error(context: &Arc<ClientContext>, start: u64) -> bool
 
 pub(crate) fn can_retry_expired_message(context: &Arc<ClientContext>, retries: u8) -> bool {
     can_retry_more(retries, context.config.network.message_retries_count)
-}
-
-pub fn find_transactions(
-    block: &Block,
-    message_id: &str,
-    shard_block_id: &str,
-) -> ClientResult<Vec<String>> {
-    let mut ids = Vec::new();
-    let msg_id: MessageId = message_id.into();
-    for msg_descr in &block.in_msg_descr {
-        if Some(&msg_id) == msg_descr.msg_id.as_ref() {
-            ids.push(
-                msg_descr
-                    .transaction_id
-                    .as_ref()
-                    .ok_or(Error::invalid_block_received(
-                        "No field `transaction_id` in block's `in_msg_descr`.",
-                        message_id,
-                        shard_block_id,
-                    ))?
-                    .to_string(),
-            );
-        }
-    }
-    Ok(ids)
 }
 
 pub(crate) fn get_message_expiration_time(
@@ -141,35 +114,35 @@ pub(crate) async fn resolve_error(
             const EXIT_ARG_FIELD: &str = "exit_arg";
             const CONTRACT_ERROR_FIELD: &str = "contract_error";
 
-            let exit_code = original_error.data[EXIT_CODE_FIELD].as_i64();
-            let local_exit_code = err.data[EXIT_CODE_FIELD].as_i64();
+            let exit_code = original_error.data()[EXIT_CODE_FIELD].as_i64();
+            let local_exit_code = err.data()[EXIT_CODE_FIELD].as_i64();
 
             if !without_transaction && exit_code != local_exit_code {
                 return Err(original_error);
             }
 
             if without_transaction {
-                original_error.data["local_error"] = serde_json::to_value(&err)
+                original_error.data_mut()["local_error"] = serde_json::to_value(&err)
                     .map_err(crate::client::Error::cannot_serialize_result)?;
             } else {
-                original_error.data[EXIT_ARG_FIELD] = err.data[EXIT_ARG_FIELD].clone();
-                original_error.data[CONTRACT_ERROR_FIELD] = err.data[CONTRACT_ERROR_FIELD].clone();
+                original_error.data_mut()[EXIT_ARG_FIELD] = err.data()[EXIT_ARG_FIELD].clone();
+                original_error.data_mut()[CONTRACT_ERROR_FIELD] = err.data()[CONTRACT_ERROR_FIELD].clone();
             }
 
-            match original_error.message.find("\nTip:") {
+            match original_error.message().find("\nTip:") {
                 Some(insert_position) => {
-                    original_error.message = format!(
+                    original_error.set_message(format!(
                         "{}.\nPossible reason: {}.{}",
-                        &original_error.message[..insert_position].trim_end().trim_end_matches('.'),
-                        remove_exit_code(&exit_code, err.message.trim_end_matches('.')),
-                        &original_error.message[insert_position..],
-                    )
+                        &original_error.message()[..insert_position].trim_end().trim_end_matches('.'),
+                        remove_exit_code(&exit_code, err.message().trim_end_matches('.')),
+                        &original_error.message()[insert_position..],
+                    ))
                 }
                 None => {
-                    original_error.message = format!(
+                    original_error.set_message(format!(
                         "{}.\nPossible reason: {}",
-                        original_error.message.trim_end_matches('.'),
-                        remove_exit_code(&exit_code, &err.message),
+                        original_error.message().trim_end_matches('.'),
+                        remove_exit_code(&exit_code, err.message())),
                     )
                 }
             }
@@ -177,14 +150,14 @@ pub(crate) async fn resolve_error(
             Err(original_error)
         }
         Ok(message) => {
-            original_error.message = format!(
+            original_error.set_message(format!(
                 "{}. {}. Possible reason: message has not been delivered",
-                original_error.message.trim_end_matches('.'),
+                original_error.message().trim_end_matches('.'),
                 message,
-            );
-            if original_error.code == ErrorCode::MessageExpired as u32 {
-                original_error.message =
-                    format!("{}. Try to send it again", original_error.message,);
+            ));
+            if original_error.code() == ErrorCode::MessageExpired as u32 {
+                original_error.set_message(
+                    format!("{}. Try to send it again", original_error.message()));
             }
             Err(original_error)
         }

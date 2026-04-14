@@ -47,7 +47,7 @@ impl Error {
         let message = match serde_json::from_str(&response.body) {
             Err(_) => response.body.clone(),
             Ok(value) => match Self::try_extract_graphql_error(&value) {
-                Some(err) => err.message,
+                Some(err) => err.message().to_string(),
                 None => response.body.clone(),
             },
         };
@@ -80,13 +80,13 @@ impl Error {
 
         if let Some(bm_data) = resp_body.get("ext_message_token") {
             if let Some(entry) =
-                client_error.data.as_object_mut().and_then(|obj| obj.get_mut("ext_message_token"))
+                client_error.data_mut().as_object_mut().and_then(|obj| obj.get_mut("ext_message_token"))
             {
                 *entry = bm_data.clone();
             }
 
-            if client_error.data.get("ext_message_token").is_none() {
-                client_error.data["ext_message_token"] = bm_data.clone();
+            if client_error.data().get("ext_message_token").is_none() {
+                client_error.data_mut()["ext_message_token"] = bm_data.clone();
             }
         }
 
@@ -94,18 +94,18 @@ impl Error {
     }
 
     pub fn queries_query_failed(mut err: ClientError) -> ClientError {
-        if err.code != ErrorCode::Unauthorized as u32 {
-            err.code = ErrorCode::QueryFailed as u32;
+        if err.code() != ErrorCode::Unauthorized as u32 {
+            err.set_code(ErrorCode::QueryFailed as u32);
         }
-        err.message = format!("Query failed: {}", err);
+        err.set_message(format!("Query failed: {}", err));
         err
     }
 
     pub fn queries_subscribe_failed(mut err: ClientError) -> ClientError {
-        if err.code != ErrorCode::Unauthorized as u32 {
-            err.code = ErrorCode::SubscribeFailed as u32;
+        if err.code() != ErrorCode::Unauthorized as u32 {
+            err.set_code(ErrorCode::SubscribeFailed as u32);
         }
-        err.message = format!("Subscribe failed: {}", err);
+        err.set_message(format!("Subscribe failed: {}", err));
         err
     }
 
@@ -114,14 +114,14 @@ impl Error {
         filter: Option<Value>,
         timestamp: u32,
     ) -> ClientError {
-        if err.code != ErrorCode::Unauthorized as u32
-            && err.code != ErrorCode::WaitForTimeout as u32
+        if err.code() != ErrorCode::Unauthorized as u32
+            && err.code() != ErrorCode::WaitForTimeout as u32
         {
-            err.code = ErrorCode::WaitForFailed as u32;
+            err.set_code(ErrorCode::WaitForFailed as u32);
         }
-        err.message = format!("WaitFor failed: {}", err);
-        err.data["filter"] = filter.into();
-        err.data["timestamp"] = format_time(timestamp).into();
+        err.set_message(format!("WaitFor failed: {}", err));
+        err.data_mut()["filter"] = filter.into();
+        err.data_mut()["timestamp"] = format_time(timestamp).into();
         err
     }
 
@@ -166,13 +166,13 @@ impl Error {
 
         let mut err = error(ErrorCode::SendMessageFailed, message.clone());
         if let Some(code) = orig_error.get("code") {
-            err.data["node_error"]["extensions"]["code"] = code.clone();
+            err.data_mut()["node_error"]["extensions"]["code"] = code.clone();
         }
         if let Some(message) = orig_error.get("message") {
-            err.data["node_error"]["extensions"]["message"] = message.clone();
+            err.data_mut()["node_error"]["extensions"]["message"] = message.clone();
         }
         if let Some(data) = orig_error.get("data") {
-            err.data["node_error"]["extensions"]["details"] = data.clone();
+            err.data_mut()["node_error"]["extensions"]["details"] = data.clone();
         }
 
         err
@@ -191,7 +191,7 @@ impl Error {
         let mut err = error(ErrorCode::GraphqlError, message);
 
         if let Some(code) = code {
-            err.data["server_code"] = code.into();
+            err.data_mut()["server_code"] = code.into();
         }
 
         if let Some(mut node_error) = details {
@@ -202,7 +202,7 @@ impl Error {
                     map.remove("locations");
                     map.remove("path");
                 }
-                err.data["node_error"] = node_error;
+                err.data_mut()["node_error"] = node_error;
             }
         }
 
@@ -211,7 +211,7 @@ impl Error {
 
     pub fn graphql_connection_error(errors: &[Value]) -> ClientError {
         let mut err = Self::graphql_server_error(Some("connection"), errors);
-        err.code = ErrorCode::GraphqlConnectionError as u32;
+        err.set_code(ErrorCode::GraphqlConnectionError as u32);
         err
     }
 
@@ -238,8 +238,8 @@ impl Error {
     }
 
     pub fn graphql_websocket_init_error(mut err: ClientError) -> ClientError {
-        err.code = ErrorCode::GraphqlWebsocketInitError as u32;
-        err.message = format!("GraphQL websocket init failed: {}", err);
+        err.set_code(ErrorCode::GraphqlWebsocketInitError as u32);
+        err.set_message(format!("GraphQL websocket init failed: {}", err));
         err
     }
 
@@ -252,7 +252,7 @@ impl Error {
             ErrorCode::QueryTransactionTreeTimeout,
             "Query transaction tree failed: some messages has not appeared during the timeout. Possible reason: sync problems on server side.".to_owned(),
         );
-        err.data = json!({ "timeout": timeout });
+        *err.data_mut() = json!({ "timeout": timeout });
         err
     }
 
@@ -319,14 +319,14 @@ mod tests {
 
         let client_error = result.unwrap();
 
-        assert_eq!(client_error.code, ErrorCode::SendMessageFailed as u32);
-        assert_eq!(client_error.message, "Resend message to the active Block Producer");
+        assert_eq!(client_error.code(), ErrorCode::SendMessageFailed as u32);
+        assert_eq!(client_error.message(), "Resend message to the active Block Producer");
 
-        let token = client_error.data.get("ext_message_token");
+        let token = client_error.data().get("ext_message_token");
         assert!(token.is_some());
         assert!(token.unwrap().get("issuer").is_some());
 
-        let extensions = client_error.data.get("node_error").and_then(|v| v.get("extensions"));
+        let extensions = client_error.data().get("node_error").and_then(|v| v.get("extensions"));
         assert!(extensions.is_some());
 
         assert_eq!(
@@ -351,13 +351,13 @@ mod tests {
 
         let client_error = result.unwrap();
 
-        assert_eq!(client_error.code, ErrorCode::SendMessageFailed as u32);
-        assert_eq!(client_error.message, "BM token expired");
+        assert_eq!(client_error.code(), ErrorCode::SendMessageFailed as u32);
+        assert_eq!(client_error.message(), "BM token expired");
 
-        let bm = client_error.data.get("block_manager");
+        let bm = client_error.data().get("block_manager");
         assert!(bm.is_none());
 
-        let extensions = client_error.data.get("node_error").and_then(|v| v.get("extensions"));
+        let extensions = client_error.data().get("node_error").and_then(|v| v.get("extensions"));
         assert!(extensions.is_some());
 
         assert_eq!(extensions.unwrap().get("code").and_then(|v| v.as_str()), Some("TOKEN_EXPIRED"));

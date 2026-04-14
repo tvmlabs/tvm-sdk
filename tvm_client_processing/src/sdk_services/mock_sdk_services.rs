@@ -8,7 +8,7 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use base64::Engine;
-use tvm_types::Cell;
+use tvm_types::cell::Cell;
 
 use crate::Error;
 use crate::MessageMonitorSdkServices;

@@ -30,7 +30,6 @@ use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 use tokio::sync::watch;
 use tvm_block::MsgAddressInt;
-use crate::encoding::SdkAddress;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
 
@@ -56,7 +55,6 @@ use crate::net::types::NetworkQueriesProtocol;
 use crate::net::websocket_link::WebsocketLink;
 use crate::processing::ThreadIdentifier;
 
-pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
@@ -517,7 +515,7 @@ impl ServerLink {
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
 
         let use_https_for_rest_api =
-            endpoint_addresses.first().map_or(false, |s| s.starts_with("https://"));
+            endpoint_addresses.first().is_some_and(|s| s.starts_with("https://"));
         let rest_api_endpoint =
             construct_rest_api_endpoint(&rest_api_addr, use_https_for_rest_api)?;
 
@@ -598,12 +596,12 @@ impl ServerLink {
                     ));
                 }
                 Some(GraphQLQueryEvent::Error(err)) => {
-                    if err.code == ErrorCode::NetworkModuleSuspended as u32
-                        || err.code == ErrorCode::NetworkModuleResumed as u32
+                    if err.code() == ErrorCode::NetworkModuleSuspended as u32
+                        || err.code() == ErrorCode::NetworkModuleResumed as u32
                     {
                         continue;
                     }
-                    let is_retryable = err.code != ErrorCode::GraphqlWebsocketInitError as u32
+                    let is_retryable = err.code() != ErrorCode::GraphqlWebsocketInitError as u32
                         && crate::client::Error::is_network_error(&err);
                     if !is_retryable || !self.state.can_retry_network_error(start) {
                         return Err(err);
@@ -837,12 +835,12 @@ impl ServerLink {
                 }
                 Some(GraphQLQueryEvent::Complete) => break,
                 Some(GraphQLQueryEvent::Error(err)) => {
-                    if err.code == ErrorCode::NetworkModuleSuspended as u32
-                        || err.code == ErrorCode::NetworkModuleResumed as u32
+                    if err.code() == ErrorCode::NetworkModuleSuspended as u32
+                        || err.code() == ErrorCode::NetworkModuleResumed as u32
                     {
                         continue;
                     }
-                    let is_retryable = err.code != ErrorCode::GraphqlWebsocketInitError as u32
+                    let is_retryable = err.code() != ErrorCode::GraphqlWebsocketInitError as u32
                         && crate::client::Error::is_network_error(&err);
                     result = Err(err);
                     if !is_retryable || !self.state.can_retry_network_error(start) {
@@ -996,12 +994,12 @@ impl ServerLink {
 
             let Err(err) = result.as_mut() else { return result };
 
-            if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
-                network_state.update_bm_data(&err.data["ext_message_token"]).await;
+            if let Some(Value::Object(_)) = err.data().get("ext_message_token") {
+                network_state.update_bm_data(&err.data()["ext_message_token"]).await;
                 message.ext_message_token = network_state.get_bm_token().await;
             }
 
-            let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
+            let Some(ext) = err.data().get("node_error").and_then(|e| e.get("extensions")) else {
                 return result;
             };
 
@@ -1010,7 +1008,7 @@ impl ServerLink {
             };
 
             if !["WRONG_PRODUCER", "THREAD_MISMATCH", "TOKEN_EXPIRED"].contains(&code) {
-                ensure_address(&mut err.data, Value::String(dst.to_string()));
+                ensure_address(err.data_mut(), Value::String(dst.to_string()));
                 return result;
             }
 
@@ -1020,7 +1018,7 @@ impl ServerLink {
             }
 
             let (real_thread_id, redirect_url) =
-                get_redirection_data(&err.data, self.state.use_https_for_rest_api);
+                get_redirection_data(err.data(), self.state.use_https_for_rest_api);
 
             if let Some(thread_id) = real_thread_id {
                 message.set_thread_id(Some(thread_id));
@@ -1051,7 +1049,7 @@ impl ServerLink {
         // Send messages is always successful in order to process case when server
         // received message but client didn't receive response
         if let Err(err) = &result {
-            log::warn!("Send messages error: {}", err.message);
+            log::warn!("Send messages error: {}", err.message());
         }
 
         Ok(result.err())

@@ -28,16 +28,15 @@ use tvm_types::write_boc;
 
 use crate::config::Config;
 use crate::decode::msg_printer::tree_of_cells_into_base64;
-use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::create_client;
 use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::decode_msg_body;
 use crate::helpers::load_ton_abi;
-use crate::helpers::load_ton_address;
 use crate::helpers::print_account;
 use crate::helpers::query_account_field;
 use crate::helpers::query_message;
+use crate::helpers::{SdkAddress, abi_from_matches_or_config};
 use crate::load_abi;
 use crate::print_args;
 
@@ -336,7 +335,7 @@ async fn decode_account_fields(m: &ArgMatches, config: &Config) -> Result<(), St
     let abi = load_abi(abi.as_ref().unwrap(), config).await?;
 
     let context = create_client_verbose(config)?;
-    let address = load_ton_address(address.unwrap(), config)?;
+    let address = SdkAddress::validate(address.unwrap())?;
     let data = query_account_field(context.clone(), &address, "data").await?;
 
     let res = decode_account_data(

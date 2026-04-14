@@ -647,7 +647,7 @@ impl Engine {
                 hash.into(),
             ) {
                 Ok(binary) => {
-                    match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
+                    match wasmtime::component::Component::new(&wasm_engine, binary.as_slice()) {
                         Ok(module) => Ok(module),
                         Err(e) => err!(
                             ExceptionCode::WasmPrecompileComponentFail,
@@ -681,7 +681,7 @@ impl Engine {
             let binary = self.get_wasm_binary_by_hash(hash.into())?;
             let component = match wasmtime::component::Component::new(
                 self.get_wasm_engine()?,
-                &binary.as_slice(),
+                binary.as_slice(),
             ) {
                 Ok(module) => module,
                 Err(e) => err!(
@@ -710,7 +710,7 @@ impl Engine {
         &self,
         executable: Vec<u8>,
     ) -> Result<wasmtime::component::Component> {
-        match wasmtime::component::Component::new(self.get_wasm_engine()?, &executable.as_slice()) {
+        match wasmtime::component::Component::new(self.get_wasm_engine()?, executable.as_slice()) {
             Ok(module) => Ok(module),
             Err(e) => err!(
                 ExceptionCode::WasmSingleUseComponentFail,
@@ -728,7 +728,7 @@ impl Engine {
     ) -> Result<()> {
         let component_type = component.component_type();
         let engine = self.get_wasm_engine()?;
-        let mut exports = component_type.exports(&engine);
+        let mut exports = component_type.exports(engine);
         let arg = exports.next();
         log::debug!("List of exports from WASM: {:?}", arg);
         if let Some(arg) = arg {
@@ -739,7 +739,7 @@ impl Engine {
             }
         }
         let binding = component.component_type();
-        let mut imports = binding.imports(&engine);
+        let mut imports = binding.imports(engine);
         let arg = imports.next();
         log::debug!("List of imports from WASM: {:?}", arg);
         if let Some(arg) = arg {

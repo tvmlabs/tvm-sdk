@@ -153,13 +153,14 @@ async fn test_wait_message() {
     client.get_tokens_from_giver_async(&encoded.address, None).await;
 
     let encoded = client.encode_message(encode_params).await.unwrap();
-    let _result = send_message
+    let send_result = send_message
         .call_with_callback(
             ParamsOfSendMessage {
                 abi: Some(abi.clone()),
                 message: encoded.message.clone(),
                 thread_id: None,
                 send_events: true,
+                dst_dapp_id: None,
             },
             callback.clone(),
         )
@@ -172,6 +173,7 @@ async fn test_wait_message() {
                 message: encoded.message.clone(),
                 send_events: true,
                 abi: Some(abi.clone()),
+                tx_hash: send_result.tx_hash.clone(),
                 ..Default::default()
             },
             callback.clone(),
@@ -225,7 +227,7 @@ async fn test_process_message() {
 
     let output = client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: true },
+            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: true, dst_dapp_id: None },
             callback,
         )
         .await
@@ -264,6 +266,7 @@ async fn test_process_message() {
                     ..Default::default()
                 },
                 send_events: true,
+                dst_dapp_id: None,
             },
             callback,
         )
@@ -354,6 +357,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
+                dst_dapp_id: None,
             },
             TestClient::default_callback,
         )
@@ -362,10 +366,10 @@ async fn test_error_resolving() {
 
     log::debug!("{:#}", json!(result));
     if TestClient::node_se() {
-        assert_eq!(result.code, TvmErrorCode::AccountMissing as u32);
+        assert_eq!(result.code(), TvmErrorCode::AccountMissing as u32);
     } else {
-        assert_eq!(result.code, original_code);
-        assert_eq!(result.data["local_error"]["code"], TvmErrorCode::AccountMissing as u32);
+        assert_eq!(result.code(), original_code);
+        assert_eq!(result.data()["local_error"]["code"], TvmErrorCode::AccountMissing as u32);
     }
 
     // deploy with low balance
@@ -376,6 +380,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
+                dst_dapp_id: None,
             },
             TestClient::default_callback,
         )
@@ -384,10 +389,10 @@ async fn test_error_resolving() {
 
     log::debug!("{:#}", json!(result));
     if TestClient::node_se() {
-        assert_eq!(result.code, TvmErrorCode::LowBalance as u32);
+        assert_eq!(result.code(), TvmErrorCode::LowBalance as u32);
     } else {
-        assert_eq!(result.code, original_code);
-        assert_eq!(result.data["local_error"]["code"], TvmErrorCode::LowBalance as u32);
+        assert_eq!(result.code(), original_code);
+        assert_eq!(result.data()["local_error"]["code"], TvmErrorCode::LowBalance as u32);
     }
 
     // ABI version 1 messages don't expire so previous deploy message can be
@@ -405,6 +410,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: run_params.clone(),
                 send_events: false,
+                dst_dapp_id: None,
             },
             TestClient::default_callback,
         )
@@ -413,10 +419,10 @@ async fn test_error_resolving() {
 
     log::debug!("{:#}", json!(result));
     if TestClient::node_se() {
-        assert_eq!(result.code, TvmErrorCode::AccountCodeMissing as u32);
+        assert_eq!(result.code(), TvmErrorCode::AccountCodeMissing as u32);
     } else {
-        assert_eq!(result.code, original_code);
-        assert_eq!(result.data["local_error"]["code"], TvmErrorCode::AccountCodeMissing as u32);
+        assert_eq!(result.code(), original_code);
+        assert_eq!(result.data()["local_error"]["code"], TvmErrorCode::AccountCodeMissing as u32);
     }
 
     // normal deploy
@@ -425,6 +431,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
+                dst_dapp_id: None,
             },
             TestClient::default_callback,
         )
@@ -438,6 +445,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: run_params.clone(),
                 send_events: false,
+                dst_dapp_id: None,
             },
             TestClient::default_callback,
         )
@@ -446,12 +454,12 @@ async fn test_error_resolving() {
 
     log::debug!("{:#}", json!(result));
     if TestClient::node_se() {
-        assert_eq!(result.code, TvmErrorCode::ContractExecutionError as u32);
-        assert_eq!(result.data["exit_code"], 100);
+        assert_eq!(result.code(), TvmErrorCode::ContractExecutionError as u32);
+        assert_eq!(result.data()["exit_code"], 100);
     } else {
-        assert_eq!(result.code, original_code);
-        assert_eq!(result.data["local_error"]["code"], TvmErrorCode::ContractExecutionError as u32);
-        assert_eq!(result.data["local_error"]["data"]["exit_code"], 100)
+        assert_eq!(result.code(), original_code);
+        assert_eq!(result.data()["local_error"]["code"], TvmErrorCode::ContractExecutionError as u32);
+        assert_eq!(result.data()["local_error"]["data"]["exit_code"], 100)
     }
 }
 
@@ -508,6 +516,7 @@ async fn test_retries() {
                             ..Default::default()
                         },
                         send_events: false,
+                        dst_dapp_id: None,
                     },
                     TestClient::default_callback,
                 )
@@ -572,7 +581,7 @@ async fn test_fees() {
 
     let run_result = client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: params, send_events: false },
+            ParamsOfProcessMessage { message_encode_params: params, send_events: false, dst_dapp_id: None },
             TestClient::default_callback,
         )
         .await
@@ -639,7 +648,7 @@ async fn test_deploy_from_tvc_v1() {
 
     let _ = client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: false },
+            ParamsOfProcessMessage { message_encode_params: encode_params, send_events: false, dst_dapp_id: None },
             |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
         .await
@@ -661,6 +670,7 @@ async fn test_deploy_from_tvc_v1() {
                     ..Default::default()
                 },
                 send_events: false,
+                dst_dapp_id: None,
             },
             move |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
@@ -725,6 +735,7 @@ fn test_process_message_sync() {
         .process_message_sync(ParamsOfProcessMessage {
             message_encode_params: encode_params,
             send_events: true,
+            dst_dapp_id: None,
         })
         .unwrap();
 
@@ -747,6 +758,7 @@ fn test_process_message_sync() {
                 ..Default::default()
             },
             send_events: true,
+            dst_dapp_id: None,
         })
         .unwrap();
     assert_eq!(output.out_messages.len(), 2);
