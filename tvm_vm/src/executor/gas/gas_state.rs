@@ -17,6 +17,7 @@ use tvm_types::error;
 use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
+use crate::executor::zk::CHKHISTPROOF_GAS_PRICE;
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
 use crate::types::Exception;
@@ -211,6 +212,15 @@ impl Gas {
 
     pub fn consume_vergrth16(&mut self) -> i64 {
         self.use_gas(VERGRTH16_GAS_PRICE)
+    }
+
+    /// Compute CHKHISTPROOF usage cost
+    pub const fn chkhistproof_price() -> i64 {
+        CHKHISTPROOF_GAS_PRICE
+    }
+
+    pub fn consume_chkhistproof(&mut self) -> i64 {
+        self.use_gas(CHKHISTPROOF_GAS_PRICE)
     }
 
     #[cfg(feature = "gosh")]

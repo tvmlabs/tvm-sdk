@@ -52,6 +52,7 @@ use crate::utils::unpack_string_from_cell;
 
 pub const POSEIDON_ZK_LOGIN_GAS_PRICE: i64 = 356;
 pub const VERGRTH16_GAS_PRICE: i64 = 2380;
+pub const CHKHISTPROOF_GAS_PRICE: i64 = 100;
 
 pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
 
@@ -587,5 +588,31 @@ pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
     let hash_int = IntegerData::from_unsigned_bytes_le(output_as_bytes);
     engine.cc.stack.push(StackItem::integer(hash_int));
 
+    Ok(())
+}
+
+pub(super) fn execute_chk_hist_proof(engine: &mut Engine) -> Status {
+    engine.mark_execution_as_block_related()?;
+    engine.load_instruction(crate::executor::types::Instruction::new("CHKHISTPROOF"))?;
+    engine.try_use_gas(Gas::chkhistproof_price())?;
+    fetch_stack(engine, 3)?;
+
+    // Stack order: var(0)=top=layer_number, var(1)=block_height, var(2)=hash
+    let layer_number: u8 = engine.cmd.var(0).as_integer()?.into(1..=10)?;
+    let block_height: u64 = engine.cmd.var(1).as_integer()?.into(0..=u64::MAX)?;
+    let hash_builder = engine
+        .cmd
+        .var(2)
+        .as_integer()?
+        .as_builder::<UnsignedIntegerBigEndianEncoding>(256)?;
+    let mut hash_bytes = [0u8; 32];
+    hash_bytes.copy_from_slice(hash_builder.data());
+
+    let result = match &engine.check_history_proof_hash {
+        Some(callback) => callback(block_height, layer_number, hash_bytes),
+        None => false,
+    };
+
+    engine.cc.stack.push(boolean!(result));
     Ok(())
 }

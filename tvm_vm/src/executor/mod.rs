@@ -62,6 +62,10 @@ mod test_vergrth_bad_args;
 mod test_poseidon_bad_args;
 
 #[cfg(test)]
+#[path = "../tests/test_chk_hist_proof.rs"]
+mod test_chk_hist_proof;
+
+#[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
 
