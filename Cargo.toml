@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.24.16"
+version = "2.24.17"
 
 rust-version = "1.76.0"
 
@@ -53,59 +53,59 @@ opt-level = 1
 opt-level = 3
 
 [profile.release]
-opt-level = "s"   # Optimize for size.
+opt-level = "z"   # Optimize for size.
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
 panic = "unwind"  # Keep release-test builds compatible with the test harness.
 strip = true      # Automatically strip symbols from the binary.
 
 [workspace.dependencies]
-anyhow = "1.0.79"
-async-trait = "0.1.77"
-base64 = "0.22.1"
-blst = "0.3.11"
-byteorder = "1.5.0"
+anyhow = "1"
+async-trait = "0.1"
+base64 = "0.22"
+blst = "0.3"
+byteorder = "1"
 chrono = "0.4"
-clap = { version = "4.4", features = ["derive"] }
-crc = "3.0.1"
-diffy = "0.3.0"
-dirs = "5.0.1"
-ed25519 = "2.2.3"
-ed25519-dalek = "2.1.0"
-extfmt = "0.1.1"
+clap = { version = "4", features = ["derive"] }
+crc = "3"
+diffy = "0.4"
+dirs = "6"
+ed25519 = "2"
+ed25519-dalek = "2"
+extfmt = "0.2"
 failure = "0.1.8"
 futures = "0.3"
-hex = "0.4.3"
-hex-literal = "0.4.1"
-json5 = "0.4.1"
-lazy_static = "1.4.0"
+hex = "0.4"
+hex-literal = "1"
+json5 = "1"
+lazy_static = "1"
 lockfree = { git = "https://github.com/tvmlabs/lockfree" }
-log = "0.4.20"
-num = "0.4.1"
-num-bigint = "0.4.4"
-num-derive = "0.4.1"
-num-traits = "0.2.18"
-proc-macro2 = "1.0.78"
-quote = "1.0.35"
-rand = "0.8.5"
-regex = "1.10.3"
-reqwest = { version = "0.12.12", default-features = false, features = [
-  "rustls-tls-webpki-roots",
+log = "0.4"
+num = "0.4"
+num-bigint = "0.4"
+num-derive = "0.4"
+num-traits = "0.2"
+proc-macro2 = "1"
+quote = "1"
+rand = "0.8"
+regex = "1"
+reqwest = { version = "0.13", default-features = false, features = [
+  "rustls",
 ] }
-semver = "1.0.27"
-serde = "1.0.197"
-serde_derive = "1.0.197"
-serde_json = "1.0.114"
-serde_repr = "0.1.18"
-sha2 = "0.10.8"
-similar = "2.4.0"
-smallvec = "1.13.1"
-thiserror = "1.0.56"
-tokio = { default-features = false, version = "1.36.0" }
-wasmtime = "36.0.2"
-wasmtime-wasi = "36.0.2"
-wasmtime-wasi-io = "36.0.2"
-zstd = "0.13.0"
+semver = "1"
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+serde_repr = "0.1"
+sha2 = "0.10"
+similar = "2"
+smallvec = "1"
+thiserror = "2"
+tokio = { default-features = false, version = "1" }
+wasmtime = "36"
+wasmtime-wasi = "36"
+wasmtime-wasi-io = "36"
+zstd = "0.13"
 #
 tvm_abi = { path = "./tvm_abi" }
 tvm_api = { path = "./tvm_api" }
@@ -121,6 +121,12 @@ tvm_sdk = { path = "./tvm_sdk" }
 tvm_struct = { path = "./tvm_struct" }
 tvm_types = { path = "./tvm_types" }
 tvm_vm = { path = "./tvm_vm", default-features = false }
+url = "2"
+#
+bincode = "1"
+criterion = "0.5"
+log4rs = "1"
+pretty_assertions = "1"
 
 [workspace.dependencies.tokio-tungstenite]
-version = "0.26.2"
+version = "0.28"

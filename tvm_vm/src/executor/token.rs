@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+#[cfg(feature = "gosh")]
 use byte_slice_cast::AsByteSlice;
 use tvm_abi::Param;
 use tvm_abi::ParamType;
@@ -681,6 +682,7 @@ pub(super) fn execute_get_available_balance(engine: &mut Engine) -> Status {
     Ok(())
 }
 
+#[cfg(feature = "gosh")]
 pub(super) fn execute_my_dapp_id(engine: &mut Engine) -> Status {
     engine.mark_execution_as_block_related()?;
     engine.load_instruction(Instruction::new("MYDAPPID"))?;

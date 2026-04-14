@@ -22,7 +22,6 @@ use zeroize::ZeroizeOnDrop;
 use crate::client::ClientContext;
 use crate::crypto;
 use crate::crypto::CryptoConfig;
-use crate::crypto::default_hdkey_compliant;
 use crate::crypto::hdkey::HDPrivateKey;
 use crate::crypto::internal::hex_decode_secret;
 use crate::crypto::internal::hmac_sha512;
@@ -321,8 +320,7 @@ impl CryptoMnemonic for Bip39Mnemonic {
         path: &str,
     ) -> ClientResult<KeyPair> {
         check_phrase(self, phrase)?;
-        let derived =
-            HDPrivateKey::from_mnemonic(phrase)?.derive_path(path, default_hdkey_compliant())?;
+        let derived = HDPrivateKey::from_mnemonic(phrase)?.derive_path(path)?;
         ed25519_keys_from_secret_bytes(&derived.secret().0)
     }
 
@@ -418,7 +416,7 @@ impl CryptoMnemonic for TonMnemonic {
 
         let seed = Self::seed_from_string(phrase, "TON default seed", 100_000);
         let master = HDPrivateKey::master(&key256(&seed[32..])?, &key256(&seed[..32])?);
-        let derived = master.derive_path(path, default_hdkey_compliant())?;
+        let derived = master.derive_path(path)?;
         ed25519_keys_from_secret_bytes(&derived.secret().0)
     }
 

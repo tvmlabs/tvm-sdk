@@ -15,7 +15,9 @@ use std::fmt::Formatter;
 use std::fmt::{self};
 use std::sync::Arc;
 
+#[cfg(not(target_arch = "wasm32"))]
 use super::bls::BLS_PUBLIC_KEY_LEN;
+#[cfg(not(target_arch = "wasm32"))]
 use super::bls::BLS_SECRET_KEY_LEN;
 use crate::Ed25519ExpandedPrivateKey;
 use crate::Ed25519PrivateKey;
@@ -216,6 +218,7 @@ impl KeyOption for Ed25519KeyOption {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug)]
 pub struct BlsKeyOption {
     id: Arc<KeyId>,
@@ -223,6 +226,7 @@ pub struct BlsKeyOption {
     pvt_key: Option<[u8; BLS_SECRET_KEY_LEN]>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl BlsKeyOption {
     pub const KEY_TYPE: i32 = 0o7;
 
@@ -279,6 +283,7 @@ impl BlsKeyOption {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl KeyOption for BlsKeyOption {
     /// Get key id
     fn id(&self) -> &Arc<KeyId> {

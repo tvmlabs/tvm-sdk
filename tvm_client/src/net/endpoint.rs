@@ -232,9 +232,13 @@ impl Endpoint {
 fn current_traceparent() -> String {
     // temporary placeholder — replace by a propagator when switching to
     // opentelemetry
+    #[cfg(target_arch = "wasm32")]
+    let n = (js_sys::Date::now() as u64) % 1_000_000_000;
+    #[cfg(not(target_arch = "wasm32"))]
     let n =
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().subsec_nanos();
-    format!("00-{:032x}-{:016x}-01", n as u128, n as u64)
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().subsec_nanos()
+            as u64;
+    format!("00-{:032x}-{:016x}-01", n as u128, n)
 }
 
 #[test]
