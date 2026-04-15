@@ -196,15 +196,13 @@ impl Display for SdkAddress {
 
 #[cfg(test)]
 mod tests {
-    use super::SdkAddress;
     use std::str::FromStr;
 
-    const DAPP_ID: &str =
-        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    const ACCOUNT_ID: &str =
-        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    const RAW_ADDRESS: &str =
-        "0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    use super::SdkAddress;
+
+    const DAPP_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const ACCOUNT_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const RAW_ADDRESS: &str = "0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     #[test]
     fn sdk_address_from_str_parses_raw_address() {
