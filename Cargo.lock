@@ -6287,6 +6287,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "webpki-roots 1.0.6",
  "zeroize",
  "zstd",
 ]

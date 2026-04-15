@@ -132,6 +132,7 @@ tvm_struct = { path = "./tvm_struct" }
 tvm_types = { path = "./tvm_types" }
 tvm_vm = { path = "./tvm_vm", default-features = false }
 url = "2"
+webpki-roots = "1"
 #
 bincode = "1"
 criterion = "0.5"

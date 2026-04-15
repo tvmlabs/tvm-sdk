@@ -83,6 +83,7 @@ zstd = { workspace = true, optional = true }
 reqwest = { features = ["cookies"], workspace = true, optional = true }
 rustls = { workspace = true, optional = true }
 tokio-tungstenite = { optional = true, workspace = true }
+webpki-roots = { workspace = true, optional = true }
 url.workspace = true
 
 # optional for wasm
@@ -160,6 +161,7 @@ rustls-tls-webpki-roots = [
   "dep:reqwest",
   "dep:rustls",
   "dep:tokio-tungstenite",
+  "dep:webpki-roots",
   "reqwest/rustls-no-provider",
   "tokio-tungstenite/rustls-tls-webpki-roots",
 ]

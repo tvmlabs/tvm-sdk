@@ -69,13 +69,18 @@ pub(crate) struct ClientEnv {
 
 impl ClientEnv {
     pub fn new() -> ClientResult<Self> {
-        // Install ring as the default rustls CryptoProvider.
-        // This is required because reqwest is built with `rustls-no-provider`
-        // (to avoid pulling in aws-lc-rs which breaks Android cross-compilation).
-        let _ = rustls::crypto::ring::default_provider().install_default();
+        // Build a rustls ClientConfig with ring crypto provider and webpki roots.
+        // This bypasses rustls-platform-verifier (which requires JNI init on Android)
+        // and avoids aws-lc-rs (which breaks Android cross-compilation).
+        let mut root_store = rustls::RootCertStore::empty();
+        root_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        let tls_config = rustls::ClientConfig::builder()
+            .with_root_certificates(root_store)
+            .with_no_client_auth();
 
         let cookies = Arc::new(reqwest::cookie::Jar::default());
         let client = ClientBuilder::new()
+            .use_preconfigured_tls(tls_config)
             .cookie_provider(cookies.clone())
             .build()
             .map_err(Error::http_client_create_error)?;
