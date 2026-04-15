@@ -69,6 +69,11 @@ pub(crate) struct ClientEnv {
 
 impl ClientEnv {
     pub fn new() -> ClientResult<Self> {
+        // Install ring as the default rustls CryptoProvider.
+        // This is required because reqwest is built with `rustls-no-provider`
+        // (to avoid pulling in aws-lc-rs which breaks Android cross-compilation).
+        let _ = rustls::crypto::ring::default_provider().install_default();
+
         let cookies = Arc::new(reqwest::cookie::Jar::default());
         let client = ClientBuilder::new()
             .cookie_provider(cookies.clone())
