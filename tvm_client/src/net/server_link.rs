@@ -794,6 +794,12 @@ impl ServerLink {
                         continue;
                     }
 
+                    log::debug!(
+                        "query_http response: endpoint={}, status={}, body={}",
+                        endpoint,
+                        response.status,
+                        response.body,
+                    );
                     self.state.reset_resume_timeout();
                     if response.status == 401 {
                         return Err(Error::unauthorized(&response));
@@ -1006,7 +1012,18 @@ impl ServerLink {
         let mut endpoint = network_state.select_send_message_endpoint().await;
 
         let query = json!([message]).to_string();
+        log::debug!(
+            "send_message: id={}, dst={}, endpoint={}, body={}",
+            msg_id,
+            dst,
+            endpoint,
+            query
+        );
         let mut result = self.query_http(query, &ensure_resource(&endpoint)).await;
+        match &result {
+            Ok(data) => log::debug!("send_message result: id={}, response={}", msg_id, data),
+            Err(err) => log::debug!("send_message error: id={}, error={}", msg_id, err.message),
+        }
         while attempts < self.config.message_retries_count {
             attempts += 1;
             if let Ok(ref data) = result {
@@ -1020,6 +1037,7 @@ impl ServerLink {
             }
 
             let Err(err) = result.as_mut() else { return result };
+            ensure_message_hash(&mut err.data, msg_id);
 
             if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
                 network_state.update_bm_data(&err.data["ext_message_token"]).await;
@@ -1055,8 +1073,27 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
                 endpoint = network_state.select_send_message_endpoint().await;
             }
-            result =
-                self.query_http(json!([message]).to_string(), &ensure_resource(&endpoint)).await;
+            let query = json!([message]).to_string();
+            log::debug!(
+                "send_message retry: id={}, attempt={}, endpoint={}, body={}",
+                msg_id,
+                attempts,
+                endpoint,
+                query
+            );
+            result = self.query_http(query, &ensure_resource(&endpoint)).await;
+            match &result {
+                Ok(data) => {
+                    log::debug!("send_message retry result: id={}, response={}", msg_id, data)
+                }
+                Err(err) => {
+                    log::debug!("send_message retry error: id={}, error={}", msg_id, err.message)
+                }
+            }
+        }
+
+        if let Err(err) = result.as_mut() {
+            ensure_message_hash(&mut err.data, msg_id);
         }
 
         result
@@ -1144,12 +1181,18 @@ fn ensure_address(err_data: &mut Value, dst: Value) {
         if addr.is_null() {
             *addr = dst;
         }
-    } else {
-        if let Some(details) =
-            err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
-        {
-            details.insert("address".to_string(), dst);
-        }
+    } else if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("address".to_string(), dst);
+    }
+}
+
+fn ensure_message_hash(err_data: &mut Value, msg_id: &str) {
+    if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("message_hash".to_string(), Value::String(msg_id.to_string()));
     }
 }
 
