@@ -194,6 +194,70 @@ impl Display for SdkAddress {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::SdkAddress;
+    use std::str::FromStr;
+
+    const DAPP_ID: &str =
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const ACCOUNT_ID: &str =
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const RAW_ADDRESS: &str =
+        "0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+    #[test]
+    fn sdk_address_from_str_parses_raw_address() {
+        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
+
+        assert_eq!(address.dapp_id, None);
+        assert_eq!(address.account_id, RAW_ADDRESS);
+        assert_eq!(address.to_string(), RAW_ADDRESS);
+    }
+
+    #[test]
+    fn sdk_address_from_str_parses_dapp_id_with_double_colon() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.account_id, RAW_ADDRESS);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{RAW_ADDRESS}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_parses_dapp_id_with_single_colon() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}:{ACCOUNT_ID}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.account_id, ACCOUNT_ID);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_parses_concatenated_dapp_id_and_account_id() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}{ACCOUNT_ID}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.account_id, ACCOUNT_ID);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_keeps_workchain_address_without_dapp_id() {
+        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
+
+        assert_eq!(address.dapp_id, None);
+        assert_eq!(address.account_id, RAW_ADDRESS);
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_invalid_dapp_id_length_for_double_colon() {
+        let err = SdkAddress::from_str(&format!("deadbeef::{RAW_ADDRESS}")).unwrap_err();
+
+        assert_eq!(err, "dapp_id must be exactly 64 hex characters");
+    }
+}
+
 pub fn now() -> u32 {
     (now_ms() / 1000) as u32
 }
