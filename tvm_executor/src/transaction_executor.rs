@@ -1211,7 +1211,11 @@ pub trait TransactionExecutor {
         };
         let fwd_prices = self.config().get_fwd_prices(is_masterchain);
         let fwd_mine_fees = fwd_prices.mine_fee_checked(&fwd_full_fees)?;
-        let fwd_fees = fwd_full_fees - fwd_mine_fees;
+        let fwd_fees = if fwd_mine_fees.as_u128() > fwd_full_fees.as_u128() {
+            Grams::zero()
+        } else {
+            Grams::new(fwd_full_fees.as_u128() - fwd_mine_fees.as_u128())?
+        };
 
         log::debug!(target: "executor", "get fee {} from bounce msg {}", fwd_full_fees, remaining_msg_balance);
 
@@ -1334,6 +1338,13 @@ fn compute_new_state(
         }
         // Account exists, but can be in different states.
         AccountStatus::AccStateActive => {
+            if let Some(state_init) = in_msg.state_init() {
+                let text = "Cannot process external message for active account with hash";
+                if !check_libraries(state_init, disable_set_lib, text, in_msg) {
+                    return Ok(Some(ComputeSkipReason::BadState));
+                }
+            }
+
             if config.has_capability(GlobalCapabilities::CapSuspendedList) {
                 if let Some(suspended_addresses) = config.raw_config().suspended_addresses()? {
                     let addr =
@@ -1686,9 +1697,6 @@ fn outmsg_action_handler(
 
     if let Some(int_header) = msg.int_header_mut() {
         let mut fwd_prices = fwd_prices_basic.clone();
-        if int_header.dst_dapp_id().is_none() {
-            fwd_prices *= 2;
-        }
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {
@@ -1729,6 +1737,9 @@ fn outmsg_action_handler(
 
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
+        } else {
+            int_header.set_exchange(false);
+            log::debug!(target: "executor", "Sanitizing is_exchange flag: forcing to false");
         }
 
         if (mode & SENDMSG_ALL_BALANCE) != 0 {

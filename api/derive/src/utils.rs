@@ -300,16 +300,16 @@ fn reduce_lines(lines: Vec<String>) -> Vec<String> {
         let line = replace_tabs(line);
         if !line.is_empty() {
             let leading_spaces = get_leading_spaces(&line);
-            if min_leading_spaces.is_none() || leading_spaces < min_leading_spaces.unwrap() {
+            if min_leading_spaces.map_or(true, |min| leading_spaces < min) {
                 min_leading_spaces = Some(leading_spaces);
             }
         }
         reduced.push(line);
     }
-    if min_leading_spaces.is_some() && min_leading_spaces.unwrap() > 0 {
+    if let Some(min_leading_spaces) = min_leading_spaces.filter(|&min| min > 0) {
         for line in &mut reduced {
             if !line.is_empty() {
-                *line = line[min_leading_spaces.unwrap()..].into();
+                line.drain(..min_leading_spaces);
             }
         }
     }

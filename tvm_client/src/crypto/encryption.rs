@@ -12,10 +12,8 @@
 
 use std::sync::Arc;
 
-use chacha20::Key;
-use chacha20::Nonce;
-use chacha20::cipher::NewStreamCipher;
-use chacha20::cipher::SyncStreamCipher;
+use chacha20::cipher::KeyIvInit;
+use chacha20::cipher::StreamCipher;
 use tvm_types::base64_encode;
 use zeroize::ZeroizeOnDrop;
 
@@ -58,7 +56,8 @@ pub fn chacha20(
     if nonce.len() != 12 {
         return Err(Error::invalid_nonce_size(nonce.len(), &[12]));
     }
-    let mut cipher = chacha20::ChaCha20::new(Key::from_slice(&key), Nonce::from_slice(&nonce));
+    let mut cipher = chacha20::ChaCha20::new_from_slices(&key, &nonce)
+        .map_err(|_e| Error::invalid_key_size(key.len(), &[32]))?;
     let mut data = base64_decode(&params.data)?;
     cipher.apply_keystream(&mut data);
     Ok(ResultOfChaCha20 { data: base64_encode(&data) })

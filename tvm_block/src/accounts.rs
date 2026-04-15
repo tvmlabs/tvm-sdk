@@ -50,10 +50,6 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::VarUInteger7;
 
-#[cfg(test)]
-#[path = "tests/test_accounts.rs"]
-mod tests;
-
 ///////////////////////////////////////////////////////////////////////////////
 /// 4.1.5. Storage profile of an account.
 ///
@@ -887,9 +883,8 @@ impl Account {
         }
     }
 
-    #[cfg(test)]
     /// getting statistic using storage for calculate storage/transfer fee
-    fn get_storage_stat(&self) -> Result<StorageUsed> {
+    pub fn get_storage_stat(&self) -> Result<StorageUsed> {
         if let Some(stuff) = self.stuff() {
             StorageUsed::calculate_for_struct(&stuff.storage)
         } else {
@@ -1033,6 +1028,7 @@ impl Account {
                 }
                 AccountState::AccountFrozen { state_init_hash } => {
                     if state_init_hash == &state_init.hash()? {
+                        init_code_hash_opt = stuff.storage.init_code_hash.clone();
                         AccountState::AccountActive { state_init: state_init.clone() }
                     } else {
                         fail!("StateInit doesn't correspond to frozen hash")

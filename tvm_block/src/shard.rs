@@ -47,10 +47,6 @@ use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::validators::ValidatorSet;
 
-#[cfg(test)]
-#[path = "tests/test_shard.rs"]
-mod tests;
-
 pub const MAX_SPLIT_DEPTH: u8 = 60;
 pub const MASTERCHAIN_ID: i32 = -1;
 pub const BASE_WORKCHAIN_ID: i32 = 0;
@@ -184,7 +180,7 @@ impl AccountIdPrefixFull {
     /// Returns count of the first bits matched in both addresses
     /// TBD
     #[allow(dead_code)]
-    pub(crate) fn count_matching_bits(&self, other: &Self) -> u8 {
+    pub fn count_matching_bits(&self, other: &Self) -> u8 {
         if self.workchain_id != other.workchain_id {
             (self.workchain_id ^ other.workchain_id).leading_zeros() as u8
         } else if self.prefix != other.prefix {
@@ -199,7 +195,7 @@ impl AccountIdPrefixFull {
     /// TBD
     #[allow(dead_code)]
     #[allow(clippy::many_single_char_names)]
-    pub(crate) fn perform_hypercube_routing(
+    pub fn perform_hypercube_routing(
         &self,
         dest: &AccountIdPrefixFull,
         cur_shard: &ShardIdent,

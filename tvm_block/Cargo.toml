@@ -26,8 +26,9 @@ tvm_types.workspace = true
 typed-builder.workspace = true
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
-rand = "0.8.5"
+pretty_assertions.workspace = true
+rand.workspace = true
+rlimit = "0.11"
 
 [features]
 default = ["gosh"]

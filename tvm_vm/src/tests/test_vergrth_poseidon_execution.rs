@@ -12,7 +12,9 @@ use std::collections::HashMap;
 use std::env;
 use std::time::Instant;
 
-use base64::decode;
+use base64::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD as BASE64_URL;
 use base64ct::Encoding as bEncoding;
 use ed25519_dalek::Signer;
 use fastcrypto::ed25519::Ed25519KeyPair;
@@ -229,7 +231,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         println!("ephemeral public_key is {:?}", eph_pubkey);
         println!("ephemeral public_key len is {:?}", eph_pubkey.len());
         let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
-        let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
+        let jwt_data_1 = BASE64_URL.decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
         let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
         println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
@@ -238,7 +240,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
             serde_json::from_str(&jwt_string_1).unwrap();
         println!("kid: {:?}", jwt_data_decoded1.kid);
 
-        let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+        let jwt_data_2 = BASE64_URL.decode(jwt_data_vector[1]).expect("Base64 decoding failed");
         let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
         println!("jwt_string_2 is {:?}", jwt_string_2);
 
@@ -617,7 +619,7 @@ fn test_proof_stuff() {
 
         let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
 
-        let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+        let jwt_data_2 = BASE64_URL.decode(jwt_data_vector[1]).expect("Base64 decoding failed");
         let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
         println!("jwt_string_2 is {:?}", jwt_string_2);
         let jwt_data_decoded2: JwtDataDecodedPart2Google =
@@ -1003,7 +1005,7 @@ async fn test_test_issuer_with_real_prove_service() {
         eph_pubkey.extend(kp.public().as_ref());
         let nonce = get_nonce(&eph_pubkey.clone(), max_epoch, jwt_randomness).unwrap();
         println!("nonce : {:?}", nonce);
-        let kp_encoded: String = base64::encode(&eph_pubkey);
+        let kp_encoded: String = BASE64.encode(&eph_pubkey);
         println!("kp_encoded : {:?}", kp_encoded);
         assert_eq!(kp_encoded, "AGkOhciuopy6FCipd5Woav28W8O3Yle+FXpY2LBroI6I".to_string());
         let sub = "112897468626716626103";

@@ -584,7 +584,7 @@ pub(super) fn execute_poseidon(engine: &mut Engine) -> Status {
         }
     };
 
-    let hash_int = IntegerData::from_unsigned_bytes_le(&output_as_bytes);
+    let hash_int = IntegerData::from_unsigned_bytes_le(output_as_bytes);
     engine.cc.stack.push(StackItem::integer(hash_int));
 
     Ok(())

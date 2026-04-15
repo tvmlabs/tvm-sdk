@@ -53,6 +53,7 @@ impl RuntimeHandlers {
         handlers
     }
 
+    #[cfg_attr(not(feature = "api_info"), allow(dead_code))]
     pub fn add_module(&mut self, module: Module) {
         self.api.modules.push(module);
     }
@@ -127,6 +128,7 @@ impl Runtime {
         }
     }
 
+    #[cfg(feature = "api_info")]
     pub fn api() -> &'static API {
         &Self::handlers().api
     }

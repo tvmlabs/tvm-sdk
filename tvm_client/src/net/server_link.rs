@@ -24,7 +24,6 @@ use futures::Future;
 use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
-use reqwest::Url;
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -32,6 +31,7 @@ use tokio::sync::watch;
 use tvm_block::MsgAddressInt;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
+use url::Url;
 
 use super::ErrorCode;
 use super::tvm_gql::ExtMessage;
@@ -790,12 +790,17 @@ impl ServerLink {
         for (name, value) in Endpoint::http_headers(&self.config) {
             headers.insert(name, value);
         }
+        let traceparent = headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("traceparent"))
+            .map(|(_, value)| value.clone());
+
         let result = self
             .client_env
             .fetch(url.as_ref(), FetchMethod::Get, Some(headers), None, self.config.query_timeout)
             .await;
 
-        match result {
+        let result = match result {
             Err(err) => Err(err),
             Ok(response) => {
                 if response.status == 200 {
@@ -809,6 +814,11 @@ impl ServerLink {
                     Err(Error::invalid_server_response(response.body))
                 }
             }
+        };
+
+        match (traceparent, result) {
+            (Some(traceparent), Err(err)) => Err(err.add_trace(traceparent)),
+            (_, result) => result,
         }
     }
 

@@ -42,10 +42,6 @@ use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::types::Grams;
 
-#[cfg(test)]
-#[path = "tests/test_in_msgs.rs"]
-mod tests;
-
 /// internal helper macros for reading InMsg variants
 macro_rules! read_msg_descr {
     ($cell:expr, $msg_descr:tt, $variant:ident) => {{
