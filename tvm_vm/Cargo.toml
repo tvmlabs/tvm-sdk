@@ -40,7 +40,9 @@ serde.workspace = true
 
 # ZK dependencies (optional, included via "gosh" feature)
 regex = { workspace = true, optional = true }
-reqwest = { workspace = true, features = ["blocking", "json", "rustls"], optional = true }
+reqwest = { workspace = true, features = ["blocking", "json", "rustls-no-provider"], optional = true }
+rustls = { workspace = true, optional = true }
+webpki-roots = { workspace = true, optional = true }
 
 bls12_381 = { version = "0.8", optional = true }
 
@@ -97,7 +99,7 @@ gosh = [
   "dep:ark-groth16", "dep:ark-relations", "dep:ark-serialize", "dep:ark-snark",
   "dep:ark-crypto-primitives", "dep:ark-r1cs-std", "dep:ark-std",
   "dep:fastcrypto", "dep:neptune", "dep:bls12_381",
-  "dep:reqwest", "dep:regex", "dep:tracing", "dep:ff",
+  "dep:reqwest", "dep:rustls", "dep:webpki-roots", "dep:regex", "dep:tracing", "dep:ff",
   "dep:schemars", "dep:rand_chacha", "dep:base64ct",
   "dep:byte-slice-cast", "dep:once_cell", "dep:derive_more",
   "dep:itertools", "dep:typenum",

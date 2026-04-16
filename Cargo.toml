@@ -94,7 +94,13 @@ quote = "1"
 rand = "0.8"
 regex = "1"
 reqwest = { version = "0.13", default-features = false, features = [
-  "rustls",
+  "rustls-no-provider",
+] }
+rustls = { version = "0.23", default-features = false, features = [
+  "ring",
+  "std",
+  "tls12",
+  "logging",
 ] }
 semver = "1"
 serde = "1"
@@ -126,6 +132,7 @@ tvm_struct = { path = "./tvm_struct" }
 tvm_types = { path = "./tvm_types" }
 tvm_vm = { path = "./tvm_vm", default-features = false }
 url = "2"
+webpki-roots = "1"
 #
 bincode = "1"
 criterion = "0.5"
