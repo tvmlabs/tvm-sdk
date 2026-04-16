@@ -65,7 +65,7 @@ pub static DARK_DEX_W8_VK: LazyLock<VerifyingKey<G1Affine>> = LazyLock::new(|| {
 });
 
 /// Path to the KZG SRS file (K=19, ~64MB).
-pub const KZG_SRS_PATH: &str = "halo2_test_data/kzg_bn254_19.srs";
+pub const KZG_SRS_PATH: &str = "kzg_bn254_19.srs";
 
 /// Pre-loaded KZG SRS parameters — `LazyLock` ensures one-time loading from file.
 /// Returns `None` if the SRS file is missing or corrupt (avoids panicking the node).
