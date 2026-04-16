@@ -86,12 +86,9 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
         }
     }
 
-    // Verify with static VK (LazyLock, deserialized once) and file-based SRS (LazyLock)
+    // Verify with static VK and embedded verifier-only KZG params (both LazyLock)
     let vk = &*crate::executor::zk_halo2_utils::DARK_DEX_W8_VK;
-    let params = match crate::executor::zk_halo2_utils::KZG_PARAMS.as_ref() {
-        Some(p) => p,
-        None => fail!(ExceptionCode::FatalError),
-    };
+    let params = &*crate::executor::zk_halo2_utils::KZG_PARAMS;
     let res = proof.verify_with_vk(vk, params, &[&pub_inputs]);
 
     engine.cc.stack.push(boolean!(res));
