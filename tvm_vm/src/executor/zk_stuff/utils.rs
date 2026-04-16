@@ -87,13 +87,13 @@ pub struct TestIssuerJWTResponse {
 
 /// Create an HTTP client with ring + webpki-roots TLS configuration.
 /// Must be used instead of `reqwest::Client::new()` because reqwest is built
-/// with `rustls-no-provider` (to avoid aws-lc-rs for Android cross-compilation).
+/// with `rustls-no-provider` (to avoid aws-lc-rs for Android
+/// cross-compilation).
 pub fn new_http_client() -> Client {
     let mut root_store = rustls::RootCertStore::empty();
     root_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
-    let tls_config = rustls::ClientConfig::builder()
-        .with_root_certificates(root_store)
-        .with_no_client_auth();
+    let tls_config =
+        rustls::ClientConfig::builder().with_root_certificates(root_store).with_no_client_auth();
 
     reqwest::ClientBuilder::new()
         .use_preconfigured_tls(tls_config)
