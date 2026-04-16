@@ -16,10 +16,15 @@ use std::str::FromStr;
 
 use serde_json::Map;
 use serde_json::Value;
+#[cfg(feature = "ton")]
 use tvm_api::IntoBoxed;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::RempMessageLevel;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::RempMessageStatus;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::RempReceipt;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_block::Account;
 use tvm_block::BlockCreateFees;
@@ -70,12 +75,14 @@ use tvm_block::GasLimitsPrices;
 use tvm_block::GlobalVersion;
 use tvm_block::Grams;
 use tvm_block::LibDescr;
+#[cfg(feature = "ton")]
 use tvm_block::MASTERCHAIN_ID;
 use tvm_block::MandatoryParams;
 use tvm_block::McStateExtra;
 use tvm_block::MsgAddressInt;
 use tvm_block::MsgForwardPrices;
 use tvm_block::ParamLimits;
+#[cfg(feature = "ton")]
 use tvm_block::SHARD_FULL;
 use tvm_block::ShardAccount;
 use tvm_block::ShardIdent;
@@ -1076,6 +1083,7 @@ pub fn parse_state_unchecked(map: &Map<String, Value>) -> Result<ShardStateUnspl
     StateParser::new().parse_state_unchecked(map)
 }
 
+#[cfg(feature = "ton")]
 fn parse_block_id_ext(map_path: &PathMap, mc: bool) -> Result<BlockIdExt> {
     if mc {
         Ok(BlockIdExt::with_params(
@@ -1097,6 +1105,7 @@ fn parse_block_id_ext(map_path: &PathMap, mc: bool) -> Result<BlockIdExt> {
     }
 }
 
+#[cfg(feature = "ton")]
 pub fn parse_remp_status(map: &Map<String, Value>) -> Result<(RempReceipt, Vec<u8>)> {
     let map_path = PathMap::new(map);
 

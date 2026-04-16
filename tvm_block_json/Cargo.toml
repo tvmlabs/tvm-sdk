@@ -29,6 +29,7 @@ metrics = { version = "0.22", optional = true }
 
 [features]
 metrics = ["dep:metrics"]
+ton = ["tvm_api/ton"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true

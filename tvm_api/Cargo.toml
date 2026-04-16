@@ -28,3 +28,4 @@ secstr = "0.5"
 
 [features]
 bytes_as_vec = []
+ton = []
