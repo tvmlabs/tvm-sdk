@@ -40,6 +40,7 @@ use crate::executor::zk_stuff::utils::gen_address_seed;
 use crate::executor::zk_stuff::utils::get_nonce;
 use crate::executor::zk_stuff::utils::get_proof;
 use crate::executor::zk_stuff::utils::get_test_issuer_jwt_token;
+use crate::executor::zk_stuff::utils::new_http_client;
 use crate::executor::zk_stuff::zk_login::CanonicalSerialize;
 use crate::executor::zk_stuff::zk_login::JWK;
 use crate::executor::zk_stuff::zk_login::JwkId;
@@ -1010,7 +1011,7 @@ async fn test_test_issuer_with_real_prove_service() {
         assert_eq!(kp_encoded, "AGkOhciuopy6FCipd5Woav28W8O3Yle+FXpY2LBroI6I".to_string());
         let sub = "112897468626716626103";
 
-        let client = reqwest::Client::new();
+        let client = new_http_client();
         let token = get_test_issuer_jwt_token(
             &client,
             &nonce,
