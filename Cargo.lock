@@ -2187,12 +2187,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "extfmt"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a61bffc6f807b136c3efeeac295edde2c65b1e345de7ea777e75f63de7436c6"
-
-[[package]]
 name = "failure"
 version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6208,9 +6202,7 @@ version = "2.24.17"
 dependencies = [
  "anyhow",
  "byteorder",
- "extfmt",
  "failure",
- "hex",
  "lazy_static",
  "ordered-float 4.6.0",
  "secstr",

@@ -24,7 +24,7 @@ use std::marker::PhantomData;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
-use extfmt::Hexlify;
+#[cfg(feature = "ton")]
 use ordered_float::OrderedFloat;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
@@ -45,15 +45,26 @@ use crate::ton::Bool;
 
 const MAX_BYTES_DEBUG_LEN: usize = 4;
 
+fn fmt_hex(f: &mut fmt::Formatter<'_>, data: &[u8]) -> fmt::Result {
+    for byte in data {
+        write!(f, "{byte:02x}")?;
+    }
+    Ok(())
+}
+
 macro_rules! impl_byteslike {
     (@common $ty:ident) => {
 
         impl fmt::Debug for $ty {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 if self.len() <= MAX_BYTES_DEBUG_LEN {
-                    write!(f, "<{}>", Hexlify(&self.0))
+                    write!(f, "<")?;
+                    fmt_hex(f, &self.0)?;
+                    write!(f, ">")
                 } else {
-                    write!(f, "<{}... {} bytes>", Hexlify(&self.0[..MAX_BYTES_DEBUG_LEN]), self.0.len())
+                    write!(f, "<")?;
+                    fmt_hex(f, &self.0[..MAX_BYTES_DEBUG_LEN])?;
+                    write!(f, "... {} bytes>", self.0.len())
                 }
             }
         }
@@ -616,14 +627,17 @@ impl_tl_primitive! { uint, u32, read_u32, write_u32 }
 impl_tl_primitive! { long, i64, read_i64, write_i64 }
 impl_tl_primitive! { ulong, u64, read_u64, write_u64 }
 
+#[cfg(feature = "ton")]
 pub type double = OrderedFloat<f64>;
 
+#[cfg(feature = "ton")]
 impl BareDeserialize for double {
     fn deserialize_bare(de: &mut Deserializer) -> Result<Self> {
         Ok(de.read_f64::<LittleEndian>()?.into())
     }
 }
 
+#[cfg(feature = "ton")]
 impl BareSerialize for double {
     fn constructor(&self) -> crate::ConstructorNumber {
         unreachable!()

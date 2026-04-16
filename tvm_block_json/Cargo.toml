@@ -21,7 +21,7 @@ serde_derive.workspace = true
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror.workspace = true
 #
-tvm_api.workspace = true
+tvm_api = { workspace = true, optional = true }
 tvm_block.workspace = true
 tvm_types.workspace = true
 
@@ -29,7 +29,7 @@ metrics = { version = "0.22", optional = true }
 
 [features]
 metrics = ["dep:metrics"]
-ton = ["tvm_api/ton"]
+ton = ["dep:tvm_api", "tvm_api/ton"]
 
 [dev-dependencies]
 pretty_assertions.workspace = true
