@@ -1,10 +1,11 @@
 use std::sync::LazyLock;
 
-use gosh_zk_snark_halo2_utils::io::{read_kzg_params, read_vk};
+use gosh_zk_snark_halo2_utils::io::read_vk;
 use halo2_base::gates::circuit::BaseCircuitParams;
 use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, G1Affine};
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
+use halo2_base::halo2_proofs::SerdeFormat;
 
 /// Circuit configuration parameters for the Dark DEX circuit (K=19, W=8 historical window).
 pub fn dark_dex_w8_config_params() -> BaseCircuitParams {
@@ -67,6 +68,21 @@ pub static DARK_DEX_W8_VK: LazyLock<VerifyingKey<G1Affine>> = LazyLock::new(|| {
 pub const KZG_SRS_PATH: &str = "halo2_test_data/kzg_bn254_19.srs";
 
 /// Pre-loaded KZG SRS parameters — `LazyLock` ensures one-time loading from file.
-pub static KZG_PARAMS: LazyLock<ParamsKZG<Bn256>> = LazyLock::new(|| {
-    read_kzg_params(KZG_SRS_PATH)
+/// Returns `None` if the SRS file is missing or corrupt (avoids panicking the node).
+pub static KZG_PARAMS: LazyLock<Option<ParamsKZG<Bn256>>> = LazyLock::new(|| {
+    let params_buf = match std::fs::read(KZG_SRS_PATH) {
+        Ok(buf) => buf,
+        Err(e) => {
+            tracing::error!("Failed to read KZG SRS file '{}': {}", KZG_SRS_PATH, e);
+            return None;
+        }
+    };
+    let mut params_slice: &[u8] = &params_buf;
+    match ParamsKZG::<Bn256>::read_custom(&mut params_slice, SerdeFormat::RawBytesUnchecked) {
+        Ok(params) => Some(params),
+        Err(e) => {
+            tracing::error!("Failed to deserialize KZG SRS: {}", e);
+            None
+        }
+    }
 });

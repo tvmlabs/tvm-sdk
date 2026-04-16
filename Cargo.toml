@@ -128,3 +128,6 @@ tvm_vm = { path = "./tvm_vm", default-features = false }
 
 [workspace.dependencies.tokio-tungstenite]
 version = "0.26.2"
+
+[patch.crates-io]
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "main" }
