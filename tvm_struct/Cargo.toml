@@ -10,7 +10,6 @@ license.workspace = true
 
 [dependencies]
 thiserror.workspace = true
-failure.workspace = true
 #
 tvm_block.workspace = true
 tvm_types.workspace = true

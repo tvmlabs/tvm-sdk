@@ -2166,7 +2166,7 @@ pub(crate) fn check_and_get_wasm_by_hash(
     engine: &mut Engine,
     exec_index: usize,
     hash_index: usize,
-) -> Result<(Vec<u8>, Option<[u8; 32]>), failure::Error> {
+) -> tvm_types::Result<(Vec<u8>, Option<[u8; 32]>)> {
     // load wasm component binary
     #[cfg(feature = "wasm_external")]
     let wasm_executable = {
