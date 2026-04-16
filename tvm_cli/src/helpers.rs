@@ -13,9 +13,14 @@
 //
 
 use std::env;
+use std::io::Write as _;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::OnceLock;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 use std::time::SystemTime;
 
@@ -108,6 +113,111 @@ pub fn global_config_path() -> String {
     }
 }
 
+struct LogFile {
+    path: String,
+    file: Mutex<std::fs::File>,
+}
+
+struct LogFilter {
+    include: Vec<String>,
+    exclude: Vec<String>,
+}
+
+impl LogFilter {
+    fn parse(spec: &str) -> Self {
+        let mut include = Vec::new();
+        let mut exclude = Vec::new();
+        for token in spec.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            if let Some(module) = token.strip_prefix('-') {
+                exclude.push(module.to_string());
+            } else {
+                include.push(token.to_string());
+            }
+        }
+        LogFilter { include, exclude }
+    }
+
+    fn allows(&self, target: &str) -> bool {
+        if self.exclude.iter().any(|e| target.starts_with(e.as_str())) {
+            return false;
+        }
+        if self.include.is_empty() {
+            return true;
+        }
+        self.include.iter().any(|i| target.starts_with(i.as_str()))
+    }
+}
+
+static LOG_FILE: OnceLock<LogFile> = OnceLock::new();
+static LOG_FILTER: OnceLock<LogFilter> = OnceLock::new();
+static JSON_MODE: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn set_json_mode(enabled: bool) {
+    JSON_MODE.store(enabled, Ordering::Relaxed);
+}
+
+pub(crate) fn is_json_mode() -> bool {
+    JSON_MODE.load(Ordering::Relaxed)
+}
+
+pub(crate) fn init_log_file(path: &str) -> Result<(), String> {
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|e| format!("failed to open log file '{}': {}", path, e))?;
+    LOG_FILE
+        .set(LogFile { path: path.to_string(), file: Mutex::new(file) })
+        .map_err(|_| "log file already initialized".to_string())
+}
+
+pub(crate) fn init_log_filter(spec: &str) {
+    let _ = LOG_FILTER.set(LogFilter::parse(spec));
+}
+
+pub(crate) fn has_log_file() -> bool {
+    LOG_FILE.get().is_some()
+}
+
+pub(crate) fn log_file_path() -> Option<&'static str> {
+    LOG_FILE.get().map(|lf| lf.path.as_str())
+}
+
+pub(crate) fn write_log_record(record: &log::Record) {
+    if let Some(filter) = LOG_FILTER.get() {
+        if !filter.allows(record.target()) {
+            return;
+        }
+    }
+    if let Some(lf) = LOG_FILE.get() {
+        if let Ok(mut file) = lf.file.lock() {
+            let _ = writeln!(
+                file,
+                "[{} {:5} {}] {}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                record.level(),
+                record.target(),
+                record.args()
+            );
+        }
+    }
+}
+
+pub(crate) fn log_startup_info() {
+    if let Some(lf) = LOG_FILE.get() {
+        if let Ok(mut file) = lf.file.lock() {
+            let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+            let args: Vec<String> = std::env::args().collect();
+            let cwd = std::env::current_dir()
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| "<unknown>".to_string());
+            let _ = writeln!(file, "[{now} INFO  tvm_cli] === tvm-cli session started ===");
+            let _ = writeln!(file, "[{now} INFO  tvm_cli]   args: {}", args.join(" "));
+            let _ = writeln!(file, "[{now} INFO  tvm_cli]   cwd: {cwd}");
+        }
+    }
+}
+
 struct SimpleLogger;
 
 impl log::Log for SimpleLogger {
@@ -116,6 +226,13 @@ impl log::Log for SimpleLogger {
     }
 
     fn log(&self, record: &log::Record) {
+        if has_log_file() {
+            write_log_record(record);
+            return;
+        }
+        if is_json_mode() {
+            return;
+        }
         match record.level() {
             log::Level::Error | log::Level::Warn => {
                 eprintln!("{}", record.args());
@@ -186,10 +303,11 @@ pub fn get_server_endpoints(config: &Config) -> Vec<String> {
 
 pub fn create_client(config: &Config) -> Result<TonClient, String> {
     let modified_endpoints = get_server_endpoints(config);
-    if !config.is_json {
+    if !config.is_json && !has_log_file() {
         println!("Connecting to:\n\tUrl: {}", config.url);
         println!("\tEndpoints: {:?}\n", modified_endpoints);
     }
+    log::info!("Connecting to: url={}, endpoints={:?}", config.url, modified_endpoints);
     let endpoints_cnt = if resolve_net_name(&config.url).unwrap_or(config.url.clone()).eq(LOCALNET)
     {
         1_u8
@@ -226,7 +344,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
 }
 
 pub fn create_client_verbose(config: &Config) -> Result<TonClient, String> {
-    let level = debug_level_from_env();
+    let level = if has_log_file() { log::LevelFilter::Trace } else { debug_level_from_env() };
     log::set_max_level(level);
     log::set_boxed_logger(Box::new(SimpleLogger))
         .map_err(|e| format!("failed to init logger: {}", e))?;

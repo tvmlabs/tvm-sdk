@@ -1016,7 +1016,7 @@ impl Counters {
         if count > !self.total || self.cnt2048 > !scaled || self.cnt65536 > !scaled {
             return false;
         }
-        let dt = now.checked_sub(self.last_updated).unwrap_or_default();
+        let dt = now.saturating_sub(self.last_updated);
         if dt != 0 {
             // more precise version of cnt2048 = llround(cnt2048 * exp(-dt / 2048.));
             // (rounding error has absolute value < 1)
