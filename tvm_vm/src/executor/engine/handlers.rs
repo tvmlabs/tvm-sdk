@@ -12,12 +12,11 @@
 use std::fmt;
 use std::ops::Range;
 
+use tvm_types::Result;
 use tvm_types::error;
 use tvm_types::types::ExceptionCode;
-use tvm_types::Result;
 
 use crate::error::TvmError;
-use crate::executor::accounts::*;
 use crate::executor::blockchain::*;
 use crate::executor::config::*;
 use crate::executor::continuation::*;
@@ -28,9 +27,9 @@ use crate::executor::dictionary::*;
 #[cfg(feature = "gosh")]
 use crate::executor::diff::*;
 use crate::executor::dump::*;
+use crate::executor::engine::Engine;
 use crate::executor::engine::core::ExecuteHandler;
 use crate::executor::engine::storage::fetch_stack;
-use crate::executor::engine::Engine;
 use crate::executor::exceptions::*;
 use crate::executor::gas::*;
 use crate::executor::globals::*;
@@ -44,6 +43,8 @@ use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+#[cfg(feature = "gosh")]
+use crate::executor::zk::*;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -387,9 +388,33 @@ impl Handlers {
                 .set(0x23, execute_diff_patch_binary_zip_not_quiet)
                 .set(0x24, execute_diff_patch_binary_quiet)
                 .set(0x25, execute_diff_patch_binary_zip_quiet)
+                .set(0x28, execute_mint_shellq)
                 .set(0x26, execute_ecc_mint)
                 .set(0x27, execute_exchange_shell)
-                .set(0x29, execute_calculate_validator_reward);
+                .set(0x30, execute_calculate_min_stake)
+                .set(0x31, execute_vergrth16)
+                .set(0x32, execute_poseidon_zk_login)
+                .set(0x33, execute_calculate_adjustment_reward)
+                .set(0x34, execute_calculate_repcoef)
+                .set(0x35, execute_calculate_block_manager_reward)
+                .set(0x36, execute_calculate_adjustment_reward_bmmv)
+                .set(0x37, execute_calculate_min_stake_bm)
+                .set(0x38, execute_ecc_burn)
+                .set(0x41, execute_calculate_mobile_verifiers_reward)
+                .set(0x42, execute_get_available_balance)
+                .set(0x43, execute_mint_shell)
+                .set(0x44, execute_send_to_dapp_config)
+                .set(0x45, execute_my_dapp_id)
+                .set(0x46, execute_calculate_mbk)
+                .set(0x47, execute_calculate_miner_tap_coef)
+                .set(0x48, execute_calculate_miner_reward)
+                .set(0x50, execute_poseidon);
+            #[cfg(feature = "wasmtime")]
+            {
+                c7_handlers //
+                    .set(0x39, execute_run_wasm)
+                    .set(0x3A, execute_run_wasm_concat_multiarg);
+            }
         }
         self.add_subset(0xC7, &mut c7_handlers)
     }
@@ -939,11 +964,7 @@ impl Handlers {
                 .set(0x40, execute_cdatasizeq)
                 .set(0x41, execute_cdatasize)
                 .set(0x42, execute_sdatasizeq)
-                .set(0x43, execute_sdatasize)
-                .set(0x44, execute_find_by_init_code_hash)
-                .set(0x45, execute_find_by_code_hash)
-                .set(0x46, execute_find_by_data_hash)
-                .set(0x50, execute_try_elect),
+                .set(0x43, execute_sdatasize),
         )
     }
 
@@ -982,7 +1003,7 @@ impl Handlers {
     fn add_subset(&mut self, code: u8, subset: &mut Handlers) -> &mut Handlers {
         match self.directs[code as usize] {
             Some(Handler::Direct(x)) => {
-                if x as usize == execute_unknown as usize {
+                if x as usize == execute_unknown as *const () as usize {
                     self.directs[code as usize] = Some(Handler::Subset(self.subsets.len()));
                     self.subsets.push(std::mem::replace(subset, Handlers::new()))
                 } else {
@@ -1002,7 +1023,7 @@ impl Handlers {
         match self.directs[code as usize] {
             None => self.directs[code as usize] = Some(Handler::Direct(handler)),
             Some(Handler::Direct(x)) => {
-                if x as usize == execute_unknown as usize {
+                if x as usize == execute_unknown as *const () as usize {
                     self.directs[code as usize] = Some(Handler::Direct(handler))
                 } else {
                     panic!("Code {:02x} is already registered", code)

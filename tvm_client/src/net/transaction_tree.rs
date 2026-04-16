@@ -15,15 +15,15 @@ use std::sync::Arc;
 
 use serde_json::Value;
 
-use crate::abi::decode_message_body;
 use crate::abi::Abi;
 use crate::abi::DecodedMessageBody;
 use crate::abi::ParamsOfDecodeMessageBody;
+use crate::abi::decode_message_body;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
+use crate::net::MESSAGES_COLLECTION;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ServerLink;
-use crate::net::MESSAGES_COLLECTION;
 
 const DEFAULT_WAITING_TIMEOUT: u32 = 60000;
 const DEFAULT_TRANSACTION_MAX_COUNT: u32 = 50;

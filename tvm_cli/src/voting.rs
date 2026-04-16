@@ -15,9 +15,9 @@ use crate::config::Config;
 use crate::helpers::create_client_local;
 use crate::helpers::decode_msg_body;
 use crate::message;
-use crate::multisig::encode_transfer_body;
 use crate::multisig::MSIG_ABI;
 use crate::multisig::TRANSFER_WITH_COMMENT;
+use crate::multisig::encode_transfer_body;
 
 pub async fn create_proposal(
     config: &Config,
@@ -56,7 +56,8 @@ pub async fn create_proposal(
         )
         .await
     } else {
-        call::call_contract(config, addr, MSIG_ABI, "submitTransaction", &params, keys, false).await
+        call::call_contract(config, addr, MSIG_ABI, "submitTransaction", &params, keys, false, None)
+            .await
     }
 }
 
@@ -90,8 +91,17 @@ pub async fn vote(
         )
         .await
     } else {
-        call::call_contract(config, addr, MSIG_ABI, "confirmTransaction", &params, keys, false)
-            .await
+        call::call_contract(
+            config,
+            addr,
+            MSIG_ABI,
+            "confirmTransaction",
+            &params,
+            keys,
+            false,
+            None,
+        )
+        .await
     }
 }
 
@@ -105,6 +115,7 @@ pub async fn decode_proposal(config: &Config, addr: &str, proposal_id: &str) -> 
         "{}",
         None,
         false,
+        None,
     )
     .await?;
 

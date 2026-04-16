@@ -17,17 +17,17 @@ mod tokenize_tests {
     use tvm_types::AccountId;
     use tvm_types::BuilderData;
     use tvm_types::Cell;
-    use tvm_types::SliceData;
     use tvm_types::ED25519_PUBLIC_KEY_LENGTH;
+    use tvm_types::SliceData;
 
-    use crate::token::Detokenizer;
-    use crate::token::Tokenizer;
     use crate::Int;
     use crate::Param;
     use crate::ParamType;
     use crate::Token;
     use crate::TokenValue;
     use crate::Uint;
+    use crate::token::Detokenizer;
+    use crate::token::Tokenizer;
 
     #[test]
     fn test_tokenize_ints() {

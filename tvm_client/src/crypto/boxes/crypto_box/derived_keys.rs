@@ -31,7 +31,7 @@ impl DerivedKey {
     }
 
     fn calc_key(password: &[u8], salt: &str) -> ClientResult<SecretBuf> {
-        let scrypt_params = scrypt::Params::new(14, 8, 1).expect("Scrypt params setup failed");
+        let scrypt_params = scrypt::Params::new(14, 8, 1, 32).expect("Scrypt params setup failed");
         let mut key = SecretBuf(vec![0; 32]);
         scrypt::scrypt(password, salt.as_bytes(), &scrypt_params, &mut key.0)
             .map_err(crypto::Error::scrypt_failed)?;

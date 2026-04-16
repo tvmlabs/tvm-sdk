@@ -16,32 +16,33 @@ use std::sync::Arc;
 use api_info::ApiModule;
 use futures::Future;
 use num_traits::FromPrimitive;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tokio::sync::oneshot::channel;
-use tokio::sync::oneshot::Sender;
 use tokio::sync::Mutex;
+use tokio::sync::oneshot::Sender;
+use tokio::sync::oneshot::channel;
 use tvm_types::base64_encode;
 
 use super::tc_destroy_string;
 use super::tc_read_string;
 use super::tc_request;
 use super::tc_request_sync;
-use crate::abi::encode_message;
+use crate::ContextHandle;
 use crate::abi::Abi;
 use crate::abi::CallSet;
 use crate::abi::DeploySet;
 use crate::abi::ParamsOfEncodeMessage;
 use crate::abi::ResultOfEncodeMessage;
 use crate::abi::Signer;
+use crate::abi::encode_message;
 use crate::client::*;
-use crate::crypto::internal::hex_decode_secret_const;
-use crate::crypto::mnemonic::ed25519_keys_from_secret_bytes;
 use crate::crypto::KeyPair;
 use crate::crypto::ParamsOfNaclSignDetached;
 use crate::crypto::ParamsOfNaclSignKeyPairFromSecret;
 use crate::crypto::ResultOfNaclSignDetached;
+use crate::crypto::internal::hex_decode_secret_const;
+use crate::crypto::mnemonic::ed25519_keys_from_secret_bytes;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 use crate::json_interface::interop::ResponseType;
@@ -57,7 +58,6 @@ use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ResultOfProcessMessage;
 use crate::tc_create_context;
 use crate::tc_destroy_context;
-use crate::ContextHandle;
 
 mod common;
 
@@ -185,7 +185,7 @@ pub struct AsyncFuncWrapper<'a, P, R> {
     p: std::marker::PhantomData<(P, R)>,
 }
 
-impl<'a, P: Serialize, R: DeserializeOwned> AsyncFuncWrapper<'a, P, R> {
+impl<P: Serialize, R: DeserializeOwned> AsyncFuncWrapper<'_, P, R> {
     pub(crate) async fn call(&self, params: P) -> ClientResult<R> {
         self.client.request_async(&self.name, params).await
     }
@@ -210,7 +210,7 @@ pub struct FuncWrapper<'a, P, R> {
     p: std::marker::PhantomData<(P, R)>,
 }
 
-impl<'a, P: Serialize, R: DeserializeOwned> FuncWrapper<'a, P, R> {
+impl<P: Serialize, R: DeserializeOwned> FuncWrapper<'_, P, R> {
     pub(crate) fn call(&self, params: P) -> ClientResult<R> {
         self.client.request(&self.name, params)
     }
@@ -240,7 +240,7 @@ impl TestClient {
         _: fn(Arc<ClientContext>, P) -> F,
         module: api_info::Module,
         function: api_info::Function,
-    ) -> AsyncFuncWrapper<P, R>
+    ) -> AsyncFuncWrapper<'_, P, R>
     where
         P: Serialize,
         R: DeserializeOwned,
@@ -258,7 +258,7 @@ impl TestClient {
         _: fn(Arc<ClientContext>, P, Arc<crate::json_interface::request::Request>) -> F,
         module: api_info::Module,
         function: api_info::Function,
-    ) -> AsyncFuncWrapper<P, R>
+    ) -> AsyncFuncWrapper<'_, P, R>
     where
         P: Serialize,
         R: DeserializeOwned,
@@ -276,7 +276,7 @@ impl TestClient {
         _: fn(Arc<ClientContext>, P) -> ClientResult<R>,
         module: api_info::Module,
         function: api_info::Function,
-    ) -> FuncWrapper<P, R>
+    ) -> FuncWrapper<'_, P, R>
     where
         P: Serialize,
         R: DeserializeOwned,
@@ -379,7 +379,7 @@ impl TestClient {
     }
 
     pub fn abi_version() -> u8 {
-        u8::from_str_radix(&env::abi_version(), 10).unwrap()
+        env::abi_version().parse::<u8>().unwrap()
     }
 
     pub fn contracts_path(abi_version: Option<u8>) -> String {
@@ -440,11 +440,7 @@ impl TestClient {
     pub(crate) fn request_json(&self, method: &str, params: Value) -> ClientResult<Value> {
         let params_json = if params.is_null() { String::new() } else { params.to_string() };
         parse_sync_response(unsafe {
-            tc_request_sync(
-                self.context,
-                StringData::new(&method.to_string()),
-                StringData::new(&params_json),
-            )
+            tc_request_sync(self.context, StringData::new(method), StringData::new(&params_json))
         })
     }
 
@@ -559,7 +555,7 @@ impl TestClient {
             let params_json = if params.is_null() { String::new() } else { params.to_string() };
             tc_request(
                 self.context,
-                StringData::new(&method.to_string()),
+                StringData::new(method),
                 StringData::new(&params_json),
                 request_id,
                 on_result,

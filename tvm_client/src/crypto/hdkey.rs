@@ -13,9 +13,10 @@ use base58::*;
 use byteorder::BigEndian;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
-use hmac::*;
-use libsecp256k1::PublicKey;
-use libsecp256k1::SecretKey;
+use hmac::Hmac;
+use hmac::Mac;
+use k256::NonZeroScalar;
+use k256::elliptic_curve::sec1::ToEncodedPoint;
 use pbkdf2::pbkdf2;
 use sha2::Digest;
 use sha2::Sha512;
@@ -23,15 +24,14 @@ use zeroize::ZeroizeOnDrop;
 
 use crate::client::ClientContext;
 use crate::crypto;
-use crate::crypto::default_hdkey_compliant;
+use crate::crypto::MnemonicDictionary;
+use crate::crypto::internal::Key256;
+use crate::crypto::internal::Key264;
 use crate::crypto::internal::key256;
 use crate::crypto::internal::key512;
 use crate::crypto::internal::sha256;
-use crate::crypto::internal::Key256;
-use crate::crypto::internal::Key264;
 use crate::crypto::mnemonic::check_phrase;
 use crate::crypto::mnemonic::mnemonics;
-use crate::crypto::MnemonicDictionary;
 use crate::error::ClientError;
 use crate::error::ClientResult;
 
@@ -145,7 +145,7 @@ pub fn hdkey_derive_from_xprv(
     params: ParamsOfHDKeyDeriveFromXPrv,
 ) -> ClientResult<ResultOfHDKeyDeriveFromXPrv> {
     let xprv = HDPrivateKey::from_serialized_string(&params.xprv)?;
-    let derived = xprv.derive(params.child_index, params.hardened, default_hdkey_compliant())?;
+    let derived = xprv.derive(params.child_index, params.hardened)?;
     Ok(ResultOfHDKeyDeriveFromXPrv { xprv: derived.serialize_to_string() })
 }
 
@@ -173,7 +173,7 @@ pub fn hdkey_derive_from_xprv_path(
 ) -> ClientResult<ResultOfHDKeyDeriveFromXPrvPath> {
     let xprv = HDPrivateKey::from_serialized_string(&params.xprv)?;
     Ok(ResultOfHDKeyDeriveFromXPrvPath {
-        xprv: xprv.derive_path(&params.path, default_hdkey_compliant())?.serialize_to_string(),
+        xprv: xprv.derive_path(&params.path)?.serialize_to_string(),
     })
 }
 
@@ -201,10 +201,10 @@ impl HDPrivateKey {
         }
     }
 
-    pub(crate) fn from_mnemonic(phrase: &String) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn from_mnemonic(phrase: &str) -> ClientResult<HDPrivateKey> {
         let salt = "mnemonic";
         let mut seed = vec![0u8; 64];
-        pbkdf2::<Hmac<Sha512>>(phrase.as_bytes(), salt.as_bytes(), 2048, &mut seed);
+        let _ = pbkdf2::<Hmac<Sha512>>(phrase.as_bytes(), salt.as_bytes(), 2048, &mut seed);
         let mut hmac: Hmac<Sha512> = Hmac::new_from_slice(b"Bitcoin seed").unwrap();
         hmac.update(&seed);
         let child_chain_with_key = key512(&hmac.finalize().into_bytes())?;
@@ -219,45 +219,22 @@ impl HDPrivateKey {
     }
 
     fn public(&self) -> Key264 {
-        let secret_key = SecretKey::parse(&self.key.0).unwrap();
-        let public_key = PublicKey::from_secret_key(&secret_key);
-        public_key.serialize_compressed().into()
+        let secret_key = k256::SecretKey::from_slice(&self.key.0).unwrap();
+        let public_key = secret_key.public_key();
+        let point = public_key.to_encoded_point(true);
+        let bytes: &[u8] = point.as_bytes();
+        let mut result = [0u8; 33];
+        result.copy_from_slice(bytes);
+        result.into()
     }
 
-    fn map_secp_error(error: libsecp256k1::Error) -> ClientError {
-        match error {
-            libsecp256k1::Error::InvalidSignature => {
-                crypto::Error::bip32_invalid_key("InvalidSignature")
-            }
-            libsecp256k1::Error::InvalidPublicKey => {
-                crypto::Error::bip32_invalid_key("InvalidPublicKey")
-            }
-            libsecp256k1::Error::InvalidSecretKey => {
-                crypto::Error::bip32_invalid_key("InvalidSecretKey")
-            }
-            libsecp256k1::Error::InvalidRecoveryId => {
-                crypto::Error::bip32_invalid_key("InvalidRecoveryId")
-            }
-            libsecp256k1::Error::InvalidMessage => {
-                crypto::Error::bip32_invalid_key("InvalidMessage")
-            }
-            libsecp256k1::Error::InvalidInputLength => {
-                crypto::Error::bip32_invalid_key("InvalidInputLength")
-            }
-            libsecp256k1::Error::TweakOutOfRange => {
-                crypto::Error::bip32_invalid_key("TweakOutOfRange")
-            }
-        }
+    fn map_k256_error(error: impl std::fmt::Display) -> ClientError {
+        crypto::Error::bip32_invalid_key(error.to_string())
     }
 
-    pub(crate) fn derive(
-        &self,
-        child_index: u32,
-        hardened: bool,
-        compliant: bool,
-    ) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn derive(&self, child_index: u32, hardened: bool) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = Default::default();
-        child.depth = self.depth + 1;
+        child.depth += 1;
 
         let public = self.public();
         let mut sha_hasher = sha2::Sha256::new();
@@ -273,16 +250,9 @@ impl HDPrivateKey {
         let mut hmac: Hmac<Sha512> =
             Hmac::new_from_slice(&self.child_chain).map_err(crypto::Error::bip32_invalid_key)?;
 
-        let secret_key = SecretKey::parse(&self.key.0).unwrap();
-        if hardened && !compliant {
-            // The private key serialization in this case will not be exactly 32 bytes and
-            // can be any smaller value, and the value is not zero-padded.
+        if hardened {
             hmac.update(&[0]);
-            hmac.update(&secret_key.serialize());
-        } else if hardened {
-            // This will use a 32 byte zero padded serialization of the private key
-            hmac.update(&[0]);
-            hmac.update(&secret_key.serialize());
+            hmac.update(&self.key.0);
         } else {
             hmac.update(&public);
         }
@@ -290,17 +260,21 @@ impl HDPrivateKey {
         let result = hmac.finalize().into_bytes();
         let (child_key_bytes, chain_code) = result.split_at(32);
 
-        let mut child_secret_key =
-            SecretKey::parse_slice(child_key_bytes).map_err(Self::map_secp_error)?;
-        let self_secret_key = SecretKey::parse(&self.key.0).map_err(Self::map_secp_error)?;
-        child_secret_key.tweak_add_assign(&self_secret_key).map_err(Self::map_secp_error)?;
+        // BIP-32 scalar addition: child_key = parse(IL) + parent_key (mod n)
+        let child_scalar =
+            NonZeroScalar::try_from(child_key_bytes).map_err(Self::map_k256_error)?;
+        let parent_scalar =
+            NonZeroScalar::try_from(self.key.0.as_slice()).map_err(Self::map_k256_error)?;
+        let sum = child_scalar.as_ref() + parent_scalar.as_ref();
+        let result_scalar = Option::<NonZeroScalar>::from(NonZeroScalar::new(sum))
+            .ok_or_else(|| crypto::Error::bip32_invalid_key("resulting key is zero"))?;
 
         child.child_chain.0.copy_from_slice(chain_code);
-        child.key.0.copy_from_slice(&child_secret_key.serialize());
+        child.key.0.copy_from_slice(&result_scalar.to_bytes());
         Ok(child)
     }
 
-    pub(crate) fn derive_path(&self, path: &String, compliant: bool) -> ClientResult<HDPrivateKey> {
+    pub(crate) fn derive_path(&self, path: &str) -> ClientResult<HDPrivateKey> {
         let mut child: HDPrivateKey = self.clone();
         for step in path.split('/') {
             if step == "m" {
@@ -309,7 +283,7 @@ impl HDPrivateKey {
                 let index: u32 = (if hardened { &step[0..(step.len() - 1)] } else { step })
                     .parse()
                     .map_err(|_| crypto::Error::bip32_invalid_derive_path(path))?;
-                child = child.derive(index, hardened, compliant)?;
+                child = child.derive(index, hardened)?;
             }
         }
         Ok(child)
@@ -326,8 +300,7 @@ impl HDPrivateKey {
         if version != XPRV_VERSION {
             return Err(crypto::Error::bip32_invalid_key("wrong key version"));
         }
-        let mut xprv: HDPrivateKey = Default::default();
-        xprv.depth = bytes[4];
+        let mut xprv = HDPrivateKey { depth: bytes[4], ..Default::default() };
         xprv.parent_fingerprint.copy_from_slice(&bytes[5..9]);
         xprv.child_number.copy_from_slice(&bytes[9..13]);
         xprv.child_chain.0.copy_from_slice(&bytes[13..45]);
@@ -351,7 +324,7 @@ impl HDPrivateKey {
         bytes
     }
 
-    fn from_serialized_string(string: &String) -> ClientResult<HDPrivateKey> {
+    fn from_serialized_string(string: &str) -> ClientResult<HDPrivateKey> {
         Self::from_serialized(
             &string
                 .from_base58()
@@ -388,8 +361,7 @@ impl Ripemd160 {
 
     fn join32(msg: &[u8]) -> Vec<u32> {
         assert_eq!(msg.len() % 4, 0usize);
-        let mut res: Vec<u32> = Vec::new();
-        res.resize(msg.len() / 4, 0);
+        let mut res: Vec<u32> = vec![0; msg.len() / 4];
         for i in 0..res.len() {
             res[i] = LittleEndian::read_u32(&msg[i * 4..(i + 1) * 4]);
         }
@@ -397,8 +369,7 @@ impl Ripemd160 {
     }
 
     fn split32(msg: &[u32]) -> Vec<u8> {
-        let mut res: Vec<u8> = Vec::new();
-        res.resize(msg.len() * 4, 0);
+        let mut res: Vec<u8> = vec![0; msg.len() * 4];
         for i in 0..msg.len() {
             LittleEndian::write_u32(&mut res[i * 4..(i + 1) * 4], msg[i]);
         }
@@ -506,8 +477,7 @@ impl Ripemd160 {
         let len = self.pending_total;
         let bytes = self._delta8;
         let k = bytes - ((len + self.pad_length) % bytes);
-        let mut res: Vec<u8> = Vec::new();
-        res.resize(k + self.pad_length, 0);
+        let mut res: Vec<u8> = vec![0; k + self.pad_length];
         res[0] = 0x80;
         LittleEndian::write_u32(&mut res[k..(k + 4)], (len as u32) << 3);
         res

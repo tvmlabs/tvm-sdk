@@ -16,8 +16,8 @@ use std::sync::Arc;
 use api_info::ApiModule;
 use api_info::ApiType;
 use api_info::Module;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use super::handlers::CallHandler;
 use super::handlers::CallNoArgsHandler;
@@ -43,29 +43,36 @@ impl<'h> ModuleReg<'h> {
     }
 
     pub fn register(self) {
+        #[cfg(feature = "api_info")]
         self.handlers.add_module(self.module);
     }
 
     pub fn register_error_code<T: ApiType>(&mut self) {
-        let mut ty = T::api();
-        ty.name = format!(
-            "{}{}{}",
-            self.module.name[0..1].to_uppercase(),
-            self.module.name[1..].to_lowercase(),
-            ty.name
-        );
-        self.module.types.push(ty);
+        #[cfg(feature = "api_info")]
+        {
+            let mut ty = T::api();
+            ty.name = format!(
+                "{}{}{}",
+                self.module.name[0..1].to_uppercase(),
+                self.module.name[1..].to_lowercase(),
+                ty.name
+            );
+            self.module.types.push(ty);
+        }
     }
 
     pub fn register_type<T: ApiType>(&mut self) {
-        let ty = T::api();
-        if let api_info::Type::None = ty.value {
-            if ty.name == "unit" {
-                return;
+        #[cfg(feature = "api_info")]
+        {
+            let ty = T::api();
+            if let api_info::Type::None = ty.value {
+                if ty.name == "unit" {
+                    return;
+                }
             }
-        }
-        if !self.module.types.iter().any(|x| x.name == ty.name) {
-            self.module.types.push(ty);
+            if !self.module.types.iter().any(|x| x.name == ty.name) {
+                self.module.types.push(ty);
+            }
         }
     }
 
@@ -78,10 +85,14 @@ impl<'h> ModuleReg<'h> {
         R: ApiType + Send + Serialize + 'static,
         F: Send + Future<Output = ClientResult<R>> + 'static,
     {
-        self.register_type::<P>();
-        self.register_type::<R>();
+        #[cfg(feature = "api_info")]
+        {
+            self.register_type::<P>();
+            self.register_type::<R>();
+        }
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
 
         self.handlers.register_async(name.clone(), Box::new(SpawnHandler::new(handler)));
@@ -102,9 +113,11 @@ impl<'h> ModuleReg<'h> {
         R: ApiType + Send + Serialize + 'static,
         F: Send + Future<Output = ClientResult<R>> + 'static,
     {
+        #[cfg(feature = "api_info")]
         self.register_type::<R>();
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
 
         self.handlers.register_async(name.clone(), Box::new(SpawnNoArgsHandler::new(handler)));
@@ -126,10 +139,14 @@ impl<'h> ModuleReg<'h> {
         R: ApiType + Send + Serialize + 'static,
         F: Send + Future<Output = ClientResult<R>> + 'static,
     {
-        self.register_type::<P>();
-        self.register_type::<R>();
+        #[cfg(feature = "api_info")]
+        {
+            self.register_type::<P>();
+            self.register_type::<R>();
+        }
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
         self.handlers.register_async(name.clone(), Box::new(SpawnHandlerCallback::new(handler)));
         #[cfg(not(feature = "wasm-base"))]
@@ -157,12 +174,16 @@ impl<'h> ModuleReg<'h> {
         AR: ApiType + Send + DeserializeOwned + 'static,
         F: Send + Future<Output = ClientResult<R>> + 'static,
     {
-        self.register_type::<P>();
-        self.register_type::<R>();
-        self.register_type::<AP>();
-        self.register_type::<AR>();
+        #[cfg(feature = "api_info")]
+        {
+            self.register_type::<P>();
+            self.register_type::<R>();
+            self.register_type::<AP>();
+            self.register_type::<AR>();
+        }
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
         self.handlers.register_async(name.clone(), Box::new(SpawnHandlerAppObject::new(handler)));
     }
@@ -177,11 +198,15 @@ impl<'h> ModuleReg<'h> {
         AR: ApiType + Send + DeserializeOwned + 'static,
         F: Send + Future<Output = ClientResult<R>> + 'static,
     {
-        self.register_type::<R>();
-        self.register_type::<AP>();
-        self.register_type::<AR>();
+        #[cfg(feature = "api_info")]
+        {
+            self.register_type::<R>();
+            self.register_type::<AP>();
+            self.register_type::<AR>();
+        }
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
         self.handlers
             .register_async(name.clone(), Box::new(SpawnHandlerAppObjectNoArgs::new(handler)));
@@ -195,10 +220,14 @@ impl<'h> ModuleReg<'h> {
         P: ApiType + Send + DeserializeOwned + Default + 'static,
         R: ApiType + Send + Serialize + 'static,
     {
-        self.register_type::<P>();
-        self.register_type::<R>();
+        #[cfg(feature = "api_info")]
+        {
+            self.register_type::<P>();
+            self.register_type::<R>();
+        }
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
 
         self.handlers.register_sync(name.clone(), Box::new(CallHandler::new(handler)));
@@ -218,9 +247,11 @@ impl<'h> ModuleReg<'h> {
     ) where
         R: ApiType + Send + Serialize + 'static,
     {
+        #[cfg(feature = "api_info")]
         self.register_type::<R>();
         let function = api();
         let name = format!("{}.{}", self.module.name, function.name);
+        #[cfg(feature = "api_info")]
         self.module.functions.push(function);
 
         self.handlers.register_sync(name.clone(), Box::new(CallNoArgsHandler::new(handler)));

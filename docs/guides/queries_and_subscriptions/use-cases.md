@@ -8,4 +8,4 @@ description: What data can you get from GraphQL API?
 * Subscribe to data updates
 * Easily paginate such data as blocks, transactions
 
-[See the full API use-cases here](/broken/pages/aSMpaJSMBVHYqL3Fo4ZE#use-cases).
+[See the full API use-cases here](../../graphql/graphql-api.md#use-cases).

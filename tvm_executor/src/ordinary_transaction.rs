@@ -22,8 +22,10 @@ use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
 use tvm_block::CommonMsgInfo;
+use tvm_block::CurrencyCollection;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_block::TrBouncePhase;
@@ -31,26 +33,25 @@ use tvm_block::TrComputePhase;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
 use tvm_block::TransactionDescrOrdinary;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_types::error;
-use tvm_types::fail;
+use tvm_block::VarUInteger32;
 use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_vm::SmartContractInfo;
 use tvm_vm::boolean;
 use tvm_vm::int;
-use tvm_vm::stack::integer::IntegerData;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
-use tvm_vm::SmartContractInfo;
+use tvm_vm::stack::integer::IntegerData;
 
-use crate::blockchain_config::BlockchainConfig;
-use crate::error::ExecutorError;
 use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
 use crate::VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
+use crate::blockchain_config::BlockchainConfig;
+use crate::error::ExecutorError;
 
 pub struct OrdinaryTransactionExecutor {
     config: BlockchainConfig,
@@ -76,15 +77,24 @@ impl OrdinaryTransactionExecutor {
 }
 
 impl TransactionExecutor for OrdinaryTransactionExecutor {
-    /// Create end execute transaction from message for account
+    /// Create and execute transaction from message for account
     fn execute_with_params(
         &self,
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
+        minted_shell: &mut i128,
     ) -> Result<Transaction> {
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
+        let mut binding = in_msg.cloned();
+        let in_msg: Option<&mut Message> = binding.as_mut();
+
+        let is_previous_state_active = match account.state() {
+            Some(AccountState::AccountUninit {}) => false,
+            None => false,
+            _ => true,
+        };
 
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
@@ -104,7 +114,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
 
-        let account_address = in_msg.dst_ref().ok_or_else(|| {
+        let account_address = &in_msg.dst_ref().cloned().ok_or_else(|| {
             ExecutorError::TrExecutorError(format!(
                 "Input message {:x} has no dst address",
                 in_msg_cell.repr_hash()
@@ -120,44 +130,75 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 account_address.address()
             }
         };
+        let is_version_1_0_3 = params.engine_version >= semver::Version::new(1, 0, 3);
+        let original_account_is_none = account.is_none();
         let mut need_to_burn = Grams::zero();
-        let mut burned = Grams::zero();
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
+        let original_msg_balance = msg_balance.clone();
         let gas_config = self.config().get_gas_config(false);
-        log::debug!(target: "executor", "src_dapp_id = {:?}, address = {:?}", params.src_dapp_id, in_msg.int_header());
+        log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
+        let mut msg_balance_convert = 0;
+        let mut exchanged = false;
+        let mut is_cross_dapp_capped = false;
         if let Some(h) = in_msg.int_header() {
-            if params.src_dapp_id != account.get_dapp_id().cloned()
+            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
-                    && (account.is_none()
-                        || account
-                            .state()
-                            .map(|s| *s == AccountState::AccountUninit {})
-                            .unwrap_or(false)))
+                    && account
+                        .state()
+                        .map(|s| *s == AccountState::AccountUninit {})
+                        .unwrap_or(true))
                 && !h.bounced
             {
-                log::debug!(target: "executor", "account dapp_id {:?}", account.get_dapp_id());
-                log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_credit * gas_config.gas_price / 65536));
-                burned = msg_balance.grams;
+                log::debug!(target: "executor", "account dapp_id {:?}", params.dapp_id);
+                log::debug!(target: "executor", "msg balance {:?}, config balance {}", msg_balance.grams, (gas_config.gas_limit * gas_config.gas_price / 65536));
                 msg_balance.grams = min(
-                    (gas_config.gas_credit * gas_config.gas_price / 65536).into(),
+                    (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
                     msg_balance.grams,
                 );
-                burned -= msg_balance.grams;
                 need_to_burn = msg_balance.grams;
+                is_cross_dapp_capped = account.stuff().is_some();
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
+            }
+            if h.is_exchange && (!is_cross_dapp_capped || is_version_1_0_3) {
+                if let Ok(Some(mut value)) = msg_balance.get_other(2) {
+                    let mut echng = value.clone();
+                    if echng > VarUInteger32::from(u64::MAX) {
+                        echng = VarUInteger32::from(u64::MAX);
+                    }
+                    if echng != VarUInteger32::from(0) {
+                        msg_balance_convert =
+                            echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                        msg_balance.grams += Grams::from(msg_balance_convert);
+                        value.sub(&echng)?;
+                        let digits = value.value().iter_u64_digits().collect::<Vec<u64>>();
+                        let base = u64::MAX as u128 + 1;
+                        let new_balance =
+                            if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
+                                u128::MAX
+                            } else {
+                                let d0 = digits.first().copied().unwrap_or(0) as u128;
+                                let d1 = digits.get(1).copied().unwrap_or(0) as u128;
+                                d0 + d1 * base
+                            };
+                        msg_balance.set_other(2, new_balance)?;
+                    }
+                    exchanged = true;
+                }
             }
         }
         let ihr_delivered = false; // ihr is disabled because it does not work
         if !ihr_delivered {
             if let Some(h) = in_msg.int_header() {
-                msg_balance.grams += h.ihr_fee;
+                if need_to_burn.as_u128() == 0 {
+                    msg_balance.grams += h.ihr_fee;
+                }
             }
         }
 
         let is_special = self.config.is_special_account(account_address)?;
-        log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}, config: {:#?}",
-            acc_balance.grams, msg_balance.grams, !bounce, is_special, self.config().special_contracts);
+        log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}",
+            acc_balance.grams, msg_balance.grams, !bounce, is_special);
         let lt = std::cmp::max(
             account.last_tr_time().unwrap_or(0),
             std::cmp::max(params.last_tr_lt.load(Ordering::Relaxed), in_msg.lt().unwrap_or(0) + 1),
@@ -183,13 +224,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 
         // first check if contract can pay for importing external message
         if is_ext_msg && !is_special {
-            // extranal message comes serialized
             let in_fwd_fee = self.config.calc_fwd_fee(is_masterchain, &in_msg_cell)?;
-            if in_msg.have_state_init() {
-                let credit: Grams = (gas_config.gas_credit * gas_config.gas_price / 65536).into();
-                need_to_burn += credit;
-                acc_balance.grams += credit;
-            }
             log::debug!(target: "executor", "import message fee: {}, acc_balance: {}", in_fwd_fee, acc_balance.grams);
             if !acc_balance.grams.sub(&in_fwd_fee)? {
                 fail!(ExecutorError::NoFundsToImportMsg)
@@ -212,6 +247,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             };
         }
         let due_before_storage = account.due_payment().map(|due| due.as_u128());
+        let is_due = account.due_payment().map(|due| due.as_u128()).is_some_and(|due| due != 0);
         let mut storage_fee;
         description.storage_ph = match self.storage_phase(
             account,
@@ -219,6 +255,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &mut tr,
             is_masterchain,
             is_special,
+            is_due,
         ) {
             Ok(storage_ph) => {
                 storage_fee = storage_ph.storage_fees_collected.as_u128();
@@ -226,7 +263,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     storage_fee += due.as_u128()
                 }
                 if let Some(due) = due_before_storage {
-                    storage_fee -= due;
+                    storage_fee = storage_fee.saturating_sub(due);
+                    log::debug!(target: "executor", "Protected storage_fee subtraction: collected={}, due={}, final={}",
+                        storage_ph.storage_fees_collected, due, storage_fee);
                 }
                 Some(storage_ph)
             }
@@ -235,7 +274,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 e
             ))),
         };
-
         if description.credit_first && msg_balance.grams > acc_balance.grams {
             msg_balance.grams = acc_balance.grams;
         }
@@ -293,7 +331,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         stack
             .push(int!(acc_balance.grams.as_u128()))
             .push(int!(msg_balance.grams.as_u128()))
-            .push(StackItem::Cell(in_msg_cell))
+            .push(StackItem::Cell(in_msg_cell.clone()))
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
             .push(boolean!(is_ext_msg));
         log::debug!(target: "executor", "compute_phase");
@@ -301,7 +339,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             Some(in_msg),
             account,
             &mut acc_balance,
-            &msg_balance,
+            &mut msg_balance,
             smc_info,
             stack,
             storage_fee,
@@ -313,7 +351,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             Err(e) => {
                 log::debug!(target: "executor", "compute_phase error: {}", e);
                 match e.downcast_ref::<ExecutorError>() {
-                    Some(ExecutorError::NoAcceptError(_, _)) => return Err(e),
+                    Some(ExecutorError::NoAcceptError(_, _))
+                    | Some(ExecutorError::TerminationDeadlineReached) => return Err(e),
                     _ => fail!(ExecutorError::TrExecutorError(e.to_string())),
                 }
             }
@@ -332,6 +371,24 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     log::debug!(target: "executor", "compute_phase: success");
                     log::debug!(target: "executor", "action_phase: lt={}", lt);
                     action_phase_processed = true;
+
+                    let message_src_dapp_id = if let Some(AccountState::AccountActive {
+                        state_init: _,
+                    }) = account.state()
+                    {
+                        if !is_previous_state_active {
+                            if let Some(header) = in_msg.int_header() {
+                                header.src_dapp_id().clone()
+                            } else {
+                                Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
+                            }
+                        } else {
+                            params.dapp_id
+                        }
+                    } else {
+                        None
+                    };
+                    let minted_shell_orig = minted_shell.clone();
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -343,8 +400,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         new_data,
                         account_address,
                         is_special,
+                        params.available_credit,
+                        minted_shell,
+                        need_to_burn,
+                        message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
+                            if phase.success == false {
+                                *minted_shell = minted_shell_orig.clone();
+                            }
                             out_msgs = messages;
                             if let Some(copyleft_reward) = &copyleft_reward {
                                 tr.total_fees_mut().grams.sub(&copyleft_reward.reward)?;
@@ -352,10 +416,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             copyleft = copyleft_reward;
                             Some(phase)
                         }
-                        Err(e) => fail!(ExecutorError::TrExecutorError(format!(
-                            "cannot create action phase of a new transaction for smart contract for reason {}",
-                            e
-                        ))),
+                        Err(e) => {
+                            *minted_shell = minted_shell_orig.clone();
+                            fail!(ExecutorError::TrExecutorError(format!(
+                                "cannot create action phase of a new transaction for smart contract for reason {}",
+                                e
+                            )))
+                        }
                     }
                 } else {
                     log::debug!(target: "executor", "compute_phase: failed");
@@ -376,41 +443,69 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             self.timings[1].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
             now = Instant::now();
         }
-        if new_acc_balance.grams >= need_to_burn {
-            new_acc_balance.grams -= need_to_burn;
-            acc_balance.grams -= need_to_burn;
-            description.aborted = match description.action.as_ref() {
-                Some(phase) => {
-                    log::debug!(
-                        target: "executor",
-                        "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
-                    );
-                    if AccStatusChange::Deleted == phase.status_change {
-                        *account = Account::default();
-                        description.destroyed = true;
-                    }
-                    if phase.success {
-                        acc_balance = new_acc_balance;
-                    }
-                    !phase.success
+        description.aborted = match description.action.as_ref() {
+            Some(phase) => {
+                log::debug!(
+                    target: "executor",
+                    "action_phase: present: success={}, err_code={}", phase.success, phase.result_code
+                );
+                if AccStatusChange::Deleted == phase.status_change {
+                    *account = Account::default();
+                    description.destroyed = true;
                 }
-                None => {
-                    log::debug!(target: "executor", "action_phase: none");
-                    true
+                if phase.success {
+                    acc_balance = new_acc_balance;
                 }
-            };
-        } else {
-            description.aborted = true;
-            acc_balance.grams = Grams::zero();
+                !phase.success
+            }
+            None => {
+                log::debug!(target: "executor", "action_phase: none");
+                true
+            }
+        };
+
+        if description.aborted {
+            match &description.compute_ph {
+                TrComputePhase::Vm(vm_phase) if vm_phase.success => {
+                    if acc_balance.grams >= need_to_burn {
+                        log::debug!(target: "executor", "Burning need_to_burn on compute success + abort: amount={}", need_to_burn);
+                        acc_balance.grams -= need_to_burn;
+                    } else {
+                        log::debug!(target: "executor", "Balance insufficient for need_to_burn, zeroing account");
+                        acc_balance.grams = Grams::zero();
+                    }
+                }
+                _ => {}
+            }
         }
 
-        log::debug!(target: "executor", "Desciption.aborted {}", description.aborted);
+        // Apply need_to_burn only if no successful bounce or bounce disabled
+        let mut should_burn_need_to_burn = false;
+
         if description.aborted && !is_ext_msg && bounce {
+            msg_balance = original_msg_balance.clone();
+            if exchanged {
+                let grams_to_subtract = Grams::from(msg_balance_convert);
+                if grams_to_subtract > acc_balance.grams {
+                    log::debug!(target: "executor", "Exchange reversal underflow protected: balance={}, to_subtract={}", acc_balance.grams, grams_to_subtract);
+                    acc_balance.grams = Grams::zero();
+                } else {
+                    acc_balance.grams -= grams_to_subtract;
+                }
+                let ecc_to_restore = if is_version_1_0_3 {
+                    msg_balance_convert
+                } else {
+                    let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
+                    std::cmp::min(msg_balance_convert, gas_consumed)
+                };
+                let mut add_value = CurrencyCollection::new();
+                add_value.set_other(2, ecc_to_restore.into())?;
+                acc_balance.add(&add_value)?;
+            }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
             {
                 log::debug!(target: "executor", "bounce_phase");
-                msg_balance.grams += burned;
                 description.bounce = match self.bounce_phase(
                     msg_balance.clone(),
                     &mut acc_balance,
@@ -418,9 +513,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     in_msg,
                     &mut tr,
                     account_address,
-                    params.block_version,
                 ) {
                     Ok((bounce_ph, Some(bounce_msg))) => {
+                        log::debug!(target: "executor", "bounce_phase: out_msg value: {}", bounce_msg.get_value().unwrap());
                         out_msgs.push(bounce_msg);
                         Some(bounce_ph)
                     }
@@ -430,20 +525,38 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         e
                     ))),
                 };
+                should_burn_need_to_burn =
+                    !matches!(description.bounce, Some(TrBouncePhase::Ok(_)));
+            } else {
+                should_burn_need_to_burn = true;
             }
             // if money can be returned to sender
             // restore account balance - storage fee
             if let Some(TrBouncePhase::Ok(_)) = description.bounce {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
-            } else if account.is_none() && !acc_balance.is_zero()? {
-                *account = Account::uninit(
-                    account_address.clone(),
-                    UInt256::new(),
-                    0,
-                    last_paid,
-                    acc_balance.clone(),
-                );
+                should_burn_need_to_burn = false;
+            } else if is_version_1_0_3 && account.status() == AccountStatus::AccStateUninit {
+                // Don't leave fwd_fee on uninit accounts after bounce failure,
+                // but preserve ECC
+                log::debug!(target: "executor", "Bounce failed on uninit account, restoring grams, preserving ECC");
+                let ecc = acc_balance.other.clone();
+                acc_balance = original_acc_balance;
+                acc_balance.other = ecc;
+            } else if original_account_is_none && !acc_balance.is_zero()? {
+                acc_balance = CurrencyCollection::default();
+            }
+        } else if description.aborted && !is_ext_msg && !bounce {
+            should_burn_need_to_burn = true;
+        }
+
+        // Apply need_to_burn if bounce failed or bouncing was not attempted
+        if should_burn_need_to_burn && need_to_burn.as_u128() > 0 {
+            log::debug!(target: "executor", "Applying cross-dapp burn: need_to_burn={}", need_to_burn);
+            if acc_balance.grams >= need_to_burn {
+                acc_balance.grams -= need_to_burn;
+            } else {
+                acc_balance.grams = Grams::zero();
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
@@ -460,6 +573,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         self.timings[2].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
         tr.set_copyleft_reward(copyleft);
+        // tr.write_to_new_cell().unwrap().finalize(max_depth)
         Ok(tr)
     }
 

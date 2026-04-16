@@ -8,11 +8,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-use tvm_client::crypto::hdkey_derive_from_xprv_path;
-use tvm_client::crypto::hdkey_secret_from_xprv;
-use tvm_client::crypto::hdkey_xprv_from_mnemonic;
-use tvm_client::crypto::mnemonic_from_random;
-use tvm_client::crypto::nacl_sign_keypair_from_secret_key;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
 use tvm_client::crypto::ParamsOfHDKeyDeriveFromXPrvPath;
@@ -20,13 +15,18 @@ use tvm_client::crypto::ParamsOfHDKeySecretFromXPrv;
 use tvm_client::crypto::ParamsOfHDKeyXPrvFromMnemonic;
 use tvm_client::crypto::ParamsOfMnemonicFromRandom;
 use tvm_client::crypto::ParamsOfNaclSignKeyPairFromSecret;
+use tvm_client::crypto::hdkey_derive_from_xprv_path;
+use tvm_client::crypto::hdkey_secret_from_xprv;
+use tvm_client::crypto::hdkey_xprv_from_mnemonic;
+use tvm_client::crypto::mnemonic_from_random;
+use tvm_client::crypto::nacl_sign_keypair_from_secret_key;
 
+use crate::Config;
+use crate::helpers::HD_PATH;
+use crate::helpers::WORD_COUNT;
 use crate::helpers::check_dir;
 use crate::helpers::create_client_local;
 use crate::helpers::read_keys;
-use crate::helpers::HD_PATH;
-use crate::helpers::WORD_COUNT;
-use crate::Config;
 
 pub fn load_keypair(keys: &str) -> Result<KeyPair, String> {
     if keys.find(' ').is_none() {
@@ -174,7 +174,7 @@ pub fn generate_keypair(
     let keys_json = serde_json::to_string_pretty(&keys)
         .map_err(|e| format!("failed to serialize the keypair: {}", e))?;
     if let Some(keys_path) = keys_path {
-        let folder_path = keys_path.trim_end_matches(|c| c != '/').trim_end_matches(|c| c == '/');
+        let folder_path = keys_path.trim_end_matches(|c| c != '/').trim_end_matches('/');
         check_dir(folder_path)?;
         std::fs::write(keys_path, &keys_json)
             .map_err(|e| format!("failed to create file with keys: {}", e))?;

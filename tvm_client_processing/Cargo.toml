@@ -22,7 +22,7 @@ serde.workspace = true
 serde_derive.workspace = true
 serde_json.workspace = true
 serde_repr.workspace = true
-tokio = { default-features = false, features = ["sync"], version = "1.4" }
+tokio = { workspace = true, features = ["sync"] }
 #
 tvm_block.workspace = true
 tvm_types.workspace = true
@@ -31,4 +31,11 @@ api_derive = { path = "../api/derive" }
 api_info = { path = "../api/info" }
 
 [dev-dependencies]
-tokio = { default-features = false, features = ["sync", "rt-multi-thread", "macros", "time", "net", "fs"], version = "1.4" }
+tokio = { workspace = true, features = [
+  "sync",
+  "rt-multi-thread",
+  "macros",
+  "time",
+  "net",
+  "fs",
+] }

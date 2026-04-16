@@ -2,10 +2,564 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.17] - 2026-04-07
+
+### Fixed
+- Fixed WASM web build compatibility and ZK dependency handling
+- Fixed `current_traceparent` function in endpoint.rs
+- Optimized dependencies: ZK deps behind feature gate, dependency deduplication, workspace consolidation
+
+### Changed
+- Removed redundant `compliant` flag from HD key derivation
+
+## [2.24.16] - 2026-03-23
+
+### Fixes
+- Fixed fwd_fee with flag 16
+- Fixed use_new_version artifacts
+
+## [2.24.15] - 2026-03-19
+
+### Fixes
+- Fixed exchange system for 16 flag in message
+
+## [2.24.14] - 2026-03-06
+
+### Fixes
+- Fixed MerkleUpdate generation for a single account cell
+
+## [2.24.13] - 2026-03-06
+
+### Added
+- `tvm_client`: outgoing HTTP requests now include a `traceparent` header; on failure the trace identifier is included in the error message for easier diagnostics
+
+### Changed
+- `tvm_cli`: migrated CLI argument definitions to current clap v3 API, removing deprecated usage
+
+### Fixed
+- `tvm_cli`: `--abi` argument is now required for the `genaddr` subcommand, preventing confusing runtime errors when omitted (breaking)
+
+## [2.24.12] - 2026-02-26
+## Changed
+- Refactored transaction execute to properly initialize account state from StateInit before execution
+
+## Fixed
+- Fix token transfers between and within dapp_id
+
+## [2.24.11] - 2026-02-17
+## Fixed
+- Hash used for calculating BOC depth when applying BOC size limits
+
+## [2.24.10] - 2026-02-16
+## New
+- Add general purpose Poseidon TVM instruction based on Axiom.
+
+## [2.24.9] - 2026-01-21
+## New
+- `tvm_client` now can be compiled without a wasmtime runtime (e.g. for the browser environment) with a new feature `wasm_web`
+
+## [2.24.8] - 2025-12-10
+## Added/Changed
+- Add and modify reward instruction for mvrewards and mining
+
+## Fixed
+- Fix deploy between dapp_id
+
+## [2.24.7] - 2025-12-10
+## New
+- Client will choose https protocol for BK rest API if client's config endpoint uses https
+
+## [2.24.6] - 2025-12-10
+## Fixed
+- Add support of Gosh provider into TLS wasm binary and update related tests
+
+## [2.24.5] - 2025-11-03
+## Fixed
+- Fix mvreward
+- Set big minstake
+
+## [2.24.4] - 2025-10-30
+## Fixed
+- Facebook tls wasm test
+
+## [2.24.3] - 2025-10-23
+
+## New
+- Add get_proof and get_nonce functions
+
+## [2.24.2] - 2025-10-17
+
+## Changed/Fixed
+- Block seq no to repair accounts moved from SDK
+- Added engine version to execute params
+
+## [2.24.1] - 2025-10-15
+
+## Changed/Fixed
+- MobileVerifiers rewards fixes
+
+## [2.24.0] - 2025-10-15
+
+### Added
+- In the `tvm_client::send_message()`/`tvm-cli call(x)` execution error result, the recipient account address has been added. This is particularly useful in cases where errors occur during contract deployment
+- `tvm-cli account|run|runx` calls now return `state_timestamp` — the timestamp of the state from which the account’s BOC was loaded
+- A `state_timestamp` field has also been added to `ResultOfGetAccount`
+
+## Changed/Fixed
+- Rename tvm-cli config files:
+  - `tonos-cli.conf.json` to `tvm-cli.conf.json`
+  - `tonos-cli.global.conf.json` to `tvm-cli.global.conf.json`
+
+  On first run after upgrade, if the new files don’t exist but the deprecated ones do, they are automatically renamed
+- Decoding of `return_value` returned in `tvm-cli call(x)` invocations
+
+## [2.23.6] - 2025-10-13
+### Fixed
+- Fixed tvm-debugger crashes when executing solidity functions that accept and return.
+
+## [2.23.5] - 2025-10-08
+- Replace `bloom` with `fastbloom`
+
+## [2.23.3] - 2025-10-04
+- Tests fixed
+
+## [2.23.2] - 2025-09-30
+- Leaf cert subject check and some error codes in certs checking added
+
+## [2.23.1] - 2025-09-30
+
+### Fixed
+- Fixed VM deadlines setup
+
+## [2.23.0] - 2025-09-27
+
+### Changed/Fixed
+- Removed full shard state balance from ValueFlow
+- Changed ShardAccountsMap from HashmapAugE to HashmapE
+
+## [2.22.5] - 2025-09-25
+
+### Changed/Fixed
+- Fixed hardcoded root certificates and sha384 issue in TLS wasm binary.
+
+## [2.22.4] - 2025-09-19
+
+### Changed/Fixed
+- Changed how the depth and bits are counted in BOC to account for deduplication (duplicate cells are not counted as they do not grow the account state). This updated counter is used to limit the max BOC size to avoid edge-case issues with node state updates.
+- Wasmtime upgrade to 36.0.2
+- Fixed some wasm tests
+
+### Added
+- External function for loading a wasm hash whitelist file from disk. Intended for use as a node config.
+
+## [2.22.3] - 2025-09-23
+
+### Fix
+- Fix mv reward instructions
+
+## [2.22.2] - 2025-09-22
+
+### Update
+- Change reward instructions
+- Change Constructor FunctionId to 1
+
+## [2.22.1] - 2025-09-19
+
+### Fixed
+- Fix bug with extract expires
+
+## [2.22.0] - 2025-09-18
+
+### Added
+- New type OptionalAccount that can either contain account data or be account redirect
+- ShardAccount now contain OptionalAccount
+- New int message header field: dest_dapp_id
+- Added filed dapp_id_changed to AccountBlock struct
+- FWD fees increased *2 for messages without dest_dapp_id
+
+## [2.21.2] - 2025-08-27
+
+### Added
+- Ability to write BOC into generic Write destination
+
+## [2.21.1] - 2025-08-20
+
+### Changed/Fixed
+-  Now function `tvm_client::account` returns account boc and **dapp_id**
+
+
+## [2.21.0] - 2025-08-20
+
+### Fixed
+- Fix mintshell action
+- Add gas prices for Vergrth16 and Poseidon instructions
+- Add wasm binary to checl TLS data for multifactor
+
+## [2.20.5] - 2025-08-20
+
+### New
+- Error codes for different wasm-related errors for better on-chain debugging
+- Various tests related to wasm clocks
+- Wasi random functions now use block timestamps as seed.
+
+## [2.20.4] - 2025-08-14
+
+### Fixed
+- Cell optimizations
+- UsageTree refactoring + optimizations
+
+## [2.20.3] - 2025-08-14
+
+### New
+- Wasm plugs for wasi-io, wasi-clocks, wasi-random, providing access to some tvm blockchain info.
+- Matching tests and examples
+
+### Fixed
+- Major refactor of wasm-related code
+
+## [2.20.2] - 2025-08-11
+
+### Fixed
+- Usage tree seg fault and added usage tree/set stoping tracking on tree drop
+
+## [2.20.1] - 2025-08-06
+
+### Update
+
+- Passing wasm binaries as arguments to `runwasm` and `runwasmconcatmultiarg` now behind a feature flag. With default flags, those binaries will be ignored.
+
+## [2.20.0] - 2025-08-05
+
+### New
+
+- Add `getavailablecredit` `sendtodappconfig` `mintshellq` instructions
+- Change `mintshell` instruction.
+- Refactor fee in executor
+
+### Update
+
+- Update CALCBMREWARDADJ. Rename into CALCBMMVREWARDADJ
+
+## [2.19.1] - 2025-07-30
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` to support wasm components dependent on, when no real io access is needed:
+```
+import wasi:io/streams@0.2.3;
+import wasi:io/error@0.2.3;
+import wasi:cli/stdin@0.2.3;
+import wasi:cli/stdout@0.2.3;
+import wasi:cli/stderr@0.2.3;
+import wasi:filesystem/types@0.2.3;
+import wasi:filesystem/preopens@0.2.3;
+```
+- Local wasm execution by hash now enforces sha256sum checking of the local wasm binary against a whitelist.
+
+### Changed
+#### Determinism:
+- added support for relaxed SIMD proposal with deterministic behaviour
+- added memory limiter support for dynamic table and linear memory allocation
+- enable other determinism settings via cranelift
+
+### New
+- Wasm Component Precompilation: Wasm Enginge gets preinitialised and Components get pre-compiled and passed into the Executor via the Executor Engine. There is support for initialising via the Executor Engine or passing pre-initialised from an external context.
+
+## [2.19.0] - 2025-07-30
+
+### Breaking changes
+- `ExtMessage` structure changed: `bm_license`, `bm_token` fields removed, `ext_message_token` field added
+- `network.endpoints` initialization changed:
+    - If port is specified in the endpoint URL then use this port for sending messages and getting account
+    - If port is not specified in the endoint URL then use 8600 for sending and getting account
+    - For graphql - always use  http(s)://hostname/graphql url
+    - Use the specified schema (protocol) (https/http)
+
+## [2.18.4] - 2025-07-18
+### Fixes
+- Fixed an error decoding account data: `Invalid BOC: error decode contract data BOC base64`
+-
+## [2.18.3] - 2025-07-08
+
+### Changed
+- Changed `api.json` file. Added properties related to module account.
+
+## [2.18.2] - 2025-07-04
+
+### Fixes
+- Fixed `runwasm` and `runwasmconcatmultiarg` causing panic on using invalid hash.
+
+## [2.18.1] - 2025-06-28
+
+### New
+- Added `runwasmconcatmultiarg` instruction that allows multiple arguments to be concatenated then passed to `runwasm`
+
+## [2.18.0] - 2025-06-27
+
+### New
+- `account` module with `get_account` function that requests account boc from BM or BK node
+- `api-token` added to `config.network`
+
+## [2.17.3] - 2025-06-25
+
+### Fixes:
+
+- Changed `runwasm` gas usage to match other instruction prices
+
+## [2.17.2] - 2025-06-19
+
+### New
+
+- Changed `runwasm` instruction to accept local wasm binaries, selected by hash.
+
+## [2.17.1] - 2025-06-16
+
+### New
+
+- Added fixed gas metering and wasm fuel limiting to `runwasm` instruction
+
+## [2.17.0] - 2025-06-12
+
+### New
+
+- Added `RUNWASM` instruction, allowing execution of WASM Component Binaries. [Details and examples in WASM instruction docs.](tvm_vm/WASM.md)
+
+## [2.16.3] - 2025-06-09
+
+### New
+
+- Add the ability to fill in the source address for external messages if it is provided by the Block
+  Manager (required for Block Keepers with authentication enabled)
+
+## [2.16.2] - 2025-06-05
+
+### New
+
+- Optimized build for new versions of Rust
+
+## [2.16.1] - 2025-05-28
+
+### New
+
+- Add `BURNECC` instructions.
+
+## [2.16.0] - 2025-05-28
+
+### New
+
+- Add support of authorization on Block Producers
+
+### Fixed
+
+- Fixed redirection while sending external messages
+
+## [2.15.0] - 2025-05-12
+
+### New
+
+- Add `CALCBMREWARD`, `CALCBMREWARDADJ`, `CALCMINSTAKEBM` instructions.
+
+## [2.14.0] - 2025-05-12
+
+### New
+
+- `gosh` feature made default
+
+
+## [2.13.0] - 2025-05-01
+
+### Improvement
+
+- While sending external messages, using the port provided in the redirection response
+
+## [2.12.0] - 2025-04-30
+
+### Improvement
+
+- Message is sent to the `bk/v2/messages` or `bm/v2/messages` endpoints
+
+## [2.11.0] - 2025-04-22
+
+### New
+- `BOC v3` stores all hashes and cell stats (tree cell count, tree bits count).
+  It increases BOC size but speeds up deserialization time. It stores cell offsets instead of cell indexes,
+  to avoid extra indirection level when resolving cell address inside boc.
+  It also introduces new internal cell variant `Boc3Cell` that holds ref to entire boc and offset
+  of raw cell data. So whe using boc3 and new cell variant, it is possible to avoid boc deserialization into
+  cell tree structure.
+- `Cell` now declared as ан enum instead of Arc<dyn CellImpl>.
+- `BocReader` parameter `force_cell_finalization` - forces cell verification and hash rebuilding when reading
+  cell(s) from BOC. It is by default. Turning this parameter off will speed up deserialization time in case when
+  BOC contains stored hashes.
+
+## [2.10.0] - 2025-03-28
+
+### New
+
+- `return_value` is added to the `ResultOfSendMessage` - returns the executed contract's return value
+
+## [2.9.2] - 2025-03-18
+
+### Fixed
+- Restored the utility  for generating `api.json`.
+- Changed the type of the `thread_id` field in the `ParamsOfSendMessage` structure.
+
+## [2.9.0] – 2025-03-11
+
+### New
+- Message delivery to the target thread has been made more reliable.
+
+### Fixed
+- Issue with tvm_api formatting
+
+### Breaking changes
+`Error.data.tvm_exit_code` renamed to `Error.data.exit_code`
+
+## [2.8.0] – 2025-02-28
+### New
+- tvm-debugger commands:
+    boc-encode      Encodes given parameters in JSON into a BOC
+    boc-decode      Decodes BOC into JSON as a set of provided parameters
+    boc-hash        Read BOC string from stdin and print its hash
+    state-encode    Encodes initial contract state from code, data, libraries ans special options
+    state-decode    Decodes initial contract state into code, data, libraries ans special options
+    account-encode  Creates account state BOC
+
+### Breaking changes
+- tvm-debugger:
+  - existing functionality was moved under command `run`
+
+
+## [2.7.1] – 2025-02-28
+
+### New
+
+- In case of "THREAD_MISMATCH" error message will be re-sent to the right thread.
+
+### Fixed
+- In case of "WRONG_PRODUCER" error message was not re-sent to the right producer correctly.
+
+### Improvements
+- Removed some unused dependencies
+
+## [2.7.0] – 2025-02-27
+### New
+- `tvm_vm`: execution time control parameters `termination_deadline` and `execution_timeout`. [See details](tvm_vm/CHANGELOG.md)
+
+## [2.6.1] – 2025-02-26
+
+### Fixed
+- Fix bugs in VERGRTH16 and POSEIDON instructions.
+
+## [2.6.0] – 2025-02-19
+
+### New
+
+`dapp_id` is moved form `Account` structure to the wrapping structure `ShardAccount`
+
+## [2.5.0] – 2025-02-19
+
+### New
+- Add instructions CALCBKREWARDADJ, CALCREPCOEF functions
+- Add free fee with same ThreadId
+
+### Fixed
+- Fix CNVRTSHELLQ, CALCBKREWARD, CALCMINSTAKE instructions.
+
+## [2.4.0] – 2025-02-06
+### New
+- `processing.send_message` works with `bm/v2/messages` endpoint and synchronously returns  execution result from the node
+
+## [2.3.3] – 2024-12-18
+
+### New
+- Delete some flags from RawReserve instruction
+
+## [2.3.2] – 2024-12-18
+
+### Fixed
+- Fix src dapp id for out messages
+
+## [2.3.1] – 2024-12-16
+
+### Fixed
+- Rawreserve didn't include credit money.
+- Transfer all balance sent credit money and transaction failed.
+- Abort ext_message didn't restore balances
+
+## [2.3.0] – 2024-10-21
+
+### New
+- Add support of VERGRTH16 and POSEIDON instructions for zk-login.
+-
+## [2.2.12] – 2024-10-08
+
+### Fixed
+- Increase message credit.
+
+## [2.2.11] – 2024-10-08
+
+### Fixed
+- Update Dapp_id field in AccountStuff into Option.
+
+## [2.2.10] – 2024-10-08
+
+### Fixed
+- Work with CurrencyCollections. Fixed add and sub.
+
+## [2.2.9] – 2024-10-08
+
+### Fixed
+- Fix SEND_ALL_BALANCE_FLAG
+
+## [2.2.8] – 2024-10-02
+
+### Improved
+Improve RawReserve instruction
+
+## [2.2.7] – 2024-09-20
+
+### Fixed
+- Fix with read_from_cell in VarIntegerN.
+
+## [2.2.6] – 2024-09-20
+
+### Fixed
+- Update MINTECC, EXCHANGE, CALCBKREWARD instruction.
+- Fix check_overflow in grams.
+
+### New
+- Add MINTSHELL intruction and credit program.
+
+## [2.2.5] – 2024-09-12
+
+### Fixed
+- Set `dapp_id` in executor to have it the same for inbound and outbound messages.
+
+## [2.2.4] – 2024-09-11
+
+### Fixed
+- `dapp_id` was not set for the accounts which state changed from nonExist to Active
+
+## [2.2.3] – 2024-09-11
+
+### New
+- Add tvm-client function `set_code_salt_cell` to set code salt with both objects passed by cells (not shared in json-api).
+
+## [2.2.2] – 2024-09-10
+
+### New
+- New instruction - CALCMINSTAKEREWARD.
+- Change CNVRTSHELLQ instruction.
+
+## [2.2.1] – 2024-08-27
+
+### New
+- New field in internal message - `src_dapp_id`.
+
 ## [2.2.0] – 2024-08-23
 
 ### New
-- New field in account - `dapp_id`. 
+- New field in account - `dapp_id`.
 
 ## [2.1.1] – 2024-08-19
 
@@ -16,10 +570,10 @@ Validator reward formula updated.
 
 ### New
 
-- New VM instructions supported:    
-  MINTECC - mint ecc tokens for special contracts   
-  CNVRTSHELLQ - convert ecc shell tokens into shell 1:1   
-  CALCBKREWARD - calculate reward for validators after validator epoch    
+- New VM instructions supported:
+  MINTECC - mint ecc tokens for special contracts
+  CNVRTSHELLQ - convert ecc shell tokens into shell 1:1
+  CALCBKREWARD - calculate reward for validators after validator epoch
 
 ## [2.0.3] – 2024-08-15
 
@@ -30,10 +584,10 @@ Validator reward formula updated.
 ## [2.0.2] – 2024-07-25
 
 ### Fixed
-AccountActive Stack Overflow issue fixed 
+AccountActive Stack Overflow issue fixed
 
 ```
-account state: AccountActive    
+account state: AccountActive
 Stack Overflow:
    0: backtrace_on_stack_overflow::handle_sigsegv
    1: <unknown>
@@ -63,7 +617,7 @@ First release of SDK supporting Acki Nacki protocol.
 
 ### Breaking
 
-- For contracts with ABI version => 2.4 initial public key should be explicitly supplied 
+- For contracts with ABI version => 2.4 initial public key should be explicitly supplied
 inside `initial_data` in `abi` module functions. Signer public key and `initial_pubkey` parameter
 are not used in contract initial data encoding since ABI version 2.4.
 
@@ -100,7 +654,6 @@ State init should be finalized and ready to be used in message as is.
 
 - functions with callbacks (e.g. `processing.process_messages`) can be called as sync.
 - `send_event` parameter is now optional with default value `false`.
-  
 ### Deprecated
 - Debot module is [DEPRECATED](./docs/reference/types-and-methods/DEPRECATED.md)
 
@@ -111,7 +664,7 @@ State init should be finalized and ready to be used in message as is.
 - Ability to call async functions via `tc_request_sync`.
 - In rust API, the following functions become sync (slight breaking):
   `abi::encode_internal_message`, `abi::attach_signature_to_message_body`, `abi::attach_signature`,
-  `abi::decode_message`, `abi::decode_message_body`, `abi::decode_account_data`, 
+  `abi::decode_message`, `abi::decode_message_body`, `abi::decode_account_data`,
   `abi::update_initial_data`, `abi::encode_initial_data`, `abi::decode_initial_data`,
   `abi::decode_boc`, `abi::encode_boc`, `boc::decode_tvc`, `boc::parse_message`, `boc::parse_transaction`,
   `boc::parse_account`, `boc::parse_block`, `boc::parse_shardstate`, `boc::get_blockchain_config`,
@@ -154,7 +707,7 @@ State init should be finalized and ready to be used in message as is.
 - Version of `ton_types` upped to 2.0.0
 - Fixed code for changed dependencies api
 - Removed logic related to client-server clock sync
-- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init` 
+- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init`
   and `boc.decode_state_init`.
 - `boc.decode_tvc` decodes TVC BOC according to the TVC spec.
 - `DeploySet.tvc` supports new TVC file format (according to new TVC spec).
@@ -166,32 +719,32 @@ State init should be finalized and ready to be used in message as is.
 - `ProcessingEvent::MessageExpired` is sent to callback in case of retry in `processing.process_message`
 
 ### Client breaking changes
-- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init` 
+- `boc.encode_tvc` and `boc.decode_tvc` are renamed to `boc.encode_state_init`
   and `boc.decode_state_init`
 
 ## [1.42.1] – 2023-03-23
 
 ### Fixed
 
-- Client was notified about every REMP status timeout. Now it is notified only once when fallback 
+- Client was notified about every REMP status timeout. Now it is notified only once when fallback
 scenario is started
 
 ## [1.42.0] – 2023-03-22
 
 ### New
 
-- Added message monitoring functions to the `processing` module: `monitor_messages`, 
+- Added message monitoring functions to the `processing` module: `monitor_messages`,
     `fetch_next_monitor_results`, `get_monitor_info`, `cancel_monitor****`.
 - Added `processing.send_messages` function.
 - Improved error resolving for deleted accounts
-- `net.first_remp_status_timeout` config parameter default value set to 1 ms in order to start 
+- `net.first_remp_status_timeout` config parameter default value set to 1 ms in order to start
 fallback scenario together with REMP statuses processing while REMP is not properly tuned yet.
 - Network errors are returned on subscription creation if occured
 
 ### Fixed
 
 - `ParamsOfSubscribe` was not public.
-- `subscribe` did not trim subscription query text. It is required for some graphql servers 
+- `subscribe` did not trim subscription query text. It is required for some graphql servers
   expecting that query text starts from operation text.
 
 ## [1.41.1] – 2023-03-14
@@ -199,43 +752,43 @@ fallback scenario together with REMP statuses processing while REMP is not prope
 ### Fixed
 
 - `api_derive` compilation errors
-- 
+-
 
 ## [1.41.0] – 2023-01-18
 
 ### New
 
 - `CapSignatureWithId` capability is supported.
-  
+
     Network signature ID is used by VM in signature verifying instructions if capability
-    `CapSignatureWithId` is enabled in blockchain configuration parameters.     
-    
-    This parameter should be set to `global_id` field from any blockchain block if network can 
-    not be reached at the moment of message encoding and the message is aimed to be sent into 
-    network with `CapSignatureWithId` enabled. Otherwise signature ID is detected automatically 
-    inside message encoding functions.   
+    `CapSignatureWithId` is enabled in blockchain configuration parameters.
+
+    This parameter should be set to `global_id` field from any blockchain block if network can
+    not be reached at the moment of message encoding and the message is aimed to be sent into
+    network with `CapSignatureWithId` enabled. Otherwise signature ID is detected automatically
+    inside message encoding functions.
     ***Overwrite priority: ExecutionOptions.signature_id -> ClientConfig.network.signature_id -> last network block***
 
-    - `ClientConfig.network.signature_id` optional parameter is added. Specify it in case of offline work for all message signing operations to use. 
-    - `ExecutionOptions` is extended with `signature_id` optional parameter. Specify locally for a particular `run_tvm` or `run_executor` call. 
+    - `ClientConfig.network.signature_id` optional parameter is added. Specify it in case of offline work for all message signing operations to use.
+    - `ExecutionOptions` is extended with `signature_id` optional parameter. Specify locally for a particular `run_tvm` or `run_executor` call.
    - `net.get_signature_id` function returns `global_id` if `CapSignatureWithId` capability is enabled,
 
 - `message_id` and `message_dst` fields are added to all `ProcessingEvent` variants
-- Config parameter `binding: { library: string, version: string }`. Binding authors should define 
+- Config parameter `binding: { library: string, version: string }`. Binding authors should define
    this parameter at context initialization.
 - `tonclient-binding-library` and `tonclient-binding-version` GraphQL request headers. [Read more here](https://github.com/tonlabs/ever-sdk/blob/master/docs/for-binding-developers/json_interface.md#bindings)
 - `Error.data.binding_library` and `Error.data.binding_version` error data fields. [Read more here](https://github.com/tonlabs/ever-sdk/blob/master/docs/for-binding-developers/json_interface.md#bindings)
-  
+
 ### Client breaking changes
 - `abi.get_signature_data` function ouput parameter `hash` is renamed to `unsigned` for consistency with other crypto functions parameters
-  
+
 ### Possible breaking change on binding side
 - Changed type of the `dictionary` parameter or mnemonic crypto functions and crypto config.
-  Now it uses `MnemonicDictionary` enum type instead of `number`. `MnemonicDictionary` numeric 
-  constants are compatible with previous values. 
+  Now it uses `MnemonicDictionary` enum type instead of `number`. `MnemonicDictionary` numeric
+  constants are compatible with previous values.
 
 ### Deprecated
-- `debot` engine module is deprecated. Debot engine development has migrated to a separate repository (soon will be published). So, in order to reduce sdk binary size, we will remove `debot` engine module from sdk in the next releases. 
+- `debot` engine module is deprecated. Debot engine development has migrated to a separate repository (soon will be published). So, in order to reduce sdk binary size, we will remove `debot` engine module from sdk in the next releases.
 
 ## [1.40.0] – 2023-01-11
 
@@ -257,7 +810,7 @@ additional server request
 
 - Queries are retried in case of network errors when websocket connection is used
 
-- `WaitForTimeout` error code (607) is returned in case of `wait_for_transaction` function was 
+- `WaitForTimeout` error code (607) is returned in case of `wait_for_transaction` function was
 successfully executed but expected data did not appeared during the specified timeout
 
 - `timeout` parameter in `net.query_transaction_tree` behaviour changed. Now value 0 indicates that
@@ -268,7 +821,7 @@ no time limit should be used and function will wait for all transactions executi
 - `transaction_max_count` parameter in `net.query_transaction_tree` which controls the count of
 transaction to be awaited and returned
 
-- `data_layout` and `function_name` parameters in `abi.decode_message` and `abi.decode_message_body` 
+- `data_layout` and `function_name` parameters in `abi.decode_message` and `abi.decode_message_body`
 that can be used to decode responsible function output and optimize message decoding by strict layout check
 
 ### Fixed

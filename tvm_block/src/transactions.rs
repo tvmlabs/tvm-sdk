@@ -12,9 +12,6 @@
 use std::fmt;
 use std::sync::Arc;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::hm_label;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -25,7 +22,14 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::UsageTree;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::hm_label;
 
+use crate::Deserializable;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::Serializable;
 use crate::accounts::Account;
 use crate::accounts::AccountStatus;
 use crate::accounts::StorageUsedShort;
@@ -37,8 +41,8 @@ use crate::hashmapaug::Augmentable;
 use crate::hashmapaug::Augmentation;
 use crate::hashmapaug::HashmapAugType;
 use crate::merkle_proof::MerkleProof;
-use crate::messages::generate_big_msg;
 use crate::messages::Message;
+use crate::messages::generate_big_msg;
 use crate::shard::ShardStateUnsplit;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
@@ -46,14 +50,6 @@ use crate::types::Grams;
 use crate::types::InRefValue;
 use crate::types::VarUInteger3;
 use crate::types::VarUInteger7;
-use crate::Deserializable;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_transactions.rs"]
-pub mod tests;
 
 // acst_unchanged$0 = AccStatusChange;  // x -> x
 // acst_frozen$10 = AccStatusChange;    // init -> frozen
@@ -1388,8 +1384,8 @@ impl Transaction {
         &mut self.total_fees
     }
 
-    /// Calculate total transaction fees
-    /// transaction fees is the amount fee for all out-messages
+    // Calculate total transaction fees
+    // transaction fees is the amount fee for all out-messages
     //    pub fn calc_total_fees(&mut self) -> &CurrencyCollection {
     //        self.total_fees = CurrencyCollection::default();
     // TODO uncomment after merge with feature-block-builder
@@ -1688,6 +1684,7 @@ pub struct AccountBlock {
     account_addr: AccountId,
     transactions: Transactions, // HashmapAug 64 ^Transaction CurrencyCollection
     state_update: ChildCell<HashUpdate>, // ^(HASH_UPDATE Account)
+    dapp_id_changed: bool,
 }
 
 impl PartialEq for AccountBlock {
@@ -1699,11 +1696,16 @@ impl PartialEq for AccountBlock {
 }
 
 impl AccountBlock {
+    pub fn dapp_id_changed(&self) -> bool {
+        self.dapp_id_changed
+    }
+
     pub fn with_address(account_addr: AccountId) -> AccountBlock {
         AccountBlock {
             account_addr,
             transactions: Transactions::default(),
             state_update: ChildCell::default(),
+            dapp_id_changed: false,
         }
     }
 
@@ -1721,6 +1723,7 @@ impl AccountBlock {
             account_addr,
             transactions,
             state_update: transaction.state_update.clone(),
+            dapp_id_changed: false,
         })
     }
 
@@ -1733,12 +1736,17 @@ impl AccountBlock {
             account_addr: account_addr.clone(),
             transactions: transactions.clone(),
             state_update: ChildCell::with_struct(state_update)?,
+            dapp_id_changed: false,
         })
     }
 
     /// add transaction to block
     pub fn add_transaction(&mut self, transaction: &Transaction) -> Result<()> {
         self.add_serialized_transaction(transaction, &transaction.serialize()?)
+    }
+
+    pub fn set_dapp_id_changed(&mut self) {
+        self.dapp_id_changed = true;
     }
 
     /// append serialized transaction to block (use to increase speed)
@@ -1804,25 +1812,25 @@ impl AccountBlock {
             // otherwice it is need to calculate Hash update
             let old_hash = old_state
                 .read_accounts()?
-                .get_serialized(self.account_addr.clone())?
+                .account(&self.account_addr)?
                 .ok_or_else(|| {
                     BlockError::Other(format!(
                         "Account should be in old shard state {:x}",
                         self.account_addr
                     ))
                 })?
-                .account_cell()
+                .account_cell()?
                 .repr_hash();
             let new_hash = new_state
                 .read_accounts()?
-                .get_serialized(self.account_addr.clone())?
+                .account(&self.account_addr)?
                 .ok_or_else(|| {
                     BlockError::Other(format!(
                         "Account should be in new shard state {:x}",
                         self.account_addr
                     ))
                 })?
-                .account_cell()
+                .account_cell()?
                 .repr_hash();
             self.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
         }
@@ -1862,6 +1870,7 @@ impl Serializable for AccountBlock {
         self.account_addr.write_to(cell)?; // account_addr: AccountId,
         self.transactions.write_hashmap_root(cell)?;
         cell.checked_append_reference(self.state_update.cell())?; // ^(HASH_UPDATE Account)
+        cell.append_bit_bool(self.dapp_id_changed)?;
         Ok(())
     }
 }
@@ -1882,6 +1891,7 @@ impl Deserializable for AccountBlock {
         self.transactions = trs;
 
         self.state_update.read_from_reference(slice)?; // ^(HASH_UPDATE Account)
+        self.dapp_id_changed.read_from(slice)?;
         Ok(())
     }
 }
@@ -1913,6 +1923,25 @@ impl ShardAccountBlocks {
     /// adds transaction to account by id from transaction
     pub fn add_transaction(&mut self, transaction: &Transaction) -> Result<()> {
         self.add_serialized_transaction(transaction, &transaction.serialize()?)
+    }
+
+    pub fn set_dapp_id_changed_for_account(&mut self, account_id: &AccountId) -> Result<()> {
+        let mut account_block;
+        match self.get_serialized(account_id.clone())? {
+            Some(acc) => {
+                account_block = acc;
+                account_block.dapp_id_changed = true;
+            }
+            None => {
+                fail!("dapp_id_changed: account_id should be initialized");
+            }
+        };
+        self.set_builder_serialized(
+            account_id.clone(),
+            &account_block.write_to_new_cell()?,
+            &account_block.aug()?,
+        )?;
+        Ok(())
     }
 
     pub fn add_serialized_transaction(

@@ -12,17 +12,23 @@ use tvm_block::Block;
 use tvm_block::BlockIdExt;
 use tvm_block::Deserializable;
 use tvm_block::InRefValue;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::ShardHashes;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_types::base64_decode;
 use tvm_types::Result;
 use tvm_types::UInt256;
+use tvm_types::base64_decode;
 
+use crate::ClientContext;
 use crate::client::storage::InMemoryKeyValueStorage;
-use crate::net::query_collection;
 use crate::net::ParamsOfQueryCollection;
+use crate::net::query_collection;
+use crate::proofs::BlockProof;
+use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
+use crate::proofs::ParamsOfProofBlockData;
+use crate::proofs::ParamsOfProofMessageData;
+use crate::proofs::ParamsOfProofTransactionData;
 use crate::proofs::engine::ProofHelperEngineImpl;
 use crate::proofs::is_transaction_refers_to_message;
 use crate::proofs::message_get_required_data;
@@ -33,13 +39,7 @@ use crate::proofs::transaction_get_required_data;
 use crate::proofs::validators::calc_subset_for_workchain;
 use crate::proofs::validators::calc_workchain_id;
 use crate::proofs::validators::calc_workchain_id_by_adnl_id;
-use crate::proofs::BlockProof;
-use crate::proofs::ParamsOfProofBlockData;
-use crate::proofs::ParamsOfProofMessageData;
-use crate::proofs::ParamsOfProofTransactionData;
-use crate::proofs::INITIAL_TRUSTED_KEY_BLOCKS;
 use crate::tests::TestClient;
-use crate::ClientContext;
 
 const GQL_SCHEMA: &str = include_str!("data/schema.graphql");
 
@@ -750,6 +750,7 @@ fn gen_full_schema_query(object_type: &str) -> Result<String> {
 }
 
 #[ignore]
+#[allow(warnings)]
 #[tokio::test]
 async fn test_proof_block_data() -> Result<()> {
     let client = TestClient::new_with_config(mainnet_config());
@@ -762,7 +763,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -771,7 +772,7 @@ async fn test_proof_block_data() -> Result<()> {
     block_json["boc"] = Value::Null;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -951,14 +952,10 @@ async fn test_proof_block_data() -> Result<()> {
             fees_collected_other {value(format:DEC)}
             fees_imported(format:DEC)
             fees_imported_other {value(format:DEC)}
-            from_prev_blk(format:DEC)
-            from_prev_blk_other {value(format:DEC)}
             imported(format:DEC)
             imported_other {value(format:DEC)}
             minted(format:DEC)
             minted_other {value(format:DEC)}
-            to_next_blk(format:DEC)
-            to_next_blk_other {value(format:DEC)}
         }
     "#;
 
@@ -971,7 +968,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )
@@ -986,7 +983,7 @@ async fn test_proof_block_data() -> Result<()> {
     .await?;
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "proofs.proof_block_data",
             ParamsOfProofBlockData { block: block_json.clone() },
         )

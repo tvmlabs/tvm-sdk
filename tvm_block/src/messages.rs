@@ -12,21 +12,26 @@
 use std::fmt;
 use std::str::FromStr;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::HashmapType;
 use tvm_types::IBitstring;
+use tvm_types::MAX_DATA_BITS;
+use tvm_types::MAX_REFERENCES_COUNT;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::UsageTree;
-use tvm_types::MAX_DATA_BITS;
-use tvm_types::MAX_REFERENCES_COUNT;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::GetRepresentationHash;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::Serializable;
 use crate::blocks::Block;
 use crate::define_HashmapE;
 use crate::error::BlockError;
@@ -39,19 +44,9 @@ use crate::types::Grams;
 use crate::types::Number5;
 use crate::types::Number9;
 use crate::types::UnixTime32;
-use crate::Deserializable;
-use crate::GetRepresentationHash;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_messages.rs"]
-mod tests;
 
 ///////////////////////////////////////////////////////////////////////////////
 /// MessageAddress
-
 // 3.1.2. TL-B scheme for addresses. The serialization of source and destination
 // addresses is defined by the following TL-B scheme: addr_none$00 =
 // MsgAddressExt; addr_extern$01 len:(## 9) external_address:(len * Bit)
@@ -63,7 +58,6 @@ mod tests;
 // workchain_id:int32 address:(addr_len * Bit) = MsgAddressInt;
 // _ MsgAddressInt = MsgAddress;
 // _ MsgAddressExt = MsgAddress;
-
 impl AnycastInfo {
     pub fn with_rewrite_pfx(pfx: SliceData) -> Result<Self> {
         Ok(Self { depth: Number5::new(pfx.remaining_bits() as u32)?, rewrite_pfx: pfx })
@@ -605,6 +599,10 @@ pub struct InternalMessageHeader {
     pub fwd_fee: Grams,
     pub created_lt: u64,
     pub created_at: UnixTime32,
+    pub src_dapp_id: Option<UInt256>,
+    pub dest_dapp_id: Option<UInt256>,
+    pub is_exchange: bool,
+    pub is_redirect: bool,
 }
 
 impl InternalMessageHeader {
@@ -626,6 +624,10 @@ impl InternalMessageHeader {
             fwd_fee: Grams::default(),
             created_lt: 0, // Logical Time will be set on BlockBuilder
             created_at: UnixTime32::default(), // UNIX time too
+            src_dapp_id: None,
+            dest_dapp_id: None,
+            is_exchange: false,
+            is_redirect: false,
         }
     }
 
@@ -643,6 +645,38 @@ impl InternalMessageHeader {
     /// Get value tansfered message
     pub fn value(&self) -> &CurrencyCollection {
         &self.value
+    }
+
+    pub fn value_mut(&mut self) -> &mut CurrencyCollection {
+        &mut self.value
+    }
+
+    pub fn set_src_dapp_id(&mut self, src_dapp_id: Option<UInt256>) {
+        self.src_dapp_id = src_dapp_id
+    }
+
+    pub fn set_dest_dapp_id(&mut self, dest_dapp_id: Option<UInt256>) {
+        self.dest_dapp_id = dest_dapp_id
+    }
+
+    pub fn set_is_redirect(&mut self) {
+        self.is_redirect = true;
+    }
+
+    pub fn set_exchange(&mut self, exchange: bool) {
+        self.is_exchange = exchange
+    }
+
+    pub fn src_dapp_id(&self) -> &Option<UInt256> {
+        &self.src_dapp_id
+    }
+
+    pub fn dest_dapp_id(&self) -> &Option<UInt256> {
+        &self.dest_dapp_id
+    }
+
+    pub fn is_exchange(&self) -> &bool {
+        &self.is_exchange
     }
 
     /// Get IHR fee for message
@@ -685,14 +719,23 @@ impl Serializable for InternalMessageHeader {
         self.src.write_to(cell)?;
         self.dst.write_to(cell)?;
 
-        self.value.write_to(cell)?; //value: CurrencyCollection
+        self.value.write_to(cell)?; // value: CurrencyCollection
 
-        self.ihr_fee.write_to(cell)?; //ihr_fee
-        self.fwd_fee.write_to(cell)?; //fwd_fee
+        self.ihr_fee.write_to(cell)?; // ihr_fee
+        self.fwd_fee.write_to(cell)?; // fwd_fee
 
-        self.created_lt.write_to(cell)?; //created_lt
-        self.created_at.write_to(cell)?; //created_at
-
+        self.created_lt.write_to(cell)?; // created_lt
+        self.created_at.write_to(cell)?; // created_at
+        self.src_dapp_id.write_maybe_to(cell)?;
+        if let Some(dest_dapp_id) = &self.dest_dapp_id {
+            cell.append_bit_one()?;
+            let refer = dest_dapp_id.serialize()?;
+            cell.checked_append_reference(refer)?;
+        } else {
+            cell.append_bit_zero()?;
+        }
+        cell.append_bit_bool(self.is_exchange)?;
+        cell.append_bit_bool(self.is_redirect)?;
         Ok(())
     }
 }
@@ -709,11 +752,20 @@ impl Deserializable for InternalMessageHeader {
 
         self.value.read_from(cell)?; // value - balance
 
-        self.ihr_fee.read_from(cell)?; //ihr_fee
-        self.fwd_fee.read_from(cell)?; //fwd_fee
-
-        self.created_lt.read_from(cell)?; //created_lt
-        self.created_at.read_from(cell)?; //created_at
+        self.ihr_fee.read_from(cell)?; // ihr_fee
+        self.fwd_fee.read_from(cell)?; // fwd_fee
+        self.created_lt.read_from(cell)?; // created_lt
+        self.created_at.read_from(cell)?; // created_at
+        if cell.get_next_bit()? {
+            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+        }
+        if cell.get_next_bit()? {
+            let mut dest_dapp_id = UInt256::default();
+            dest_dapp_id.read_from_reference(cell)?;
+            self.dest_dapp_id = Some(dest_dapp_id);
+        }
+        self.is_exchange = cell.get_next_bit()?;
+        self.is_redirect = cell.get_next_bit()?;
         Ok(())
     }
 }
@@ -748,7 +800,7 @@ impl Serializable for ExternalInboundMessageHeader {
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
-        self.import_fee.write_to(cell)?; //ihr_fee
+        self.import_fee.write_to(cell)?; // ihr_fee
 
         Ok(())
     }
@@ -759,7 +811,7 @@ impl Deserializable for ExternalInboundMessageHeader {
         // constructor tag will be readed in Message
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
-        self.import_fee.read_from(cell)?; //ihr_fee
+        self.import_fee.read_from(cell)?; // ihr_fee
         Ok(())
     }
 }
@@ -810,8 +862,8 @@ impl Serializable for ExtOutMessageHeader {
 
         self.src.write_to(cell)?; // addr src
         self.dst.write_to(cell)?; // addr dst
-        self.created_lt.write_to(cell)?; //created_lt
-        self.created_at.write_to(cell)?; //created_at
+        self.created_lt.write_to(cell)?; // created_lt
+        self.created_at.write_to(cell)?; // created_at
 
         Ok(())
     }
@@ -822,8 +874,8 @@ impl Deserializable for ExtOutMessageHeader {
         // constructor tag will be readed in Message
         self.src.read_from(cell)?; // addr src
         self.dst.read_from(cell)?; // addr dst
-        self.created_lt.read_from(cell)?; //created_lt
-        self.created_at.read_from(cell)?; //created_at
+        self.created_lt.read_from(cell)?; // created_lt
+        self.created_at.read_from(cell)?; // created_at
         Ok(())
     }
 }
@@ -837,7 +889,6 @@ impl Deserializable for ExtOutMessageHeader {
 /// import_fee:Grams = CommonMsgInfo;
 /// ext_out_msg_info$11 src:MsgAddressInt dest:MsgAddressExt
 /// created_lt:uint64 created_at:uint32 = CommonMsgInfo;
-
 impl fmt::Display for CommonMsgInfo {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -966,7 +1017,7 @@ pub type MessageId = UInt256;
 #[derive(Debug, Default, Clone, Eq)]
 pub struct Message {
     header: CommonMsgInfo,
-    init: Option<StateInit>,
+    pub init: Option<StateInit>,
     body: Option<SliceData>,
     body_to_ref: Option<bool>,
     init_to_ref: Option<bool>,
@@ -1371,12 +1422,10 @@ impl Message {
         MerkleProof::create_by_usage_tree(block_root, usage_tree)?.serialize()
     }
 
-    #[cfg(test)]
     pub fn serialization_params(&self) -> (Option<bool>, Option<bool>) {
         (self.body_to_ref, self.init_to_ref)
     }
 
-    #[cfg(test)]
     pub fn set_serialization_params(
         &mut self,
         body_to_ref: Option<bool>,
@@ -1444,13 +1493,13 @@ impl Message {
                 if !init_to_ref {
                     builder
                         .append_bit_one()? //mayby bit
-                        .append_bit_zero()?; //either bit
+                        .append_bit_zero()?; // either bit
                     builder.append_builder(&init_builder)?;
                 } else {
                     // if not enough space in current cell - append as reference
                     builder
                         .append_bit_one()? //mayby bit
-                        .append_bit_one()?; //either bit
+                        .append_bit_one()?; // either bit
                     builder.checked_append_reference(init_builder.into_cell()?)?;
                 }
             }
@@ -1464,11 +1513,11 @@ impl Message {
         match self.body.as_ref() {
             Some(body) => {
                 if !body_to_ref {
-                    builder.append_bit_zero()?; //either bit  x:X
+                    builder.append_bit_zero()?; // either bit  x:X
                     builder.checked_append_references_and_data(body)?;
                 } else {
                     // if not enough space in current cell - append as reference
-                    builder.append_bit_one()?; //either bit  x:^X
+                    builder.append_bit_one()?; // either bit  x:^X
                     builder.checked_append_reference(body.clone().into_cell())?;
                 };
             }
@@ -1501,7 +1550,6 @@ impl Deserializable for Message {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
         // read header
         self.header.read_from(cell)?;
-
         // read StateInit
         if cell.get_next_bit()? {
             // maybe of init
@@ -1561,6 +1609,10 @@ impl InternalMessageHeader {
             fwd_fee: Grams::default(),
             created_lt: 0,
             created_at: UnixTime32::default(),
+            src_dapp_id: None,
+            dest_dapp_id: None,
+            is_exchange: false,
+            is_redirect: false,
         }
     }
 }
@@ -1884,14 +1936,15 @@ impl Deserializable for MsgAddressExt {
         let bits = cell.get_next_bits(2)?[0] >> 6;
         if bits == 0 {
             *self = MsgAddressExt::AddrNone;
-        }
-        if bits == 1 {
+            Ok(())
+        } else if bits == 1 {
             let mut data = MsgAddrExt::default();
             data.read_from(cell)?;
             *self = MsgAddressExt::AddrExtern(data);
+            Ok(())
+        } else {
+            Err(BlockError::InvalidArg(format!("Invalid MsgAddressExt tag: {}", bits)).into())
         }
-        // TODO: add error checking!
-        Ok(())
     }
 }
 

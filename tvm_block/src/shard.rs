@@ -13,8 +13,6 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::{self};
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -24,14 +22,21 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::CopyleftRewards;
+use crate::Deserializable;
+use crate::IntermediateAddress;
+use crate::MaybeDeserialize;
+use crate::MaybeSerialize;
+use crate::RefShardBlocks;
+use crate::Serializable;
 use crate::accounts::ShardAccount;
 use crate::config_params::CatchainConfig;
 use crate::define_HashmapE;
 use crate::envelope_message::FULL_BITS;
 use crate::error::BlockError;
-use crate::hashmapaug::Augmentation;
-use crate::hashmapaug::HashmapAugType;
 use crate::master::BlkMasterInfo;
 use crate::master::LibDescr;
 use crate::master::McStateExtra;
@@ -41,18 +46,6 @@ use crate::shard_accounts::ShardAccounts;
 use crate::types::ChildCell;
 use crate::types::CurrencyCollection;
 use crate::validators::ValidatorSet;
-use crate::Account;
-use crate::CopyleftRewards;
-use crate::Deserializable;
-use crate::IntermediateAddress;
-use crate::MaybeDeserialize;
-use crate::MaybeSerialize;
-use crate::RefShardBlocks;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_shard.rs"]
-mod tests;
 
 pub const MAX_SPLIT_DEPTH: u8 = 60;
 pub const MASTERCHAIN_ID: i32 = -1;
@@ -187,7 +180,7 @@ impl AccountIdPrefixFull {
     /// Returns count of the first bits matched in both addresses
     /// TBD
     #[allow(dead_code)]
-    pub(crate) fn count_matching_bits(&self, other: &Self) -> u8 {
+    pub fn count_matching_bits(&self, other: &Self) -> u8 {
         if self.workchain_id != other.workchain_id {
             (self.workchain_id ^ other.workchain_id).leading_zeros() as u8
         } else if self.prefix != other.prefix {
@@ -202,7 +195,7 @@ impl AccountIdPrefixFull {
     /// TBD
     #[allow(dead_code)]
     #[allow(clippy::many_single_char_names)]
-    pub(crate) fn perform_hypercube_routing(
+    pub fn perform_hypercube_routing(
         &self,
         dest: &AccountIdPrefixFull,
         cur_shard: &ShardIdent,
@@ -929,9 +922,8 @@ impl ShardStateUnsplit {
     }
 
     pub fn insert_account(&mut self, account_id: &UInt256, acc: &ShardAccount) -> Result<()> {
-        let account = acc.read_account()?;
         let mut accounts = self.read_accounts()?;
-        accounts.set(account_id, acc, &account.aug()?)?;
+        accounts.insert(account_id, acc)?;
         self.write_accounts(&accounts)
     }
 
@@ -1055,78 +1047,6 @@ impl ShardStateUnsplit {
             })?
             .config
             .read_cur_validator_set_and_cc_conf()
-    }
-
-    fn update_smc_internal(
-        &mut self,
-        address: &UInt256,
-        op: impl FnOnce(&mut Account) -> Result<()>,
-    ) -> Result<()> {
-        let mut accounts = self.read_accounts()?;
-        let mut shard_smc =
-            accounts.get(address)?.ok_or_else(|| error!("SMC {:x} isn't present", address))?;
-        let mut smc = shard_smc.read_account()?;
-        op(&mut smc)?;
-        shard_smc.write_account(&smc)?;
-        accounts.set(address, &shard_smc, &smc.aug()?)?;
-        self.write_accounts(&accounts)
-    }
-
-    pub fn update_smc(
-        &mut self,
-        address: &UInt256,
-        code: Option<&Cell>,
-        data: Option<&Cell>,
-    ) -> Result<()> {
-        self.update_smc_internal(address, |smc| {
-            if let Some(code) = code {
-                smc.set_code(code.clone());
-            }
-            if let Some(data) = data {
-                smc.set_data(data.clone());
-            }
-            Ok(())
-        })
-    }
-
-    pub fn update_config_smc(&mut self) -> Result<()> {
-        self.update_config_smc_with_code(None)
-    }
-
-    pub fn update_config_smc_with_code(&mut self, new_code: Option<Cell>) -> Result<()> {
-        let config = self
-            .read_custom()?
-            .ok_or_else(|| error!("masterchain state must contain config"))?
-            .config;
-        let address = config.config_address()?;
-        self.update_smc_internal(&address, |smc| {
-            smc.update_config_smc(&config)?;
-            if let Some(new_code) = new_code {
-                smc.set_code(new_code);
-            }
-            Ok(())
-        })
-    }
-
-    pub fn update_elector_smc(
-        &mut self,
-        new_code: Option<Cell>,
-        new_data: Option<Cell>,
-    ) -> Result<()> {
-        let config = self
-            .read_custom()?
-            .ok_or_else(|| error!("masterchain state must contain config"))?
-            .config;
-        let address = config.elector_address()?;
-        self.update_smc_internal(&address, |smc| {
-            if let Some(new_code) = new_code {
-                smc.set_code(new_code);
-            }
-            if let Some(new_data) = new_data {
-                smc.set_data(new_data);
-            }
-            Ok(())
-        })
     }
 }
 

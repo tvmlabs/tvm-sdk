@@ -14,15 +14,15 @@ use std::collections::HashMap;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use futures::stream::Fuse;
-use futures::stream::FusedStream;
 use futures::Sink;
 use futures::SinkExt;
 use futures::StreamExt;
+use futures::stream::Fuse;
+use futures::stream::FusedStream;
 use serde_json::Value;
-use tokio::sync::mpsc::channel;
 use tokio::sync::mpsc::Receiver;
 use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::channel;
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::client::ClientEnv;
@@ -30,14 +30,14 @@ use crate::client::WebSocket;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientError;
 use crate::error::ClientResult;
+use crate::net::Error;
+use crate::net::NetworkConfig;
 use crate::net::endpoint::Endpoint;
 use crate::net::gql::GraphQLMessageFromClient;
 use crate::net::gql::GraphQLMessageFromServer;
 use crate::net::server_link::NetworkState;
 use crate::net::tvm_gql::GraphQLQuery;
 use crate::net::tvm_gql::GraphQLQueryEvent;
-use crate::net::Error;
-use crate::net::NetworkConfig;
 
 type WSSender = Pin<Box<dyn Sink<String, Error = ClientError> + Send>>;
 
@@ -479,7 +479,7 @@ impl LinkHandler {
         operation_id: &str,
         operation_event: GraphQLQueryEvent,
     ) {
-        if let Ok(id) = u32::from_str_radix(operation_id, 10) {
+        if let Ok(id) = operation_id.parse::<u32>() {
             if remove {
                 if let Some(mut operation) = self.operations.remove(&id) {
                     operation.notify(operation_event).await;
@@ -511,13 +511,13 @@ impl LinkHandler {
     }
 
     async fn send_error_to_running_operations(&mut self, err: ClientError) {
-        for (_, operation) in &mut self.operations {
+        for operation in self.operations.values_mut() {
             operation.notify(GraphQLQueryEvent::Error(err.clone())).await;
         }
     }
 
     async fn stop_running_operations(&self, ws: &mut WSSender) -> ClientResult<()> {
-        for (id, _) in &self.operations {
+        for id in self.operations.keys() {
             ws_send(ws, GraphQLMessageFromClient::Stop { id: id.to_string() }).await?;
         }
         Ok(())

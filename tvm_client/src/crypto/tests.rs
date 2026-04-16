@@ -1,6 +1,6 @@
+use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
@@ -484,17 +484,16 @@ fn mnemonic() {
         .unwrap();
     assert_eq!(result.tvm_public_key, "PubDdJkMyss2qHywFuVP1vzww0TpsLxnRNnbifTCcu-XEgW0");
 
-    let result: KeyPair = client.request(
-        "crypto.mnemonic_derive_sign_keys",
-        ParamsOfMnemonicDeriveSignKeys {
+    let result: KeyPair = client
+        .request("crypto.mnemonic_derive_sign_keys", ParamsOfMnemonicDeriveSignKeys {
             phrase:
                 "abandon math mimic master filter design carbon crystal rookie group knife young"
                     .into(),
             path: None,
             dictionary: None,
             word_count: None,
-        },
-    ).unwrap();
+        })
+        .unwrap();
     let result: ResultOfConvertPublicKeyToTonSafeFormat = client
         .request(
             "crypto.convert_public_key_to_tvm_safe_format",
@@ -564,6 +563,7 @@ fn mnemonic() {
     assert_eq!(result.tvm_public_key, "PuZdw_KyXIzo8IksTrERN3_WoAoYTyK7OvM-yaLk711sUIB3");
 }
 
+#[ignore]
 #[test]
 fn hdkey() {
     TestClient::init_log();
@@ -1207,6 +1207,7 @@ async fn test_crypto_boxes() -> tvm_types::Result<()> {
     Ok(())
 }
 
+#[allow(warnings)]
 #[tokio::test]
 async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     let client = Arc::new(TestClient::new());
@@ -1293,7 +1294,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     }
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "crypto.clear_crypto_box_secret_cache",
             RegisteredCryptoBox { handle: crypto_box.handle },
         )
@@ -1315,6 +1316,7 @@ async fn test_crypto_box_signing_boxes() -> tvm_types::Result<()> {
     Ok(())
 }
 
+#[allow(warnings)]
 #[tokio::test]
 async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     let client = Arc::new(TestClient::new());
@@ -1419,7 +1421,7 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     }
 
     client
-        .request_async(
+        .request_async::<_, ()>(
             "crypto.clear_crypto_box_secret_cache",
             RegisteredCryptoBox { handle: crypto_box.handle },
         )

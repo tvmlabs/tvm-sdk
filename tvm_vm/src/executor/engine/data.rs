@@ -9,8 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::fail;
 use tvm_types::GasConsumer;
+use tvm_types::fail;
 
 use crate::executor::engine::Engine;
 use crate::executor::microcode::BUILDER;
@@ -18,8 +18,8 @@ use crate::executor::microcode::CELL;
 use crate::executor::microcode::CONTINUATION;
 use crate::executor::microcode::SLICE;
 use crate::executor::microcode::VAR;
-use crate::stack::continuation::ContinuationData;
 use crate::stack::StackItem;
+use crate::stack::continuation::ContinuationData;
 use crate::types::Status;
 
 // Utilities ******************************************************************

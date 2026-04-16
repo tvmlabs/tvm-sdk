@@ -1,7 +1,7 @@
 use std::future::Future;
+use std::sync::Arc;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 use async_trait::async_trait;
 use serde_json::Value;
@@ -62,7 +62,7 @@ impl From<ClientError> for tvm_client_processing::Error {
 
 impl From<tvm_client_processing::Error> for ClientError {
     fn from(value: tvm_client_processing::Error) -> Self {
-        Self { code: value.code, message: value.message, data: value.data }
+        Self { code: value.code, message: value.message, data: value.data, traceparent: None }
     }
 }
 

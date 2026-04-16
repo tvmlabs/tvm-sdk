@@ -51,7 +51,7 @@ impl ExpectType {
                 ty => Self::unexpected(ty, "Struct", parent_hint),
             },
             Self::String => match ty {
-                Type::String { .. } => {}
+                Type::String => {}
                 ty => Self::unexpected(ty, "String", parent_hint),
             },
             Self::Number => match ty {

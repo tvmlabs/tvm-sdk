@@ -27,8 +27,8 @@ use tokio::sync::Mutex;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::query_collection;
 use crate::net::ParamsOfQueryCollection;
+use crate::net::query_collection;
 
 #[async_trait::async_trait]
 pub trait ChainIterator {

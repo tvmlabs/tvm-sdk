@@ -225,8 +225,7 @@ pub fn generate_random_bytes(
     params: ParamsOfGenerateRandomBytes,
 ) -> ClientResult<ResultOfGenerateRandomBytes> {
     let mut rng = rand::thread_rng();
-    let mut bytes: Vec<u8> = Vec::new();
-    bytes.resize(params.length as usize, 0);
+    let mut bytes: Vec<u8> = vec![0; params.length as usize];
     rng.fill_bytes(&mut bytes);
     Ok(ResultOfGenerateRandomBytes { bytes: base64_encode(&bytes) })
 }

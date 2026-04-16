@@ -9,13 +9,13 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use super::errors::ToOperationParameterError;
-use super::parse::*;
 use super::CompileHandler;
 use super::CompileResult;
 use super::Engine;
 use super::EnsureParametersCountInRange;
 use super::Units;
+use super::errors::ToOperationParameterError;
+use super::parse::*;
 use crate::debug::DbgNode;
 use crate::debug::DbgPos;
 use crate::simple_commands;
@@ -839,13 +839,28 @@ impl Engine {
         DIFF_PATCH_BINARY_ZIPQ               => 0xC7, 0x25
         MINTECC                              => 0xC7, 0x26
         CNVRTSHELLQ                          => 0xC7, 0x27
-        CALCBKREWARD                         => 0xC7, 0x29
-    }
-
-    #[cfg(feature = "groth")]
-    simple_commands! {
-        enumerate_groth_commands
-        VERGRTH16                            => 0xF9, 0x12
+        MINTSHELLQ                           => 0xC7, 0x28
+        CALCMINSTAKE                         => 0xC7, 0x30
+        VERGRTH16                            => 0xC7, 0x31
+        POSEIDONZKLOGIN                      => 0xC7, 0x32
+        CALCBKREWARDADJ                      => 0xC7, 0x33
+        CALCREPCOEF                          => 0xC7, 0x34
+        CALCBMREWARD                         => 0xC7, 0x35
+        CALCBMMVREWARDADJ                    => 0xC7, 0x36
+        CALCMINSTAKEBM                       => 0xC7, 0x37
+        BURNECC                              => 0xC7, 0x38
+        RUNWASM                              => 0xC7, 0x39
+        RUNWASMCONCATMULTIARG                => 0xC7, 0x3A
+        CALCBOOSTCOEF                        => 0xC7, 0x40
+        CALCMVREWARD                         => 0xC7, 0x41
+        GETAVAILABLEBALANCE                  => 0xC7, 0x42
+        MINTSHELL                            => 0xC7, 0x43
+        SENDTODAPPCONFIG                     => 0xC7, 0x44
+        MYDAPPID                             => 0xC7, 0x45
+        CALCMBK                              => 0xC7, 0x46
+        CALCMINERTAPCOEF                     => 0xC7, 0x47
+        CALCMINERREWARD                      => 0xC7, 0x48
+        POSEIDON                             => 0xC7, 0x50
     }
 
     fn add_commands<'a>(
@@ -866,8 +881,5 @@ impl Engine {
 
         #[cfg(feature = "gosh")]
         self.add_commands(Self::enumerate_diff_commands());
-
-        #[cfg(feature = "groth")]
-        self.add_commands(Self::enumerate_groth_commands());
     }
 }

@@ -2,9 +2,9 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use serde_json::Value;
 #[cfg(test)]
 use serde_json::json;
-use serde_json::Value;
 use tvm_abi::encode_function_call;
 use tvm_block::CurrencyCollection;
 use tvm_block::ExternalInboundMessageHeader;
@@ -15,16 +15,16 @@ use tvm_block::Message;
 use tvm_block::MsgAddressExt;
 use tvm_block::MsgAddressInt;
 use tvm_block::VarUInteger32;
-use tvm_types::ed25519_create_private_key;
 use tvm_types::SliceData;
+use tvm_types::ed25519_create_private_key;
 
+use crate::RunArgs;
 use crate::helper::get_dest_address;
 use crate::helper::get_now;
 use crate::helper::load_abi_as_string;
 use crate::helper::read_keys;
-use crate::Args;
 
-pub(crate) fn generate_message(args: &Args) -> anyhow::Result<(Message, SliceData)> {
+pub(crate) fn generate_message(args: &RunArgs) -> anyhow::Result<(Message, SliceData)> {
     let body = generate_message_body(args)?;
     let message = if args.internal {
         generate_internal_message(args, Some(body.clone()))
@@ -35,7 +35,7 @@ pub(crate) fn generate_message(args: &Args) -> anyhow::Result<(Message, SliceDat
 }
 
 pub(crate) fn generate_external_message(
-    args: &Args,
+    args: &RunArgs,
     body: Option<SliceData>,
 ) -> anyhow::Result<Message> {
     let dst = get_dest_address(args)?;
@@ -52,7 +52,7 @@ pub(crate) fn generate_external_message(
 }
 
 pub(crate) fn generate_internal_message(
-    args: &Args,
+    args: &RunArgs,
     body: Option<SliceData>,
 ) -> anyhow::Result<Message> {
     let dst = get_dest_address(args)?;
@@ -92,26 +92,22 @@ pub(crate) fn generate_internal_message(
     Ok(msg)
 }
 
-pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
+pub(crate) fn generate_message_body(args: &RunArgs) -> anyhow::Result<SliceData> {
     assert!(args.abi_file.is_some());
     assert!(args.function_name.is_some());
     let abi = load_abi_as_string(args.abi_file.as_ref().unwrap())?;
     let function_name = args.function_name.as_ref().unwrap();
-    let header = args.abi_header.clone().map(|v| {
-        serde_json::to_string(&v)
-            .unwrap_or("{}".to_string())
-            .trim_matches(|c| c == '"')
-            .replace('\\', "")
-            .to_string()
-    });
+    let header = args
+        .abi_header
+        .clone()
+        .map(|v| serde_json::to_string(&v).unwrap_or("{}".to_string()).to_string());
     let parameters = args
         .call_parameters
         .clone()
         .map(|v| {
             serde_json::to_string(&v)
+                .map_err(|err| anyhow::format_err!("Failed to serialize call parameters: {err}"))
                 .unwrap()
-                .trim_matches(|c| c == '"')
-                .replace('\\', "")
                 .to_string()
         })
         .unwrap_or("{}".to_string());
@@ -139,7 +135,7 @@ pub(crate) fn generate_message_body(args: &Args) -> anyhow::Result<SliceData> {
 
 #[test]
 fn test_encode_body() -> anyhow::Result<()> {
-    let mut args = Args::default();
+    let mut args = RunArgs::default();
     args.abi_file = Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap());
     args.function_name = Some("inc".to_string());
     let _body = generate_message_body(&args)?;
@@ -155,7 +151,7 @@ fn test_encode_body() -> anyhow::Result<()> {
 
 #[test]
 fn test_generate_message() -> anyhow::Result<()> {
-    let mut args = Args::default();
+    let mut args = RunArgs::default();
     args.abi_file = Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap());
     args.function_name = Some("inc".to_string());
     let _ext_message = generate_message(&args)?;

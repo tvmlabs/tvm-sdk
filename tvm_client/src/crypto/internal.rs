@@ -111,7 +111,7 @@ pub(crate) fn decode_public_key(string: &String) -> ClientResult<VerifyingKey> {
     .map_err(|err| crypto::Error::invalid_public_key(err, string))
 }
 
-pub(crate) fn decode_secret_key(string: &String) -> ClientResult<SigningKey> {
+pub(crate) fn decode_secret_key(string: &str) -> ClientResult<SigningKey> {
     Ok(SigningKey::from_bytes(
         &hex_decode_secret_const(string)
             .map_err(|err| crypto::Error::invalid_secret_key(err, string))?
@@ -150,7 +150,7 @@ pub(crate) fn hmac_sha512(key: &[u8], data: &[u8]) -> [u8; 64] {
 
 pub(crate) fn pbkdf2_hmac_sha512(password: &[u8], salt: &[u8], c: u32) -> [u8; 64] {
     let mut result = [0u8; 64];
-    pbkdf2::pbkdf2::<Hmac<Sha512>>(password, salt, c, &mut result);
+    let _ = pbkdf2::pbkdf2::<Hmac<Sha512>>(password, salt, c, &mut result);
     result
 }
 
@@ -158,11 +158,9 @@ pub(crate) fn sign_using_secret(
     unsigned: &[u8],
     secret: &[u8],
 ) -> ClientResult<(Vec<u8>, Vec<u8>)> {
-    let mut signed: Vec<u8> = Vec::new();
-    signed.resize(unsigned.len() + sodalite::SIGN_LEN, 0);
+    let mut signed: Vec<u8> = vec![0; unsigned.len() + sodalite::SIGN_LEN];
     sodalite::sign_attached(&mut signed, unsigned, &key512(secret)?.0);
-    let mut signature: Vec<u8> = Vec::new();
-    signature.resize(64, 0);
+    let mut signature: Vec<u8> = vec![0; 64];
     for (place, element) in signature.iter_mut().zip(signed.iter()) {
         *place = *element;
     }

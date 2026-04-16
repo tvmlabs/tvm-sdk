@@ -9,15 +9,15 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
 use tvm_types::GasConsumer;
+use tvm_types::MAX_DATA_BITS;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_types::MAX_DATA_BITS;
+use tvm_types::error;
+use tvm_types::fail;
 
 use crate::error::TvmError;
 use crate::types::Exception;

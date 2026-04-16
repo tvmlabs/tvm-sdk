@@ -14,7 +14,6 @@ failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 log.workspace = true
-metrics.workspace = true
 num.workspace = true
 num-traits.workspace = true
 serde.workspace = true
@@ -26,5 +25,10 @@ tvm_api.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
 
+metrics = { version = "0.22", optional = true }
+
+[features]
+metrics = ["dep:metrics"]
+
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions.workspace = true

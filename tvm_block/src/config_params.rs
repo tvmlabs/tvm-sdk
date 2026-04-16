@@ -9,8 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -20,30 +18,26 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::Serializable;
 use crate::define_HashmapE;
 use crate::error::BlockError;
-use crate::hashmapaug::HashmapAugType;
 use crate::shard::ShardIdent;
-use crate::shard_accounts::ShardAccounts;
 use crate::signature::CryptoSignature;
 use crate::signature::SigPubKey;
 use crate::types::ChildCell;
 use crate::types::ExtraCurrencyCollection;
 use crate::types::Grams;
+use crate::types::Number8;
 use crate::types::Number12;
 use crate::types::Number13;
 use crate::types::Number16;
 use crate::types::Number32;
-use crate::types::Number8;
 use crate::validators::ValidatorDescr;
 use crate::validators::ValidatorSet;
-use crate::Deserializable;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_config_params.rs"]
-mod tests;
 
 // 1.6.3. Quick access through the header of masterchain blocks
 // _ config_addr:uint256
@@ -110,30 +104,6 @@ impl ConfigParams {
         let key = SliceData::load_bitstring(index.write_to_new_cell()?)?;
         self.config_params.set_builder(key, &value)?;
         Ok(())
-    }
-
-    pub fn get_smc_tick_tock(&self, smc_addr: &UInt256, accounts: &ShardAccounts) -> Result<usize> {
-        let account = match accounts.get(smc_addr)? {
-            Some(shard_account) => shard_account.read_account()?,
-            None => fail!("Tick-tock smartcontract not found"),
-        };
-        Ok(account.get_tick_tock().map(|tick_tock| tick_tock.as_usize()).unwrap_or_default())
-    }
-
-    pub fn special_ticktock_smartcontracts(
-        &self,
-        tick_tock: usize,
-        accounts: &ShardAccounts,
-    ) -> Result<Vec<(UInt256, usize)>> {
-        let mut vec = Vec::new();
-        self.fundamental_smc_addr()?.iterate_keys(|key: UInt256| {
-            let tt = self.get_smc_tick_tock(&key, accounts)?;
-            if (tick_tock & tt) != 0 {
-                vec.push((key, tt))
-            }
-            Ok(true)
-        })?;
-        Ok(vec)
     }
 
     // Wrappers
@@ -414,8 +384,6 @@ pub enum GlobalCapabilities {
     #[cfg(feature = "signature_with_id")]
     CapSignatureWithId = 0x0000_0400_0000, // use some predefined id during signature check
     CapBounceAfterFailedAction = 0x0000_0800_0000,
-    #[cfg(feature = "groth")]
-    CapGroth16 = 0x0000_1000_0000,
     CapFeeInGasUnits = 0x0000_2000_0000, // all fees in config are in gas units
     CapBigCells = 0x0000_4000_0000,
     CapSuspendedList = 0x0000_8000_0000,
@@ -1754,6 +1722,26 @@ pub struct MsgForwardPrices {
     pub next_frac: u16,
 }
 
+impl std::ops::Mul<u64> for MsgForwardPrices {
+    type Output = Self;
+
+    fn mul(mut self, rhs: u64) -> Self::Output {
+        self.lump_price = self.lump_price.saturating_mul(rhs);
+        self.bit_price = self.bit_price.saturating_mul(rhs);
+        self.cell_price = self.cell_price.saturating_mul(rhs);
+        self.ihr_price_factor = self.ihr_price_factor.saturating_mul(rhs as u32);
+        self.first_frac = self.first_frac.saturating_mul(rhs as u16);
+        self.next_frac = self.next_frac.saturating_mul(rhs as u16);
+        self
+    }
+}
+
+impl std::ops::MulAssign<u64> for MsgForwardPrices {
+    fn mul_assign(&mut self, rhs: u64) {
+        *self = self.clone() * rhs;
+    }
+}
+
 impl MsgForwardPrices {
     pub fn new() -> Self {
         Self::default()
@@ -2018,7 +2006,6 @@ impl IntoIterator for &FundamentalSmcAddresses {
 }
 
 /// ConfigParam 30;
-
 const DELECTOR_PARAMS_TAG: u8 = 0x1;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct DelectorParams {
@@ -2417,8 +2404,8 @@ impl Serializable for WorkchainFormat0 {
 pub struct WorkchainDescr {
     pub enabled_since: u32,
     actual_min_split: u8,
-    min_split: u8,
-    max_split: u8,
+    pub min_split: u8,
+    pub max_split: u8,
     // basic: bool, // depends on format
     pub active: bool,
     pub accept_msgs: bool,
@@ -3275,8 +3262,8 @@ impl Serializable for BlockLimits {
     }
 }
 
-type ConfigParam22 = BlockLimits;
-type ConfigParam23 = BlockLimits;
+pub type ConfigParam22 = BlockLimits;
+pub type ConfigParam23 = BlockLimits;
 
 const COPYLEFT_TAG: u8 = 0x9A;
 
@@ -3356,8 +3343,7 @@ impl SuspendedAddresses {
     }
 }
 
-#[cfg(test)]
-pub(crate) fn dump_config(params: &HashmapE) {
+pub fn dump_config(params: &HashmapE) {
     params
         .iterate_slices(|ref mut key, ref mut slice| -> Result<bool> {
             let key = key.get_next_u32()?;

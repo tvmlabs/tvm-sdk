@@ -4,15 +4,14 @@ use crate::abi::ParamsOfEncodeMessage;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
-use crate::processing::internal::can_retry_expired_message;
-use crate::processing::send_message;
-use crate::processing::wait_for_transaction;
 use crate::processing::ErrorCode;
 use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
 use crate::processing::ResultOfProcessMessage;
-use crate::processing::ResultOfSendMessage;
+use crate::processing::internal::can_retry_expired_message;
+use crate::processing::send_message;
+use crate::processing::wait_for_transaction;
 use crate::tvm::StdContractError;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug)]
@@ -41,11 +40,12 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
         let message = crate::abi::encode_message(context.clone(), encode_params).await?;
 
         // Send
-        let ResultOfSendMessage { shard_block_id, sending_endpoints } = send_message(
+        let _ /* ResultOfSendMessage { shard_block_id, sending_endpoints } */ = send_message(
             context.clone(),
             ParamsOfSendMessage {
                 message: message.message.clone(),
                 abi: Some(abi.clone()),
+                thread_id: None,
                 send_events: params.send_events,
             },
             &callback,
@@ -60,8 +60,8 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
                 message: message.message.clone(),
                 send_events: params.send_events,
                 abi: Some(abi.clone()),
-                shard_block_id: shard_block_id.clone(),
-                sending_endpoints: Some(sending_endpoints),
+                shard_block_id: "".to_string(), // shard_block_id.clone(),
+                sending_endpoints: Some(vec!["".to_string()] /* sending_endpoints */),
             },
             &callback,
         )

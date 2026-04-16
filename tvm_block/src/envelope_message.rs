@@ -11,15 +11,17 @@
 
 use std::cmp::Ordering;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::Serializable;
 use crate::error::BlockError;
 use crate::messages::Message;
 use crate::shard::AccountIdPrefixFull;
@@ -27,12 +29,6 @@ use crate::shard::ShardIdent;
 use crate::types::AddSub;
 use crate::types::ChildCell;
 use crate::types::Grams;
-use crate::Deserializable;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_envelope_message.rs"]
-mod tests;
 
 // 3.1.15. Enveloped messages. Message envelopes are used for attaching
 // routing information, such as the current (transit) address and the next-hop
@@ -391,7 +387,7 @@ impl MsgEnvelope {
     /// Create Envelope with hypercube routing params
     /// TBD
     #[allow(dead_code)]
-    pub(crate) fn hypercube_routing(
+    pub fn hypercube_routing(
         msg: &Message,
         src_shard: &ShardIdent,
         fwd_fee_remaining: Grams,

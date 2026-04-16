@@ -15,19 +15,20 @@ use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_bigint::Sign;
 use tvm_block::Serializable;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::contract::AbiVersion;
+use crate::PublicKeyData;
 use crate::contract::ABI_VERSION_1_0;
 use crate::contract::ABI_VERSION_2_2;
 use crate::contract::ABI_VERSION_2_4;
+use crate::contract::AbiVersion;
 use crate::error::AbiError;
 use crate::int::Int;
 use crate::int::Uint;
@@ -35,7 +36,6 @@ use crate::param_type::ParamType;
 use crate::token::Token;
 use crate::token::TokenValue;
 use crate::token::Tokenizer;
-use crate::PublicKeyData;
 
 pub struct SerializedValue {
     pub data: BuilderData,
@@ -336,7 +336,7 @@ impl TokenValue {
         }
     }
 
-    fn write_bytes(data: &[u8], abi_version: &AbiVersion) -> Result<BuilderData> {
+    pub fn write_bytes(data: &[u8], abi_version: &AbiVersion) -> Result<BuilderData> {
         let cell_len = BuilderData::bits_capacity() / 8;
         let mut len = data.len();
         let mut cell_capacity = if abi_version == &ABI_VERSION_1_0 {

@@ -14,10 +14,8 @@ use std::collections::BTreeMap;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use tvm_block::types::Grams;
 use tvm_block::MsgAddress;
-use tvm_types::error;
-use tvm_types::fail;
+use tvm_block::types::Grams;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -25,12 +23,14 @@ use tvm_types::HashmapType;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::contract::AbiVersion;
 use crate::contract::ABI_VERSION_1_0;
 use crate::contract::ABI_VERSION_2_0;
 use crate::contract::ABI_VERSION_2_2;
 use crate::contract::ABI_VERSION_2_4;
+use crate::contract::AbiVersion;
 use crate::error::AbiError;
 use crate::int::Int;
 use crate::int::Uint;
@@ -385,7 +385,7 @@ impl TokenValue {
         Ok((TokenValue::Map(key_type.clone(), value_type.clone(), new_map), cursor))
     }
 
-    fn read_bytes_from_chain(
+    pub fn read_bytes_from_chain(
         cursor: SliceData,
         last: bool,
         abi_version: &AbiVersion,
@@ -435,7 +435,7 @@ impl TokenValue {
         }
     }
 
-    fn read_bytes(
+    pub fn read_bytes(
         cursor: SliceData,
         last: bool,
         abi_version: &AbiVersion,
@@ -445,7 +445,7 @@ impl TokenValue {
         Ok((TokenValue::Bytes(data), cursor))
     }
 
-    fn read_string(
+    pub fn read_string(
         cursor: SliceData,
         last: bool,
         abi_version: &AbiVersion,
@@ -547,7 +547,6 @@ impl TokenValue {
         let mut tokens = vec![];
 
         for param in params {
-            // println!("{:?}", param);
             let last = Some(param) == params.last() && last;
             let (token_value, new_cursor) =
                 Self::read_from(&param.kind, cursor, last, abi_version, allow_partial)?;

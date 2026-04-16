@@ -16,11 +16,11 @@ use std::cmp::Ordering;
 use num_traits::One;
 use num_traits::Signed;
 use num_traits::Zero;
-use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
 
 use crate::error::TvmError;
 use crate::stack::integer::behavior::OperationBehavior;
@@ -158,6 +158,12 @@ impl IntegerData {
     pub fn from_unsigned_bytes_be(data: impl AsRef<[u8]>) -> Self {
         Self {
             value: IntegerValue::Value(Int::from_bytes_be(num::bigint::Sign::Plus, data.as_ref())),
+        }
+    }
+
+    pub fn from_unsigned_bytes_le(data: impl AsRef<[u8]>) -> Self {
+        Self {
+            value: IntegerValue::Value(Int::from_bytes_le(num::bigint::Sign::Plus, data.as_ref())),
         }
     }
 

@@ -11,8 +11,6 @@
 
 use std::cmp::Ordering;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -23,10 +21,12 @@ use tvm_types::IBitstring;
 use tvm_types::Leaf;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::error::BlockError;
 use crate::Deserializable;
 use crate::Serializable;
+use crate::error::BlockError;
 
 /// trait for types used as Augment to calc aug on forks
 pub trait Augmentable: Clone + Default + Serializable + Deserializable {
@@ -584,7 +584,6 @@ pub trait HashmapAugType<
             p(key, <X>::construct_from(&mut slice)?, aug)
         })
     }
-    #[cfg(test)]
     /// Puts element to the tree
     fn set_serialized(
         &mut self,
@@ -901,5 +900,18 @@ pub trait HashmapAugRemover<
 }
 
 #[cfg(test)]
-#[path = "tests/test_hashmapaug.rs"]
-mod tests;
+impl Augmentable for u8 {
+    fn calc(&mut self, other: &Self) -> Result<bool> {
+        if *self < *other {
+            *self = *other
+        }
+        Ok(true)
+    }
+}
+
+#[cfg(test)]
+impl Augmentation<u8> for u8 {
+    fn aug(&self) -> Result<u8> {
+        unreachable!()
+    }
+}

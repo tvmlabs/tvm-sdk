@@ -2,12 +2,12 @@ use std::collections::HashMap;
 
 use serde_json::Value;
 
+use super::TonClient;
+use super::dinterface::DebotInterface;
+use super::dinterface::InterfaceResult;
 use super::dinterface::decode_answer_id;
 use super::dinterface::get_arg;
 use super::dinterface::get_array_strings;
-use super::dinterface::DebotInterface;
-use super::dinterface::InterfaceResult;
-use super::TonClient;
 use crate::abi::Abi;
 use crate::client::FetchMethod;
 
@@ -87,11 +87,12 @@ impl NetworkInterface {
         let mut header_map = HashMap::new();
         for h in headers {
             let mut iter = h.split(':');
-            let key = iter.next();
-            let value = iter.next();
-            if key.is_some() && value.is_some() {
-                header_map.insert(key.unwrap().trim().to_owned(), value.unwrap().trim().to_owned());
-            }
+            match (iter.next(), iter.next()) {
+                (Some(key), Some(value)) => {
+                    header_map.insert(key.trim().to_owned(), value.trim().to_owned())
+                }
+                _ => None,
+            };
         }
         let response = self
             .client

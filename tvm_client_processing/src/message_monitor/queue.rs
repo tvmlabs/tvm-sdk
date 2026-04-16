@@ -3,10 +3,10 @@ use std::mem;
 
 use serde_json::Value;
 
-use crate::message_monitor::MessageMonitoringResult;
 use crate::MessageMonitoringParams;
 use crate::MonitorFetchWaitMode;
 use crate::MonitoringQueueInfo;
+use crate::message_monitor::MessageMonitoringResult;
 
 #[derive(Clone)]
 pub(crate) struct BufferedMessage {

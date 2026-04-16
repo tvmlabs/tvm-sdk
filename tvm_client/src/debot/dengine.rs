@@ -3,17 +3,21 @@ use std::sync::Arc;
 
 use tvm_abi::Contract;
 
+use super::DEBOT_WC;
+use super::DInfo;
+use super::JsonValue;
+use super::TonClient;
 use super::action::AcType;
 use super::action::DAction;
 use super::browser::BrowserCallbacks;
 use super::calltype::ContractCall;
 use super::calltype::DebotCallType;
-use super::context::str_hex_to_utf8;
 use super::context::DContext;
 use super::context::STATE_CURRENT;
 use super::context::STATE_EXIT;
 use super::context::STATE_PREV;
 use super::context::STATE_ZERO;
+use super::context::str_hex_to_utf8;
 use super::debot_abi::DEBOT_ABI;
 use super::dinterface::BuiltinInterfaces;
 use super::dinterface::DebotInterfaceExecutor;
@@ -25,13 +29,8 @@ use super::json_interface::JsonInterface;
 use super::msg_interface::MsgInterface;
 use super::routines;
 use super::run_output::RunOutput;
-use super::DInfo;
-use super::JsonValue;
-use super::TonClient;
-use super::DEBOT_WC;
-use crate::abi::decode_message_body;
-use crate::abi::encode_message;
-use crate::abi::encode_message_body;
+use crate::ClientConfig;
+use crate::ClientContext;
 use crate::abi::Abi;
 use crate::abi::CallSet;
 use crate::abi::DeploySet;
@@ -40,24 +39,25 @@ use crate::abi::ParamsOfDecodeMessageBody;
 use crate::abi::ParamsOfEncodeMessage;
 use crate::abi::ParamsOfEncodeMessageBody;
 use crate::abi::Signer;
+use crate::abi::decode_message_body;
+use crate::abi::encode_message;
+use crate::abi::encode_message_body;
 use crate::boc::internal::deserialize_cell_from_base64;
-use crate::crypto::remove_signing_box;
 use crate::crypto::RegisteredSigningBox;
 use crate::crypto::SigningBoxHandle;
+use crate::crypto::remove_signing_box;
 use crate::encoding::decode_abi_number;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::query_collection;
 use crate::net::NetworkConfig;
 use crate::net::ParamsOfQueryCollection;
-use crate::processing::process_message;
+use crate::net::query_collection;
 use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ProcessingEvent;
-use crate::tvm::run_tvm;
+use crate::processing::process_message;
 use crate::tvm::ParamsOfRunTvm;
-use crate::ClientConfig;
-use crate::ClientContext;
+use crate::tvm::run_tvm;
 
 const EMPTY_CELL: &str = "te6ccgEBAQEAAgAAAA==";
 
@@ -694,10 +694,10 @@ impl DEngine {
         let msg_params = ParamsOfEncodeMessage {
             abi: abi.clone(),
             address: Some(addr.clone()),
-            call_set: if args.is_none() {
-                CallSet::some_with_function(func)
+            call_set: if let Some(args) = args {
+                CallSet::some_with_function_and_input(func, args)
             } else {
-                CallSet::some_with_function_and_input(func, args.unwrap())
+                CallSet::some_with_function(func)
             },
             ..Default::default()
         };
@@ -742,10 +742,10 @@ impl DEngine {
             abi: abi.clone(),
             address: Some(addr),
             deploy_set: state.and_then(|s| DeploySet::some_with_tvc(Some(s.to_string()))),
-            call_set: if args.is_none() {
-                CallSet::some_with_function(func)
+            call_set: if let Some(args) = args {
+                CallSet::some_with_function_and_input(func, args)
             } else {
-                CallSet::some_with_function_and_input(func, args.unwrap())
+                CallSet::some_with_function(func)
             },
             signer: match signer {
                 Some(signing_box) => Signer::SigningBox { handle: signing_box },

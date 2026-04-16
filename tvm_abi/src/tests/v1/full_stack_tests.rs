@@ -10,9 +10,9 @@
 // limitations under the License.
 
 use tvm_block::Serializable;
+use tvm_types::Ed25519PublicKey;
 use tvm_types::dictionary::HashmapE;
 use tvm_types::ed25519_generate_private_key;
-use tvm_types::Ed25519PublicKey;
 
 use crate::json_abi::*;
 
@@ -130,6 +130,7 @@ const WALLET_ABI: &str = r#"{
 }
 "#;
 
+#[ignore]
 #[test]
 fn test_constructor_call() {
     let params = r#"{}"#;

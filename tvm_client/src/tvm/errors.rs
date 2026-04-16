@@ -185,7 +185,9 @@ impl Error {
             if error_code == ExceptionCode::OutOfGas {
                 error.message.push_str(". Check account balance");
                 if gas_used.is_none() && exit_arg.is_some() {
-                    error.data["gas_used"] = exit_arg.unwrap();
+                    if let Some(exit_arg) = exit_arg {
+                        error.data["gas_used"] = exit_arg;
+                    }
                 }
             }
         } else if let Some(code) = StdContractError::from_usize(exit_code as usize) {
@@ -333,10 +335,7 @@ impl Error {
     }
 
     fn read_error_message(exit_arg: &Value) -> Option<String> {
-        let cell = match Self::extract_cell(exit_arg) {
-            Some(cell) => cell,
-            None => return None,
-        };
+        let cell = Self::extract_cell(exit_arg)?;
 
         String::from_utf8(Self::load_boc_data(&cell)).ok()
     }
@@ -355,11 +354,8 @@ impl Error {
         }
 
         let base64_value = match map.get("value") {
-            Some(value) => match value {
-                Value::String(base64_value) => base64_value,
-                _ => return None,
-            },
-            None => return None,
+            Some(Value::String(base64_value)) => base64_value,
+            _ => return None,
         };
 
         deserialize_cell_from_base64(base64_value, "contract_error").map(|(_bytes, cell)| cell).ok()

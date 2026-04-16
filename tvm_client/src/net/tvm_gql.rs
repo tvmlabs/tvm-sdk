@@ -10,15 +10,18 @@
 // limitations under the License.
 //
 
-use serde::de::Error;
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::de::Error;
 use serde_json::Value;
 
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::gql::GraphQLMessageFromClient;
 use crate::net::ParamsOfWaitForCollection;
+use crate::net::gql::GraphQLMessageFromClient;
 
 const COUNTERPARTIES_COLLECTION: &str = "counterparties";
 const FETCH_ADDITIONAL_TIMEOUT: u32 = 5000;
@@ -62,6 +65,22 @@ pub struct FieldAggregation {
 pub struct PostRequest {
     pub id: String,
     pub body: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[allow(non_snake_case)]
+pub struct ExtMessage {
+    pub id: String,
+    pub body: String,
+    pub expire_at: Option<f64>,
+    pub thread_id: Option<String>,
+    pub ext_message_token: Option<Value>,
+}
+
+impl ExtMessage {
+    pub fn set_thread_id(&mut self, thread_id: Option<String>) {
+        self.thread_id = thread_id;
+    }
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, Clone)]

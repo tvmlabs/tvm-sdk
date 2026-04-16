@@ -10,8 +10,8 @@
 // limitations under the License.
 //
 
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 
 use serde_json::Value;
 use tvm_block::Account;
@@ -32,6 +32,7 @@ use super::stack::serialize_item;
 use super::types::ExecutionOptions;
 use super::types::ResolvedExecutionOptions;
 use crate::abi::Abi;
+use crate::boc::BocCacheType;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::internal::deserialize_object_from_cell;
@@ -39,13 +40,12 @@ use crate::boc::internal::serialize_cell_to_boc;
 use crate::boc::internal::serialize_object_to_base64;
 use crate::boc::internal::serialize_object_to_boc;
 use crate::boc::internal::serialize_object_to_cell;
-use crate::boc::BocCacheType;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::processing::parsing::decode_output;
 use crate::processing::DecodedOutput;
-use crate::tvm::check_transaction::calc_transaction_fees;
+use crate::processing::parsing::decode_output;
 use crate::tvm::Error;
+use crate::tvm::check_transaction::calc_transaction_fees;
 
 #[derive(Serialize, Deserialize, ApiType, Debug, Clone)]
 #[serde(tag = "type")]
@@ -84,13 +84,7 @@ impl AccountForExecutor {
             }
             AccountForExecutor::Uninit => {
                 let last_paid = (context.env.now_ms() / 1000) as u32;
-                let account = Account::uninit(
-                    address,
-                    UInt256::new(),
-                    0,
-                    last_paid,
-                    UNLIMITED_BALANCE.into(),
-                );
+                let account = Account::uninit(address, 0, last_paid, UNLIMITED_BALANCE.into());
                 let account = serialize_object_to_cell(&account, "account")?;
                 Ok((account, None))
             }
@@ -418,7 +412,7 @@ where
         signature_id: options.signature_id,
         ..ExecuteParams::default()
     };
-    let transaction =
+    let (transaction, _) =
         match executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params) {
             Ok(transaction) => transaction,
             Err(err) => {

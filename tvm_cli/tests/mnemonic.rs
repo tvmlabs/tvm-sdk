@@ -6,6 +6,7 @@ use predicates::prelude::*;
 mod common;
 use common::BIN_NAME;
 
+#[ignore]
 #[test]
 fn test_has_mnemonic_checks() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;

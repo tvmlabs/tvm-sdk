@@ -16,14 +16,14 @@ use std::sync::atomic::Ordering;
 
 use serde::Serialize;
 
-use crate::error::ClientError;
-use crate::error::ClientResult;
 use crate::CResponseHandler;
 use crate::CResponseHandlerPtr;
 use crate::ResponseHandler;
 use crate::ResponseHandlerPtr;
 use crate::ResponseType;
 use crate::StringData;
+use crate::error::ClientError;
+use crate::error::ClientResult;
 
 enum ResponseHandlerImpl {
     Rust(u32, ResponseHandler),

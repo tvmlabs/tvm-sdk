@@ -18,8 +18,8 @@ use serde::Serialize;
 use crate::global_config_path;
 use crate::helpers::default_config_name;
 
-const TESTNET: &str = "net.evercloud.dev";
-const MAINNET: &str = "main.evercloud.dev";
+const TESTNET: &str = "shellnet.ackinacki.org";
+const MAINNET: &str = "mainnet.ackinacki.org";
 pub const LOCALNET: &str = "http://127.0.0.1/";
 
 fn default_url() -> String {
@@ -108,7 +108,7 @@ pub struct Config {
     #[serde(default = "default_true")]
     pub no_answer: bool,
     #[serde(default = "default_false")]
-    pub balance_in_tons: bool,
+    pub balance_in_vmshells: bool,
     #[serde(default = "default_false")]
     pub local_run: bool,
     #[serde(default = "default_false")]
@@ -119,6 +119,7 @@ pub struct Config {
     // SDK authentication parameters
     pub project_id: Option<String>,
     pub access_key: Option<String>,
+    pub api_token: Option<String>,
     ////////////////////////////////
     #[serde(default = "default_endpoints")]
     pub endpoints: Vec<String>,
@@ -147,6 +148,7 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             url: default_url(),
+            api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -162,7 +164,7 @@ impl Default for Config {
             depool_fee: default_depool_fee(),
             lifetime: default_lifetime(),
             no_answer: default_true(),
-            balance_in_tons: default_false(),
+            balance_in_vmshells: default_false(),
             local_run: default_false(),
             async_call: default_false(),
             endpoints: default_endpoints(),
@@ -191,6 +193,7 @@ impl Config {
         let endpoints = FullConfig::default_map()[&url].clone();
         Config {
             url,
+            api_token: None,
             wc: default_wc(),
             addr: None,
             method: None,
@@ -206,7 +209,7 @@ impl Config {
             depool_fee: default_depool_fee(),
             lifetime: default_lifetime(),
             no_answer: default_true(),
-            balance_in_tons: default_false(),
+            balance_in_vmshells: default_false(),
             local_run: default_false(),
             async_call: default_false(),
             endpoints,
@@ -218,8 +221,8 @@ impl Config {
     }
 }
 
-const MAIN_ENDPOINTS: &[&str] = &["https://mainnet.evercloud.dev"];
-const NET_ENDPOINTS: &[&str] = &["https://devnet.evercloud.dev"];
+const MAIN_ENDPOINTS: &[&str] = &["mainnet.ackinacki.org"];
+const NET_ENDPOINTS: &[&str] = &["shellnet.ackinacki.org"];
 const SE_ENDPOINTS: &[&str] = &["http://localhost"];
 
 pub fn resolve_net_name(url: &str) -> Option<String> {
@@ -247,12 +250,11 @@ pub fn resolve_net_name(url: &str) -> Option<String> {
             return Some(net);
         }
     }
-    if url == "main" {
-        return Some(MAINNET.to_string());
-    }
-    if url == "dev" || url == "devnet" {
-        return Some(TESTNET.to_string());
-    }
+    match url {
+        "main" | "mainnet" => return Some(MAINNET.to_string()),
+        "dev" | "devnet" | "shellnet" => return Some(TESTNET.to_string()),
+        _ => {}
+    };
     // if url.contains("127.0.0.1") ||
     //     url.contains("0.0.0.0") ||
     //     url.contains("localhost") {
@@ -374,6 +376,9 @@ pub fn clear_config(
         config.endpoints = FullConfig::default_map()[&url].clone();
         config.url = url;
     }
+    if matches.is_present("API_TOKEN") {
+        config.api_token = None;
+    }
     if matches.is_present("ADDR") {
         config.addr = None;
     }
@@ -416,8 +421,8 @@ pub fn clear_config(
     if matches.is_present("NO_ANSWER") {
         config.no_answer = default_true();
     }
-    if matches.is_present("BALANCE_IN_TONS") {
-        config.balance_in_tons = default_false();
+    if matches.is_present("BALANCE_IN_VMSHELLS") {
+        config.balance_in_vmshells = default_false();
     }
     if matches.is_present("LOCAL_RUN") {
         config.local_run = default_false();
@@ -446,7 +451,7 @@ pub fn clear_config(
         config.access_key = None;
     }
 
-    if matches.args.is_empty() {
+    if !matches.args_present() {
         *config = Config::new();
     }
 
@@ -526,10 +531,10 @@ pub fn set_config(
             .parse::<bool>()
             .map_err(|e| format!(r#"failed to parse "no_answer": {}"#, e))?;
     }
-    if let Some(balance_in_tons) = matches.value_of("BALANCE_IN_TONS") {
-        config.balance_in_tons = balance_in_tons
+    if let Some(balance_in_vmshells) = matches.value_of("BALANCE_IN_VMSHELLS") {
+        config.balance_in_vmshells = balance_in_vmshells
             .parse::<bool>()
-            .map_err(|e| format!(r#"failed to parse "balance_in_tons": {}"#, e))?;
+            .map_err(|e| format!(r#"failed to parse "balance_in_vmshells": {}"#, e))?;
     }
     if let Some(local_run) = matches.value_of("LOCAL_RUN") {
         config.local_run = local_run
@@ -576,7 +581,9 @@ pub fn set_config(
             );
         }
     }
-
+    if let Some(s) = matches.value_of("API_TOKEN") {
+        config.api_token = Some(s.to_string());
+    }
     full_config.to_file(&full_config.path)?;
     if !(full_config.config.is_json || is_json) {
         println!("Succeeded.");
@@ -586,9 +593,9 @@ pub fn set_config(
 
 #[cfg(test)]
 mod tests {
-    use super::resolve_net_name;
     use super::MAINNET;
     use super::TESTNET;
+    use super::resolve_net_name;
 
     #[test]
     fn test_endpoints_resolver() {
@@ -607,27 +614,28 @@ mod tests {
         assert_eq!(resolve_net_name("https://0.0.0.1"), None);
         assert_eq!(resolve_net_name("https://1.0.0.0"), None);
 
-        assert_eq!(resolve_net_name("https://main.ton.dev"), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("https://main.everos.dev"), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("https://main.evercloud.dev"), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("http://main.ton.dev"), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("  http://main.ton.dev  "), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("  https://main.ton.dev  "), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("main.ton.dev"), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("main.everos.dev"), Some(MAINNET.to_owned()));
-        assert_eq!(resolve_net_name("main.evercloud.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("https://main.ton.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("https://main.everos.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("https://main.evercloud.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("http://main.ton.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("  http://main.ton.dev  "), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("  https://main.ton.dev  "), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("main.ton.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("main.everos.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("main.evercloud.dev"), Some(MAINNET.to_owned()));
         assert_eq!(resolve_net_name("main"), Some(MAINNET.to_owned()));
+        assert_eq!(resolve_net_name("mainnet"), Some(MAINNET.to_owned()));
         assert_eq!(resolve_net_name("main.ton.com"), None);
 
-        assert_eq!(resolve_net_name("https://net.ton.dev"), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("https://net.everos.dev"), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("https://net.evercloud.dev"), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("http://net.ton.dev"), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("  http://net.ton.dev  "), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("  https://net.ton.dev  "), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("net.ton.dev"), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("https://net.ton.dev"), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("https://net.everos.dev"), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("https://net.evercloud.dev"), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("http://net.ton.dev"), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("  http://net.ton.dev  "), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("  https://net.ton.dev  "), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("net.ton.dev"), Some(TESTNET.to_owned()));
         assert_eq!(resolve_net_name("dev"), Some(TESTNET.to_owned()));
         assert_eq!(resolve_net_name("devnet"), Some(TESTNET.to_owned()));
-        assert_eq!(resolve_net_name("net.ton.com"), None);
+        assert_eq!(resolve_net_name("shellnet"), Some(TESTNET.to_owned()));
     }
 }

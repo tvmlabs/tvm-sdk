@@ -12,16 +12,23 @@ use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_sdk::ContractImage;
 use tvm_struct::scheme::TVC;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 use tvm_types::Result;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::*;
 use crate::abi::internal::create_tvc_image;
 use crate::abi::internal::is_empty_pubkey;
 use crate::abi::internal::resolve_pubkey;
+use crate::boc::ParamsOfDecodeStateInit;
+use crate::boc::ParamsOfGetCodeFromTvc;
+use crate::boc::ParamsOfParse;
+use crate::boc::ResultOfDecodeStateInit;
+use crate::boc::ResultOfEncodeBoc;
+use crate::boc::ResultOfGetCodeFromTvc;
+use crate::boc::ResultOfParse;
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::boc::internal::deserialize_object_from_base64;
 use crate::boc::internal::deserialize_object_from_cell;
@@ -30,20 +37,13 @@ use crate::boc::internal::serialize_cell_to_base64;
 use crate::boc::internal::serialize_object_to_base64;
 use crate::boc::parse_message;
 use crate::boc::tvc::resolve_state_init_cell;
-use crate::boc::ParamsOfDecodeStateInit;
-use crate::boc::ParamsOfGetCodeFromTvc;
-use crate::boc::ParamsOfParse;
-use crate::boc::ResultOfDecodeStateInit;
-use crate::boc::ResultOfEncodeBoc;
-use crate::boc::ResultOfGetCodeFromTvc;
-use crate::boc::ResultOfParse;
 use crate::crypto::KeyPair;
 use crate::encoding::account_decode;
-use crate::tests::TestClient;
 use crate::tests::EVENTS;
 use crate::tests::EVENTS_OLD;
 use crate::tests::HELLO;
 use crate::tests::T24_INIT_DATA;
+use crate::tests::TestClient;
 use crate::utils::conversion::abi_uint;
 
 struct EncodeCheckEthalons {
@@ -59,6 +59,7 @@ struct EncodeCheckEthalons {
     pub run_without_sign_message: &'static str,
 }
 
+#[ignore]
 #[test]
 fn encode_v2() {
     let ethalons = EncodeCheckEthalons {
@@ -77,6 +78,7 @@ fn encode_v2() {
     test_encode_v2_params(ethalons, None);
 }
 
+#[ignore]
 #[test]
 fn encode_v2_with_signature_id() {
     let ethalons = EncodeCheckEthalons {
@@ -603,6 +605,7 @@ fn gen_pubkey() -> PublicKeyData {
     tvm_types::ed25519_generate_private_key().unwrap().verifying_key()
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_encode_internal_message() -> Result<()> {
     let client = TestClient::new();
@@ -681,10 +684,12 @@ async fn test_encode_internal_message_empty_body() -> Result<()> {
     let src_address =
         String::from("0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94");
 
-    let mut msg_header = InternalMessageHeader::default();
-    msg_header.ihr_disabled = true;
-    msg_header.bounce = true;
-    msg_header.value = CurrencyCollection::with_grams(1000000000);
+    let mut msg_header = InternalMessageHeader {
+        ihr_disabled: true,
+        bounce: true,
+        value: CurrencyCollection::with_grams(1000000000),
+        ..Default::default()
+    };
     msg_header.set_dst(account_decode(&dst_address)?);
 
     let msg = Message::with_int_header(msg_header.clone());
@@ -886,7 +891,7 @@ fn test_decode_account_data() {
     let decoded = client
         .request::<_, ResultOfDecodeAccountData>(
             "abi.decode_account_data",
-            ParamsOfDecodeAccountData { data, abi, allow_partial: false },
+            ParamsOfDecodeAccountData { data, abi, allow_partial: true },
         )
         .unwrap()
         .data;

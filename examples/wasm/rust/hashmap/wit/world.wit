@@ -1,0 +1,10 @@
+package docs:adder@0.1.0;
+
+interface add-interface {
+    add: func(kwargs: list<u8>) -> list<u8>;
+    substract: func(kwargs: list<u8>) -> list<u8>;
+}
+
+world adder {
+    export add-interface;
+}

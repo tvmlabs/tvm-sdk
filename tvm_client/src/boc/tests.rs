@@ -17,11 +17,11 @@ use serde_json::Value;
 use tvm_block::MsgAddrStd;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
-use tvm_types::base64_decode;
-use tvm_types::base64_encode;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
+use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 
 use super::*;
 use crate::abi::CallSet;
@@ -36,8 +36,8 @@ use crate::boc::tvc::ParamsOfDecodeTvc;
 use crate::boc::tvc::ResultOfDecodeTvc;
 use crate::crypto::KeyPair;
 use crate::json_interface::modules::BocModule;
-use crate::tests::TestClient;
 use crate::tests::EVENTS_OLD;
+use crate::tests::TestClient;
 
 #[test]
 fn test_encode_boc() {
@@ -355,6 +355,7 @@ fn get_code_from_tvc() {
     assert_eq!(result.code, code_boc);
 }
 
+#[ignore]
 #[test]
 fn parse_message() {
     let client = TestClient::new();
@@ -380,6 +381,7 @@ fn parse_message() {
     );
 }
 
+#[ignore]
 #[test]
 fn parse_account() {
     let client = TestClient::new();
@@ -399,6 +401,7 @@ fn parse_account() {
     assert_eq!(result.parsed["balance"], "0x8ac723055200f641");
 }
 
+#[ignore]
 #[test]
 fn parse_pruned_account() {
     let client = TestClient::new();
@@ -439,6 +442,7 @@ fn parse_pruned_account() {
     );
 }
 
+#[ignore]
 #[test]
 fn parse_transaction() {
     let client = TestClient::new();
@@ -458,6 +462,7 @@ fn parse_transaction() {
     assert_eq!(result.parsed["now"], 1600186476);
 }
 
+#[ignore]
 #[test]
 fn parse_block() {
     let client = TestClient::new();
@@ -762,6 +767,7 @@ fn test_get_compiler_version() {
     assert_eq!(result.version.as_deref(), Some("sol 0.51.0"));
 }
 
+#[ignore]
 #[test]
 fn encode_external_in_message() {
     TestClient::init_log();

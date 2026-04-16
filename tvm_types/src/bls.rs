@@ -10,15 +10,18 @@
 // limitations under the License.
 
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
 
+#[cfg(not(target_arch = "wasm32"))]
 use blst::min_pk::*;
+#[cfg(not(target_arch = "wasm32"))]
 use blst::*;
 use rand::Rng;
 use rand::RngCore;
 
-use crate::fail;
 use crate::Result;
+use crate::fail;
 
 // Constants
 
@@ -34,6 +37,7 @@ pub const BLS_SEED_LEN: usize = 32;
 
 // Utilities
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn gen_bls_key_pair_based_on_key_material(
     ikm: &[u8; BLS_KEY_MATERIAL_LEN],
 ) -> Result<([u8; BLS_PUBLIC_KEY_LEN], [u8; BLS_SECRET_KEY_LEN])> {
@@ -41,11 +45,13 @@ pub fn gen_bls_key_pair_based_on_key_material(
     Ok(key_pair.serialize())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn gen_bls_key_pair() -> Result<([u8; BLS_PUBLIC_KEY_LEN], [u8; BLS_SECRET_KEY_LEN])> {
     let key_pair = BlsKeyPair::gen_bls_key_pair()?;
     Ok(key_pair.serialize())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn gen_public_key_based_on_secret_key(
     sk: &[u8; BLS_SECRET_KEY_LEN],
 ) -> Result<[u8; BLS_PUBLIC_KEY_LEN]> {
@@ -53,10 +59,12 @@ pub fn gen_public_key_based_on_secret_key(
     Ok(pk.pk_bytes)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn sign(sk_bytes: &[u8; BLS_SECRET_KEY_LEN], msg: &[u8]) -> Result<[u8; BLS_SIG_LEN]> {
     BlsSignature::simple_sign(sk_bytes, msg)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn verify(
     sig_bytes: &[u8; BLS_SIG_LEN],
     msg: &[u8],
@@ -65,6 +73,7 @@ pub fn verify(
     BlsSignature::simple_verify(sig_bytes, msg, pk_bytes)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn add_node_info_to_sig(
     sig_bytes: [u8; BLS_SIG_LEN],
     node_index: u16,
@@ -73,6 +82,7 @@ pub fn add_node_info_to_sig(
     BlsSignature::add_node_info_to_sig(sig_bytes, node_index, total_num_of_nodes)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn sign_and_add_node_info(
     sk_bytes: &[u8; BLS_SECRET_KEY_LEN],
     msg: &[u8],
@@ -82,14 +92,17 @@ pub fn sign_and_add_node_info(
     BlsSignature::sign(sk_bytes, msg, node_index, total_num_of_nodes)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn truncate_nodes_info_from_sig(sig_bytes_with_nodes_info: &[u8]) -> Result<[u8; BLS_SIG_LEN]> {
     BlsSignature::truncate_nodes_info_from_sig(sig_bytes_with_nodes_info)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn get_nodes_info_from_sig(sig_bytes_with_nodes_info: &[u8]) -> Result<Vec<u8>> {
     BlsSignature::get_nodes_info_from_sig(sig_bytes_with_nodes_info)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn truncate_nodes_info_and_verify(
     sig_bytes_with_nodes_info: &[u8],
     pk_bytes: &[u8; BLS_PUBLIC_KEY_LEN],
@@ -100,6 +113,7 @@ pub fn truncate_nodes_info_and_verify(
 
 // Aggregation
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn aggregate_public_keys(
     bls_pks_bytes: &[&[u8; BLS_PUBLIC_KEY_LEN]],
 ) -> Result<[u8; BLS_PUBLIC_KEY_LEN]> {
@@ -118,6 +132,7 @@ pub fn aggregate_public_keys(
     Ok(agg.to_public_key().to_bytes())
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn aggregate_public_keys_based_on_nodes_info(
     bls_pks_bytes: &[&[u8; BLS_PUBLIC_KEY_LEN]],
     nodes_info_bytes: &[u8],
@@ -143,6 +158,7 @@ pub fn aggregate_public_keys_based_on_nodes_info(
     Ok(result)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn aggregate_two_bls_signatures(
     sig_bytes_with_nodes_info_1: &[u8],
     sig_bytes_with_nodes_info_2: &[u8],
@@ -152,7 +168,7 @@ pub fn aggregate_two_bls_signatures(
     let new_nodes_info = NodesInfo::merge(&bls_sig_1.nodes_info, &bls_sig_2.nodes_info)?;
     let sig1 = convert_signature_bytes_to_signature(&bls_sig_1.sig_bytes)?;
     let sig2 = convert_signature_bytes_to_signature(&bls_sig_2.sig_bytes)?;
-    let sig_validate_res = sig1.validate(false); //set true to exclude infinite point, i.e. zero sig
+    let sig_validate_res = sig1.validate(false); // set true to exclude infinite point, i.e. zero sig
     if sig_validate_res.is_err() {
         fail!("Signature is not in group.");
     }
@@ -167,6 +183,7 @@ pub fn aggregate_two_bls_signatures(
     Ok(new_agg_sig_bytes)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn aggregate_bls_signatures(sig_bytes_with_nodes_info_vec: &[&[u8]]) -> Result<Vec<u8>> {
     if sig_bytes_with_nodes_info_vec.is_empty() {
         fail!("Vector of signatures can not be empty!");
@@ -209,6 +226,7 @@ pub fn aggregate_bls_signatures(sig_bytes_with_nodes_info_vec: &[&[u8]]) -> Resu
 
 // Converter
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn convert_secret_key_bytes_to_secret_key(
     sk_bytes: &[u8; BLS_SECRET_KEY_LEN],
 ) -> Result<SecretKey> {
@@ -219,6 +237,7 @@ pub fn convert_secret_key_bytes_to_secret_key(
     Ok(sk)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn convert_signature_bytes_to_signature(sig_bytes: &[u8; BLS_SIG_LEN]) -> Result<Signature> {
     let sig = match Signature::from_bytes(sig_bytes) {
         Ok(sig) => sig,
@@ -227,6 +246,7 @@ pub fn convert_signature_bytes_to_signature(sig_bytes: &[u8; BLS_SIG_LEN]) -> Re
     Ok(sig)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn convert_public_key_bytes_to_public_key(
     pk_bytes: &[u8; BLS_PUBLIC_KEY_LEN],
 ) -> Result<PublicKey> {
@@ -237,12 +257,14 @@ pub fn convert_public_key_bytes_to_public_key(
     Ok(pk)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn convert_signature_to_signature_bytes(sig: Signature) -> [u8; BLS_SIG_LEN] {
     sig.to_bytes()
 }
 
 // Keygen
 
+#[cfg(not(target_arch = "wasm32"))]
 pub struct KeyPair {
     pub sk: SecretKey,
     pub pk: PublicKey,
@@ -283,7 +305,10 @@ impl BlsKeyPair {
     pub fn serialize(&self) -> ([u8; BLS_PUBLIC_KEY_LEN], [u8; BLS_SECRET_KEY_LEN]) {
         (self.pk_bytes, self.sk_bytes)
     }
+}
 
+#[cfg(not(target_arch = "wasm32"))]
+impl BlsKeyPair {
     pub fn deserialize(
         key_pair_data: &([u8; BLS_PUBLIC_KEY_LEN], [u8; BLS_SECRET_KEY_LEN]),
     ) -> Result<Self> {
@@ -503,6 +528,7 @@ pub fn create_random_nodes_info(total_num_of_nodes: u16, attempts: u16) -> Nodes
 
 // Signing
 
+#[cfg(not(target_arch = "wasm32"))]
 pub const DST: [u8; 43] = *b"BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_";
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -533,32 +559,6 @@ impl BlsSignature {
         Ok(Self { sig_bytes, nodes_info })
     }
 
-    pub fn simple_sign(
-        sk_bytes: &[u8; BLS_SECRET_KEY_LEN],
-        msg: &[u8],
-    ) -> Result<[u8; BLS_SIG_LEN]> {
-        if msg.is_empty() {
-            fail!("Msg to sign can not be empty!")
-        }
-        let sk = convert_secret_key_bytes_to_secret_key(sk_bytes)?;
-        let sig = sk.sign(msg, &DST, &[]);
-        Ok(sig.to_bytes())
-    }
-
-    pub fn simple_verify(
-        sig_bytes: &[u8; BLS_SIG_LEN],
-        msg: &[u8],
-        pk_bytes: &[u8; BLS_PUBLIC_KEY_LEN],
-    ) -> Result<bool> {
-        if msg.is_empty() {
-            fail!("Msg to sign can not be empty!")
-        }
-        let sig = convert_signature_bytes_to_signature(sig_bytes)?;
-        let pk = convert_public_key_bytes_to_public_key(pk_bytes)?;
-        let res = sig.verify(true, msg, &DST, &[], &pk, true);
-        Ok(res == BLST_ERROR::BLST_SUCCESS)
-    }
-
     pub fn add_node_info_to_sig(
         sig_bytes: [u8; BLS_SIG_LEN],
         node_index: u16,
@@ -576,16 +576,6 @@ impl BlsSignature {
         Ok(sig_bytes)
     }
 
-    pub fn sign(
-        sk_bytes: &[u8; BLS_SECRET_KEY_LEN],
-        msg: &[u8],
-        node_index: u16,
-        total_num_of_nodes: u16,
-    ) -> Result<Vec<u8>> {
-        let sig = BlsSignature::simple_sign(sk_bytes, msg)?;
-        add_node_info_to_sig(sig, node_index, total_num_of_nodes)
-    }
-
     pub fn get_nodes_info_from_sig(sig_bytes_with_nodes_info: &[u8]) -> Result<Vec<u8>> {
         let bls_sig = BlsSignature::deserialize(sig_bytes_with_nodes_info)?;
         Ok(bls_sig.nodes_info.serialize())
@@ -596,16 +586,6 @@ impl BlsSignature {
     ) -> Result<[u8; BLS_SIG_LEN]> {
         let bls_sig = BlsSignature::deserialize(sig_bytes_with_nodes_info)?;
         Ok(bls_sig.sig_bytes)
-    }
-
-    pub fn verify(
-        sig_bytes_with_nodes_info: &[u8],
-        pk_bytes: &[u8; BLS_PUBLIC_KEY_LEN],
-        msg: &[u8],
-    ) -> Result<bool> {
-        let sig_bytes = BlsSignature::truncate_nodes_info_from_sig(sig_bytes_with_nodes_info)?;
-        let res = BlsSignature::simple_verify(&sig_bytes, msg, pk_bytes)?;
-        Ok(res)
     }
 
     pub fn print_signature_bytes(sig_bytes: &[u8]) {
@@ -632,5 +612,54 @@ impl BlsSignature {
         println!("{:?}", &self.sig_bytes);
         self.nodes_info.print();
         println!("--------------------------------------------------");
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl BlsSignature {
+    pub fn simple_sign(
+        sk_bytes: &[u8; BLS_SECRET_KEY_LEN],
+        msg: &[u8],
+    ) -> Result<[u8; BLS_SIG_LEN]> {
+        if msg.is_empty() {
+            fail!("Msg to sign can not be empty!")
+        }
+        let sk = convert_secret_key_bytes_to_secret_key(sk_bytes)?;
+        let sig = sk.sign(msg, &DST, &[]);
+        Ok(sig.to_bytes())
+    }
+
+    pub fn simple_verify(
+        sig_bytes: &[u8; BLS_SIG_LEN],
+        msg: &[u8],
+        pk_bytes: &[u8; BLS_PUBLIC_KEY_LEN],
+    ) -> Result<bool> {
+        if msg.is_empty() {
+            fail!("Msg to sign can not be empty!")
+        }
+        let sig = convert_signature_bytes_to_signature(sig_bytes)?;
+        let pk = convert_public_key_bytes_to_public_key(pk_bytes)?;
+        let res = sig.verify(true, msg, &DST, &[], &pk, true);
+        Ok(res == BLST_ERROR::BLST_SUCCESS)
+    }
+
+    pub fn sign(
+        sk_bytes: &[u8; BLS_SECRET_KEY_LEN],
+        msg: &[u8],
+        node_index: u16,
+        total_num_of_nodes: u16,
+    ) -> Result<Vec<u8>> {
+        let sig = BlsSignature::simple_sign(sk_bytes, msg)?;
+        add_node_info_to_sig(sig, node_index, total_num_of_nodes)
+    }
+
+    pub fn verify(
+        sig_bytes_with_nodes_info: &[u8],
+        pk_bytes: &[u8; BLS_PUBLIC_KEY_LEN],
+        msg: &[u8],
+    ) -> Result<bool> {
+        let sig_bytes = BlsSignature::truncate_nodes_info_from_sig(sig_bytes_with_nodes_info)?;
+        let res = BlsSignature::simple_verify(&sig_bytes, msg, pk_bytes)?;
+        Ok(res)
     }
 }

@@ -38,18 +38,18 @@ use proc_macro2::Spacing;
 use proc_macro2::Span;
 use proc_macro2::TokenStream as Tokens;
 use proc_macro2::TokenStream;
-use quote::quote;
 use quote::TokenStreamExt;
+use quote::quote;
 use serde_derive::Deserialize;
 
 pub mod parser {
     use std::cmp::Ordering;
 
+    use pom::Parser;
     use pom::char_class::alphanum;
     use pom::char_class::digit;
     use pom::char_class::hex_digit;
     use pom::parser::*;
-    use pom::Parser;
 
     #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
     pub enum Type {
@@ -325,7 +325,7 @@ pub mod parser {
                 string += " = ";
                 string += &output;
 
-                Some(crc::crc32::checksum_ieee(string.as_bytes()))
+                Some(crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC).checksum(string.as_bytes()))
             }
         }
     }
@@ -494,7 +494,13 @@ fn reformat(filename: &Path) {
     const INSTALL_INSTRUCTIONS: &str = "It's not an issue, the building will proceed. \
         If you wish to develop using tvm_api, you can install rustfmt by running command: \
         `rustup component add rustfmt`";
-    let status = match Command::new("rustfmt").arg("--edition").arg("2018").arg(filename).status() {
+    let status = match Command::new("rustfmt")
+        .arg("+nightly")
+        .arg("--edition")
+        .arg("2024")
+        .arg(filename)
+        .status()
+    {
         Ok(status) => status,
         Err(err) => {
             if !WARNING_PRINTED.swap(true, Ordering::Relaxed) {
@@ -1887,7 +1893,7 @@ type MethodsTree<'a> =
     BTreeMap<&'a str, BTreeMap<&'a TypeIR, BTreeSet<&'a Constructor<TypeIR, FieldIR>>>>;
 
 impl Constructors<TypeIR, FieldIR> {
-    fn coalesce_methods(&self) -> MethodsTree {
+    fn coalesce_methods(&self) -> MethodsTree<'_> {
         let mut map: MethodsTree = BTreeMap::new();
         for Matched(cons, _) in &self.0 {
             for field in &cons.fields {

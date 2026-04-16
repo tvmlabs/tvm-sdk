@@ -12,13 +12,13 @@
 use std::fmt;
 use std::ops::Range;
 
-use tvm_types::error;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
 
 use crate::executor::math::DivMode;
-use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
+use crate::stack::integer::IntegerData;
 
 macro_rules! param {
     ($self:ident, $id:ident) => {{

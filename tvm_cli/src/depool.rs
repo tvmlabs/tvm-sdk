@@ -10,11 +10,9 @@
 // limitations under the License.
 use std::collections::HashMap;
 
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::ParamsOfDecodeMessageBody;
@@ -29,6 +27,7 @@ use crate::config::Config;
 use crate::convert;
 use crate::depool_abi::DEPOOL_ABI;
 use crate::depool_abi::PARTICIPANT_ABI;
+use crate::helpers::TonClient;
 use crate::helpers::answer_filter;
 use crate::helpers::create_client;
 use crate::helpers::create_client_local;
@@ -38,108 +37,104 @@ use crate::helpers::load_abi;
 use crate::helpers::load_ton_address;
 use crate::helpers::now;
 use crate::helpers::print_message;
-use crate::helpers::TonClient;
 use crate::multisig::CallArgs;
 use crate::multisig::MultisigArgs;
 use crate::print_args;
 
-pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
-    let wallet_arg = Arg::with_name("MSIG")
+pub fn create_depool_command<'b>() -> Command<'b> {
+    let wallet_arg = Arg::new("MSIG")
         .takes_value(true)
         .long("--wallet")
-        .short("-w")
+        .short('w')
         .help("Multisig wallet address.");
-    let value_arg = Arg::with_name("VALUE")
-        .takes_value(true)
-        .long("--value")
-        .short("-v")
-        .help("Value in tons.");
-    let keys_arg = Arg::with_name("SIGN")
+    let value_arg =
+        Arg::new("VALUE").takes_value(true).long("--value").short('v').help("Value in tons.");
+    let keys_arg = Arg::new("SIGN")
         .takes_value(true)
         .long("--sign")
-        .short("-s")
+        .short('s')
         .help("Seed phrase or path to file with keypair which must be used to sign message to multisig wallet.");
-    let total_period_arg = Arg::with_name("TPERIOD")
+    let total_period_arg = Arg::new("TPERIOD")
         .takes_value(true)
         .long("--total")
-        .short("-t")
+        .short('t')
         .help("Total period of vesting stake (days).");
-    let withdrawal_period_arg = Arg::with_name("WPERIOD")
+    let withdrawal_period_arg = Arg::new("WPERIOD")
         .takes_value(true)
         .long("--withdrawal")
-        .short("-i")
+        .short('i')
         .help("Payment period of vesting stake (days).");
-    let beneficiary_arg = Arg::with_name("BENEFICIARY")
+    let beneficiary_arg = Arg::new("BENEFICIARY")
         .takes_value(true)
         .long("--beneficiary")
-        .short("-b")
+        .short('b')
         .help("Smart contract address which will own lock stake rewards.");
-    let donor_arg = Arg::with_name("DONOR")
+    let donor_arg = Arg::new("DONOR")
         .takes_value(true)
         .long("--donor")
-        .short("-d")
+        .short('d')
         .help("Donor smart contract address.");
-    let dest_arg = Arg::with_name("DEST")
+    let dest_arg = Arg::new("DEST")
         .takes_value(true)
         .long("--dest")
-        .short("-d")
+        .short('d')
         .help("Address of the destination smart contract.");
-    let wait_answer = Arg::with_name("WAIT_ANSWER")
+    let wait_answer = Arg::new("WAIT_ANSWER")
         .long("--wait-answer")
-        .short("-a")
+        .short('a')
         .help("Wait for depool answer when calling a depool function.");
     let v2_arg =
-        Arg::with_name("V2").long("--v2").help("Force to interpret wallet account as multisig v2.");
+        Arg::new("V2").long("--v2").help("Force to interpret wallet account as multisig v2.");
 
-    SubCommand::with_name("depool")
+    Command::new("depool")
         .about("DePool commands.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .arg(Arg::with_name("ADDRESS")
+        .allow_hyphen_values(true)
+        .dont_collapse_args_in_usage(true)
+        .arg(Arg::new("ADDRESS")
             .takes_value(true)
             .long("--addr")
             .help("DePool contract address. If omitted, then config.addr is used."))
         .arg(wait_answer.clone())
-        .subcommand(SubCommand::with_name("donor")
+        .subcommand(Command::new("donor")
             .about(r#"Top level command for specifying donor for exotic stakes in depool."#)
-            .subcommand(SubCommand::with_name("vesting")
+            .subcommand(Command::new("vesting")
                 .about("Set the address from which participant can receive a vesting stake.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(keys_arg.clone())
                 .arg(donor_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("lock")
+            .subcommand(Command::new("lock")
                 .about("Set the address from which participant can receive a lock stake.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(keys_arg.clone())
                 .arg(donor_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(v2_arg.clone())))
-        .subcommand(SubCommand::with_name("answers")
+        .subcommand(Command::new("answers")
             .about("Prints depool answers")
-            .setting(AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
             .arg(wallet_arg.clone())
-            .arg(Arg::with_name("SINCE")
+            .arg(Arg::new("SINCE")
                 .takes_value(true)
                 .long("--since")
-                .short("-s")
+                .short('s')
                 .help("Prints answers since this unixtime.")) )
-        .subcommand(SubCommand::with_name("stake")
+        .subcommand(Command::new("stake")
             .about(r#"Top level command for managing stakes in depool. Uses a supplied multisignature wallet to send internal message with stake to depool."#)
-            .subcommand(SubCommand::with_name("ordinary")
+            .subcommand(Command::new("ordinary")
                 .about("Deposits an ordinary stake in the depool from the multisignature wallet.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(value_arg.clone())
                 .arg(keys_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("vesting")
+            .subcommand(Command::new("vesting")
                 .about("Deposits a vesting stake in the depool from the multisignature wallet.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(value_arg.clone())
                 .arg(keys_arg.clone())
@@ -148,9 +143,9 @@ pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
                 .arg(withdrawal_period_arg.clone())
                 .arg(beneficiary_arg.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("lock")
+            .subcommand(Command::new("lock")
                 .about("Deposits a lock stake in the depool from the multisignature wallet.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(value_arg.clone())
                 .arg(keys_arg.clone())
@@ -159,70 +154,70 @@ pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
                 .arg(withdrawal_period_arg.clone())
                 .arg(beneficiary_arg.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("transfer")
+            .subcommand(Command::new("transfer")
                 .about("Transfers ownership of the wallet stake to another contract.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(value_arg.clone())
                 .arg(keys_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(dest_arg.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("remove")
+            .subcommand(Command::new("remove")
                 .about("Withdraws an ordinary stake from the current pooling round of the depool to the multisignature wallet.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(value_arg.clone())
                 .arg(keys_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("withdrawPart")
+            .subcommand(Command::new("withdrawPart")
                 .about("Withdraws part of the stake after round completion.")
-                .setting(AppSettings::AllowLeadingHyphen)
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(value_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(keys_arg.clone())
                 .arg(v2_arg.clone())))
-        .subcommand(SubCommand::with_name("replenish")
+        .subcommand(Command::new("replenish")
             .about("Transfers funds from the multisignature wallet to the depool contract (NOT A STAKE).")
-            .setting(AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
             .arg(wallet_arg.clone())
             .arg(value_arg.clone())
             .arg(keys_arg.clone())
             .arg(v2_arg.clone()))
-        .subcommand(SubCommand::with_name("ticktock")
+        .subcommand(Command::new("ticktock")
             .about("Calls depool 'ticktock()' function to update its state. 1 ton is attached to this call (change will be returned).")
-            .setting(AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
             .arg(wallet_arg.clone())
             .arg(keys_arg.clone())
             .arg(v2_arg.clone()))
-        .subcommand(SubCommand::with_name("withdraw")
+        .subcommand(Command::new("withdraw")
             .about("Allows to disable auto investment of the stake into the next round and withdraw all the stakes after round completion.")
-            .setting(AppSettings::AllowLeadingHyphen)
-            .subcommand(SubCommand::with_name("on")
-                .setting(AppSettings::AllowLeadingHyphen)
+            .allow_hyphen_values(true)
+            .subcommand(Command::new("on")
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(keys_arg.clone())
                 .arg(v2_arg.clone()))
-            .subcommand(SubCommand::with_name("off")
-                .setting(AppSettings::AllowLeadingHyphen)
+            .subcommand(Command::new("off")
+                .allow_hyphen_values(true)
                 .arg(wallet_arg.clone())
                 .arg(wait_answer.clone())
                 .arg(keys_arg.clone())
                 .arg(v2_arg.clone())))
-        .subcommand(SubCommand::with_name("events")
+        .subcommand(Command::new("events")
             .about("Prints depool events.")
-            .setting(AppSettings::AllowLeadingHyphen)
-            .arg(Arg::with_name("SINCE")
+            .allow_hyphen_values(true)
+            .arg(Arg::new("SINCE")
                 .takes_value(true)
                 .long("--since")
-                .short("-s")
+                .short('s')
                 .help("Prints events since this unixtime."))
-            .arg(Arg::with_name("WAITONE")
+            .arg(Arg::new("WAITONE")
                 .long("--wait-one")
-                .short("-w")
+                .short('w')
                 .help("Waits until new event will be emitted.")) )
 }
 
@@ -231,10 +226,10 @@ pub fn create_depool_command<'a, 'b>() -> App<'a, 'b> {
 /// Stores parameters for request from wallet to depool
 struct DepoolCmd<'a> {
     /// Reference to command line arguments
-    m: &'a ArgMatches<'a>,
+    m: &'a ArgMatches,
     /// Reference to depool address
     depool: &'a str,
-    /// Amount of nanoevers to send from wallet to depool
+    /// Amount of nanovmshells to send from wallet to depool
     value: u64,
     /// Payload for message from wallet to depool.
     /// Encodes one of depool API functions.
@@ -247,7 +242,7 @@ struct DepoolCmd<'a> {
 
 impl<'a> DepoolCmd<'a> {
     pub async fn stake_ordinary(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -258,7 +253,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_vesting(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
         with_lock: bool,
@@ -298,7 +293,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_remove(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -309,7 +304,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_withdraw_part(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -320,7 +315,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn stake_transfer(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -333,7 +328,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn donor(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
         for_vesting: bool,
@@ -345,7 +340,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn withdraw(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
         enable: bool,
@@ -356,7 +351,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn replenish(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -366,7 +361,7 @@ impl<'a> DepoolCmd<'a> {
     }
 
     pub async fn ticktock(
-        m: &'a ArgMatches<'_>,
+        m: &'a ArgMatches,
         config: &'a Config,
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
@@ -493,14 +488,14 @@ impl<'a> DepoolCmd<'a> {
     }
 }
 
-fn parse_value(m: &ArgMatches<'_>) -> Result<u64, String> {
+fn parse_value(m: &ArgMatches) -> Result<u64, String> {
     let amount = m.value_of("VALUE").ok_or("value is not defined.".to_string())?;
     let amount = u64::from_str_radix(&convert::convert_token(amount)?, 10)
         .map_err(|e| format!(r#"failed to parse stake value: {}"#, e))?;
     Ok(amount)
 }
 
-pub async fn depool_command(m: &ArgMatches<'_>, config: &mut Config) -> Result<(), String> {
+pub async fn depool_command(m: &ArgMatches, config: &mut Config) -> Result<(), String> {
     let depool = m.value_of("ADDRESS").map(|s| s.to_owned()).or(config.addr.clone()).ok_or(
         "depool address is not defined. Supply it in the config file or in command line."
             .to_string(),
@@ -572,7 +567,7 @@ pub async fn depool_command(m: &ArgMatches<'_>, config: &mut Config) -> Result<(
     Err("unknown depool command".to_owned())
 }
 
-async fn answer_command(m: &ArgMatches<'_>, config: &Config, depool: &str) -> Result<(), String> {
+async fn answer_command(m: &ArgMatches, config: &Config, depool: &str) -> Result<(), String> {
     let wallet = m
         .value_of("MSIG")
         .map(|s| s.to_string())
@@ -621,7 +616,7 @@ async fn print_answer(ton: TonClient, message: &serde_json::Value) -> Result<(),
 
 // Events command
 
-async fn events_command(m: &ArgMatches<'_>, config: &Config, depool: &str) -> Result<(), String> {
+async fn events_command(m: &ArgMatches, config: &Config, depool: &str) -> Result<(), String> {
     let since = m.value_of("SINCE");
     let wait_for = m.is_present("WAITONE");
     let depool = Some(depool);

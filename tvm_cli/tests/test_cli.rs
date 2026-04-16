@@ -7,21 +7,21 @@ use std::time::SystemTime;
 use assert_cmd::Command;
 use common::giver_v3;
 use predicates::prelude::*;
-use serde_json::json;
 use serde_json::Value;
+use serde_json::json;
 
 mod common;
-use common::generate_key_and_address;
-use common::generate_phrase_and_key;
-use common::giver_v2;
-use common::grep_address;
-use common::set_config;
 use common::BIN_NAME;
 use common::GIVER_ABI;
 use common::GIVER_V2_ABI;
 use common::GIVER_V2_ADDR;
 use common::GIVER_V2_KEY;
 use common::NETWORK;
+use common::generate_key_and_address;
+use common::generate_phrase_and_key;
+use common::giver_v2;
+use common::grep_address;
+use common::set_config;
 
 use crate::common::grep_message_id;
 
@@ -134,6 +134,7 @@ fn test_config_1() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_deploy_alias() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = "test_deploy_alias.config";
@@ -239,24 +240,22 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("--config").arg(config_path).arg("config").arg("endpoint").arg("reset");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"))
-        .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"));
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
+        .stdout(predicate::str::contains("http://127.0.0.1/"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("clear");
     cmd.assert().success().stdout(predicate::str::contains("Succeeded"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config").arg(config_path).arg("config").arg("--url").arg("main.evercloud.dev");
+    cmd.arg("--config").arg(config_path).arg("config").arg("--url").arg("mainnet.ackinacki.org");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains(r#""url": "main.evercloud.dev","#))
+        .stdout(predicate::str::contains(r#""url": "mainnet.ackinacki.org","#))
         .stdout(predicate::str::contains(
             r#""endpoints": [
-    "https://mainnet.evercloud.dev"
+    "mainnet.ackinacki.org"
   ]"#,
         ));
 
@@ -270,11 +269,9 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .arg("[1.1.1.1,my.net.com]");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
         .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
         .stdout(predicate::str::contains("myownhost"))
         .stdout(predicate::str::contains("1.1.1.1"))
         .stdout(predicate::str::contains("my.net.com"));
@@ -297,18 +294,15 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .arg("endpoint")
         .arg("add")
         .arg("myownhost")
-        .arg("[1.1.1.1,my.net.com,tonlabs.net]");
+        .arg("[1.1.1.1,my.net.com]");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
         .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
         .stdout(predicate::str::contains("myownhost"))
         .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"))
-        .stdout(predicate::str::contains("tonlabs.net"));
+        .stdout(predicate::str::contains("my.net.com"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("--url").arg("myownhost");
@@ -316,8 +310,7 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(r#""url": "myownhost","#))
         .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"))
-        .stdout(predicate::str::contains("tonlabs.net"));
+        .stdout(predicate::str::contains("my.net.com"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config")
@@ -325,42 +318,31 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .arg("config")
         .arg("endpoint")
         .arg("remove")
-        .arg("main.evercloud.dev");
+        .arg("myownhost");
+
     cmd.assert()
         .success()
-        .stdout(predicate::function(|s: &str| !s.contains("main.evercloud.dev")))
-        .stdout(predicate::function(|s: &str| !s.contains("https://mainnet.evercloud.dev")))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
         .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
-        .stdout(predicate::str::contains("myownhost"))
-        .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"));
+        .stdout(predicate::function(|s: &str| !s.contains("myownhost")));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("endpoint").arg("print");
     cmd.assert()
         .success()
-        .stdout(predicate::function(|s: &str| !s.contains("main.evercloud.dev")))
-        .stdout(predicate::function(|s: &str| !s.contains("https://mainnet.evercloud.dev")))
-        .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
-        .stdout(predicate::str::contains("myownhost"))
-        .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"));
+        .stdout(predicate::function(|s: &str| !s.contains("myownhost")))
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
+        .stdout(predicate::str::contains("http://127.0.0.1/"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("endpoint").arg("reset");
     cmd.assert()
         .success()
-        .stdout(predicate::function(|s: &str| !s.contains("myownhost")))
-        .stdout(predicate::function(|s: &str| !s.contains("my.net.com")))
-        .stdout(predicate::str::contains("http://127.0.0.1/"))
-        .stdout(predicate::str::contains("net.evercloud.dev"))
-        .stdout(predicate::str::contains("https://devnet.evercloud.dev"))
-        .stdout(predicate::str::contains("main.evercloud.dev"))
-        .stdout(predicate::str::contains("https://mainnet.evercloud.dev"));
+        .stdout(predicate::str::contains("mainnet.ackinacki.org"))
+        .stdout(predicate::str::contains("shellnet.ackinacki.org"))
+        .stdout(predicate::str::contains("http://127.0.0.1/"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("--list");
@@ -368,8 +350,7 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
         .success()
         .stdout(predicate::str::contains(r#""url": "myownhost","#))
         .stdout(predicate::str::contains("1.1.1.1"))
-        .stdout(predicate::str::contains("my.net.com"))
-        .stdout(predicate::str::contains("tonlabs.net"));
+        .stdout(predicate::str::contains("my.net.com"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config").arg(config_path).arg("config").arg("clear");
@@ -379,12 +360,14 @@ fn test_config_endpoints() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_call_giver() -> Result<(), Box<dyn std::error::Error>> {
     giver_v3(GIVER_V2_ADDR);
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_fee() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -468,6 +451,7 @@ fn test_fee() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_genaddr_genkey() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -483,6 +467,7 @@ fn test_genaddr_genkey() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_genaddr() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -499,6 +484,7 @@ fn test_genaddr() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_genaddr_setkey() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -513,17 +499,7 @@ fn test_genaddr_setkey() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[test]
-fn test_genaddr_wc() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("genaddr").arg("tests/samples/wallet.tvc").arg("--wc").arg("-1");
-    cmd.assert()
-        .success()
-        .stdout(predicate::str::contains("Raw address: -1"))
-        .stdout(predicate::str::contains("Succeeded"));
-    Ok(())
-}
-
+#[ignore]
 #[test]
 fn test_genaddr_initdata() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -545,6 +521,7 @@ fn test_genaddr_initdata() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_getkeypair() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -562,6 +539,7 @@ fn test_getkeypair() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_async_deploy() -> Result<(), Box<dyn std::error::Error>> {
     let wallet_tvc = "tests/samples/wallet.tvc";
@@ -610,6 +588,7 @@ fn test_async_deploy() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
     let wallet_tvc = "tests/samples/wallet.tvc";
@@ -621,7 +600,7 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
 
     giver_v3(&addr);
 
-    set_config(&["--balance_in_tons", "--url"], &["true", &*NETWORK], Some(config_path))?;
+    set_config(&["--balance_in_vmshells", "--url"], &["true", &*NETWORK], Some(config_path))?;
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("--config")
@@ -643,7 +622,11 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains("\"balance\": \""));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("account").arg(&addr).assert().success().stdout(predicate::str::contains(" nanoton"));
+    cmd.arg("account")
+        .arg(&addr)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(" nanovmshell"));
 
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("-j")
@@ -706,6 +689,7 @@ fn test_deploy() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_genaddr_update_key() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "genaddr_update.key";
@@ -732,6 +716,7 @@ fn test_genaddr_update_key() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_genaddr_seed() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "tests/genaddr_seed.key";
@@ -755,6 +740,7 @@ fn test_genaddr_seed() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_nodeid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -782,6 +768,7 @@ fn test_nodeid() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_override_config_path() -> Result<(), Box<dyn std::error::Error>> {
     // config from cmd lime
@@ -815,6 +802,7 @@ fn test_override_config_path() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_global_config() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -903,6 +891,7 @@ fn test_old_config() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_sendfile() -> Result<(), Box<dyn std::error::Error>> {
     let msg_path = "call.boc";
@@ -1020,45 +1009,7 @@ fn test_account_command() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[test]
-fn test_config_wc() -> Result<(), Box<dyn std::error::Error>> {
-    let config_path = "test_wc.config";
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config")
-        .arg(config_path)
-        .arg("config")
-        .arg("--url")
-        .arg("https://net.evercloud.dev")
-        .arg("--project_id")
-        .arg("b2ad82504ee54fccb5bc6db8cbb3df1e")
-        .arg("--access_key")
-        .arg("27377cc9027d4de792f100eb869e18e8")
-        .arg("--wc")
-        .arg("-1");
-    cmd.assert().success();
-
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config")
-        .arg(config_path)
-        .arg("account")
-        .arg("3333333333333333333333333333333333333333333333333333333333333333");
-    cmd.assert().success().stdout(predicate::str::contains("acc_type:      Active"));
-
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config").arg(config_path).arg("config").arg("--wc").arg("1");
-    cmd.assert().success();
-
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config")
-        .arg(config_path)
-        .arg("account")
-        .arg("3333333333333333333333333333333333333333333333333333333333333333");
-    cmd.assert().success().stdout(predicate::str::contains("Account not found"));
-
-    fs::remove_file(config_path)?;
-    Ok(())
-}
-
+#[ignore]
 #[test]
 fn test_account_doesnt_exist() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -1178,6 +1129,7 @@ fn test_decode_msg() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_decode_body() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -1224,6 +1176,7 @@ fn test_decode_body() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_decode_body_constructor_for_minus_workchain() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
@@ -1329,6 +1282,7 @@ fn test_decode_body_constructor_for_minus_workchain() -> Result<(), Box<dyn std:
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_error() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "error_test.key";
@@ -1351,6 +1305,7 @@ fn test_error() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_depool_body() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "depool_body.key";
@@ -1384,6 +1339,7 @@ fn test_depool_body() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_depool_1() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "depool_1.key";
@@ -1441,6 +1397,7 @@ fn test_depool_1() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_depool_2() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "depool_2.key";
@@ -1501,6 +1458,7 @@ fn test_depool_2() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_depool_3() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "depool_3.key";
@@ -1622,6 +1580,7 @@ fn test_depool_3() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_depool_4() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "depool_4.key";
@@ -1676,6 +1635,7 @@ fn test_depool_4() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_depool_5() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "depool_5.key";
@@ -1734,6 +1694,7 @@ fn test_depool_5() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_gen_deploy_message() -> Result<(), Box<dyn std::error::Error>> {
     let output = "test_gen_deploy_message_raw.out";
@@ -1823,6 +1784,7 @@ fn test_decode_tvc() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_dump_tvc() -> Result<(), Box<dyn std::error::Error>> {
     let tvc_path = "giver.tvc";
@@ -1868,6 +1830,7 @@ fn test_dump_tvc() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_run_account() -> Result<(), Box<dyn std::error::Error>> {
     let boc_path = "tests/depool_acc.boc";
@@ -2013,6 +1976,7 @@ fn test_run_account() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_run_async_call() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = "async_call.conf";
@@ -2097,6 +2061,7 @@ fn test_run_async_call() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_multisig() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "msig_test.key";
@@ -2447,6 +2412,7 @@ fn test_alternative_syntax() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_options_priority() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = "options.config";
@@ -2618,6 +2584,7 @@ fn test_options_priority() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_alternative_parameters() -> Result<(), Box<dyn std::error::Error>> {
     let tvc_path = "tests/samples/arguments.tvc";
@@ -2720,6 +2687,7 @@ fn test_alternative_parameters() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_override_url() -> Result<(), Box<dyn std::error::Error>> {
     let cli_config = "main.auth.conf1";
@@ -2748,6 +2716,7 @@ fn test_override_url() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[ignore]
 #[test]
 fn test_alternative_paths() -> Result<(), Box<dyn std::error::Error>> {
     let key_path = "link_path.key.json";

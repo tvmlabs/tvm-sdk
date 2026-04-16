@@ -3,13 +3,13 @@ use std::env;
 use std::sync::Arc;
 
 use serde_json::json;
-use tvm_client::net::query_collection;
+use tvm_client::ClientContext;
 use tvm_client::net::OrderBy;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::SortDirection;
-use tvm_client::proofs::proof_block_data;
+use tvm_client::net::query_collection;
 use tvm_client::proofs::ParamsOfProofBlockData;
-use tvm_client::ClientContext;
+use tvm_client::proofs::proof_block_data;
 use tvm_types::Result;
 use tvm_types::UInt256;
 

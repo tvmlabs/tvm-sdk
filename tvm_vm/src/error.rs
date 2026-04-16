@@ -10,10 +10,10 @@
 // limitations under the License.
 
 use thiserror::Error;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::ExceptionCode;
 use tvm_types::Result;
+use tvm_types::error;
+use tvm_types::fail;
 
 use crate::types::Exception;
 
@@ -31,6 +31,9 @@ pub enum TvmError {
     /// TVM Exception description
     #[error("VM Exception: {} {}", 0, 1)]
     TvmExceptionFull(Exception, String),
+    /// Termination deadline reached
+    #[error("Termination deadline reached")]
+    TerminationDeadlineReached,
 }
 
 pub fn tvm_exception(err: tvm_types::Error) -> Result<Exception> {

@@ -8,35 +8,35 @@ use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 use tvm_types::SliceData;
 
-use super::errors::Error;
-use super::helpers::build_internal_message;
 use super::BrowserCallbacks;
 use super::DebotActivity;
 use super::Spending;
 use super::TonClient;
+use super::errors::Error;
+use super::helpers::build_internal_message;
 use crate::abi::Signer;
+use crate::boc::ParamsOfGetBocHash;
+use crate::boc::ParamsOfParse;
 use crate::boc::get_boc_hash;
 use crate::boc::internal::deserialize_object_from_base64;
 use crate::boc::internal::serialize_object_to_base64;
 use crate::boc::parse_message;
-use crate::boc::ParamsOfGetBocHash;
-use crate::boc::ParamsOfParse;
 use crate::crypto::SigningBoxHandle;
 use crate::encoding::decode_abi_number;
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::query_transaction_tree;
 use crate::net::ParamsOfQueryTransactionTree;
-use crate::processing::send_message;
-use crate::processing::wait_for_transaction;
+use crate::net::query_transaction_tree;
 use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
-use crate::tvm::run_executor;
-use crate::tvm::run_tvm;
+use crate::processing::send_message;
+use crate::processing::wait_for_transaction;
 use crate::tvm::AccountForExecutor;
 use crate::tvm::ParamsOfRunExecutor;
 use crate::tvm::ParamsOfRunTvm;
+use crate::tvm::run_executor;
+use crate::tvm::run_tvm;
 
 const SUPPORTED_ABI_VERSION: u8 = 2;
 const ABI_2_3: u8 = 0x32;
@@ -372,9 +372,9 @@ impl ContractCall {
             }
         };
 
-        let result = send_message(
+        let _/* result */ = send_message(
             self.ton.clone(),
-            ParamsOfSendMessage { message: fixed_msg.clone(), abi: None, send_events: true },
+            ParamsOfSendMessage { message: fixed_msg.clone(), send_events: true, ..Default::default() },
             callback.clone(),
         )
         .await
@@ -390,9 +390,11 @@ impl ContractCall {
                 ParamsOfWaitForTransaction {
                     abi: None,
                     message: fixed_msg,
-                    shard_block_id: result.shard_block_id,
+                    shard_block_id: "".to_string(), // result.shard_block_id
                     send_events: true,
-                    sending_endpoints: Some(result.sending_endpoints),
+                    sending_endpoints: Some(
+                        vec!["".to_string()], // result.sending_endpoints
+                    ),
                 },
                 callback,
             )
@@ -477,11 +479,11 @@ fn build_onerror_body(onerror_id: u32, e: ClientError) -> ClientResult<SliceData
 }
 
 fn build_answer_msg(
-    out_msg: &String,
+    out_msg: &str,
     answer_id: u32,
     func_id: u32,
-    dest_addr: &String,
-    debot_addr: &String,
+    dest_addr: &str,
+    debot_addr: &str,
 ) -> Option<String> {
     let out_message: Message = deserialize_object_from_base64(out_msg, "message").ok()?.object;
     if out_message.is_internal() {
@@ -554,7 +556,12 @@ async fn emulate_transaction(
         result.transaction.pointer("/compute/exit_code").and_then(|val| val.as_i64()).unwrap_or(0);
 
     if exit_code != 0 {
-        let err = ClientError { code: 0, message: String::from(""), data: result.transaction };
+        let err = ClientError {
+            code: 0,
+            message: String::from(""),
+            data: result.transaction,
+            traceparent: None,
+        };
         return Err(err);
     }
 
