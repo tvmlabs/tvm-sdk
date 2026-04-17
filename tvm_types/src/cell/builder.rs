@@ -9,20 +9,21 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::collections::BTreeSet;
 use std::fmt;
 
 use smallvec::SmallVec;
 pub(super) type SmallData = SmallVec<[u8; 128]>;
 
-use crate::cell::append_tag;
-use crate::cell::find_tag;
 use crate::cell::Cell;
 use crate::cell::CellType;
 use crate::cell::DataCell;
 use crate::cell::LevelMask;
-use crate::cell::SliceData;
 use crate::cell::MAX_DATA_BITS;
 use crate::cell::MAX_SAFE_DEPTH;
+use crate::cell::SliceData;
+use crate::cell::append_tag;
+use crate::cell::find_tag;
 use crate::error;
 use crate::fail;
 use crate::types::ExceptionCode;
@@ -36,6 +37,7 @@ pub struct BuilderData {
     length_in_bits: usize,
     pub(super) references: SmallVec<[Cell; 4]>,
     pub(super) cell_type: CellType,
+    account_cell_hashes: Option<BTreeSet<Cell>>,
 }
 
 impl BuilderData {
@@ -49,6 +51,7 @@ impl BuilderData {
             length_in_bits: 0,
             references: SmallVec::new_const(),
             cell_type: CellType::Ordinary,
+            account_cell_hashes: None,
         }
     }
 
@@ -74,6 +77,8 @@ impl BuilderData {
             length_in_bits,
             references: SmallVec::new(),
             cell_type: CellType::Ordinary,
+            account_cell_hashes: None,
+            // store here every cell hash, passing it into the builder as a mutable ref
         })
     }
 
@@ -131,15 +136,18 @@ impl BuilderData {
             CellType::LibraryReference => LevelMask::with_level(0),
             CellType::MerkleProof | CellType::MerkleUpdate => children_level_mask.virtualize(1),
             CellType::Big => fail!("Big cell creation by builder is prohibited"),
+            CellType::External => fail!("External cell creation by builder is prohibited"),
         };
         append_tag(&mut self.data, self.length_in_bits);
 
-        Ok(Cell::with_cell_impl(DataCell::with_params(
-            self.references.to_vec(),
+        Ok(Cell::with_data(DataCell::with_params(
+            self.references,
             &self.data,
             self.cell_type,
             level_mask.mask(),
             Some(max_depth),
+            None,
+            None,
             None,
             None,
         )?))

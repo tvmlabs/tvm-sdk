@@ -9,19 +9,19 @@ use crate::boc::internal::deserialize_object_from_base64;
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
-use crate::net::wait_for_collection;
-use crate::net::ParamsOfWaitForCollection;
 use crate::net::MAX_TIMEOUT;
+use crate::net::ParamsOfWaitForCollection;
 use crate::net::TRANSACTIONS_COLLECTION;
+use crate::net::wait_for_collection;
+use crate::processing::Error;
+use crate::processing::ParamsOfWaitForTransaction;
+use crate::processing::ProcessingEvent;
+use crate::processing::ResultOfProcessMessage;
 use crate::processing::blocks_walking::wait_next_block;
 use crate::processing::internal::can_retry_network_error;
 use crate::processing::internal::resolve_error;
 use crate::processing::parsing::decode_output;
 use crate::processing::parsing::parse_transaction_boc;
-use crate::processing::Error;
-use crate::processing::ParamsOfWaitForTransaction;
-use crate::processing::ProcessingEvent;
-use crate::processing::ResultOfProcessMessage;
 use crate::tvm::check_transaction::calc_transaction_fees;
 use crate::tvm::check_transaction::extract_error;
 
@@ -55,7 +55,7 @@ pub async fn fetch_next_shard_block<F: futures::Future<Output = ()> + Send>(
             Err(err) => {
                 let is_retryable_error = crate::client::Error::is_network_error(&err)
                     || err.code == crate::net::ErrorCode::WaitForTimeout as u32;
-                let error = Error::fetch_block_failed(err, message_id, &block_id.to_string());
+                let error = Error::fetch_block_failed(err, message_id, block_id);
 
                 // Notify app about error
                 if params.send_events {
@@ -182,6 +182,7 @@ async fn fetch_contract_balance(
     Ok(balance.balance)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn fetch_transaction_result(
     context: &Arc<ClientContext>,
     shard_block_id: &str,

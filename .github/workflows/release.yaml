@@ -1,0 +1,218 @@
+name: Release tvm-cli
+
+on:
+  push:
+    # NOTE: if tag has -rc or -rc<digit> in it, it will be considered a release candidate
+    # and will trigger prerelease true
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+.an'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+.an'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suffix: macos-arm64
+            target: aarch64-apple-darwin
+            os: macos-15
+            zigbuild: false
+
+          # - suffix: macos-amd64
+          #   target: x86_64-apple-darwin
+          #   os: macos-13
+          #   zigbuild: false
+
+          - suffix: linux-musl-arm64
+            target: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+            zigbuild: true
+
+          - suffix: linux-musl-amd64
+            target: x86_64-unknown-linux-musl
+            os: ubuntu-24.04
+            zigbuild: true
+
+          - suffix: arm64
+            target: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            zigbuild: false
+
+          - suffix: x86_64
+            target: x86_64-unknown-linux-gnu
+            os: ubuntu-24.04
+            zigbuild: false
+
+    name: Build ${{ matrix.target }}
+
+    env:
+      CARGO_TERM_COLOR: always
+      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      CMAKE_C_COMPILER_LAUNCHER: sccache
+      CMAKE_CXX_COMPILER_LAUNCHER: sccache
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set VERSION
+        id: version
+        run: |
+          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Setup cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: builder-${{ runner.os }}-cargo
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux tools
+        if: startsWith(matrix.os, 'ubuntu-')
+        env:
+          packages: >-
+            build-essential
+            cmake
+            curl
+            jq
+            clang
+            librocksdb-dev
+            protobuf-compiler
+            python3-pip
+        run: |
+          sudo apt update -yq
+          sudo apt install -yq $packages
+          pip3 install ziglang
+          [[ -f ~/.cargo/bin/cargo-zigbuild ]] || cargo install cargo-zigbuild
+
+      - name: Install MacOS tools
+        if: startsWith(matrix.os, 'macos-')
+        run: |
+          brew install protobuf jq
+
+      - name: Build Binary
+        env:
+          CARGO_INCREMENTAL: 0
+          CARGO_NET_RETRY: 10
+          RUST_BACKTRACE: full
+          RUSTUP_MAX_RETRIES: 10
+        run: |
+          cargo update
+
+          for binary in tvm-cli tvm-debugger; do
+            if [[ "${{ matrix.zigbuild }}" == "true" ]]; then
+              cargo zigbuild -r --target ${{ matrix.target }} --bin "$binary"
+            else
+              cargo build -r --target ${{ matrix.target }} --bin "$binary"
+            fi
+          done
+          ls -lA target/${{ matrix.target }}/release
+
+      - name: List all binaries
+        run: |
+          mkdir artifacts-${{ matrix.suffix }}
+
+          for binary in tvm-cli tvm-debugger; do
+            mv target/${{ matrix.target }}/release/$binary artifacts-${{ matrix.suffix }}/$binary
+          done
+          ls -lA artifacts-${{ matrix.suffix }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: artifacts-${{ matrix.suffix }}/*
+          name: artifacts-${{ matrix.suffix }}
+          if-no-files-found: error
+          retention-days: 3
+
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+
+  release:
+    needs:
+      - build
+    runs-on: ubuntu-latest
+
+    env:
+      SUFFIXES: macos-arm64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Make archives
+        run: |
+          set -e
+          version=$(echo "${{ github.ref_name }}" | sed 's/^v//')
+          for suffix in $SUFFIXES; do
+            chmod +x artifacts-"$suffix"/*
+            cd artifacts-"$suffix"
+            for file in *; do
+              tar -czvf "$file"-"$version"-"$suffix".tar.gz $file
+            done
+            cd ..
+            ls -lA artifacts-"$suffix"
+          done
+
+      - name: Set prerelease flag
+        id: prerelease
+        run: |
+          if [[ "${{ github.ref_name }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.an$ ]]; then
+            echo "PRERELEASE=false" >> $GITHUB_OUTPUT
+          else
+            echo "PRERELEASE=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: ${{ steps.prerelease.outputs.TITLE }}
+          PRERELEASE: ${{ steps.prerelease.outputs.PRERELEASE }}
+        run: |
+          TITLE="Version: ${{ github.ref_name }}"
+          EXISTS=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }} --silent && echo "true" || echo "false")
+
+          if [[ "$EXISTS" = "false" ]]; then
+            if [[ "$PRERELEASE" = "false" ]]; then
+              gh release create "${{ github.ref_name }}" --title "$TITLE"
+            else
+              gh release create "${{ github.ref_name }}" --title "$TITLE" --prerelease
+            fi
+          fi
+
+      - name: Upload to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            artifacts-*/**.tar.gz \
+            --clobber

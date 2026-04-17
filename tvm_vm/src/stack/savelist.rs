@@ -11,7 +11,6 @@
 
 use std::fmt;
 
-use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::ExceptionCode;
 use tvm_types::HashmapE;
@@ -19,6 +18,7 @@ use tvm_types::HashmapType;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
 
 use crate::error::TvmError;
 use crate::executor::gas::gas_state::Gas;

@@ -2,9 +2,9 @@ use serde_json::Map;
 use serde_json::Value;
 use tvm_types::Result;
 
+use crate::EntryConfig;
 use crate::block_parser::BlockParsingError;
 use crate::block_parser::JsonReducer;
-use crate::EntryConfig;
 
 #[derive(Clone)]
 pub struct ParsedEntry {

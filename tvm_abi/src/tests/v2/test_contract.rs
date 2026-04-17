@@ -11,13 +11,13 @@
 
 use std::collections::HashMap;
 
-use crate::contract::ABI_VERSION_2_4;
 use crate::Contract;
 use crate::DataItem;
 use crate::Event;
 use crate::Function;
 use crate::Param;
 use crate::ParamType;
+use crate::contract::ABI_VERSION_2_4;
 
 const TEST_ABI: &str = r#"
 {

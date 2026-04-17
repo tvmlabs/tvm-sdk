@@ -6,11 +6,13 @@ use serde_json::Value;
 use crate::client::binding_config;
 use crate::client::core_version;
 use crate::net;
+use crate::net::construct_rest_api_endpoint;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Default, ApiType)]
 pub struct ClientError {
     pub code: u32,
     pub message: String,
+    pub traceparent: Option<String>,
     pub data: Value,
 }
 
@@ -86,7 +88,13 @@ impl AddNetworkUrl for ClientError {
 
 impl Display for ClientError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if f.alternate() { write!(f, "{:#}", json!(self)) } else { write!(f, "{}", self.message) }
+        if f.alternate() {
+            write!(f, "{:#}", json!(self))
+        } else if let Some(traceparent) = &self.traceparent {
+            write!(f, "{}; traceparent: {}", self.message, traceparent)
+        } else {
+            write!(f, "{}", self.message)
+        }
     }
 }
 
@@ -110,7 +118,7 @@ impl ClientError {
             data["binding_library"] = Value::String(binding.library);
             data["binding_version"] = Value::String(binding.version);
         }
-        Self { code, message, data }
+        Self { code, message, data, traceparent: None }
     }
 
     pub fn with_code_message(code: u32, message: String) -> Self {
@@ -120,6 +128,7 @@ impl ClientError {
             data: json!({
                 "core_version": core_version(),
             }),
+            traceparent: None,
         }
     }
 
@@ -139,8 +148,113 @@ impl ClientError {
     pub fn is_unauthorized(&self) -> bool {
         self.code == net::ErrorCode::Unauthorized as u32
     }
+
+    pub fn get_redirection_data(&self, use_https: bool) -> (Option<String>, Option<String>) {
+        let details = self
+            .data
+            .get("node_error")
+            .and_then(|ne| ne.get("extensions"))
+            .and_then(|e| e.get("details"));
+
+        let redirect_url = details
+            .and_then(|d| d.get("producers"))
+            .and_then(Value::as_array)
+            .and_then(|arr| arr.first())
+            .and_then(Value::as_str)
+            .and_then(|url_str| construct_rest_api_endpoint(url_str, use_https).ok())
+            .map(|url| url.to_string());
+
+        let thread_id =
+            details.and_then(|d| d.get("thread_id")).and_then(Value::as_str).map(|s| s.to_string());
+
+        (thread_id, redirect_url)
+    }
+
+    pub fn add_trace(mut self, traceparent: String) -> ClientError {
+        self.traceparent = Some(traceparent);
+        self
+    }
 }
 
 pub(crate) fn format_time(time: u32) -> String {
     format!("{} ({})", chrono::Local.timestamp_opt(time as i64, 0).unwrap().to_rfc2822(), time)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_error(endpoints: Vec<&str>, thread_id: &str) -> ClientError {
+        ClientError {
+            code: 1,
+            message: "Test".to_string(),
+            data: json!({
+                "node_error": {
+                    "extensions": {
+                        "details": {
+                            "producers": endpoints,
+                            "thread_id": thread_id
+                        }
+                    }
+                }
+            }),
+            traceparent: None,
+        }
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_valid_url() {
+        let error = mock_error(vec!["https://example.com"], "thread-123");
+        let (tid, url) = error.get_redirection_data(true);
+        assert_eq!(tid, Some("thread-123".to_string()));
+        assert_eq!(url, Some("https://example.com/v2/".to_string()));
+    }
+    #[test]
+    fn test_get_redirection_data_with_valid_urls() {
+        let error = mock_error(
+            vec!["https://cool.com:1111", "https://google.com", "https://example.com"],
+            "thread-123",
+        );
+        let (tid, url) = error.get_redirection_data(true);
+        assert_eq!(tid, Some("thread-123".to_string()));
+        assert_eq!(url, Some("https://cool.com/v2/".to_string()));
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_missing_details() {
+        let error = ClientError {
+            code: 1,
+            message: "Test".to_string(),
+            data: json!({
+                "node_error": {
+                    "extensions": {}
+                }
+            }),
+            traceparent: None,
+        };
+        let (tid, url) = error.get_redirection_data(true);
+        assert_eq!(tid, None);
+        assert_eq!(url, None);
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_invalid_producer_url() {
+        let error = mock_error(vec!["wrong_scheme://df"], "tid");
+        let (tid, url) = error.get_redirection_data(true);
+        assert_eq!(tid, Some("tid".to_string()));
+        assert_eq!(url, None);
+    }
+
+    #[test]
+    fn test_get_redirection_data_with_no_node_error() {
+        let error = ClientError {
+            code: 1,
+            message: "Test".to_string(),
+            data: json!({}),
+            traceparent: None,
+        };
+        let (tid, url) = error.get_redirection_data(true);
+        assert_eq!(tid, None);
+        assert_eq!(url, None);
+    }
 }

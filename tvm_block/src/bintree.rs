@@ -10,22 +10,18 @@
 
 use std::marker::PhantomData;
 
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
+use tvm_types::error;
+use tvm_types::fail;
 
-use crate::error::BlockError;
-use crate::hashmapaug::Augmentable;
 use crate::Deserializable;
 use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_bintree.rs"]
-mod tests;
+use crate::error::BlockError;
+use crate::hashmapaug::Augmentable;
 
 pub trait BinTreeType<X: Default + Serializable + Deserializable> {
     fn get_data(&self) -> SliceData;
@@ -274,7 +270,7 @@ where
 /// bt_fork$1 {X:Type} left:^(BinTree X) right:^(BinTree X) = BinTree X;
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct BinTree<X: Default + Serializable + Deserializable> {
-    data: SliceData,
+    pub data: SliceData,
     phantom: PhantomData<X>,
 }
 

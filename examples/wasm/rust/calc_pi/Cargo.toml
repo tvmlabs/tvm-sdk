@@ -1,0 +1,21 @@
+[package]
+name = "calc_pi"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wit-bindgen-rt = { version = "0.41.0", features = ["bitflags"] }
+#fraction = "0.2.2"
+num-bigint = "0.2.2"
+num-traits = "0.2.8"
+num-integer = "0.1.46"
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.component]
+package = "docs:calc-pi"
+
+[package.metadata.component.dependencies]
+
+[workspace]

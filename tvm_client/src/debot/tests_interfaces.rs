@@ -12,20 +12,20 @@ use std::sync::Arc;
 
 use serde_json::Value;
 
+use crate::ClientContext;
 use crate::client::ParamsOfAppRequest;
-use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::crypto::EncryptionBoxHandle;
 use crate::crypto::EncryptionBoxInfo;
 use crate::crypto::KeyPair;
 use crate::crypto::RegisteredEncryptionBox;
 use crate::crypto::RegisteredSigningBox;
 use crate::crypto::SigningBoxHandle;
+use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::encoding::decode_abi_number;
 use crate::error::ClientResult;
 use crate::json_interface::crypto::*;
 use crate::json_interface::interop::ResponseType;
 use crate::tests::TestClient;
-use crate::ClientContext;
 // use super::*;
 
 pub const SUPPORTED_INTERFACES: &[&str] = &[
@@ -214,8 +214,7 @@ impl EncryptionBoxInput {
     pub async fn call(&self, func: &str, args: &Value) -> (u32, Value) {
         match func {
             "getNaclBox" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 let nonce = args["nonce"].as_str().unwrap().to_owned();
                 let their_key = args["theirPubkey"].as_str().unwrap().to_owned();
                 let client_copy = Arc::clone(&self.client);
@@ -256,13 +255,11 @@ impl EncryptionBoxInput {
                 (answer_id, json!({ "handle": box_handle.clone() }))
             }
             "getSupportedInterfaces" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 (answer_id, json!({ "names": vec![hex::encode("NaclBox")] }))
             }
             "remove" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 (answer_id, json!({ "removed": true }))
             }
             _ => panic!("interface function not found"),
@@ -339,8 +336,7 @@ impl SingingBoxInput {
     pub fn call(&self, func: &str, args: &Value) -> (u32, Value) {
         match func {
             "get" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 (answer_id, json!({ "handle": self.box_handle.clone() }))
             }
             _ => panic!("interface function not found"),
@@ -357,8 +353,7 @@ impl Echo {
     pub fn call(&self, func: &str, args: &Value) -> (u32, Value) {
         match func {
             "echo" => {
-                let answer_id =
-                    u32::from_str_radix(args["answerId"].as_str().unwrap(), 10).unwrap();
+                let answer_id = args["answerId"].as_str().unwrap().parse::<u32>().unwrap();
                 let request_vec = hex::decode(args["request"].as_str().unwrap()).unwrap();
                 let request = std::str::from_utf8(&request_vec).unwrap();
                 (answer_id, json!({ "response": hex::encode(request.as_bytes()) }))

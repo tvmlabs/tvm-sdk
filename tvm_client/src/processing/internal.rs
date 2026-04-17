@@ -4,8 +4,8 @@ use tvm_block::MsgAddressInt;
 use tvm_sdk::Block;
 use tvm_sdk::MessageId;
 
-use super::fetching::fetch_account;
 use super::ErrorCode;
+use super::fetching::fetch_account;
 use crate::abi::Abi;
 use crate::abi::ParamsOfDecodeMessage;
 use crate::client::ClientContext;
@@ -34,7 +34,7 @@ pub(crate) fn can_retry_expired_message(context: &Arc<ClientContext>, retries: u
 pub fn find_transactions(
     block: &Block,
     message_id: &str,
-    shard_block_id: &String,
+    shard_block_id: &str,
 ) -> ClientResult<Vec<String>> {
     let mut ids = Vec::new();
     let msg_id: MessageId = message_id.into();

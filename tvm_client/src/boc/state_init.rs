@@ -17,13 +17,13 @@ use tvm_types::BuilderData;
 use tvm_types::Cell;
 
 use super::BocCacheType;
+use crate::boc::Error;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::internal::deserialize_object_from_boc;
 use crate::boc::internal::deserialize_object_from_cell;
 use crate::boc::internal::serialize_cell_to_boc;
 use crate::boc::internal::serialize_object_to_boc;
 use crate::boc::tvc::resolve_state_init_cell;
-use crate::boc::Error;
 use crate::client::ClientContext;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientResult;
@@ -207,6 +207,19 @@ pub struct ParamsOfSetCodeSalt {
 pub struct ResultOfSetCodeSalt {
     /// Contract code with salt set. BOC encoded as base64 or BOC handle
     pub code: String,
+}
+
+/// Sets new salt to contract code. Returns the new contract code with salt.
+pub fn set_code_salt_cell(code: Cell, salt: Cell) -> ClientResult<Cell> {
+    match code.data() {
+        OLD_CPP_SELECTOR_DATA => set_old_selector_salt(code, salt),
+        NEW_SELECTOR_DATA => set_new_selector_salt(code, salt),
+        MYCODE_SELECTOR_DATA => set_mycode_selector_salt(code, salt),
+        OLD_SOL_SELECTOR_DATA => {
+            Err(Error::invalid_boc("the contract doesn't support salt adding"))
+        }
+        _ => Err(Error::invalid_boc("unknown contract type")),
+    }
 }
 
 /// Sets new salt to contract code. Returns the new contract code with salt.

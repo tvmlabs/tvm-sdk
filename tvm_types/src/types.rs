@@ -16,7 +16,7 @@ use std::fmt::UpperHex;
 use std::str;
 use std::str::FromStr;
 
-pub type Error = failure::Error;
+pub type Error = anyhow::Error;
 pub type Result<T> = std::result::Result<T, Error>;
 use num::FromPrimitive;
 use smallvec::SmallVec;
@@ -32,30 +32,26 @@ pub type Status = Result<()>;
 #[macro_export]
 macro_rules! error {
     ($error:literal) => {
-        failure::err_msg(format!("{} {}:{}", $error, file!(), line!()))
+        $crate::anyhow::anyhow!("{} {}:{}", $error, file!(), line!())
     };
     ($error:expr) => {
-        failure::Error::from($error)
+        <$crate::anyhow::Error>::from($error)
     };
     ($fmt:expr, $($arg:tt)+) => {
-        failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
+        $crate::anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())
     };
 }
 
 #[macro_export]
 macro_rules! fail {
     ($error:literal) => {
-        return Err(failure::err_msg(format!("{} {}:{}", $error, file!(), line!())))
+        return Err($crate::anyhow::anyhow!("{} {}:{}", $error, file!(), line!()))
     };
-    // uncomment to explicit panic for any ExceptionCode
-    // (ExceptionCode::CellUnderflow) => {
-    //     panic!("{}", error!(ExceptionCode::CellUnderflow))
-    // };
     ($error:expr) => {
         return Err(error!($error))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err(failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())))
+        return Err($crate::anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
     };
 }
 
@@ -216,6 +212,16 @@ impl From<Vec<u8>> for UInt256 {
     }
 }
 
+impl TryFrom<SliceData> for UInt256 {
+    type Error = Error;
+
+    fn try_from(mut value: SliceData) -> Result<Self> {
+        let mut result = Self::default();
+        value.get_next_bytes_to_slice(result.0.as_mut())?;
+        Ok(result)
+    }
+}
+
 impl FromStr for UInt256 {
     type Err = Error;
 
@@ -332,7 +338,7 @@ pub enum ExceptionCode {
     CellOverflow = 8,
     #[error("cell underflow")]
     CellUnderflow = 9,
-    #[error("dictionaty error")]
+    #[error("dictionary error")]
     DictionaryError = 10,
     #[error("unknown error")]
     UnknownError = 11,
@@ -346,6 +352,48 @@ pub enum ExceptionCode {
     PrunedCellAccess = 15,
     #[error("big cell")]
     BigCellAccess = 16,
+    #[error("execution timeout")]
+    ExecutionTimeout = 17,
+    #[error("wasm failed to load")]
+    WasmLoadFail = 18,
+    #[error("wasm failed to execute")]
+    WasmExecFail = 19,
+    #[error("wasm local binary hash mismatch")]
+    WasmForbiddenBinary = 20,
+    #[error("wasm failed to find exported function or component")]
+    WasmInvalidFunction = 21,
+    #[error("wasm cell unpack error")]
+    WasmCellUnpackError = 22,
+    #[error("wasm cell pack error")]
+    WasmCellPackError = 23,
+    #[error("wasm not a valid sha256 provided")]
+    WasmInvalidHash = 24,
+    #[error("wasm linker failed for component")]
+    WasmLinkerFail = 25,
+    #[error("wasm failed to instantiate")]
+    WasmInstantiateFail = 26,
+    #[error("wasm failed to init engine")]
+    WasmEngineInitFail = 27,
+    #[error("wasm engine not created at launch")]
+    WasmEngineMissing = 28,
+    #[error("wasm precompilation failed")]
+    WasmPrecompileComponentFail = 29,
+    #[error("wasm runtime compilation failed")]
+    WasmSingleUseComponentFail = 30,
+    #[error("wasm failed to parse sha256 hash string")]
+    WasmWhitelistInvalidHash = 31,
+    #[error("wasm hash not in whitelist")]
+    WasmWhitelistForbiddenHash = 32,
+    #[error("wasm missing matching local binary")]
+    WasmWhitelistMissingBinary = 33,
+    #[error("wasm failed to set or use fuel limit")]
+    WasmFuelError = 34,
+    #[error("DApp ID is not set")]
+    DAppIdNotSet = 35,
+    #[error("failed to unpack cell")]
+    CellUnpackError = 36,
+    #[error("wasm base config is incorrect")]
+    WasmConfigError = 37,
 }
 
 // impl fmt::Display for ExceptionCode {

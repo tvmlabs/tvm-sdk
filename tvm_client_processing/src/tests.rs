@@ -7,6 +7,7 @@ use tvm_block::MsgAddrStd;
 use tvm_types::AccountId;
 use tvm_types::UInt256;
 
+use crate::MonitoredMessage;
 use crate::message_monitor::MessageMonitor;
 use crate::message_monitor::MessageMonitoringParams;
 use crate::message_monitor::MessageMonitoringResult;
@@ -14,7 +15,6 @@ use crate::message_monitor::MessageMonitoringStatus;
 use crate::message_monitor::MessageMonitoringTransaction;
 use crate::message_monitor::MonitorFetchWaitMode;
 use crate::sdk_services::MockSdkServices;
-use crate::MonitoredMessage;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_fetch() {
@@ -144,6 +144,7 @@ async fn test_mon_info() {
     assert_eq!(info.unresolved, 1);
 }
 
+#[ignore = "subscription does not supported"]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_buffering() {
     let api = sdk_services();

@@ -11,11 +11,11 @@
 
 use tvm_types::SliceData;
 
-use crate::executor::engine::storage::fetch_stack;
 use crate::executor::engine::Engine;
+use crate::executor::engine::storage::fetch_stack;
 use crate::executor::types::Instruction;
-use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
+use crate::stack::integer::IntegerData;
 use crate::types::Status;
 
 fn unary<F>(engine: &mut Engine, name: &'static str, operation: F) -> Status

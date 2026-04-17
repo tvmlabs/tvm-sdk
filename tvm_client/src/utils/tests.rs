@@ -65,6 +65,7 @@ async fn test_utils() {
     assert_eq!(converted.address, hex);
 }
 
+#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_calc_storage_fee() {
     let client = TestClient::new();

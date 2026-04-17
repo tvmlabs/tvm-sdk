@@ -13,6 +13,8 @@ use std::marker::PhantomData;
 
 pub use self::hashmap::HashmapE;
 pub use self::pfxhashmap::PfxHashmapE;
+use crate::GasConsumer;
+use crate::Mask;
 use crate::cell::BuilderData;
 use crate::cell::Cell;
 use crate::cell::IBitstring;
@@ -21,8 +23,6 @@ use crate::error;
 use crate::fail;
 use crate::types::ExceptionCode;
 use crate::types::Result;
-use crate::GasConsumer;
-use crate::Mask;
 
 mod hashmap;
 mod pfxhashmap;
@@ -715,7 +715,8 @@ pub trait HashmapType {
     fn hashmap_merge(&mut self, other: &Self, key: &SliceData) -> Result<()> {
         let bit_len = self.bit_len();
         if bit_len != other.bit_len() || key.remaining_bits() > bit_len {
-            return Ok(()); // fail!("data in hashmaps do not correspond each other or key too long")
+            return Ok(()); // fail!("data in hashmaps do not correspond each
+            // other or key too long")
         }
         let cell1 = match self.data() {
             Some(data) => data.clone(),

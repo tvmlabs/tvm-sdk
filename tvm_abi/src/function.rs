@@ -15,31 +15,31 @@ use std::collections::HashMap;
 
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
+use tvm_types::BuilderData;
+use tvm_types::Cell;
+use tvm_types::ED25519_SIGNATURE_LENGTH;
+use tvm_types::Ed25519PrivateKey;
+use tvm_types::IBitstring;
+use tvm_types::MAX_DATA_BYTES;
+use tvm_types::Result;
+use tvm_types::SliceData;
 use tvm_types::error;
 use tvm_types::fail;
 use tvm_types::sha256_digest;
-use tvm_types::BuilderData;
-use tvm_types::Cell;
-use tvm_types::Ed25519PrivateKey;
-use tvm_types::IBitstring;
-use tvm_types::Result;
-use tvm_types::SliceData;
-use tvm_types::ED25519_SIGNATURE_LENGTH;
-use tvm_types::MAX_DATA_BYTES;
 
-use crate::contract::AbiVersion;
-use crate::contract::SerdeFunction;
+use crate::ParamType;
+use crate::PublicKeyData;
+use crate::SignatureData;
 use crate::contract::ABI_VERSION_1_0;
 use crate::contract::ABI_VERSION_2_3;
+use crate::contract::AbiVersion;
+use crate::contract::SerdeFunction;
 use crate::error::AbiError;
 use crate::param::Param;
 use crate::token::Cursor;
 use crate::token::SerializedValue;
 use crate::token::Token;
 use crate::token::TokenValue;
-use crate::ParamType;
-use crate::PublicKeyData;
-use crate::SignatureData;
 
 /// Contract function specification.
 #[derive(Debug, Clone, PartialEq)]
@@ -146,6 +146,11 @@ impl Function {
     }
 
     pub fn calc_function_id(signature: &str) -> u32 {
+        if let Some(pos) = signature.find('(') {
+            if &signature[0..pos] == "constructor" {
+                return 1;
+            }
+        }
         // Sha256 hash of signature
         let function_hash = sha256_digest(signature.as_bytes());
 

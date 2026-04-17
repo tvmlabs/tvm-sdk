@@ -9,18 +9,16 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 extern crate reqwest;
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde_json::json;
-use tvm_client::abi::encode_message_body;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiContract;
 use tvm_client::abi::AbiParam;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::ParamsOfEncodeMessageBody;
+use tvm_client::abi::encode_message_body;
 
 use crate::call;
 use crate::config::Config;
@@ -204,7 +202,7 @@ pub struct CallArgs {
 }
 
 impl CallArgs {
-    pub async fn submit(matches: &ArgMatches<'_>) -> Result<Self, String> {
+    pub async fn submit(matches: &ArgMatches) -> Result<Self, String> {
         let dest = matches
             .value_of("DEST")
             .map(|s| s.to_owned())
@@ -222,7 +220,7 @@ impl CallArgs {
     }
 
     pub async fn submit_with_args(
-        matches: &ArgMatches<'_>,
+        matches: &ArgMatches,
         dest: &str,
         value: &str,
         bounce: bool,
@@ -243,7 +241,7 @@ impl CallArgs {
         Ok(Self { params, func_name: "submitTransaction".to_owned(), ..Default::default() })
     }
 
-    pub async fn deploy(matches: &ArgMatches<'_>) -> Result<Self, String> {
+    pub async fn deploy(matches: &ArgMatches) -> Result<Self, String> {
         let is_setcode = matches.is_present("SETCODE");
         let v2 = matches.is_present("V2");
 
@@ -292,11 +290,7 @@ pub struct MultisigArgs {
 }
 
 impl MultisigArgs {
-    pub fn new(
-        matches: &ArgMatches<'_>,
-        config: &Config,
-        call_args: CallArgs,
-    ) -> Result<Self, String> {
+    pub fn new(matches: &ArgMatches, config: &Config, call_args: CallArgs) -> Result<Self, String> {
         let address = matches
             .value_of("MSIG")
             .map(|s| s.to_owned())
@@ -376,81 +370,81 @@ impl MultisigArgs {
             &self.params().to_string(),
             Some(self.keys.clone()),
             false,
+            None,
         )
         .await
     }
 }
 
-pub fn create_multisig_command<'a, 'b>() -> App<'a, 'b> {
-    let v2_arg = Arg::with_name("V2")
-        .long("--v2")
-        .help("Force to interact with wallet account as multisig v2.");
-    let bounce_arg = Arg::with_name("BOUNCE")
+pub fn create_multisig_command<'b>() -> Command<'b> {
+    let v2_arg =
+        Arg::new("V2").long("--v2").help("Force to interact with wallet account as multisig v2.");
+    let bounce_arg = Arg::new("BOUNCE")
         .long("--bounce")
-        .short("-b")
+        .short('b')
         .help("Send bounce message to destination account.");
 
-    let keys_arg = Arg::with_name("KEYS")
+    let keys_arg = Arg::new("KEYS")
         .long("--keys")
-        .short("-k")
+        .short('k')
         .takes_value(true)
         .help("Path to the file with a keypair.");
 
-    SubCommand::with_name("multisig")
+    Command::new("multisig")
         .about("Multisignature wallet commands.")
-        .setting(AppSettings::AllowNegativeNumbers)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .subcommand(SubCommand::with_name("send")
-            .setting(AppSettings::AllowLeadingHyphen)
+        .allow_negative_numbers(true)
+        .dont_collapse_args_in_usage(true)
+        .subcommand(Command::new("send")
+            .allow_hyphen_values(true)
             .about("Transfer funds from the wallet to the recipient.")
-            .arg(Arg::with_name("MSIG")
+            .arg(Arg::new("MSIG")
                 .long("--addr")
                 .takes_value(true)
                 .help("Wallet address. If undefined then config.wallet is used."))
-            .arg(Arg::with_name("DEST")
+            .arg(Arg::new("DEST")
                 .long("--dest")
                 .takes_value(true)
                 .help("Recipient address."))
-            .arg(Arg::with_name("VALUE")
+            .arg(Arg::new("VALUE")
                 .long("--value")
                 .takes_value(true)
                 .help("Amount of funds to transfer (in evers)."))
-            .arg(Arg::with_name("PURPOSE")
+            .arg(Arg::new("PURPOSE")
                 .long("--purpose")
                 .takes_value(true)
                 .help("Optional, comment attached to transfer."))
-            .arg(Arg::with_name("SIGN")
+            .arg(Arg::new("SIGN")
                 .long("--sign")
                 .takes_value(true)
                 .help("Seed phrase or path to file with keypair."))
             .arg(bounce_arg)
             .arg(v2_arg.clone()))
-        .subcommand(SubCommand::with_name("deploy")
-            .setting(AppSettings::AllowLeadingHyphen)
+        .subcommand(Command::new("deploy")
+            .allow_hyphen_values(true)
             .about("Deploys a wallet with a given public key. By default, deploys a SafeMultisig with one custodian, which can be tuned with flags.")
             .arg(keys_arg)
-            .arg(Arg::with_name("SETCODE")
+            .arg(Arg::new("SETCODE")
                 .long("--setcode")
                 .help("Deploy SetcodeMultisig instead of SafeMultisig."))
-            .arg(Arg::with_name("VALUE")
+            .arg(Arg::new("VALUE")
                 .long("--local")
                 .takes_value(true)
-                .short("-l")
+                .short('l')
                 .help("Perform a preliminary call of local giver to initialize contract with given value."))
-            .arg(Arg::with_name("OWNERS")
+            .arg(Arg::new("OWNERS")
                 .long("--owners")
                 .takes_value(true)
-                .short("-o")
+                .short('o')
                 .help("Array of wallet owners public keys. Note: deployer could be not included in this case. If not specified the only owner is contract deployer."))
-            .arg(Arg::with_name("CONFIRMS")
+            .arg(Arg::new("CONFIRMS")
                 .long("--confirms")
                 .takes_value(true)
-                .short("-c")
+                .short('c')
                 .help("Number of confirmations required for executing transaction. Default value is 1."))
             .arg(v2_arg))
 }
 
-pub async fn multisig_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn multisig_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     if let Some(m) = m.subcommand_matches("send") {
         return multisig_send_command(m, config).await;
     }
@@ -460,7 +454,7 @@ pub async fn multisig_command(m: &ArgMatches<'_>, config: &Config) -> Result<(),
     Err("unknown multisig command".to_owned())
 }
 
-async fn multisig_send_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn multisig_send_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let call_args = CallArgs::submit(matches).await?;
     let common_args = MultisigArgs::new(matches, config, call_args)?;
     send(config, common_args).await
@@ -495,7 +489,7 @@ async fn send(config: &Config, args: MultisigArgs) -> Result<(), String> {
     call::print_json_result(result, config)
 }
 
-async fn multisig_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let call_args = CallArgs::deploy(matches).await?;
     let args = MultisigArgs::new(matches, config, call_args)?;
 
@@ -532,6 +526,7 @@ async fn multisig_deploy_command(matches: &ArgMatches<'_>, config: &Config) -> R
             &params,
             None,
             false,
+            None,
         )
         .await?;
     }

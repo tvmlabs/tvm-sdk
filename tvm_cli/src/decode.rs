@@ -8,11 +8,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
-use clap::App;
-use clap::AppSettings;
 use clap::Arg;
 use clap::ArgMatches;
-use clap::SubCommand;
+use clap::Command;
 use serde::Serialize;
 use serde_json::json;
 use tvm_block::Account;
@@ -20,13 +18,13 @@ use tvm_block::AccountStatus;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
-use tvm_client::abi::decode_account_data;
 use tvm_client::abi::ParamsOfDecodeAccountData;
+use tvm_client::abi::decode_account_data;
+use tvm_types::Cell;
+use tvm_types::SliceData;
 use tvm_types::base64_decode;
 use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
-use tvm_types::Cell;
-use tvm_types::SliceData;
 
 use crate::config::Config;
 use crate::decode::msg_printer::tree_of_cells_into_base64;
@@ -43,88 +41,88 @@ use crate::helpers::query_message;
 use crate::load_abi;
 use crate::print_args;
 
-pub fn create_decode_command<'a, 'b>() -> App<'a, 'b> {
-    let tvc_cmd = SubCommand::with_name("stateinit")
-        .setting(AppSettings::AllowLeadingHyphen)
+pub fn create_decode_command<'b>() -> Command<'b> {
+    let tvc_cmd = Command::new("stateinit")
+        .allow_hyphen_values(true)
         .about("Decodes tvc data (including compiler version) from different sources.")
         .arg(
-            Arg::with_name("TVC")
+            Arg::new("TVC")
                 .long("--tvc")
                 .conflicts_with("BOC")
                 .help("Contract is passed via path to the TVC file."),
         )
         .arg(
-            Arg::with_name("BOC")
+            Arg::new("BOC")
                 .long("--boc")
                 .conflicts_with("TVC")
                 .help("Contract is passed via path to the account BOC file."),
         )
         .arg(
-            Arg::with_name("INPUT")
+            Arg::new("INPUT")
                 .required(true)
                 .help("Contract address or path to the file with contract data."),
         );
-    SubCommand::with_name("decode")
+    Command::new("decode")
         .about("Decode commands.")
-        .setting(AppSettings::AllowLeadingHyphen)
-        .setting(AppSettings::TrailingVarArg)
-        .setting(AppSettings::DontCollapseArgsInUsage)
-        .subcommand(SubCommand::with_name("body")
+        .allow_hyphen_values(true)
+        .trailing_var_arg(true)
+        .dont_collapse_args_in_usage(true)
+        .subcommand(Command::new("body")
             .about("Decodes body base64 string.")
-            .arg(Arg::with_name("BODY")
+            .arg(Arg::new("BODY")
                 .required(true)
                 .help("Message body encoded as base64."))
-            .arg(Arg::with_name("ABI")
+            .arg(Arg::new("ABI")
                 .long("--abi")
                 .takes_value(true)
                 .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.")))
-        .subcommand(SubCommand::with_name("msg")
+        .subcommand(Command::new("msg")
             .about("Decodes message file.")
-            .arg(Arg::with_name("MSG")
+            .arg(Arg::new("MSG")
                 .required(true)
                 .help("Path to the message boc file (with binary data), message in base64 or message id."))
-            .arg(Arg::with_name("ABI")
+            .arg(Arg::new("ABI")
                 .long("--abi")
                 .takes_value(true)
                 .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file."))
-            .arg(Arg::with_name("BASE64")
+            .arg(Arg::new("BASE64")
                 .long("--base64")
                 .help("Flag that changes behavior of the command to work with data in base64 (FLAG IS DEPRECATED).")))
         .subcommand(tvc_cmd)
-        .subcommand(SubCommand::with_name("account")
+        .subcommand(Command::new("account")
             .about("Top level command of account decode commands.")
-            .subcommand(SubCommand::with_name("data")
-                .setting(AppSettings::AllowLeadingHyphen)
+            .subcommand(Command::new("data")
+                .allow_hyphen_values(true)
                 .about("Decodes data fields from the contract state.")
-                .arg(Arg::with_name("TVC")
+                .arg(Arg::new("TVC")
                     .long("--tvc")
-                    .short("-t")
+                    .short('t')
                     .takes_value(true)
                     .help("Path to the tvc file with contract state.")
                     .conflicts_with("ADDRESS"))
-                .arg(Arg::with_name("ADDRESS")
+                .arg(Arg::new("ADDRESS")
                     .long("--addr")
-                    .short("-a")
+                    .short('a')
                     .takes_value(true)
                     .help("Contract address.")
                     .conflicts_with("TVC"))
-                .arg(Arg::with_name("ABI")
+                .arg(Arg::new("ABI")
                     .long("--abi")
                     .takes_value(true)
                     .help("Path or link to the contract ABI file or pure json ABI data. Can be specified in the config file.")))
-            .subcommand(SubCommand::with_name("boc")
+            .subcommand(Command::new("boc")
                 .about("Decodes data from the file with boc of the account and saves contract tvc file if needed.")
-                .arg(Arg::with_name("BOCFILE")
+                .arg(Arg::new("BOCFILE")
                     .required(true)
                     .help("Path to the account boc file."))
-                .arg(Arg::with_name("DUMPTVC")
+                .arg(Arg::new("DUMPTVC")
                     .long("--dumptvc")
-                    .short("-d")
+                    .short('d')
                     .takes_value(true)
                     .help("Path to the TVC file where to save the dump."))))
 }
 
-pub async fn decode_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn decode_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     if let Some(m) = m.subcommand_matches("body") {
         return decode_body_command(m, config).await;
     }
@@ -145,7 +143,7 @@ pub async fn decode_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), S
     Err("unknown command".to_owned())
 }
 
-async fn decode_data_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_data_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     if m.is_present("TVC") {
         return decode_tvc_fields(m, config).await;
     }
@@ -155,7 +153,7 @@ async fn decode_data_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), 
     Err("unknown command".to_owned())
 }
 
-async fn decode_body_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_body_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let body = m.value_of("BODY");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -165,7 +163,7 @@ async fn decode_body_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), 
     Ok(())
 }
 
-async fn decode_account_from_boc(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_account_from_boc(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let boc = m.value_of("BOCFILE");
     let tvc_path = m.value_of("DUMPTVC");
 
@@ -245,6 +243,7 @@ pub async fn print_account_data(
         Some(data),
         code_hash,
         if decode_stateinit { Some(si) } else { None },
+        None,
     );
 
     if tvc_path.is_some() && state_init.is_some() {
@@ -254,7 +253,7 @@ pub async fn print_account_data(
     Ok(())
 }
 
-async fn decode_message_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_message_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let msg = m.value_of("MSG");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -305,7 +304,7 @@ async fn decode_message_command(m: &ArgMatches<'_>, config: &Config) -> Result<(
     Ok(())
 }
 
-async fn decode_tvc_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_tvc_fields(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let tvc = m.value_of("TVC");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -328,7 +327,7 @@ async fn decode_tvc_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), St
     Ok(())
 }
 
-async fn decode_account_fields(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_account_fields(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = m.value_of("ADDRESS");
     let abi = Some(abi_from_matches_or_config(m, config)?);
     if !config.is_json {
@@ -336,13 +335,16 @@ async fn decode_account_fields(m: &ArgMatches<'_>, config: &Config) -> Result<()
     }
     let abi = load_abi(abi.as_ref().unwrap(), config).await?;
 
-    let ton = create_client_verbose(config)?;
+    let context = create_client_verbose(config)?;
     let address = load_ton_address(address.unwrap(), config)?;
-    let data = query_account_field(ton.clone(), &address, "data").await?;
+    let data = query_account_field(context.clone(), &address, "data").await?;
 
-    let res =
-        decode_account_data(ton, ParamsOfDecodeAccountData { abi, data, ..Default::default() })
-            .map_err(|e| format!("failed to decode data: {}", e))?;
+    let res = decode_account_data(
+        context,
+        ParamsOfDecodeAccountData { abi, data, allow_partial: true, ..Default::default() },
+    )
+    .map_err(|e| format!("failed to decode data: {}", e))?;
+
     if !config.is_json {
         println!("Account fields:");
     }
@@ -438,7 +440,7 @@ async fn decode_message(msg_boc: Vec<u8>, abi_path: Option<String>) -> Result<St
         .map_err(|e| format!("Failed to serialize the result: {}", e))
 }
 
-fn load_state_init(m: &ArgMatches<'_>) -> Result<StateInit, String> {
+fn load_state_init(m: &ArgMatches) -> Result<StateInit, String> {
     let input = m.value_of("INPUT").unwrap();
     let stat_init = if m.is_present("BOC") {
         let account = Account::construct_from_file(input)
@@ -451,7 +453,7 @@ fn load_state_init(m: &ArgMatches<'_>) -> Result<StateInit, String> {
     Ok(stat_init)
 }
 
-async fn decode_tvc_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+async fn decode_tvc_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let input = m.value_of("INPUT");
     if !config.is_json {
         print_args!(input);
@@ -484,23 +486,23 @@ async fn decode_tvc_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), S
 }
 
 pub mod msg_printer {
-    use serde_json::json;
     use serde_json::Value;
+    use serde_json::json;
     use tvm_block::CommonMsgInfo;
     use tvm_block::CurrencyCollection;
     use tvm_block::Grams;
     use tvm_block::Message;
     use tvm_block::StateInit;
-    use tvm_client::boc::get_compiler_version;
     use tvm_client::boc::ParamsOfGetCompilerVersion;
+    use tvm_client::boc::get_compiler_version;
+    use tvm_types::Cell;
     use tvm_types::base64_encode;
     use tvm_types::write_boc;
-    use tvm_types::Cell;
 
+    use crate::Config;
+    use crate::helpers::TonClient;
     use crate::helpers::create_client_local;
     use crate::helpers::decode_msg_body;
-    use crate::helpers::TonClient;
-    use crate::Config;
 
     pub fn tree_of_cells_into_base64(root_cell: Option<&Cell>) -> Result<String, String> {
         match root_cell {

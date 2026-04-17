@@ -9,20 +9,28 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+#[cfg(feature = "wasmtime")]
+use std::collections::HashMap;
+#[cfg(feature = "wasmtime")]
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Duration;
+use std::time::Instant;
 
 use tvm_block::GlobalCapabilities;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
 use tvm_types::Result;
 use tvm_types::SliceData;
-use tvm_vm::executor::gas::gas_state::Gas;
+use tvm_types::UInt256;
 use tvm_vm::executor::Engine;
+use tvm_vm::executor::MVConfig;
+use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::smart_contract_info::SmartContractInfo;
-use tvm_vm::stack::savelist::SaveList;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
+use tvm_vm::stack::savelist::SaveList;
 
 use crate::BlockchainConfig;
 
@@ -45,6 +53,8 @@ pub struct VMSetup {
     ctx: VMSetupContext,
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
+    termination_deadline: Option<Instant>,
+    execution_timeout: Option<Duration>,
 }
 
 impl VMSetup {
@@ -71,7 +81,24 @@ impl VMSetup {
             ctx,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            termination_deadline: None,
+            execution_timeout: None,
         }
+    }
+
+    pub fn set_engine_available_credit(mut self, credit: i128) -> VMSetup {
+        self.vm.set_available_credit(credit);
+        self
+    }
+
+    pub fn set_engine_version(mut self, version: semver::Version) -> VMSetup {
+        self.vm.set_version(version);
+        self
+    }
+
+    pub fn set_engine_mv_config(mut self, mvconfig: MVConfig) -> VMSetup {
+        self.vm.set_mv_config(mvconfig);
+        self
     }
 
     pub fn set_smart_contract_info(mut self, sci: SmartContractInfo) -> Result<VMSetup> {
@@ -139,6 +166,76 @@ impl VMSetup {
         self
     }
 
+    /// Sets termination deadline
+    pub fn set_termination_deadline(mut self, deadline: Option<Instant>) -> VMSetup {
+        self.termination_deadline = deadline;
+        self
+    }
+
+    /// Sets execution timeout
+    pub fn set_execution_timeout(mut self, timeout: Option<Duration>) -> VMSetup {
+        self.execution_timeout = timeout;
+        self
+    }
+
+    /// Sets local wasm library root path
+    #[cfg(feature = "wasmtime")]
+    pub fn set_wasm_root_path(mut self, path: String) -> VMSetup {
+        self.vm.set_wasm_root_path(path);
+        self
+    }
+
+    /// Sets whitelist of hashes in local wasm library
+    #[cfg(feature = "wasmtime")]
+    pub fn set_wasm_hash_whitelist(mut self, whitelist: HashSet<[u8; 32]>) -> VMSetup {
+        self.vm.set_wasm_hash_whitelist(whitelist);
+        self
+    }
+
+    /// Sets block time for use in wasm
+    #[cfg(feature = "wasmtime")]
+    pub fn set_wasm_block_time(mut self, time: u64) -> VMSetup {
+        self.vm.set_wasm_block_time(time);
+        self
+    }
+
+    /// Sets account dapp_id
+    pub fn set_dapp_id(mut self, dapp_id: Option<UInt256>) -> VMSetup {
+        self.vm.set_dapp_id(dapp_id);
+        self
+    }
+
+    /// Init wasmtime engine
+    #[cfg(feature = "wasmtime")]
+    pub fn wasm_engine_init_cached(mut self) -> Result<VMSetup> {
+        self.vm.wasm_engine_init_cached()?;
+        Ok(self)
+    }
+
+    /// Insert external wasmtime engine
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_insert_wasm_engine(mut self, engine: Option<wasmtime::Engine>) -> VMSetup {
+        self.vm.extern_insert_wasm_engine(engine);
+        self
+    }
+
+    /// Insert external wasm component cache
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_insert_wasm_component_cache(
+        mut self,
+        cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    ) -> VMSetup {
+        self.vm.extern_insert_wasm_component_cache(cache);
+        self
+    }
+
+    /// Precompile local hash components
+    #[cfg(feature = "wasmtime")]
+    pub fn precompile_all_wasm_by_hash(mut self) -> Result<VMSetup> {
+        self.vm = self.vm.precompile_all_wasm_by_hash()?;
+        Ok(self)
+    }
+
     /// Creates new instance of TVM with defined stack, registers and code.
     pub fn create(self) -> Engine {
         if cfg!(debug_assertions) {
@@ -168,6 +265,8 @@ impl VMSetup {
             self.vm_execution_is_block_related,
             self.block_collation_was_finished,
         );
+        vm.set_termination_deadline(self.termination_deadline);
+        vm.set_execution_timeout(self.execution_timeout);
         vm
     }
 }

@@ -15,11 +15,11 @@ use std::sync::Arc;
 use serde_json::Value;
 use tvm_block::ShardIdent;
 
+use crate::ClientContext;
 use crate::error::ClientResult;
 use crate::net::iterators::block::BlockFields;
-use crate::net::iterators::block_iterator::filter::Filter;
 use crate::net::iterators::block_iterator::NextLink;
-use crate::ClientContext;
+use crate::net::iterators::block_iterator::filter::Filter;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Branch {
@@ -46,12 +46,12 @@ impl Branch {
                 shard,
                 block_id: fields.id().to_string(),
                 update_time,
-                next_link: NextLink::ByBoth,
+                next_link: NextLink::Both,
             });
         }
         for (shard, block_id) in fields.get_shards()? {
             if filter.match_shard(&shard) {
-                branches.push(Branch { shard, block_id, update_time, next_link: NextLink::ByBoth });
+                branches.push(Branch { shard, block_id, update_time, next_link: NextLink::Both });
             }
         }
         Ok(branches)

@@ -6,8 +6,6 @@ use tvm_block::ChildCell;
 use tvm_block::Serializable;
 use tvm_block::ShardAccounts;
 use tvm_block::Transaction;
-use tvm_types::fail;
-use tvm_types::write_boc;
 use tvm_types::AccountId;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
@@ -15,9 +13,9 @@ use tvm_types::ExceptionCode;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::fail;
+use tvm_types::write_boc;
 
-use crate::block_parser::entry::get_sharding_depth;
-use crate::block_parser::get_partition;
 use crate::BlockParserConfig;
 use crate::BlockParsingError;
 use crate::EntryConfig;
@@ -25,6 +23,8 @@ use crate::JsonReducer;
 use crate::ParsedBlock;
 use crate::ParsedEntry;
 use crate::ParsingBlock;
+use crate::block_parser::entry::get_sharding_depth;
+use crate::block_parser::get_partition;
 
 pub(crate) enum AccountTransition {
     None,
@@ -100,14 +100,14 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
         };
         let shard_accounts = shard_state.read_accounts()?;
         for account_id in self.changed.iter() {
-            let acc = shard_accounts.account(account_id)?.ok_or_else(|| {
+            let shard_acc = shard_accounts.account(account_id)?.ok_or_else(|| {
                 BlockParsingError::InvalidData(
                     "Block and shard state mismatch: \
                                     state doesn't contain changed account"
                         .to_string(),
                 )
             })?;
-            let acc = acc.read_account()?;
+            let acc = shard_acc.read_account()?.as_struct()?;
 
             let last_trans_chain_order = self.last_trans_chain_order.remove(account_id);
             result.accounts.push(Self::prepare_account_entry(
@@ -117,6 +117,7 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 self.max_account_bytes_size,
                 self.accounts_sharding_depth,
                 self.accounts_config,
+                shard_acc.get_dapp_id().cloned(),
             )?);
         }
 
@@ -138,7 +139,9 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
             self.parsing.id
         );
 
+        #[cfg(feature = "metrics")]
         metrics::histogram!("accounts_parsing_time").record(now.elapsed());
+        #[cfg(feature = "metrics")]
         metrics::histogram!("parsed_accounts_count").record(self.changed.len() as f64);
 
         Ok(())
@@ -201,7 +204,11 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
                 return Ok(None);
             }
         }
-        Ok(if let Some(acc) = acc? { acc.read_account()?.get_code_hash() } else { None })
+        Ok(if let Some(acc) = acc? {
+            acc.read_account()?.as_struct()?.get_code_hash()
+        } else {
+            None
+        })
     }
 
     pub(crate) fn prepare_account_entry(
@@ -211,6 +218,7 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
         max_account_bytes_size: Option<usize>,
         accounts_sharding_depth: u32,
         accounts_config: &Option<EntryConfig<R>>,
+        dapp_id: Option<UInt256>,
     ) -> Result<ParsedEntry> {
         let mut boc1 = None;
         let mut boc = vec![];
@@ -241,8 +249,14 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
             Some(id) => id,
             None => fail!("Account without id in external db processor"),
         };
-        let set =
-            crate::AccountSerializationSet { account, prev_code_hash, proof: None, boc, boc1 };
+        let set = crate::AccountSerializationSet {
+            account,
+            prev_code_hash,
+            proof: None,
+            boc,
+            boc1,
+            dapp_id,
+        };
 
         let partition = get_partition(accounts_sharding_depth, account_id.clone())?;
         let mut doc = crate::db_serialize_account("id", &set)?;

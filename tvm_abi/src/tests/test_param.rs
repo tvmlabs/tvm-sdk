@@ -12,8 +12,6 @@
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
 
-use crate::contract::ABI_VERSION_2_0;
-use crate::token::Detokenizer;
 use crate::Function;
 use crate::Int;
 use crate::Param;
@@ -21,6 +19,8 @@ use crate::ParamType;
 use crate::Token;
 use crate::TokenValue;
 use crate::Uint;
+use crate::contract::ABI_VERSION_2_0;
+use crate::token::Detokenizer;
 
 #[test]
 fn int_json_representation() {

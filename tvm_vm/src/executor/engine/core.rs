@@ -11,14 +11,15 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::fmt::Write;
+use std::io::BufRead;
 use std::ops::Range;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::Duration;
+use std::time::Instant;
 
-use tvm_block::Deserializable;
 use tvm_block::GlobalCapabilities;
-use tvm_block::ShardAccount;
-use tvm_types::error;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -29,10 +30,12 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::sha256_digest;
 
+use crate::error::TvmError;
 use crate::error::tvm_exception_full;
 use crate::error::update_error_description;
-use crate::error::TvmError;
 use crate::executor::continuation::switch;
 use crate::executor::continuation::switch_to_c0;
 use crate::executor::engine::handlers::Handlers;
@@ -49,25 +52,30 @@ use crate::executor::types::RegisterPair;
 use crate::executor::types::RegisterTrio;
 use crate::executor::types::WhereToGetParams;
 use crate::smart_contract_info::SmartContractInfo;
+use crate::stack::Stack;
+use crate::stack::StackItem;
 use crate::stack::continuation::ContinuationData;
 use crate::stack::continuation::ContinuationType;
 use crate::stack::integer::IntegerData;
 use crate::stack::savelist::SaveList;
-use crate::stack::Stack;
-use crate::stack::StackItem;
 use crate::types::Exception;
 use crate::types::ResultMut;
 use crate::types::ResultOpt;
 use crate::types::ResultRef;
 use crate::types::Status;
 
-pub(super) type ExecuteHandler = fn(&mut Engine) -> Status;
-
-pub trait IndexProvider: Send + Sync {
-    fn get_accounts_by_init_code_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-    fn get_accounts_by_code_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
-    fn get_accounts_by_data_hash(&self, hash: &UInt256) -> Result<Vec<ShardAccount>>;
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct MVConfig {
+    pub mbn_lst_global: Vec<u64>,
 }
+
+impl MVConfig {
+    pub fn set_config(&mut self, mbn_lst: Vec<u64>) {
+        self.mbn_lst_global = mbn_lst;
+    }
+}
+
+pub(super) type ExecuteHandler = fn(&mut Engine) -> Status;
 
 pub(super) struct SliceProto {
     data_window: Range<usize>,
@@ -102,7 +110,6 @@ pub struct Engine {
     pub(in crate::executor) cmd: InstructionExt,
     pub(in crate::executor) ctrls: SaveList,
     pub(in crate::executor) libraries: Vec<HashmapE>, // 256 bit dictionaries
-    pub(in crate::executor) index_provider: Option<Arc<dyn IndexProvider>>,
     pub(in crate::executor) modifiers: BehaviorModifiers,
     // SliceData::load_cell() is faster than trying to cache SliceData for each
     // visited cell with HashMap<UInt256, SliceData>
@@ -127,6 +134,25 @@ pub struct Engine {
     signature_id: i32,
     vm_execution_is_block_related: Arc<Mutex<bool>>,
     block_collation_was_finished: Arc<Mutex<bool>>,
+    termination_deadline: Option<Instant>,
+    execution_timeout: Option<Duration>,
+
+    #[cfg(feature = "wasmtime")]
+    wasm_binary_root_path: String,
+    available_credit: i128,
+    #[cfg(feature = "wasmtime")]
+    wasm_hash_whitelist: HashSet<[u8; 32]>, // store hashes of wasm binaries available locally
+    #[cfg(feature = "wasmtime")]
+    wash_component_cache: HashMap<[u8; 32], wasmtime::component::Component>, /* precompute components of local binaries */
+    #[cfg(feature = "wasmtime")]
+    wasm_engine_cache: Option<wasmtime::Engine>,
+    #[cfg(feature = "wasmtime")]
+    wasm_block_timestamp: u64,
+
+    mvconfig: MVConfig,
+    engine_version: semver::Version,
+
+    pub(in crate::executor) self_dapp_id: Option<UInt256>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -159,7 +185,7 @@ pub struct EngineTraceInfo<'a> {
     pub gas_cmd: i64,
 }
 
-impl<'a> EngineTraceInfo<'a> {
+impl EngineTraceInfo<'_> {
     pub fn has_cmd(&self) -> bool {
         matches!(self.info_type, EngineTraceInfoType::Normal | EngineTraceInfoType::Implicit)
     }
@@ -260,7 +286,6 @@ impl Engine {
             cmd: InstructionExt::new("NOP"),
             ctrls: SaveList::new(),
             libraries: Vec::new(),
-            index_provider: None,
             #[cfg(not(feature = "signature_no_check"))]
             modifiers: BehaviorModifiers,
             #[cfg(feature = "signature_no_check")]
@@ -286,7 +311,47 @@ impl Engine {
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
+            termination_deadline: None,
+            execution_timeout: None,
+            #[cfg(feature = "wasmtime")]
+            wasm_binary_root_path: "./config/wasm".to_owned(),
+            available_credit: 0,
+            #[cfg(feature = "wasmtime")]
+            wasm_hash_whitelist: HashSet::new(),
+            #[cfg(feature = "wasmtime")]
+            wash_component_cache: HashMap::new(),
+            #[cfg(feature = "wasmtime")]
+            wasm_engine_cache: None,
+            #[cfg(feature = "wasmtime")]
+            wasm_block_timestamp: 0,
+            self_dapp_id: None,
+            mvconfig: MVConfig::default(),
+            engine_version: "1.0.0".parse().unwrap(),
         }
+    }
+
+    pub fn set_available_credit(&mut self, credit: i128) {
+        self.available_credit = credit;
+    }
+
+    pub fn get_available_credit(&mut self) -> i128 {
+        self.available_credit
+    }
+
+    pub fn set_mv_config(&mut self, config: MVConfig) {
+        self.mvconfig = config;
+    }
+
+    pub fn get_mv_config(&mut self) -> MVConfig {
+        self.mvconfig.clone()
+    }
+
+    pub fn get_version(&mut self) -> semver::Version {
+        self.engine_version.clone()
+    }
+
+    pub fn set_version(&mut self, version: semver::Version) {
+        self.engine_version = version;
     }
 
     pub fn set_block_related_flags(
@@ -296,6 +361,14 @@ impl Engine {
     ) {
         self.vm_execution_is_block_related = vm_execution_is_block_related;
         self.block_collation_was_finished = block_collation_was_finished;
+    }
+
+    pub fn set_termination_deadline(&mut self, deadline: Option<Instant>) {
+        self.termination_deadline = deadline;
+    }
+
+    pub fn set_execution_timeout(&mut self, timeout: Option<Duration>) {
+        self.execution_timeout = timeout;
     }
 
     pub fn mark_execution_as_block_related(&mut self) -> Status {
@@ -410,6 +483,401 @@ impl Engine {
 
     pub fn steps(&self) -> u32 {
         self.step
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn set_wasm_root_path(&mut self, wasm_binary_root_path: String) {
+        self.wasm_binary_root_path = wasm_binary_root_path;
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn set_wasm_hash_whitelist(&mut self, wasm_hash_whitelist: HashSet<[u8; 32]>) {
+        self.wasm_hash_whitelist = wasm_hash_whitelist;
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn set_wasm_block_time(&mut self, time: u64) {
+        self.wasm_block_timestamp = time;
+    }
+
+    pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
+        self.self_dapp_id = dapp_id;
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_wasm_engine_init() -> Result<wasmtime::Engine> {
+        log::debug!("Extern Initialising Wasm Engine");
+        // load or access WASM engine
+        let mut wasm_config = wasmtime::Config::new();
+        wasm_config.wasm_component_model(true);
+        wasm_config.consume_fuel(true);
+        // configs to assure determinism
+        wasm_config.cranelift_nan_canonicalization(true);
+        wasm_config.cranelift_pcc(true);
+        wasm_config.wasm_relaxed_simd(true);
+        wasm_config.relaxed_simd_deterministic(true);
+        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+            Ok(module) => module,
+            Err(e) => {
+                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+            }
+        };
+        Ok(wasm_engine)
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn wasm_engine_init_cached(&mut self) -> Result<()> {
+        log::debug!("Internal Initialising Wasm Engine");
+        // load or access WASM engine
+        let mut wasm_config = wasmtime::Config::new();
+        wasm_config.wasm_component_model(true);
+        wasm_config.consume_fuel(true);
+        // configs to assure determinism
+        wasm_config.cranelift_nan_canonicalization(true);
+        wasm_config.cranelift_pcc(true);
+        wasm_config.wasm_relaxed_simd(true);
+        wasm_config.relaxed_simd_deterministic(true);
+        let wasm_engine = match wasmtime::Engine::new(&wasm_config) {
+            Ok(module) => module,
+            Err(e) => {
+                err!(ExceptionCode::WasmEngineInitFail, "Failed to init WASM engine {:?}", e)?
+            }
+        };
+        self.wasm_engine_cache = Some(wasm_engine);
+        Ok(())
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_insert_wasm_engine(&mut self, engine: Option<wasmtime::Engine>) {
+        self.wasm_engine_cache = engine.clone();
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_insert_wasm_component_cache(
+        &mut self,
+        cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    ) {
+        self.wash_component_cache = cache;
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn get_wasm_engine(&self) -> Result<&wasmtime::Engine> {
+        match &self.wasm_engine_cache {
+            Some(engine) => Ok(engine),
+            None => err!(
+                ExceptionCode::WasmEngineMissing,
+                "Wasm Engine was not created. This is probably a bug."
+            )?,
+        }
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn get_wasm_block_time(&self) -> u64 {
+        self.wasm_block_timestamp
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn create_wasm_store<T>(&self, data: T) -> Result<wasmtime::Store<T>> {
+        Ok(wasmtime::Store::new(self.get_wasm_engine()?, data))
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_load_wasm_hash_whitelist_from_path(
+        wasm_whitelist_path: String,
+    ) -> Result<HashSet<[u8; 32]>> {
+        let b = std::io::BufReader::new(std::fs::File::open(wasm_whitelist_path)?);
+        let hash_strs: std::io::Result<Vec<String>> = b.lines().collect();
+        let hash_strs: Vec<String> = match hash_strs {
+            Ok(h) => h,
+            Err(e) => {
+                return err!(
+                    ExceptionCode::WasmConfigError,
+                    "wasm whitelist config could not be read {:?}",
+                    e
+                );
+            }
+        };
+        let mut whitelist = HashSet::<[u8; 32]>::new();
+        for hash_str in hash_strs {
+            let hash: Result<Vec<u8>> = (0..hash_str.len())
+                .step_by(2)
+                .map(|i| match u8::from_str_radix(&hash_str[i..i + 2], 16) {
+                    Ok(k) => Ok(k),
+                    Err(e) => {
+                        err!(
+                            ExceptionCode::WasmWhitelistInvalidHash,
+                            "Error parsing wasm hash string: {:?}, original error: {:?}",
+                            hash_str,
+                            e
+                        )
+                    }
+                })
+                .collect();
+            let hash = hash?;
+            let hash: [u8; 32] = match hash.try_into() {
+                Ok(h) => h,
+                Err(e) => {
+                    return err!(
+                        ExceptionCode::WasmWhitelistInvalidHash,
+                        "Error parsing wasm hash string: {:?}, original error: {:?}",
+                        hash_str,
+                        e
+                    );
+                }
+            };
+            whitelist.insert(hash);
+        }
+        Ok(whitelist)
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_precompile_all_wasm_from_hash_list(
+        wasm_binary_root_path: String,
+        wasm_engine: wasmtime::Engine,
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+    ) -> HashMap<[u8; 32], wasmtime::component::Component> {
+        let hashmap = wasm_hash_whitelist.clone();
+        let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+
+        for hash in hashmap {
+            let res = match Self::extern_get_wasm_binary_by_hash(
+                wasm_binary_root_path.clone(),
+                wasm_hash_whitelist.clone(),
+                hash.into(),
+            ) {
+                Ok(binary) => {
+                    match wasmtime::component::Component::new(&wasm_engine, &binary.as_slice()) {
+                        Ok(module) => Ok(module),
+                        Err(e) => err!(
+                            ExceptionCode::WasmPrecompileComponentFail,
+                            "Failed to load WASM
+            component {:?}",
+                            e
+                        ),
+                    }
+                }
+
+                Err(e) => Err(e),
+            };
+            // We catch errors to allow a partial precompilation in case of missing files
+            match res {
+                Ok(comp) => {
+                    cache.insert(hash, comp);
+                }
+                Err(e) => log::warn!("Failed to precompile hash: {:?} with error: {:?}", hash, e),
+            };
+            // let mut cache = &mut self.wash_component_cache;
+        }
+        cache
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
+        let hashmap = self.wasm_hash_whitelist.clone();
+        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+
+        for hash in hashmap {
+            let binary = self.get_wasm_binary_by_hash(hash.into())?;
+            let component = match wasmtime::component::Component::new(
+                self.get_wasm_engine()?,
+                &binary.as_slice(),
+            ) {
+                Ok(module) => module,
+                Err(e) => err!(
+                    ExceptionCode::WasmPrecompileComponentFail,
+                    "Failed to load WASM
+    component {:?}",
+                    e
+                )?,
+            };
+            // let mut cache = &mut self.wash_component_cache;
+            self.wash_component_cache.insert(hash, component);
+        }
+        Ok(self)
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn get_precompiled_wasm_component(
+        &self,
+        hash: [u8; 32],
+    ) -> Option<&wasmtime::component::Component> {
+        self.wash_component_cache.get(&hash)
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn create_single_use_wasm_component(
+        &self,
+        executable: Vec<u8>,
+    ) -> Result<wasmtime::component::Component> {
+        match wasmtime::component::Component::new(self.get_wasm_engine()?, &executable.as_slice()) {
+            Ok(module) => Ok(module),
+            Err(e) => err!(
+                ExceptionCode::WasmSingleUseComponentFail,
+                "Failed to load WASM
+    component {:?}",
+                e
+            )?,
+        }
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn print_wasm_component_exports_and_imports(
+        &self,
+        component: &wasmtime::component::Component,
+    ) -> Result<()> {
+        let component_type = component.component_type();
+        let engine = self.get_wasm_engine()?;
+        let mut exports = component_type.exports(&engine);
+        let arg = exports.next();
+        log::debug!("List of exports from WASM: {:?}", arg);
+        if let Some(arg) = arg {
+            log::debug!("{:?}", arg);
+
+            for arg in exports {
+                log::debug!(" {:?}", arg);
+            }
+        }
+        let binding = component.component_type();
+        let mut imports = binding.imports(&engine);
+        let arg = imports.next();
+        log::debug!("List of imports from WASM: {:?}", arg);
+        if let Some(arg) = arg {
+            log::debug!("{:?}", arg);
+
+            for arg in imports {
+                log::debug!(" {:?}", arg);
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn add_wasm_hash_to_whitelist_by_str(&mut self, wasm_hash_str: String) -> Result<bool> {
+        let hash: Result<Vec<u8>> = (0..wasm_hash_str.len())
+            .step_by(2)
+            .map(|i| match u8::from_str_radix(&wasm_hash_str[i..i + 2], 16) {
+                Ok(k) => Ok(k),
+                Err(e) => {
+                    err!(
+                        ExceptionCode::WasmWhitelistInvalidHash,
+                        "Error parsing wasm hash string: {:?}, original error: {:?}",
+                        wasm_hash_str,
+                        e
+                    )
+                }
+            })
+            .collect();
+        let hash = hash?;
+        let hash = match hash.try_into() {
+            Ok(h) => h,
+            Err(e) => {
+                err!(ExceptionCode::WasmWhitelistInvalidHash, "This isn't a sha256 hash: {:?}", e)?
+            }
+        };
+        Ok(self.wasm_hash_whitelist.insert(hash))
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_check_hash(
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+        file: Vec<u8>,
+        hash: String,
+    ) -> Result<Vec<u8>> {
+        let new_hash = sha256_digest(file.clone());
+        let mut s = String::with_capacity(new_hash.len() * 2);
+        for &b in new_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        if s == hash {
+            if wasm_hash_whitelist.contains(&new_hash) {
+                Ok(file)
+            } else {
+                err!(
+                    ExceptionCode::WasmWhitelistForbiddenHash,
+                    "Wasm hash not in whitelist: {:?}",
+                    s
+                )?
+            }
+        } else {
+            err!(
+                ExceptionCode::WasmForbiddenBinary,
+                "Wasm hash mismatch: expected {:?}, got {:?}",
+                hash,
+                s
+            )?
+        }
+    }
+
+    #[cfg(feature = "wasmtime")]
+    fn check_hash(&self, file: Vec<u8>, hash: String) -> Result<Vec<u8>> {
+        let new_hash = sha256_digest(file.clone());
+        let mut s = String::with_capacity(new_hash.len() * 2);
+        for &b in new_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        if s == hash {
+            if self.wasm_hash_whitelist.contains(&new_hash) {
+                Ok(file)
+            } else {
+                err!(
+                    ExceptionCode::WasmWhitelistForbiddenHash,
+                    "Wasm hash not in whitelist: {:?}",
+                    s
+                )?
+            }
+        } else {
+            err!(
+                ExceptionCode::WasmForbiddenBinary,
+                "Wasm hash mismatch: expected {:?}, got {:?}",
+                hash,
+                s
+            )?
+        }
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn extern_get_wasm_binary_by_hash(
+        wasm_binary_root_path: String,
+        wasm_hash_whitelist: HashSet<[u8; 32]>,
+        wasm_hash: Vec<u8>,
+    ) -> Result<Vec<u8>> {
+        let mut s = String::with_capacity(wasm_hash.len() * 2);
+        log::debug!("{}", std::env::current_dir()?.display());
+        for &b in wasm_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        let filename = format!("{}/{}", wasm_binary_root_path, s);
+        log::debug!("Getting file {:?}", filename);
+        // TODO: Add some hash checking of the file
+        match std::fs::read(filename) {
+            Ok(r) => Self::extern_check_hash(wasm_hash_whitelist, r, s),
+            Err(e) => err!(
+                ExceptionCode::WasmWhitelistMissingBinary,
+                "Failed to find wasm instruction by hash {:?}",
+                e
+            )?,
+        }
+    }
+
+    #[cfg(feature = "wasmtime")]
+    pub fn get_wasm_binary_by_hash(&self, wasm_hash: Vec<u8>) -> Result<Vec<u8>> {
+        let mut s = String::with_capacity(wasm_hash.len() * 2);
+        log::debug!("{}", std::env::current_dir()?.display());
+        for &b in wasm_hash.as_slice() {
+            write!(&mut s, "{:02x}", b)?;
+        }
+        let filename = format!("{}/{}", self.wasm_binary_root_path, s);
+        log::debug!("Getting file {:?}", filename);
+        // TODO: Add some hash checking of the file
+        match std::fs::read(filename) {
+            Ok(r) => self.check_hash(r, s),
+            Err(e) => err!(
+                ExceptionCode::WasmWhitelistMissingBinary,
+                "Failed to find wasm instruction by hash {:?}",
+                e
+            )?,
+        }
     }
 
     fn is_trace_enabled(&self) -> bool {
@@ -610,6 +1078,11 @@ impl Engine {
     }
 
     pub fn execute(&mut self) -> Result<i32> {
+        let deadline =
+            match (self.termination_deadline, self.execution_timeout.map(|x| Instant::now() + x)) {
+                (Some(a), Some(b)) => Some(a.min(b)),
+                (a, b) => a.or(b),
+            };
         self.trace_info(EngineTraceInfoType::Start, 0, None);
         let result = loop {
             if let Some(result) = self.seek_next_cmd()? {
@@ -617,22 +1090,29 @@ impl Engine {
             }
             let gas = self.gas_used();
             self.cmd_code = SliceProto::from(self.cc.code());
-            let execution_result = match HANDLERS_CP0.get_handler(self) {
-                Err(err) => {
-                    self.basic_use_gas(8);
-                    Some(err)
+            let execution_result = if is_deadline_reached(deadline) {
+                if is_deadline_reached(self.termination_deadline) {
+                    return Err(TvmError::TerminationDeadlineReached.into());
                 }
-                Ok(handler) => match handler(self) {
-                    Err(e) => Some(update_error_description(e, |e| {
-                        format!(
-                            "CMD: {}{} err: {}",
-                            self.cmd.proto.name_prefix.unwrap_or_default(),
-                            self.cmd.proto.name,
-                            e
-                        )
-                    })),
-                    Ok(_) => self.gas.check_gas_remaining().err(),
-                },
+                Some(exception!(ExceptionCode::ExecutionTimeout, "execution_timeout"))
+            } else {
+                match HANDLERS_CP0.get_handler(self) {
+                    Err(err) => {
+                        self.basic_use_gas(8);
+                        Some(err)
+                    }
+                    Ok(handler) => match handler(self) {
+                        Err(e) => Some(update_error_description(e, |e| {
+                            format!(
+                                "CMD: {}{} err: {}",
+                                self.cmd.proto.name_prefix.unwrap_or_default(),
+                                self.cmd.proto.name,
+                                e
+                            )
+                        })),
+                        Ok(_) => self.gas.check_gas_remaining().err(),
+                    },
+                }
             };
             self.trace_info(EngineTraceInfoType::Normal, gas, None);
             self.cmd.clear();
@@ -978,13 +1458,13 @@ impl Engine {
         }
     }
 
-    pub fn ctrl(&self, index: usize) -> ResultRef<StackItem> {
+    pub fn ctrl(&self, index: usize) -> ResultRef<'_, StackItem> {
         self.ctrls
             .get(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
     }
 
-    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<StackItem> {
+    pub fn ctrl_mut(&mut self, index: usize) -> ResultMut<'_, StackItem> {
         self.ctrls
             .get_mut(index)
             .ok_or_else(|| exception!(ExceptionCode::RangeCheckError, "get ctrl {} failed", index))
@@ -1061,10 +1541,6 @@ impl Engine {
 
     pub fn trace_bit(&self, trace_mask: u8) -> bool {
         (self.trace & trace_mask) == trace_mask
-    }
-
-    pub fn set_index_provider(&mut self, index_provider: Arc<dyn IndexProvider>) {
-        self.index_provider = Some(index_provider)
     }
 
     pub fn behavior_modifiers(&self) -> &BehaviorModifiers {
@@ -1521,6 +1997,10 @@ impl Engine {
         if exception.exception_code().is_some() {
             self.step += 1;
         }
+        if exception.exception_code() == Some(ExceptionCode::ExecutionTimeout) {
+            log::trace!(target: "tvm", "EXECUTION TIMEOUT CODE: {}\n", self.cmd_code_string());
+            return Err(err);
+        }
         if exception.exception_code() == Some(ExceptionCode::OutOfGas) {
             log::trace!(target: "tvm", "OUT OF GAS CODE: {}\n", self.cmd_code_string());
             return Err(err);
@@ -1563,6 +2043,10 @@ impl Engine {
         };
         if exception.exception_code().is_some() {
             self.step += 1;
+        }
+        if exception.exception_code() == Some(ExceptionCode::ExecutionTimeout) {
+            log::trace!(target: "tvm", "EXECUTION TIMEOUT CODE: {}\n", self.cmd_code_string());
+            return Err(err);
         }
         if exception.exception_code() == Some(ExceptionCode::OutOfGas) {
             log::trace!(target: "tvm", "OUT OF GAS CODE: {}\n", self.cmd_code_string());
@@ -1652,7 +2136,7 @@ impl Engine {
     }
 
     /// get smartcontract info param from ctrl(7) tuple index 0
-    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<StackItem> {
+    pub(in crate::executor) fn smci_param(&self, index: usize) -> ResultRef<'_, StackItem> {
         let tuple = self.ctrl(7)?.as_tuple()?;
         let tuple = tuple
             .first()
@@ -1668,7 +2152,7 @@ impl Engine {
         })
     }
 
-    pub(in crate::executor) fn rand(&self) -> ResultRef<IntegerData> {
+    pub(in crate::executor) fn rand(&self) -> ResultRef<'_, IntegerData> {
         self.smci_param(6)?.as_integer()
     }
 
@@ -1715,11 +2199,9 @@ impl Engine {
         }
         Ok(None)
     }
+}
 
-    pub(crate) fn read_config_param<T: Deserializable>(&mut self, index: i32) -> Result<T> {
-        match self.get_config_param(index)? {
-            Some(cell) => T::construct_from_cell(cell),
-            None => err!("Cannot get config param {}", index),
-        }
-    }
+#[inline(always)]
+fn is_deadline_reached(deadline: Option<Instant>) -> bool {
+    deadline.map(|deadline| Instant::now() > deadline).unwrap_or(false)
 }

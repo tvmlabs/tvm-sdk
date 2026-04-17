@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
-use super::keys::strip_secret;
 use super::CipherMode;
+use super::keys::strip_secret;
 use crate::error::ClientError;
 
 #[derive(ApiType)]
@@ -115,7 +115,7 @@ impl Error {
         )
     }
 
-    pub fn invalid_secret_key<E: Display>(err: E, key: &String) -> ClientError {
+    pub fn invalid_secret_key<E: Display>(err: E, key: &str) -> ClientError {
         error(
             ErrorCode::InvalidSecretKey,
             format!("Invalid secret key [{}]: {}", strip_secret(key), err),
@@ -130,7 +130,7 @@ impl Error {
         error(ErrorCode::InvalidSignature, format!("Invalid signature [{}]: {}", signature, err))
     }
 
-    pub fn invalid_key<E: Display>(err: E, key: &String) -> ClientError {
+    pub fn invalid_key<E: Display>(err: E, key: &str) -> ClientError {
         error(ErrorCode::InvalidKey, format!("Invalid key [{}]: {}", strip_secret(key), err))
     }
 

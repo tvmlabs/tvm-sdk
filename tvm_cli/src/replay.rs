@@ -16,8 +16,8 @@ use std::io::Read;
 use std::io::Write;
 use std::io::{self};
 use std::process::exit;
-use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
+use std::sync::atomic::AtomicU64;
 
 use clap::ArgMatches;
 use serde::Deserialize;
@@ -32,24 +32,23 @@ use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
-use tvm_client::net::aggregate_collection;
-use tvm_client::net::query_collection;
 use tvm_client::net::AggregationFn;
 use tvm_client::net::FieldAggregation;
 use tvm_client::net::OrderBy;
 use tvm_client::net::ParamsOfAggregateCollection;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::SortDirection;
+use tvm_client::net::aggregate_collection;
+use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
 use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
-use tvm_executor::TickTockTransactionExecutor;
 use tvm_executor::TransactionExecutor;
-use tvm_types::base64_encode;
-use tvm_types::write_boc;
 use tvm_types::BuilderData;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::base64_encode;
+use tvm_types::write_boc;
 use tvm_vm::executor::Engine;
 use tvm_vm::executor::EngineTraceInfo;
 
@@ -388,8 +387,11 @@ pub async fn replay(
         }
         if tr.id == txnid {
             if dump_mask & DUMP_ACCOUNT != 0 {
-                let path =
-                    format!("{}-{}.boc", account_address.split(':').last().unwrap_or(""), txnid);
+                let path = format!(
+                    "{}-{}.boc",
+                    account_address.split(':').next_back().unwrap_or(""),
+                    txnid
+                );
                 account_root
                     .write_to_file(&path)
                     .map_err(|e| format!("Failed to write account: {}", e))?;
@@ -454,7 +456,7 @@ pub async fn replay(
                     trace_callback,
                     ..ExecuteParams::default()
                 };
-                let tr = executor
+                let (tr, _) = executor
                     .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
                     .map_err(|e| format!("Failed to execute txn: {}", e))?;
                 return Ok(tr);
@@ -465,9 +467,6 @@ pub async fn replay(
             .read_description()
             .map_err(|e| format!("failed to read transaction: {}", e))?
         {
-            TransactionDescr::TickTock(desc) => {
-                Box::new(TickTockTransactionExecutor::new(config.clone(), desc.tt))
-            }
             TransactionDescr::Ordinary(_) => {
                 Box::new(OrdinaryTransactionExecutor::new(config.clone()))
             }
@@ -491,7 +490,7 @@ pub async fn replay(
             last_tr_lt: Arc::new(AtomicU64::new(tr.tr.logical_time())),
             ..ExecuteParams::default()
         };
-        let tr_local = executor
+        let (tr_local, _) = executor
             .execute_with_libs_and_params(msg.as_ref(), &mut account_root, params)
             .map_err(|e| format!("Failed to execute txn: {}", e))?;
         state.account = Account::construct_from_cell(account_root.clone())
@@ -540,8 +539,8 @@ pub async fn replay(
 }
 
 pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm_types::Status {
-    let context = create_client(config)
-        .map_err(|e| failure::err_msg(format!("Failed to create ctx: {}", e)))?;
+    let context =
+        create_client(config).map_err(|e| anyhow::anyhow!("Failed to create ctx: {e}"))?;
 
     let block = query_collection(
         context.clone(),
@@ -597,7 +596,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", account);
         fetch(config, account.as_str(), format!("{}.txns", account).as_str(), Some(end_lt), false)
             .await
-            .map_err(failure::err_msg)?;
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
     }
 
     let config_txns_path = format!("{}.txns", CONFIG_ADDR);
@@ -605,7 +604,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
         println!("Fetching transactions of {}", CONFIG_ADDR);
         fetch(config, CONFIG_ADDR, config_txns_path.as_str(), Some(end_lt), false)
             .await
-            .map_err(failure::err_msg)?;
+            .map_err(|e| anyhow::anyhow!("{e}"))?;
     }
 
     let acc = accounts[0].0.as_str();
@@ -625,7 +624,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
             None,
         )
         .await
-        .map_err(failure::err_msg)?;
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
     } else {
         println!("Using pre-computed config {}", config_path);
     }
@@ -634,7 +633,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
     let tasks: Vec<_> = accounts
         .iter()
         .map(|(account, txns)| {
-            let account_filename = account.split(':').last().unwrap_or("").to_owned();
+            let account_filename = account.split(':').next_back().unwrap_or("").to_owned();
             let _config = config.clone().to_owned();
             let txnid = txns[0].0.clone();
             tokio::spawn(async move {
@@ -652,7 +651,7 @@ pub async fn fetch_block(config: &Config, block_id: &str, filename: &str) -> tvm
                         None,
                     )
                     .await
-                    .map_err(failure::err_msg)
+                    .map_err(|e| anyhow::anyhow!("{e}"))
                     .unwrap();
                 }
             })
@@ -704,7 +703,7 @@ struct BlockAccountDescr {
     transactions: Vec<String>,
 }
 
-pub async fn fetch_block_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn fetch_block_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     fetch_block(
         config,
         m.value_of("BLOCKID").ok_or("Missing block id")?,
@@ -715,7 +714,7 @@ pub async fn fetch_block_command(m: &ArgMatches<'_>, config: &Config) -> Result<
     Ok(())
 }
 
-pub async fn fetch_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), String> {
+pub async fn fetch_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     fetch(
         config,
         m.value_of("ADDRESS").ok_or("Missing account address")?,
@@ -732,7 +731,7 @@ pub async fn fetch_command(m: &ArgMatches<'_>, config: &Config) -> Result<(), St
     Ok(())
 }
 
-pub async fn replay_command(m: &ArgMatches<'_>, cli_config: &Config) -> Result<(), String> {
+pub async fn replay_command(m: &ArgMatches, cli_config: &Config) -> Result<(), String> {
     let (config_txns, bc_config) = if m.is_present("DEFAULT_CONFIG") {
         ("", Some(get_blockchain_config(cli_config, None).await?))
     } else {

@@ -16,19 +16,21 @@ use tvm_block::Account;
 use tvm_block::Deserializable;
 use tvm_block::Serializable;
 use tvm_client::abi::FunctionHeader;
-use tvm_client::tvm::run_get;
-use tvm_client::tvm::run_tvm;
 use tvm_client::tvm::ExecutionOptions;
 use tvm_client::tvm::ParamsOfRunGet;
 use tvm_client::tvm::ParamsOfRunTvm;
+use tvm_client::tvm::run_get;
+use tvm_client::tvm::run_tvm;
 use tvm_types::base64_encode;
 
 use crate::call::print_json_result;
 use crate::config::Config;
 use crate::config::FullConfig;
+use crate::debug::DebugParams;
 use crate::debug::debug_error;
 use crate::debug::init_debug_logger;
-use crate::debug::DebugParams;
+use crate::helpers::AccountSource;
+use crate::helpers::TonClient;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::contract_data_from_matches_or_config_alias;
 use crate::helpers::create_client;
@@ -41,13 +43,11 @@ use crate::helpers::load_params;
 use crate::helpers::now;
 use crate::helpers::now_ms;
 use crate::helpers::unpack_alternative_params;
-use crate::helpers::AccountSource;
-use crate::helpers::TonClient;
 use crate::message::prepare_message;
 use crate::replay::construct_blockchain_config;
 
 pub async fn run_command(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
     is_alternative: bool,
 ) -> Result<(), String> {
@@ -78,7 +78,7 @@ pub async fn run_command(
         matches.value_of("METHOD").unwrap()
     };
     let trace_path;
-    let ton_client = if account_source == AccountSource::NETWORK {
+    let tvm_client = if account_source == AccountSource::NETWORK {
         trace_path = format!("run_{}_{}.log", address, method);
         create_client(config)?
     } else {
@@ -86,19 +86,22 @@ pub async fn run_command(
         create_client_local()?
     };
 
-    let (account, account_boc) =
-        load_account(&account_source, &address, Some(ton_client.clone()), config).await?;
+    let (account, account_boc, state_timestamp) =
+        load_account(&account_source, &address, Some(tvm_client.clone()), config).await?;
+
     let address = match account_source {
         AccountSource::NETWORK => address,
         AccountSource::BOC => account.get_addr().unwrap().to_string(),
         AccountSource::TVC => "0".repeat(64),
     };
+
     run(
         matches,
         config,
-        Some(ton_client),
+        Some(tvm_client),
         &address,
         account_boc,
+        state_timestamp,
         abi_path,
         is_alternative,
         trace_path,
@@ -107,11 +110,12 @@ pub async fn run_command(
 }
 
 async fn run(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     config: &Config,
     ton_client: Option<TonClient>,
     address: &str,
     account_boc: String,
+    state_timestamp: Option<u64>,
     abi_path: String,
     is_alternative: bool,
     trace_path: String,
@@ -172,7 +176,7 @@ async fn run(
     )
     .await;
 
-    let result = match result {
+    let mut result = match result {
         Ok(result) => result,
         Err(e) => {
             let bc_config = get_blockchain_config(config, bc_config).await?;
@@ -194,17 +198,24 @@ async fn run(
     if !config.is_json {
         println!("Succeeded.");
     }
+
     if !result.out_messages.is_empty() {
-        let res = result.decoded.and_then(|d| d.output);
-        match res {
-            Some(data) => {
-                print_json_result(data, config)?;
-            }
+        let mut data = match result.decoded.as_mut().and_then(|d| d.output.take()) {
+            Some(v) => v,
             None => {
-                println!("Failed to decode output messages. Check that abi matches the contract.");
-                println!("Messages in base64:\n{:?}", result.out_messages);
+                eprintln!("Failed to decode output messages. Check that ABI matches the contract.");
+                eprintln!("Messages in base64:\n{:?}", result.out_messages);
+                return Ok(());
+            }
+        };
+
+        if let Some(ts) = state_timestamp {
+            if let Some(obj) = data.as_object_mut() {
+                obj.insert("state_timestamp".to_string(), Value::from(ts));
             }
         }
+
+        print_json_result(data, config)?;
     }
     Ok(())
 }
@@ -243,7 +254,7 @@ pub async fn run_get_method(
         create_client_local()?
     };
 
-    let (_, acc_boc) = load_account(&source_type, addr, Some(ton.clone()), config).await?;
+    let (_, acc_boc, _) = load_account(&source_type, addr, Some(ton.clone()), config).await?;
 
     let params = params
         .map(|p| serde_json::from_str(&p))

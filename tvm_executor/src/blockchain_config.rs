@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use tvm_block::BlockError;
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParams;
 use tvm_block::FundamentalSmcAddresses;
@@ -92,7 +93,11 @@ impl CalcMsgFwdFees for MsgForwardPrices {
     /// Calculate message IHR fee
     /// IHR fee is calculated as `(msg_forward_fee * ihr_factor) >> 16`
     fn ihr_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        Grams::new((fwd_fee.as_u128() * self.ihr_price_factor as u128) >> 16)
+        let product = fwd_fee
+            .as_u128()
+            .checked_mul(self.ihr_price_factor as u128)
+            .ok_or_else(|| BlockError::InvalidArg("IHR fee calculation overflow".to_string()))?;
+        Grams::new(product >> 16)
     }
 
     /// Calculate mine part of forward fee
@@ -104,11 +109,19 @@ impl CalcMsgFwdFees for MsgForwardPrices {
     /// to validators of shard to which message destination address is
     /// belong.
     fn mine_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        Grams::new((fwd_fee.as_u128() * self.first_frac as u128) >> 16)
+        let product = fwd_fee
+            .as_u128()
+            .checked_mul(self.first_frac as u128)
+            .ok_or_else(|| BlockError::InvalidArg("mine fee calculation overflow".to_string()))?;
+        Grams::new(product >> 16)
     }
 
     fn next_fee_checked(&self, fwd_fee: &Grams) -> Result<Grams> {
-        Grams::new((fwd_fee.as_u128() * self.next_frac as u128) >> 16)
+        let product = fwd_fee
+            .as_u128()
+            .checked_mul(self.next_frac as u128)
+            .ok_or_else(|| BlockError::InvalidArg("next fee calculation overflow".to_string()))?;
+        Grams::new(product >> 16)
     }
 }
 
@@ -328,7 +341,7 @@ impl BlockchainConfig {
 
     /// Check if account is special TON account
     pub fn is_special_account(&self, address: &MsgAddressInt) -> Result<bool> {
-        log::debug!(target: "executor", "is_special_account address {}, config addr  {}, special_contracts {:#?}", address, self.raw_config.config_addr, self.special_contracts);
+        log::debug!(target: "executor", "is_special_account address {}, config addr  {}", address, self.raw_config.config_addr);
         let account_id = address.get_address();
         // special account adresses are stored in hashmap
         // config account is special too

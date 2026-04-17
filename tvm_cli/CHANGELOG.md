@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.18] - 2026-04-13
+
+### Added
+- `--log-path` global option and `TVM_CLI_LOG_PATH` env var to redirect all log output to a file (append mode), keeping stdout/stderr clean for automation scripts
+- `--log-filter` option and `TVM_CLI_LOG_FILTER` env var for include/exclude module filtering (e.g. `tvm_client,-hyper`)
+- Session startup info (command-line arguments, working directory) is logged to the log file
+
+### Changed
+- Console log output is now suppressed in `--json` (`-j`) mode
+- Default console log level lowered from Warn to Error to reduce noise
+
+## [2.24.13] - 2026-03-03
+
+### Changed
+- Migrated CLI argument definitions to current clap v3 API, removing deprecated usage
+
+### Fixed
+- `--abi` argument is now required for the `genaddr` subcommand, preventing confusing runtime errors when omitted
+
 ## 0.36.0
 
  - Supported [ABI 2.4](https://github.com/tonlabs/ever-abi/blob/master/CHANGELOG.md#version-240)

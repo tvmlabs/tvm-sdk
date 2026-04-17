@@ -22,10 +22,10 @@ use tvm_types::Cell;
 use tvm_types::UInt256;
 
 use super::Error;
+use crate::boc::internal::DeserializedBoc;
 use crate::boc::internal::deserialize_cell_from_base64;
 use crate::boc::internal::deserialize_cell_from_boc;
 use crate::boc::internal::serialize_cell_to_base64;
-use crate::boc::internal::DeserializedBoc;
 use crate::client::ClientContext;
 use crate::error::ClientResult;
 
@@ -198,8 +198,8 @@ impl Bocs {
         boc: &str,
         name: &str,
     ) -> ClientResult<(DeserializedBoc, Cell)> {
-        if boc.starts_with('*') {
-            let hash = UInt256::from_str(&boc[1..]).map_err(|err| {
+        if let Some(stripped) = boc.strip_prefix('*') {
+            let hash = UInt256::from_str(stripped).map_err(|err| {
                 Error::invalid_boc(format!("BOC start with `*` but contains invalid hash: {}", err))
             })?;
 
@@ -257,7 +257,7 @@ impl Bocs {
         match cache_type {
             BocCacheType::Pinned { pin } => self.add_new_pinned(hash.clone(), pin, cell),
             BocCacheType::Unpinned => {
-                if let Some(_) = self.get_cached(&hash) {
+                if self.get_cached(&hash).is_some() {
                     return Ok(hash);
                 }
                 let size = size.unwrap_or_else(|| calc_tree_size(&cell));
@@ -346,8 +346,8 @@ pub struct ParamsOfBocCacheUnpin {
     /// is unpinned
     pub boc_ref: Option<String>,
 }
-/// Unpin BOCs with specified pin defined in the `cache_set`.
 
+/// Unpin BOCs with specified pin defined in the `cache_set`.
 /// Decrease pin reference counter for BOCs with specified pin defined in the
 /// `cache_set`. BOCs which have only 1 pin and its reference counter become 0
 /// will be removed from cache

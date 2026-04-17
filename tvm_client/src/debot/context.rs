@@ -1,9 +1,9 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::de;
 use serde::Deserialize;
 use serde::Deserializer;
+use serde::de;
 
 use super::action::DAction;
 use crate::encoding::decode_abi_number;

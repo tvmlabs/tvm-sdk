@@ -24,12 +24,12 @@ use tvm_types::Cell;
 use tvm_types::HashmapType;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
-use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::Engine;
-use tvm_vm::stack::integer::IntegerData;
-use tvm_vm::stack::savelist::SaveList;
+use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
+use tvm_vm::stack::integer::IntegerData;
+use tvm_vm::stack::savelist::SaveList;
 
 use super::types::ResolvedExecutionOptions;
 use crate::encoding::slice_from_cell;
@@ -148,7 +148,7 @@ pub(crate) fn call_tvm_msg(
         .map_err(|err| Error::internal_error(format!("can not parse actions: {}", err)))?;
 
     let mut msgs = vec![];
-    for (_, action) in actions.iter_mut().enumerate() {
+    for action in actions.iter_mut() {
         if let OutAction::SendMsg { out_msg, .. } = std::mem::replace(action, OutAction::None) {
             msgs.push(out_msg);
         }
@@ -158,6 +158,7 @@ pub(crate) fn call_tvm_msg(
     Ok(msgs)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn build_contract_info(
     config_params: &ConfigParams,
     address: &MsgAddressInt,

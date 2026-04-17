@@ -11,17 +11,24 @@
 #![allow(clippy::too_many_arguments)]
 
 use std::cmp::min;
+#[cfg(feature = "wasmtime")]
+use std::collections::HashMap;
+#[cfg(feature = "wasmtime")]
+use std::collections::HashSet;
 use std::collections::LinkedList;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
+use std::time::Duration;
+use std::time::Instant;
 
 use tvm_block::AccStatusChange;
 use tvm_block::Account;
 use tvm_block::AccountState;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
+use tvm_block::BASE_WORKCHAIN_ID;
 use tvm_block::CommonMsgInfo;
 use tvm_block::ComputeSkipReason;
 use tvm_block::CopyleftReward;
@@ -33,10 +40,19 @@ use tvm_block::GetRepresentationHash;
 use tvm_block::GlobalCapabilities;
 use tvm_block::Grams;
 use tvm_block::HashUpdate;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 use tvm_block::OutAction;
 use tvm_block::OutActions;
+use tvm_block::RESERVE_ALL_BUT;
+use tvm_block::SENDMSG_ALL_BALANCE;
+use tvm_block::SENDMSG_DELETE_IF_EMPTY;
+use tvm_block::SENDMSG_EXCHANGE_ECC;
+use tvm_block::SENDMSG_IGNORE_ERROR;
+use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
+use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
+use tvm_block::SENDMSG_VALID_FLAGS;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
 use tvm_block::StorageUsedShort;
@@ -49,21 +65,6 @@ use tvm_block::TrStoragePhase;
 use tvm_block::Transaction;
 use tvm_block::VarUInteger32;
 use tvm_block::WorkchainFormat;
-use tvm_block::BASE_WORKCHAIN_ID;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_block::RESERVE_ALL_BUT;
-use tvm_block::RESERVE_IGNORE_ERROR;
-use tvm_block::RESERVE_PLUS_ORIG;
-use tvm_block::RESERVE_REVERSE;
-use tvm_block::RESERVE_VALID_MODES;
-use tvm_block::SENDMSG_ALL_BALANCE;
-use tvm_block::SENDMSG_DELETE_IF_EMPTY;
-use tvm_block::SENDMSG_IGNORE_ERROR;
-use tvm_block::SENDMSG_PAY_FEE_SEPARATELY;
-use tvm_block::SENDMSG_REMAINING_MSG_BALANCE;
-use tvm_block::SENDMSG_VALID_FLAGS;
-use tvm_types::error;
-use tvm_types::fail;
 use tvm_types::AccountId;
 use tvm_types::Cell;
 use tvm_types::ExceptionCode;
@@ -73,11 +74,15 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_vm::error::TvmError;
 use tvm_vm::error::tvm_exception;
+use tvm_vm::executor::BehaviorModifiers;
+use tvm_vm::executor::MVConfig;
 use tvm_vm::executor::gas::gas_state::Gas;
 use tvm_vm::executor::token::ECC_SHELL_KEY;
-use tvm_vm::executor::BehaviorModifiers;
-use tvm_vm::executor::IndexProvider;
+use tvm_vm::executor::token::INFINITY_CREDIT;
 use tvm_vm::smart_contract_info::SmartContractInfo;
 use tvm_vm::stack::Stack;
 
@@ -86,7 +91,6 @@ use crate::blockchain_config::CalcMsgFwdFees;
 use crate::error::ExecutorError;
 use crate::vmsetup::VMSetup;
 use crate::vmsetup::VMSetupContext;
-use crate::VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE;
 
 const RESULT_CODE_ACTIONLIST_INVALID: i32 = 32;
 const RESULT_CODE_TOO_MANY_ACTIONS: i32 = 33;
@@ -99,12 +103,16 @@ const RESULT_CODE_INVALID_BALANCE: i32 = 40;
 const RESULT_CODE_BAD_ACCOUNT_STATE: i32 = 41;
 const RESULT_CODE_ANYCAST: i32 = 50;
 const RESULT_CODE_NOT_FOUND_LICENSE: i32 = 51;
+const RESULT_CODE_NOT_SPECIAL_CONTRACT: i32 = 52;
+const RESULT_CODE_OVERFLOW: i32 = 53;
 const RESULT_CODE_UNSUPPORTED: i32 = -1;
 
 const MAX_ACTIONS: usize = 255;
 
 const MAX_MSG_BITS: usize = 1 << 21;
 const MAX_MSG_CELLS: usize = 1 << 13;
+
+const STORAGE_FEE_COOLER_TIME: u32 = 2592000;
 
 #[derive(Eq, PartialEq, Debug)]
 pub enum IncorrectCheckRewrite {
@@ -121,14 +129,26 @@ pub struct ExecuteParams {
     pub seed_block: UInt256,
     pub debug: bool,
     pub trace_callback: Option<Arc<tvm_vm::executor::TraceCallback>>,
-    pub index_provider: Option<Arc<dyn IndexProvider>>,
     pub behavior_modifiers: Option<BehaviorModifiers>,
     pub block_version: u32,
     #[cfg(feature = "signature_with_id")]
     pub signature_id: i32,
     pub vm_execution_is_block_related: Arc<Mutex<bool>>,
     pub block_collation_was_finished: Arc<Mutex<bool>>,
-    pub src_dapp_id: Option<UInt256>,
+    pub dapp_id: Option<UInt256>,
+    pub available_credit: i128,
+    pub termination_deadline: Option<Instant>,
+    pub execution_timeout: Option<Duration>,
+    #[cfg(feature = "wasmtime")]
+    pub wasm_binary_root_path: String,
+    #[cfg(feature = "wasmtime")]
+    pub wasm_hash_whitelist: HashSet<[u8; 32]>,
+    #[cfg(feature = "wasmtime")]
+    pub wasm_engine: Option<wasmtime::Engine>,
+    #[cfg(feature = "wasmtime")]
+    pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
+    pub mvconfig: MVConfig,
+    pub engine_version: semver::Version,
 }
 
 pub struct ActionPhaseResult {
@@ -162,14 +182,26 @@ impl Default for ExecuteParams {
             seed_block: UInt256::default(),
             debug: false,
             trace_callback: None,
-            index_provider: None,
             behavior_modifiers: None,
             block_version: 0,
             #[cfg(feature = "signature_with_id")]
             signature_id: 0,
             vm_execution_is_block_related: Arc::new(Mutex::new(false)),
             block_collation_was_finished: Arc::new(Mutex::new(false)),
-            src_dapp_id: None,
+            dapp_id: None,
+            available_credit: 0,
+            termination_deadline: None,
+            execution_timeout: None,
+            #[cfg(feature = "wasmtime")]
+            wasm_binary_root_path: "./config/wasm".to_owned(),
+            #[cfg(feature = "wasmtime")]
+            wasm_hash_whitelist: HashSet::new(),
+            #[cfg(feature = "wasmtime")]
+            wasm_engine: None,
+            #[cfg(feature = "wasmtime")]
+            wasm_component_cache: HashMap::new(),
+            mvconfig: MVConfig::default(),
+            engine_version: "1.0.0".parse().unwrap(),
         }
     }
 }
@@ -180,6 +212,7 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account: &mut Account,
         params: ExecuteParams,
+        minted_shell: &mut i128,
     ) -> Result<Transaction>;
 
     fn execute_with_libs_and_params(
@@ -187,39 +220,52 @@ pub trait TransactionExecutor {
         in_msg: Option<&Message>,
         account_root: &mut Cell,
         params: ExecuteParams,
-    ) -> Result<Transaction> {
+    ) -> Result<(Transaction, i128)> {
+        // set exec cell depth limit with threadlocal
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+            .with_borrow_mut(|x| *x = Some(1398101 * 1024));
         let old_hash = account_root.repr_hash();
+        let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let mut is_previous_state_active = true;
-        if let Some(AccountState::AccountUninit {}) = account.state() {
-            is_previous_state_active = false;
-        }
-        let src_dapp_id = params.src_dapp_id.clone();
-        let mut transaction = self.execute_with_params(in_msg, &mut account, params)?;
+        let is_previous_state_active = match account.state() {
+            Some(AccountState::AccountUninit {}) => false,
+            None => false,
+            _ => true,
+        };
+        log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
+        let mut transaction =
+            self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
         if self.config().has_capability(GlobalCapabilities::CapFastStorageStat) {
             account.update_storage_stat_fast()?;
         } else {
             account.update_storage_stat()?;
         }
-        if let Some(AccountState::AccountActive { state_init: _ }) = account.state() {
-            if !is_previous_state_active {
-                if let Some(message) = in_msg {
-                    if message.int_header().is_some() {
-                        if let Some(dapp_id) = src_dapp_id.clone() {
-                            account.set_dapp_id(dapp_id.clone());
-                        }
-                    } else {
-                        account.set_dapp_id(
-                            account.get_id().unwrap().get_bytestring(0).as_slice().into(),
-                        );
-                    }
-                }
-            }
-        }
+        log::trace!(target: "executor", "acc state {:?}, previous_state {:?}, minted_shell {:?}", account.state(), is_previous_state_active, minted_shell);
         *account_root = account.serialize()?;
         let new_hash = account_root.repr_hash();
+        // unset exec cell depth limit with thread local
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+            .with_borrow_mut(|x| *x = None);
         transaction.write_state_update(&HashUpdate::with_hashes(old_hash, new_hash))?;
-        Ok(transaction)
+        // let cell = account
+        //     .clone()
+        //     .write_to_new_cell()?
+        //     .finalize(1024)
+        //     .map_err(|err| tvm_types::Error::from_boxed_compat(err.into()))?;
+        // for k in cell.depths() {
+        //     if k > 800 - 20 {
+        //         return Err(tvm_types::Error::from_boxed_compat(
+        //             anyhow::format_err!(
+        //                 "failed in the right place on cell depths {:?}",
+        //                 cell.depths()
+        //             )
+        //             .into(),
+        //         ));
+        //     }
+        // }
+        Ok((transaction, *minted_shell))
     }
 
     #[deprecated]
@@ -264,6 +310,7 @@ pub trait TransactionExecutor {
         tr: &mut Transaction,
         is_masterchain: bool,
         is_special: bool,
+        is_due: bool,
     ) -> Result<TrStoragePhase> {
         log::debug!(target: "executor", "storage_phase");
         if tr.now() < acc.last_paid() {
@@ -291,7 +338,9 @@ pub trait TransactionExecutor {
             fee.add(due_payment)?;
             acc.set_due_payment(None);
         }
-
+        if tr.now() < acc.last_paid() + STORAGE_FEE_COOLER_TIME && !is_due {
+            fee = Grams::zero();
+        }
         if acc_balance.grams >= fee {
             log::debug!(target: "executor", "acc_balance: {}, storage fee: {}", acc_balance.grams, fee);
             acc_balance.grams.sub(&fee)?;
@@ -384,10 +433,10 @@ pub trait TransactionExecutor {
     /// Evaluates new accout state and invokes TVM if account has contract code.
     fn compute_phase(
         &self,
-        msg: Option<&Message>,
+        msg: Option<&mut Message>,
         acc: &mut Account,
         acc_balance: &mut CurrencyCollection,
-        msg_balance: &CurrencyCollection,
+        msg_balance: &mut CurrencyCollection,
         mut smc_info: SmartContractInfo,
         stack: Stack,
         storage_fee: u128,
@@ -399,7 +448,7 @@ pub trait TransactionExecutor {
         let mut vm_phase = TrComputePhaseVm::default();
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
         let libs_disabled = !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
-        let is_external = if let Some(msg) = msg {
+        let is_external = if let Some(ref msg) = msg {
             if let Some(header) = msg.int_header() {
                 log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
                 if result_acc.is_none() {
@@ -415,8 +464,8 @@ pub trait TransactionExecutor {
 
                         // if there was a balance in message (not bounce), then account state at
                         // least become uninit
+                        result_acc.uninit_account();
                         *acc = result_acc.clone();
-                        acc.uninit_account();
                     }
                 }
                 false
@@ -428,8 +477,8 @@ pub trait TransactionExecutor {
             debug_assert!(!result_acc.is_none());
             false
         };
-        log::debug!(target: "executor", "acc balance: {:#?}", acc_balance);
-        log::debug!(target: "executor", "msg balance: {}", msg_balance.grams);
+        log::debug!(target: "executor", "acc balance: {}", acc_balance);
+        log::debug!(target: "executor", "msg balance: {}", msg_balance);
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() {
             log::debug!(target: "executor", "skip computing phase no gas");
@@ -454,9 +503,20 @@ pub trait TransactionExecutor {
             if let Some(state_init) = msg.state_init() {
                 libs.push(state_init.libraries().inner());
             }
-            if let Some(reason) =
-                compute_new_state(&mut result_acc, acc_balance, msg, self.config())?
-            {
+            let compute_result =
+                compute_new_state(&mut result_acc, acc_balance, msg, self.config());
+            if let Some(reason) = compute_result? {
+                if let CommonMsgInfo::IntMsgInfo(ref mut header) = msg.header_mut() {
+                    if !header.bounce && reason == ComputeSkipReason::BadState {
+                        if msg_balance.grams > acc_balance.grams {
+                            acc_balance.grams = Grams::zero();
+                        } else {
+                            acc_balance.grams -= msg_balance.grams;
+                        }
+                        msg_balance.grams = Grams::zero();
+                        header.value_mut().set_grams(0)?;
+                    }
+                }
                 if !init_code_hash {
                     *acc = result_acc;
                 }
@@ -497,7 +557,7 @@ pub trait TransactionExecutor {
         if let Some(init_code_hash) = result_acc.init_code_hash() {
             smc_info.set_init_code_hash(init_code_hash.clone());
         }
-        let mut vm = VMSetup::with_context(
+        let mut vm_setup = VMSetup::with_context(
             SliceData::load_cell(code)?,
             VMSetupContext {
                 capabilities: self.config().capabilites(),
@@ -512,11 +572,35 @@ pub trait TransactionExecutor {
         .set_libraries(libs)
         .set_gas(gas)
         .set_debug(params.debug)
+        .set_termination_deadline(params.termination_deadline)
+        .set_execution_timeout(params.execution_timeout)
         .set_block_related_flags(
             params.vm_execution_is_block_related.clone(),
             params.block_collation_was_finished.clone(),
-        )
-        .create();
+        );
+
+        #[cfg(feature = "wasmtime")]
+        {
+            vm_setup = vm_setup.set_wasm_root_path(params.wasm_binary_root_path.clone())
+        }
+
+        vm_setup = vm_setup
+            .set_engine_available_credit(params.available_credit)
+            .set_engine_version(params.engine_version.clone())
+            .set_engine_mv_config(params.mvconfig.clone());
+
+        #[cfg(feature = "wasmtime")]
+        {
+            vm_setup = vm_setup
+                .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
+                .set_wasm_block_time(params.block_unixtime.into())
+                .extern_insert_wasm_engine(params.wasm_engine.clone())
+                .extern_insert_wasm_component_cache(params.wasm_component_cache.clone())
+        };
+
+        vm_setup = vm_setup.set_dapp_id(params.dapp_id.clone());
+
+        let mut vm = vm_setup.create();
 
         if let Some(modifiers) = params.behavior_modifiers.clone() {
             vm.modify_behavior(modifiers);
@@ -534,6 +618,9 @@ pub trait TransactionExecutor {
         match result {
             Err(err) => {
                 log::debug!(target: "executor", "VM terminated with exception: {}", err);
+                if let Some(TvmError::TerminationDeadlineReached) = err.downcast_ref() {
+                    fail!(ExecutorError::TerminationDeadlineReached);
+                }
                 let exception = tvm_exception(err)?;
                 vm_phase.exit_code = if let Some(code) = exception.custom_code() {
                     code
@@ -634,6 +721,9 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        available_credit: i128,
+        minted_shell: &mut i128,
+        need_to_burn: Grams,
     ) -> Result<(TrActionPhase, Vec<Message>)> {
         let result = self.action_phase_with_copyleft(
             tr,
@@ -646,6 +736,10 @@ pub trait TransactionExecutor {
             new_data,
             my_addr,
             is_special,
+            available_credit,
+            minted_shell,
+            need_to_burn,
+            None,
         )?;
         Ok((result.phase, result.messages))
     }
@@ -662,7 +756,12 @@ pub trait TransactionExecutor {
         new_data: Option<Cell>,
         my_addr: &MsgAddressInt,
         is_special: bool,
+        available_credit: i128,
+        minted_shell: &mut i128,
+        need_to_burn: Grams,
+        message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
+        let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -690,6 +789,9 @@ pub trait TransactionExecutor {
             return Ok(ActionPhaseResult::from_phase(phase));
         }
         phase.tot_actions = actions.len() as i16;
+        log::debug!(target: "executor", "\nActions {:#?}",
+                actions
+        );
 
         let process_err_code =
             |mut err_code: i32, i: usize, phase: &mut TrActionPhase| -> Result<bool> {
@@ -735,10 +837,11 @@ pub trait TransactionExecutor {
             && !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
 
         for (i, action) in actions.iter_mut().enumerate() {
-            log::debug!(target: "executor", "\nAction #{}\nType: {}\nInitial balance: {}",
+            log::debug!(target: "executor", "\nAction #{}\nType: {}\nInitial balance: {}, need_to_burn {}",
                 i,
                 action_type(action),
-                balance_to_string(&acc_remaining_balance)
+                balance_to_string(&acc_remaining_balance),
+                need_to_burn
             );
             let mut init_balance = acc_remaining_balance.clone();
             let err_code = match std::mem::replace(action, OutAction::None) {
@@ -754,7 +857,7 @@ pub trait TransactionExecutor {
                         &mut out_msg,
                         &mut acc_remaining_balance,
                         msg_remaining_balance,
-                        compute_phase_fees,
+                        //                        compute_phase_fees,
                         self.config(),
                         is_special,
                         my_addr,
@@ -770,12 +873,13 @@ pub trait TransactionExecutor {
                         Err(code) => code,
                     }
                 }
-                OutAction::ReserveCurrency { mode, value } => {
+                OutAction::ReserveCurrency { mode, mut value } => {
+                    log::debug!(target: "executor", "RESERVE: mode {:?}, value {:?}, acc_remaining {:?}, original_acc_balance {:?}, need_to_reserve {:?}", mode, value, acc_remaining_balance, original_acc_balance, need_to_reserve);
                     match reserve_action_handler(
                         mode,
-                        &value,
-                        original_acc_balance,
+                        &mut value,
                         &mut acc_remaining_balance,
+                        &mut need_to_reserve,
                     ) {
                         Ok(reserved_value) => {
                             phase.spec_actions += 1;
@@ -813,39 +917,55 @@ pub trait TransactionExecutor {
                     let mut add_value = CurrencyCollection::new();
                     if is_special {
                         add_value.other = value;
+                        match acc_remaining_balance.add(&add_value) {
+                            Ok(_) => {
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
+                        }
+                    } else {
+                        RESULT_CODE_NOT_SPECIAL_CONTRACT
                     }
-                    log::debug!(target: "executor", "mint token action with status {} and value {}  in account {}", is_special, add_value, acc_remaining_balance);
-                    match acc_remaining_balance.add(&add_value) {
-                        Ok(_) => {
+                }
+                OutAction::BurnToken { value, key } => {
+                    let mut sub_value = CurrencyCollection::new();
+                    if value == 0 {
+                        let other = acc_remaining_balance.get_other(key)?;
+                        if let Some(acc_value) = other {
+                            sub_value.other.set(&key, &acc_value)?;
+                        }
+                    } else {
+                        sub_value
+                            .other
+                            .set(&key, &VarUInteger32::from_two_u128(0, value as u128)?)?;
+                    }
+                    match acc_remaining_balance.sub(&sub_value) {
+                        Ok(true) => {
                             phase.spec_actions += 1;
                             0
                         }
-                        Err(_) => RESULT_CODE_INVALID_BALANCE,
+                        Ok(false) | Err(_) => RESULT_CODE_NOT_ENOUGH_EXTRA,
                     }
                 }
                 OutAction::ExchangeShell { value } => {
-                    let mut add_value = CurrencyCollection::new();
+                    let mut sub_value = CurrencyCollection::new();
                     let mut exchange_value = 0;
                     if let Some(a) = acc_remaining_balance.other.get(&ECC_SHELL_KEY)? {
                         if a <= VarUInteger32::from(value as u128) {
-                            add_value.other.set(&ECC_SHELL_KEY, &a)?;
-                            log::debug!(target: "executor", "get data of bigint {:?}", a.value().to_u64_digits());
+                            sub_value.other.set(&ECC_SHELL_KEY, &a)?;
                             let digits = a.value().to_u64_digits();
                             if !digits.1.is_empty() {
-                                exchange_value = a.value().to_u64_digits().1[0];
+                                exchange_value = digits.1[0];
                             }
                         } else {
-                            log::debug!(target: "executor", "ord values a {:?}, value {}", a, value);
-                            add_value.set_other(ECC_SHELL_KEY, value as u128)?;
+                            sub_value.set_other(ECC_SHELL_KEY, value as u128)?;
                             exchange_value = value;
                         }
                     }
-                    log::debug!(target: "executor", "exchange shell token in action in account {} with value {} and final {}", acc_remaining_balance, exchange_value, add_value);
-                    match acc_remaining_balance.sub(&add_value) {
+                    match acc_remaining_balance.grams.add(&Grams::from(exchange_value)) {
                         Ok(true) => {
-                            acc_remaining_balance
-                                .grams
-                                .add(&Grams::from(exchange_value * 1_000_000_000))?;
+                            acc_remaining_balance.sub(&sub_value)?;
                             phase.spec_actions += 1;
                             0
                         }
@@ -856,6 +976,60 @@ pub trait TransactionExecutor {
                         Err(_) => {
                             phase.spec_actions += 1;
                             0
+                        }
+                    }
+                }
+                OutAction::MintShellToken { value } => {
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + minted_shell.clone() as i128 > available_credit
+                    {
+                        RESULT_CODE_NOT_ENOUGH_GRAMS
+                    } else {
+                        match acc_remaining_balance.grams.add(&(Grams::from(value))) {
+                            Ok(true) => {
+                                *minted_shell += value as i128;
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Ok(false) => RESULT_CODE_OVERFLOW,
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
+                        }
+                    }
+                }
+                OutAction::MintShellQToken { mut value } => {
+                    if available_credit != INFINITY_CREDIT {
+                        if value as i128 + minted_shell.clone() as i128 > available_credit {
+                            if minted_shell.clone() as i128 >= available_credit {
+                                value = 0;
+                            } else {
+                                let new_value = available_credit - *minted_shell;
+                                value = new_value.try_into()?;
+                            }
+                        }
+                    }
+                    match acc_remaining_balance.grams.add(&(Grams::from(value))) {
+                        Ok(true) => {
+                            *minted_shell += value as i128;
+                            phase.spec_actions += 1;
+                            0
+                        }
+                        Ok(false) => RESULT_CODE_OVERFLOW,
+                        Err(_) => RESULT_CODE_UNSUPPORTED,
+                    }
+                }
+                OutAction::SendToDappConfigToken { value } => {
+                    let value_gram = Grams::from(value);
+                    if value_gram > acc_remaining_balance.grams {
+                        RESULT_CODE_NOT_ENOUGH_GRAMS
+                    } else {
+                        match acc_remaining_balance.grams.sub(&value_gram) {
+                            Ok(true) => {
+                                *minted_shell -= value as i128;
+                                phase.spec_actions += 1;
+                                0
+                            }
+                            Ok(false) => RESULT_CODE_OVERFLOW,
+                            Err(_) => RESULT_CODE_UNSUPPORTED,
                         }
                     }
                 }
@@ -870,37 +1044,60 @@ pub trait TransactionExecutor {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
+        if acc_remaining_balance.grams < Grams::from(need_to_reserve) {
+            let err_code = RESULT_CODE_NOT_ENOUGH_GRAMS;
+            if process_err_code(err_code, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
+        }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
+            if let Some(header) = out_msg.int_header_mut() {
+                header.set_src_dapp_id(message_src_dapp_id.clone());
+            }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
                 continue;
             }
-            log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
-                balance_to_string(&acc_remaining_balance));
-            let result = outmsg_action_handler(
-                &mut phase,
-                mode,
-                &mut out_msg,
-                &mut acc_remaining_balance,
-                msg_remaining_balance,
-                compute_phase_fees,
-                self.config(),
-                is_special,
-                my_addr,
-                &total_reserved_value,
-                &mut account_deleted,
-            );
-            log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
-            let err_code = match result {
-                Ok(_) => {
-                    phase.msgs_created += 1;
-                    out_msgs.push(out_msg);
-                    0
+            let mut free_to_send = acc_remaining_balance.clone();
+            if acc_remaining_balance.grams > Grams::from(need_to_reserve) {
+                if need_to_reserve != 0 {
+                    free_to_send.grams.sub(&Grams::from(need_to_reserve))?;
                 }
-                Err(code) => code,
-            };
-            if process_err_code(err_code, i, &mut phase)? {
-                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                log::debug!(target: "executor", "\nSend message with all balance:\nInitial balance: {}",
+                    balance_to_string(&acc_remaining_balance));
+                let result = outmsg_action_handler(
+                    &mut phase,
+                    mode,
+                    &mut out_msg,
+                    &mut free_to_send,
+                    msg_remaining_balance,
+                    //                    compute_phase_fees,
+                    self.config(),
+                    is_special,
+                    my_addr,
+                    &total_reserved_value,
+                    &mut account_deleted,
+                );
+                if need_to_reserve != 0 {
+                    free_to_send.grams.add(&Grams::from(need_to_reserve))?;
+                }
+                acc_remaining_balance = free_to_send.clone();
+                log::debug!(target: "executor", "Final balance:   {}", balance_to_string(&acc_remaining_balance));
+                let err_code = match result {
+                    Ok(_) => {
+                        phase.msgs_created += 1;
+                        out_msgs.push(out_msg);
+                        0
+                    }
+                    Err(code) => code,
+                };
+                if process_err_code(err_code, i, &mut phase)? {
+                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                }
+            } else {
+                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                }
             }
         }
 
@@ -923,6 +1120,15 @@ pub trait TransactionExecutor {
         if account_deleted {
             log::debug!(target: "executor", "\nAccount deleted");
             phase.status_change = AccStatusChange::Deleted;
+        }
+        log::debug!(target: "executor", "Balance and need_to_burn {}, {}", acc_remaining_balance, need_to_burn);
+        if acc_remaining_balance.grams >= need_to_burn {
+            acc_remaining_balance.grams -= need_to_burn;
+        } else {
+            acc_remaining_balance.grams = Grams::zero();
+            if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, 0, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            }
         }
         phase.valid = true;
         phase.success = true;
@@ -949,7 +1155,6 @@ pub trait TransactionExecutor {
         msg: &Message,
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
-        block_version: u32,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
         let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
         if !header.bounce {
@@ -957,6 +1162,7 @@ pub trait TransactionExecutor {
         }
         // create bounced message and swap src and dst addresses
         let mut header = header.clone();
+        header.set_exchange(false);
         let msg_src =
             header.src_ref().ok_or_else(|| error!("Not found src in message header"))?.clone();
         let msg_dst = std::mem::replace(&mut header.dst, msg_src);
@@ -997,23 +1203,17 @@ pub trait TransactionExecutor {
         }
 
         // calculated storage for bounced message is empty
-        let serialized_message = bounce_msg.serialize()?;
-        let (storage, fwd_full_fees) = if block_version
-            >= VERSION_BLOCK_NEW_CALCULATION_BOUNCED_STORAGE
-        {
-            let mut storage = StorageUsedShort::default();
-            storage.append(&serialized_message);
-            let storage_bits = storage.bits() - serialized_message.bit_length() as u64;
-            let storage_cells = storage.cells() - 1;
-            let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &serialized_message)?;
-            (StorageUsedShort::with_values_checked(storage_cells, storage_bits)?, fwd_full_fees)
-        } else {
+        let (storage, fwd_full_fees) = {
             let fwd_full_fees = self.config().calc_fwd_fee(is_masterchain, &Cell::default())?;
             (StorageUsedShort::with_values_checked(0, 0)?, fwd_full_fees)
         };
         let fwd_prices = self.config().get_fwd_prices(is_masterchain);
         let fwd_mine_fees = fwd_prices.mine_fee_checked(&fwd_full_fees)?;
-        let fwd_fees = fwd_full_fees - fwd_mine_fees;
+        let fwd_fees = if fwd_mine_fees.as_u128() > fwd_full_fees.as_u128() {
+            Grams::zero()
+        } else {
+            Grams::new(fwd_full_fees.as_u128() - fwd_mine_fees.as_u128())?
+        };
 
         log::debug!(target: "executor", "get fee {} from bounce msg {}", fwd_full_fees, remaining_msg_balance);
 
@@ -1039,7 +1239,7 @@ pub trait TransactionExecutor {
         log::debug!(
             target: "executor",
             "bounce fees: {} bounce value: {}",
-            fwd_mine_fees, bounce_msg.get_value().unwrap().grams
+            fwd_mine_fees, bounce_msg.get_value().unwrap()
         );
         tr.add_fee_grams(&fwd_mine_fees)?;
         Ok((TrBouncePhase::ok(storage, fwd_mine_fees, fwd_fees), Some(bounce_msg)))
@@ -1136,6 +1336,13 @@ fn compute_new_state(
         }
         // Account exists, but can be in different states.
         AccountStatus::AccStateActive => {
+            if let Some(state_init) = in_msg.state_init() {
+                let text = "Cannot process external message for active account with hash";
+                if !check_libraries(state_init, disable_set_lib, text, in_msg) {
+                    return Ok(Some(ComputeSkipReason::BadState));
+                }
+            }
+
             if config.has_capability(GlobalCapabilities::CapSuspendedList) {
                 if let Some(suspended_addresses) = config.raw_config().suspended_addresses()? {
                     let addr =
@@ -1157,6 +1364,72 @@ fn compute_new_state(
         AccountStatus::AccStateUninit => {
             log::debug!(target: "executor", "AccountUninit");
             if let Some(state_init) = in_msg.state_init() {
+                match in_msg.body() {
+                    Some(mut data) => {
+                        if in_msg.is_internal() {
+                            if let Ok(function_id) = data.get_next_u32() {
+                                log::trace!(target: "executor", "{} function_id", function_id);
+                                if function_id != 1 {
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            } else {
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                        }
+                        if in_msg.is_inbound_external() {
+                            let sign_bit = match data.get_next_bit() {
+                                Ok(bit) => bit,
+                                Err(_) => {
+                                    log::error!(target: "executor", "Failed to get sign_bit from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            };
+                            if sign_bit {
+                                if data.get_next_bits(512).is_err() {
+                                    log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                            let pubkey_bit = match data.get_next_bit() {
+                                Ok(bit) => bit,
+                                Err(_) => {
+                                    log::error!(target: "executor", "Failed to get pubkey_bit from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            };
+                            if pubkey_bit {
+                                if data.get_next_bits(256).is_err() {
+                                    log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                            if data.get_next_u64().is_err() {
+                                log::error!(target: "executor", "Failed to get timestamp (u64) from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                            if data.get_next_u32().is_err() {
+                                log::error!(target: "executor", "Failed to get expire (u32) from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
+                            }
+                            match data.get_next_u32() {
+                                Ok(function_id) => {
+                                    log::trace!(target: "executor", "{} function_id", function_id);
+                                    if function_id != 1 {
+                                        log::error!(target: "executor", "Invalid function_id {} in external message, expected 1", function_id);
+                                        return Ok(Some(ComputeSkipReason::BadState));
+                                    }
+                                }
+                                Err(_) => {
+                                    log::error!(target: "executor", "Failed to get function_id (u32) from external message body");
+                                    return Ok(Some(ComputeSkipReason::BadState));
+                                }
+                            }
+                        }
+                    }
+                    None => {
+                        return Ok(Some(ComputeSkipReason::BadState));
+                    }
+                }
                 // if msg is a constructor message then
                 // borrow code and data from it and switch account state to 'active'.
                 log::debug!(target: "executor", "message for uninitialized: activated");
@@ -1378,7 +1651,7 @@ fn outmsg_action_handler(
     msg: &mut Message,
     acc_balance: &mut CurrencyCollection,
     msg_balance: &mut CurrencyCollection,
-    compute_phase_fees: &Grams,
+    //    compute_phase_fees: &Grams,
     config: &BlockchainConfig,
     is_special: bool,
     my_addr: &MsgAddressInt,
@@ -1386,7 +1659,10 @@ fn outmsg_action_handler(
     account_deleted: &mut bool,
 ) -> std::result::Result<CurrencyCollection, i32> {
     // we cannot send all balance from account and from message simultaneously ?
-    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE;
+    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE
+        | SENDMSG_ALL_BALANCE
+        | SENDMSG_IGNORE_ERROR
+        | SENDMSG_REMAINING_MSG_BALANCE;
     if (mode & !SENDMSG_VALID_FLAGS) != 0
         || (mode & invalid_flags) == invalid_flags
         || ((mode & SENDMSG_DELETE_IF_EMPTY) != 0 && (mode & SENDMSG_ALL_BALANCE) == 0)
@@ -1394,7 +1670,7 @@ fn outmsg_action_handler(
         log::error!(target: "executor", "outmsg mode has unsupported flags");
         return Err(RESULT_CODE_UNSUPPORTED);
     }
-    let skip = if (mode & SENDMSG_IGNORE_ERROR) != 0 { None } else { Some(()) };
+    let skip = Some(());
     let (fwd_mine_fee, total_fwd_fees);
     let mut result_value; // to sub from acc_balance
 
@@ -1405,7 +1681,7 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INCORRECT_SRC_ADDRESS);
     }
 
-    let fwd_prices = config.get_fwd_prices(msg.is_masterchain());
+    let fwd_prices_basic = config.get_fwd_prices(msg.is_masterchain());
     let compute_fwd_fee = if is_special {
         Grams::default()
     } else {
@@ -1419,6 +1695,7 @@ fn outmsg_action_handler(
     };
 
     if let Some(int_header) = msg.int_header_mut() {
+        let mut fwd_prices = fwd_prices_basic.clone();
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {
@@ -1456,27 +1733,46 @@ fn outmsg_action_handler(
         total_fwd_fees = fwd_fee + int_header.ihr_fee;
 
         let fwd_remain_fee = fwd_fee - fwd_mine_fee;
+
+        if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
+            int_header.set_exchange(true);
+        } else {
+            int_header.set_exchange(false);
+            log::debug!(target: "executor", "Sanitizing is_exchange flag: forcing to false");
+        }
+
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
             // send all remaining account balance
             result_value = acc_balance.clone();
-            int_header.value = acc_balance.clone();
+            //    if need_to_reserve != 0 {
+            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
+            // Ok(true) => (),
+            // Ok(false) => {
+            // result_value.grams = Grams::zero();
+            // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+            // }
+            // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
+            // }
+            // }
+            int_header.value = result_value.clone();
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
-        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
-            // send all remainig balance of inbound message
-            result_value.add(msg_balance).ok();
-            if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
-                if &result_value.grams < compute_phase_fees {
-                    return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+                    // send all remainig balance of inbound message
+                    result_value.add(msg_balance).ok();
+                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                        if &result_value.grams < compute_phase_fees {
+                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                        }
+                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                            RESULT_CODE_ACTIONLIST_INVALID
+                        })?;
+                    }
+                    int_header.value = result_value.clone();
                 }
-                result_value.grams.sub(compute_phase_fees).map_err(|err| {
-                    log::error!(target: "executor", "cannot subtract msg balance : {}", err);
-                    RESULT_CODE_ACTIONLIST_INVALID
-                })?;
-            }
-            int_header.value = result_value.clone();
-        }
+        */
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
             result_value.grams += total_fwd_fees;
@@ -1538,7 +1834,7 @@ fn outmsg_action_handler(
 
     if (mode & SENDMSG_DELETE_IF_EMPTY) != 0
         && (mode & SENDMSG_ALL_BALANCE) != 0
-        && acc_balance.grams.is_zero()
+        && acc_balance.grams == Grams::from(0)
         && reserved_value.grams.is_zero()
     {
         *account_deleted = true;
@@ -1563,7 +1859,8 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INVALID_BALANCE);
     }
 
-    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
+    //    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
+    if mode & SENDMSG_ALL_BALANCE != 0 {
         *msg_balance = CurrencyCollection::default();
     }
 
@@ -1584,42 +1881,33 @@ fn outmsg_action_handler(
 /// Reduces balance by the amount of the reserved value.
 fn reserve_action_handler(
     mode: u8,
-    val: &CurrencyCollection,
-    original_acc_balance: &CurrencyCollection,
+    val: &mut CurrencyCollection,
     acc_remaining_balance: &mut CurrencyCollection,
+    need_to_reserve: &mut u64,
 ) -> std::result::Result<CurrencyCollection, i32> {
-    if mode & !RESERVE_VALID_MODES != 0 {
+    if mode > RESERVE_ALL_BUT {
         return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
+    }
+    if mode & RESERVE_ALL_BUT == 0 {
+        if *need_to_reserve != 0 {
+            match val.grams.add(&Grams::from(*need_to_reserve)) {
+                Ok(true) => (),
+                Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
+                Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
+            }
+            *need_to_reserve = 0;
+        }
+    } else {
+        if acc_remaining_balance.grams < Grams::from(*need_to_reserve) + val.grams {
+            return Err(RESULT_CODE_INVALID_BALANCE);
+        }
+        if *need_to_reserve != 0 {
+            *need_to_reserve = 0;
+        }
     }
     log::debug!(target: "executor", "Reserve with mode = {} value = {}", mode, balance_to_string(val));
 
-    let mut reserved;
-    if mode & RESERVE_PLUS_ORIG != 0 {
-        // Append all currencies
-        if mode & RESERVE_REVERSE != 0 {
-            reserved = original_acc_balance.clone();
-            let result = reserved.sub(val);
-            match result {
-                Err(_) => return Err(RESULT_CODE_INVALID_BALANCE),
-                Ok(false) => return Err(RESULT_CODE_UNSUPPORTED),
-                Ok(true) => (),
-            }
-        } else {
-            reserved = val.clone();
-            reserved.add(original_acc_balance).or(Err(RESULT_CODE_INVALID_BALANCE))?;
-        }
-    } else {
-        if mode & RESERVE_REVERSE != 0 {
-            // flag 8 without flag 4 unacceptable
-            return Err(RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
-        }
-        reserved = val.clone();
-    }
-    if mode & RESERVE_IGNORE_ERROR != 0 {
-        // Only grams
-        reserved.grams = min(reserved.grams, acc_remaining_balance.grams);
-    }
-
+    let mut reserved = val.clone();
     let mut remaining = acc_remaining_balance.clone();
     if remaining.grams.as_u128() < reserved.grams.as_u128() {
         return Err(RESULT_CODE_NOT_ENOUGH_GRAMS);
@@ -1770,7 +2058,6 @@ fn account_from_message(
                 if check_libraries(init, disable_set_lib, text, msg) {
                     return Account::active_by_init_code_hash(
                         hdr.dst.clone(),
-                        UInt256::new(),
                         msg_remaining_balance.clone(),
                         0,
                         init.clone(),
@@ -1796,7 +2083,7 @@ fn account_from_message(
         );
         None
     } else {
-        Some(Account::uninit(hdr.dst.clone(), UInt256::new(), 0, 0, msg_remaining_balance.clone()))
+        Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
     }
 }
 
@@ -1818,6 +2105,10 @@ fn action_type(action: &OutAction) -> String {
         OutAction::SetCode { new_code: _ } => "SetCode".to_string(),
         OutAction::ReserveCurrency { mode: _, value: _ } => "ReserveCurrency".to_string(),
         OutAction::ChangeLibrary { mode: _, code: _, hash: _ } => "ChangeLibrary".to_string(),
+        OutAction::MintShellToken { value: _ } => "MintShellToken".to_string(),
+        OutAction::MintShellQToken { value: _ } => "MintShellQToken".to_string(),
+        OutAction::SendToDappConfigToken { value: _ } => "SendToDappConfigToken".to_string(),
+        OutAction::ExchangeShell { value: _ } => "ExchangeShell".to_string(),
         _ => "Unknown".to_string(),
     }
 }

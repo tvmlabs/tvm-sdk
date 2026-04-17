@@ -1,0 +1,26 @@
+[package]
+name = "tls_check"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+wit-bindgen-rt = { version = "0.41.0", features = ["bitflags"] }
+
+num-bigint = "0.2.2"
+num-traits = "0.2.8"
+num-integer = "0.1.46"
+hex = "0.4"
+base64url = "0.1.0"
+chrono = "0.4"
+
+#rand = "0.8.5"
+
+[lib]
+crate-type = ["cdylib"]
+
+[package.metadata.component]
+package = "docs:tlschecker"
+
+[package.metadata.component.dependencies]
+
+[workspace]

@@ -10,11 +10,14 @@
 // limitations under the License.
 //
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde_json::Value;
 use tvm_block::MsgAddressInt;
 
-use crate::error::format_time;
 use crate::error::ClientError;
+use crate::error::format_time;
 
 #[derive(ApiType)]
 pub enum ErrorCode {
@@ -34,6 +37,7 @@ pub enum ErrorCode {
     MessageRejected = 514,
     InvalidRempStatus = 515,
     NextRempStatusTimeout = 516,
+    InvalidThread = 517,
 }
 
 pub struct Error;
@@ -95,7 +99,7 @@ impl Error {
     pub fn fetch_block_failed<E: std::fmt::Display>(
         err: E,
         message_id: &str,
-        shard_block_id: &String,
+        shard_block_id: &str,
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::FetchBlockFailed,
@@ -129,7 +133,7 @@ impl Error {
     pub fn invalid_block_received<E: std::fmt::Display>(
         err: E,
         message_id: &str,
-        shard_block_id: &String,
+        shard_block_id: &str,
     ) -> ClientError {
         Self::processing_error(
             ErrorCode::InvalidBlockReceived,
@@ -175,7 +179,7 @@ impl Error {
 
     pub fn transaction_wait_timeout(
         message_id: &str,
-        shard_block_id: &String,
+        shard_block_id: &str,
         expiration_time: u32,
         timeout: u32,
         block_time: u32,
@@ -223,5 +227,9 @@ impl Error {
 
     pub fn next_remp_status_timeout() -> ClientError {
         error(ErrorCode::NextRempStatusTimeout, "Next REMP status awaiting timeout".to_string())
+    }
+
+    pub fn invalid_thread<E: std::fmt::Display>(err: E) -> ClientError {
+        error(ErrorCode::InvalidThread, format!("Invalid thread id: {}", err))
     }
 }

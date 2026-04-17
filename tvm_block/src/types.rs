@@ -19,12 +19,10 @@ use std::sync::Arc;
 use std::time::SystemTime;
 use std::time::UNIX_EPOCH;
 
-use num::bigint::Sign;
 use num::BigInt;
 use num::One;
 use num::Zero;
-use tvm_types::error;
-use tvm_types::fail;
+use num::bigint::Sign;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -34,19 +32,16 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::error;
+use tvm_types::fail;
 
+use crate::Deserializable;
+use crate::Serializable;
 use crate::define_HashmapE;
 use crate::error::BlockError;
 use crate::hashmapaug::Augmentable;
-use crate::Deserializable;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_types.rs"]
-mod tests;
 
 /// var_uint$_ {n:#} len:(#< n) value:(uint (len * 8)) = VarUInteger n;
-
 /// var_int$_ {n:#} len:(#< n) value:(int (len * 8)) = VarInteger n;
 /// nanograms$_ amount:(VarUInteger 16) = Grams;
 ///
@@ -54,7 +49,6 @@ mod tests;
 /// that x < 2^8*l, and serializes first l as an unsigned 4-bit integer, then x
 /// itself as an unsigned 8`-bit integer. Notice that four zero bits represent a
 /// zero amount of Grams.
-
 macro_rules! define_VarIntegerN {
     ($varname:ident, $N:expr,BigInt) => {
         #[derive(Eq, Clone, Debug)]
@@ -62,7 +56,7 @@ macro_rules! define_VarIntegerN {
 
         #[allow(dead_code)]
         impl $varname {
-            fn get_len(value: &BigInt) -> usize {
+            pub fn get_len(value: &BigInt) -> usize {
                 (value.bits() as usize + 7) >> 3
             }
 
@@ -112,7 +106,7 @@ macro_rules! define_VarIntegerN {
             // Interface to write value with type rule
             fn write_to_cell(value: &BigInt) -> Result<BuilderData> {
                 let len = Self::get_len(value);
-                if len >= $N {
+                if len > $N {
                     fail!("serialization of {} error {} >= {}", stringify!($varname), len, $N)
                 }
 
@@ -125,7 +119,7 @@ macro_rules! define_VarIntegerN {
 
             fn read_from_cell(cell: &mut SliceData) -> Result<BigInt> {
                 let len = cell.get_next_int(Self::get_len_len())? as usize;
-                if len >= $N {
+                if len > $N {
                     fail!("deserialization of {} error {} >= {}", stringify!($varname), len, $N)
                 }
                 Ok(BigInt::from_bytes_be(Sign::Plus, &cell.get_next_bytes(len)?))
@@ -847,6 +841,11 @@ impl CurrencyCollection {
         Self::from_grams(Grams::from(grams))
     }
 
+    pub fn set_grams(&mut self, grams: u64) -> Result<()> {
+        self.grams = Grams::from(grams);
+        Ok(())
+    }
+
     pub const fn from_grams(grams: Grams) -> Self {
         CurrencyCollection { grams, other: ExtraCurrencyCollection::default() }
     }
@@ -882,28 +881,43 @@ pub trait AddSub {
 
 impl AddSub for CurrencyCollection {
     fn sub(&mut self, other: &Self) -> Result<bool> {
+        let data = self.clone();
         if !self.grams.sub(&other.grams)? {
             return Ok(false);
         }
-        other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
+        let res = other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             if let Some(mut a) = self.other.get(&key)? {
                 if a >= b {
                     a.sub(&b)?;
                     self.other.set(&key, &a)?;
                     return Ok(true);
                 }
+            } else if b == VarUInteger32::zero() {
+                return Ok(true);
             }
-            Ok(false) // coin not found in mine or amount is smaller - cannot subtract
-        })
+
+            Ok(false) // coin not found in mine or amount is smaller - cannot
+            // subtract
+        });
+        if let Ok(true) = res {
+            Ok(true)
+        } else {
+            *self = data;
+            res
+        }
     }
 
     fn add(&mut self, other: &Self) -> Result<bool> {
-        self.grams.add(&other.grams)?;
+        if !self.grams.add(&other.grams)? {
+            return Ok(false);
+        }
         let mut result = self.other.clone();
         other.other.iterate_with_keys(|key: u32, b| -> Result<bool> {
             match self.other.get(&key)? {
                 Some(mut a) => {
-                    a.add(&b)?;
+                    if !a.add(&b)? {
+                        return Ok(false);
+                    }
                     result.set(&key, &a)?;
                 }
                 None => {
@@ -997,6 +1011,13 @@ impl Serializable for u32 {
 impl Serializable for u128 {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
         cell.append_u128(*self)?;
+        Ok(())
+    }
+}
+
+impl Serializable for i128 {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        cell.append_i128(*self)?;
         Ok(())
     }
 }
@@ -1517,5 +1538,75 @@ impl<T: Default + Serializable + Deserializable> PartialEq for ChildCell<T> {
             }
             (None, None) => true,
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExternalCell<T: Default + Serializable + Deserializable> {
+    cell: Cell,
+    phantom: PhantomData<T>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExternalCellStruct<T> {
+    Struct(T),
+    External(UInt256),
+}
+
+impl<T> ExternalCellStruct<T> {
+    pub fn as_struct(self) -> Result<T> {
+        match self {
+            ExternalCellStruct::Struct(s) => Ok(s),
+            _ => Err(BlockError::ExternalCellRead.into()),
+        }
+    }
+}
+
+impl<T: Default + Serializable + Deserializable + Clone> Default for ExternalCell<T> {
+    fn default() -> Self {
+        Self { cell: T::default().serialize().unwrap_or_default(), phantom: PhantomData }
+    }
+}
+
+impl<T: Default + Serializable + Deserializable + Clone> ExternalCell<T> {
+    pub fn with_cell(cell: Cell) -> Self {
+        Self { cell, phantom: PhantomData }
+    }
+
+    pub fn with_struct(s: &T) -> Result<Self> {
+        Ok(ExternalCell { cell: s.serialize()?, phantom: PhantomData })
+    }
+
+    pub fn write_struct(&mut self, s: &T) -> Result<()> {
+        self.cell = s.serialize()?;
+        Ok(())
+    }
+
+    pub fn read_struct(&self) -> Result<ExternalCellStruct<T>> {
+        if self.cell.cell_type() == CellType::External {
+            return Ok(ExternalCellStruct::External(self.cell.repr_hash()));
+        }
+        T::construct_from_cell(self.cell.clone()).map(ExternalCellStruct::Struct)
+    }
+
+    pub fn read_from_reference(&mut self, slice: &mut SliceData) -> Result<()> {
+        self.cell = slice.checked_drain_reference()?;
+        Ok(())
+    }
+
+    pub fn cell(&self) -> Cell {
+        self.cell.clone()
+    }
+
+    pub fn set_cell(&mut self, cell: Cell) {
+        self.cell = cell;
+    }
+
+    pub fn hash(&self) -> UInt256 {
+        self.cell.repr_hash()
+    }
+
+    pub fn is_external(&self) -> bool {
+        self.cell.cell_type() == CellType::External
     }
 }

@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use tvm_types::fail;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::HashmapE;
@@ -18,14 +17,11 @@ use tvm_types::HashmapType;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::fail;
 
-use crate::define_HashmapE;
 use crate::Deserializable;
 use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_miscellaneous.rs"]
-mod tests;
+use crate::define_HashmapE;
 
 // key is [ shard:uint64 mc_seqno:uint32 ]
 // _ (HashmapE 96 ProcessedUpto) = ProcessedInfo;

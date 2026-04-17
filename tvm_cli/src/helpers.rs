@@ -8,22 +8,34 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::env;
+use std::io::Write as _;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::OnceLock;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 use std::time::SystemTime;
 
 use clap::ArgMatches;
-use serde_json::json;
+use serde_json::Map;
 use serde_json::Value;
+use serde_json::json;
 use tvm_block::Account;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
 use tvm_block::MsgAddressInt;
 use tvm_block::Serializable;
 use tvm_block::StateInit;
+use tvm_client::ClientConfig;
+use tvm_client::ClientContext;
 use tvm_client::abi::Abi;
 use tvm_client::abi::AbiConfig;
 use tvm_client::abi::AbiContract;
@@ -32,50 +44,178 @@ use tvm_client::abi::DeploySet;
 use tvm_client::abi::ParamsOfDecodeMessageBody;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
+use tvm_client::account;
+use tvm_client::account::ResultOfGetAccount;
+use tvm_client::boc::internal::serialize_cell_to_base64;
 use tvm_client::crypto::CryptoConfig;
 use tvm_client::crypto::KeyPair;
 use tvm_client::crypto::MnemonicDictionary;
 use tvm_client::error::ClientError;
-use tvm_client::net::query_collection;
 use tvm_client::net::NetworkConfig;
 use tvm_client::net::OrderBy;
 use tvm_client::net::ParamsOfQueryCollection;
-use tvm_client::ClientConfig;
-use tvm_client::ClientContext;
+use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
 use tvm_types::base64_decode;
 use tvm_types::base64_encode;
-use tvm_types::UInt256;
 use url::Url;
 
+use crate::FullConfig;
 use crate::call::parse_params;
 use crate::config::Config;
 use crate::config::LOCALNET;
 use crate::debug::debug_level_from_env;
-use crate::replay::construct_blockchain_config;
 use crate::replay::CONFIG_ADDR;
+use crate::replay::construct_blockchain_config;
 use crate::resolve_net_name;
-use crate::FullConfig;
-
 pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
-const CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
-const GLOBAL_CONFIG_PATH: &str = ".tonos-cli.global.conf.json";
+const DEPRECATED_CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
+const CONFIG_BASE_NAME: &str = "tvm-cli.conf.json";
+const DEPRECATED_GLOBAL_CONFIG_PATH: &str = ".tonos-cli.global.conf.json";
+const GLOBAL_CONFIG_PATH: &str = ".tvm-cli.global.conf.json";
 
+// todo: rewrite `config.url`, `config.endpoints[]`, `endpoints_map{}` and
+// `path`
 pub fn default_config_name() -> String {
-    env::current_dir()
-        .map(|dir| dir.join(PathBuf::from(CONFIG_BASE_NAME)).to_str().unwrap().to_string())
-        .unwrap_or(CONFIG_BASE_NAME.to_string())
+    match env::current_dir() {
+        Ok(dir) => {
+            let new = dir.join(PathBuf::from(CONFIG_BASE_NAME));
+            let old = dir.join(PathBuf::from(DEPRECATED_CONFIG_BASE_NAME));
+
+            if !new.exists() && old.exists() {
+                let _ = std::fs::rename(&old, &new);
+            }
+
+            new.to_string_lossy().into_owned()
+        }
+        Err(_) => CONFIG_BASE_NAME.to_string(),
+    }
 }
 
 pub fn global_config_path() -> String {
-    env::current_exe()
-        .map(|mut dir| {
-            dir.set_file_name(GLOBAL_CONFIG_PATH);
-            dir.to_str().unwrap().to_string()
-        })
-        .unwrap_or(GLOBAL_CONFIG_PATH.to_string())
+    match env::current_exe() {
+        Ok(exe_path) => {
+            let mut new = exe_path.clone();
+            new.set_file_name(GLOBAL_CONFIG_PATH);
+
+            let mut old = exe_path;
+            old.set_file_name(DEPRECATED_GLOBAL_CONFIG_PATH);
+
+            if !new.exists() && old.exists() {
+                let _ = std::fs::rename(&old, &new);
+            }
+
+            new.to_string_lossy().into_owned()
+        }
+        Err(_) => GLOBAL_CONFIG_PATH.to_string(),
+    }
+}
+
+struct LogFile {
+    path: String,
+    file: Mutex<std::fs::File>,
+}
+
+struct LogFilter {
+    include: Vec<String>,
+    exclude: Vec<String>,
+}
+
+impl LogFilter {
+    fn parse(spec: &str) -> Self {
+        let mut include = Vec::new();
+        let mut exclude = Vec::new();
+        for token in spec.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            if let Some(module) = token.strip_prefix('-') {
+                exclude.push(module.to_string());
+            } else {
+                include.push(token.to_string());
+            }
+        }
+        LogFilter { include, exclude }
+    }
+
+    fn allows(&self, target: &str) -> bool {
+        if self.exclude.iter().any(|e| target.starts_with(e.as_str())) {
+            return false;
+        }
+        if self.include.is_empty() {
+            return true;
+        }
+        self.include.iter().any(|i| target.starts_with(i.as_str()))
+    }
+}
+
+static LOG_FILE: OnceLock<LogFile> = OnceLock::new();
+static LOG_FILTER: OnceLock<LogFilter> = OnceLock::new();
+static JSON_MODE: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn set_json_mode(enabled: bool) {
+    JSON_MODE.store(enabled, Ordering::Relaxed);
+}
+
+pub(crate) fn is_json_mode() -> bool {
+    JSON_MODE.load(Ordering::Relaxed)
+}
+
+pub(crate) fn init_log_file(path: &str) -> Result<(), String> {
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|e| format!("failed to open log file '{}': {}", path, e))?;
+    LOG_FILE
+        .set(LogFile { path: path.to_string(), file: Mutex::new(file) })
+        .map_err(|_| "log file already initialized".to_string())
+}
+
+pub(crate) fn init_log_filter(spec: &str) {
+    let _ = LOG_FILTER.set(LogFilter::parse(spec));
+}
+
+pub(crate) fn has_log_file() -> bool {
+    LOG_FILE.get().is_some()
+}
+
+pub(crate) fn log_file_path() -> Option<&'static str> {
+    LOG_FILE.get().map(|lf| lf.path.as_str())
+}
+
+pub(crate) fn write_log_record(record: &log::Record) {
+    if let Some(filter) = LOG_FILTER.get() {
+        if !filter.allows(record.target()) {
+            return;
+        }
+    }
+    if let Some(lf) = LOG_FILE.get() {
+        if let Ok(mut file) = lf.file.lock() {
+            let _ = writeln!(
+                file,
+                "[{} {:5} {}] {}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                record.level(),
+                record.target(),
+                record.args()
+            );
+        }
+    }
+}
+
+pub(crate) fn log_startup_info() {
+    if let Some(lf) = LOG_FILE.get() {
+        if let Ok(mut file) = lf.file.lock() {
+            let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+            let args: Vec<String> = std::env::args().collect();
+            let cwd = std::env::current_dir()
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| "<unknown>".to_string());
+            let _ = writeln!(file, "[{now} INFO  tvm_cli] === tvm-cli session started ===");
+            let _ = writeln!(file, "[{now} INFO  tvm_cli]   args: {}", args.join(" "));
+            let _ = writeln!(file, "[{now} INFO  tvm_cli]   cwd: {cwd}");
+        }
+    }
 }
 
 struct SimpleLogger;
@@ -86,6 +226,13 @@ impl log::Log for SimpleLogger {
     }
 
     fn log(&self, record: &log::Record) {
+        if has_log_file() {
+            write_log_record(record);
+            return;
+        }
+        if is_json_mode() {
+            return;
+        }
         match record.level() {
             log::Level::Error | log::Level::Warn => {
                 eprintln!("{}", record.args());
@@ -128,6 +275,7 @@ pub fn now_ms() -> u64 {
 }
 
 pub type TonClient = Arc<ClientContext>;
+pub type TvmClient = Arc<ClientContext>;
 
 pub fn create_client_local() -> Result<TonClient, String> {
     let cli = ClientContext::new(ClientConfig::default())
@@ -155,10 +303,11 @@ pub fn get_server_endpoints(config: &Config) -> Vec<String> {
 
 pub fn create_client(config: &Config) -> Result<TonClient, String> {
     let modified_endpoints = get_server_endpoints(config);
-    if !config.is_json {
+    if !config.is_json && !has_log_file() {
         println!("Connecting to:\n\tUrl: {}", config.url);
         println!("\tEndpoints: {:?}\n", modified_endpoints);
     }
+    log::info!("Connecting to: url={}, endpoints={:?}", config.url, modified_endpoints);
     let endpoints_cnt = if resolve_net_name(&config.url).unwrap_or(config.url.clone()).eq(LOCALNET)
     {
         1_u8
@@ -177,7 +326,6 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             hdkey_derivation_path: HD_PATH.to_string(),
         },
         network: NetworkConfig {
-            server_address: Some(config.url.to_owned()),
             sending_endpoint_count: endpoints_cnt,
             endpoints: if modified_endpoints.is_empty() { None } else { Some(modified_endpoints) },
             message_retries_count: config.retries as i8,
@@ -185,6 +333,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
             wait_for_timeout: config.timeout,
             out_of_sync_threshold: Some(config.out_of_sync_threshold * 1000),
             access_key: config.access_key.clone(),
+            api_token: config.api_token.clone(),
             ..Default::default()
         },
         ..Default::default()
@@ -195,7 +344,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
 }
 
 pub fn create_client_verbose(config: &Config) -> Result<TonClient, String> {
-    let level = debug_level_from_env();
+    let level = if has_log_file() { log::LevelFilter::Trace } else { debug_level_from_env() };
     log::set_max_level(level);
     log::set_boxed_logger(Box::new(SimpleLogger))
         .map_err(|e| format!("failed to init logger: {}", e))?;
@@ -292,24 +441,34 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
-    let accounts = query_with_limit(
-        ton.clone(),
-        "accounts",
-        json!({ "id": { "eq": address } }),
-        field,
-        None,
-        Some(1),
-    )
-    .await
-    .map_err(|e| format!("failed to query account data: {}", e))?;
-    if accounts.is_empty() {
-        return Err(format!("account with address {} not found", address));
+    let params = account::ParamsOfGetAccount { address: address.to_owned() };
+    let result_of_get_acc = account::get_account(ton, params)
+        .await
+        .map_err(|e| format!("failed to get account: {e}"))?;
+
+    if field == "boc" {
+        return Ok(result_of_get_acc.boc);
     }
-    let data = accounts[0][field].as_str();
-    if data.is_none() {
-        return Err(format!("account doesn't contain {}", field));
+
+    if field != "data" {
+        return Err("Only boc and data field are supported".to_string());
     }
-    Ok(data.unwrap().to_string())
+
+    let account = Account::construct_from_base64(&result_of_get_acc.boc)
+        .map_err(|e| format!("failed to construct account from boc: {e}"))?;
+
+    let state_init = account.state_init();
+
+    if state_init.is_none() {
+        return Err("account doesn't contain state_init".to_string());
+    }
+
+    let cell: Option<tvm_types::Cell> = state_init.unwrap().clone().data;
+
+    match cell {
+        Some(cell) => Ok(serialize_cell_to_base64(&cell, "account data").unwrap()),
+        None => Err("State init doesn't contain field data".to_string()),
+    }
 }
 
 pub async fn decode_msg_body(
@@ -492,33 +651,39 @@ pub fn json_account(
     data: Option<String>,
     code_hash: Option<String>,
     state_init: Option<String>,
+    state_timestamp: Option<u64>,
 ) -> Value {
-    let mut res = json!({});
-    if acc_type.is_some() {
-        res["acc_type"] = json!(acc_type.unwrap());
+    let mut map = Map::new();
+
+    if let Some(v) = acc_type {
+        map.insert("acc_type".into(), json!(v));
     }
-    if address.is_some() {
-        res["address"] = json!(address.unwrap());
+    if let Some(v) = address {
+        map.insert("address".into(), json!(v));
     }
-    if balance.is_some() {
-        res["balance"] = json!(balance.unwrap());
+    if let Some(v) = balance {
+        map.insert("balance".into(), json!(v));
     }
-    if last_paid.is_some() {
-        res["last_paid"] = json!(last_paid.unwrap());
+    if let Some(v) = last_paid {
+        map.insert("last_paid".into(), json!(v));
     }
-    if last_trans_lt.is_some() {
-        res["last_trans_lt"] = json!(last_trans_lt.unwrap());
+    if let Some(v) = last_trans_lt {
+        map.insert("last_trans_lt".into(), json!(v));
     }
-    if data.is_some() {
-        res["data_boc"] = json!(data.unwrap());
+    if let Some(v) = data {
+        map.insert("data_boc".into(), json!(v));
     }
-    if code_hash.is_some() {
-        res["code_hash"] = json!(code_hash.unwrap());
+    if let Some(v) = code_hash {
+        map.insert("code_hash".into(), json!(v));
     }
-    if state_init.is_some() {
-        res["state_init"] = json!(state_init.unwrap());
+    if let Some(v) = state_init {
+        map.insert("state_init".into(), json!(v));
     }
-    res
+    if let Some(v) = state_timestamp {
+        map.insert("state_timestamp".into(), json!(v));
+    }
+
+    Value::Object(map)
 }
 
 pub fn print_account(
@@ -531,6 +696,7 @@ pub fn print_account(
     data: Option<String>,
     code_hash: Option<String>,
     state_init: Option<String>,
+    state_timestamp: Option<u64>,
 ) {
     if config.is_json {
         let acc = json_account(
@@ -542,6 +708,7 @@ pub fn print_account(
             data,
             code_hash,
             state_init,
+            state_timestamp,
         );
         println!("{:#}", acc);
     } else {
@@ -550,28 +717,31 @@ pub fn print_account(
             return;
         }
         if address.is_some() {
-            println!("address:       {}", address.unwrap());
+            println!("address:         {}", address.unwrap());
         }
         if acc_type.is_some() {
-            println!("acc_type:      {}", acc_type.unwrap());
+            println!("acc_type:        {}", acc_type.unwrap());
         }
         if balance.is_some() {
-            println!("balance:       {}", balance.unwrap());
+            println!("balance:         {}", balance.unwrap());
         }
         if last_paid.is_some() {
-            println!("last_paid:     {}", last_paid.unwrap());
+            println!("last_paid:       {}", last_paid.unwrap());
         }
         if last_trans_lt.is_some() {
-            println!("last_trans_lt: {}", last_trans_lt.unwrap());
+            println!("last_trans_lt:   {}", last_trans_lt.unwrap());
         }
         if data.is_some() {
-            println!("data_boc:      {}", data.unwrap());
+            println!("data_boc:        {}", data.unwrap());
         }
         if code_hash.is_some() {
-            println!("code_hash:     {}", code_hash.unwrap());
+            println!("code_hash:       {}", code_hash.unwrap());
         }
         if state_init.is_some() {
-            println!("state_init:    {}", state_init.unwrap());
+            println!("state_init:      {}", state_init.unwrap());
+        }
+        if let Some(state_timestamp) = state_timestamp {
+            println!("state_timestamp: {}", state_timestamp);
         }
     }
 }
@@ -587,7 +757,6 @@ pub fn construct_account_from_tvc(
                 .map_err(|e| format!("Failed to set address: {}", e))?,
             _ => MsgAddressInt::default(),
         },
-        UInt256::new(),
         match balance {
             Some(balance) => CurrencyCollection::with_grams(balance),
             _ => CurrencyCollection::default(),
@@ -618,20 +787,28 @@ pub enum AccountSource {
 pub async fn load_account(
     source_type: &AccountSource,
     source: &str,
-    ton_client: Option<TonClient>,
+    tvm_client: Option<TonClient>,
     config: &Config,
-) -> Result<(Account, String), String> {
+) -> Result<(Account, String, Option<u64>), String> {
     match source_type {
         AccountSource::NETWORK => {
-            let ton_client = match ton_client {
-                Some(ton_client) => ton_client,
+            let ton_client = match tvm_client {
+                Some(tvm_client) => tvm_client,
                 None => create_client(config)?,
             };
-            let boc = query_account_field(ton_client.clone(), source, "boc").await?;
+
+            let ResultOfGetAccount { boc, state_timestamp, .. } = account::get_account(
+                ton_client,
+                account::ParamsOfGetAccount { address: source.to_string() },
+            )
+            .await
+            .map_err(|e| format!("Failed to get account: {e}"))?;
+
             Ok((
                 Account::construct_from_base64(&boc)
                     .map_err(|e| format!("Failed to construct account: {}", e))?,
                 boc,
+                state_timestamp,
             ))
         }
         _ => {
@@ -645,7 +822,7 @@ pub async fn load_account(
             let account_bytes = account
                 .write_to_bytes()
                 .map_err(|e| format!(" failed to load data from the account: {}", e))?;
-            Ok((account, base64_encode(&account_bytes)))
+            Ok((account, base64_encode(&account_bytes), None))
         }
     }
 }
@@ -674,10 +851,7 @@ pub fn check_file_exists(path: &str, trim: &[&str], ending: &[&str]) -> Option<S
     None
 }
 
-pub fn abi_from_matches_or_config(
-    matches: &ArgMatches<'_>,
-    config: &Config,
-) -> Result<String, String> {
+pub fn abi_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<String, String> {
     matches
         .value_of("ABI")
         .map(|s| s.to_string())
@@ -719,7 +893,7 @@ pub fn load_params(params: &str) -> Result<String, String> {
 }
 
 pub async fn unpack_alternative_params(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     abi_path: &str,
     method: &str,
     config: &Config,
@@ -732,7 +906,7 @@ pub async fn unpack_alternative_params(
     }
 }
 
-pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> Result<i32, String> {
+pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<i32, String> {
     Ok(matches
         .value_of("WC")
         .map(|v| i32::from_str_radix(v, 10))
@@ -742,7 +916,7 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches<'_>, config: &Config) -> R
 }
 
 pub fn contract_data_from_matches_or_config_alias(
-    matches: &ArgMatches<'_>,
+    matches: &ArgMatches,
     full_config: &FullConfig,
 ) -> Result<(Option<String>, Option<String>, Option<String>), String> {
     let address = matches

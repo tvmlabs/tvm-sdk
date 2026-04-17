@@ -13,11 +13,8 @@ license.workspace = true
 anyhow.workspace = true
 byteorder.workspace = true
 extfmt.workspace = true
-failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
-ordered-float.workspace = true
-secstr.workspace = true
 serde.workspace = true
 serde_derive.workspace = true
 thiserror.workspace = true
@@ -25,9 +22,8 @@ thiserror.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
 
-[build-dependencies]
-serde_json = "1.0.112"
-tvm_tl_codegen = { path = "../tvm_tl_codegen", default-features = false }
+ordered-float = "4"
+secstr = "0.5"
 
 [features]
 bytes_as_vec = []

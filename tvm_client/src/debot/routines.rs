@@ -4,21 +4,21 @@ use tvm_types::base64_decode;
 use tvm_types::base64_encode;
 
 use super::TonClient;
-use crate::boc::parse_account;
 use crate::boc::ParamsOfParse;
-use crate::crypto::generate_random_bytes;
-use crate::crypto::nacl_box_keypair_from_secret_key;
-use crate::crypto::signing_box_sign;
+use crate::boc::parse_account;
 use crate::crypto::KeyPair;
 use crate::crypto::ParamsOfGenerateRandomBytes;
 use crate::crypto::ParamsOfNaclBox;
 use crate::crypto::ParamsOfNaclBoxKeyPairFromSecret;
 use crate::crypto::ParamsOfSigningBoxSign;
 use crate::crypto::SigningBoxHandle;
+use crate::crypto::generate_random_bytes;
+use crate::crypto::nacl_box_keypair_from_secret_key;
+use crate::crypto::signing_box_sign;
 use crate::encoding::decode_abi_bigint;
 use crate::encoding::decode_abi_number;
-use crate::net::query_collection;
 use crate::net::ParamsOfQueryCollection;
+use crate::net::query_collection;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub(super) struct ResultOfGetAccountState {
@@ -138,7 +138,7 @@ pub fn convert_string_to_tokens(_ton: TonClient, arg: &str) -> Result<String, St
         } else {
             result += "000000000";
         }
-        u64::from_str_radix(&result, 10).map_err(|e| format!("failed to parse amount: {}", e))?;
+        result.parse::<u64>().map_err(|e| format!("failed to parse amount: {}", e))?;
         return Ok(result);
     }
     Err("Invalid amount value".to_string())
@@ -214,8 +214,7 @@ pub(super) async fn sign_hash(
 
 pub(super) fn generate_random(ton: TonClient, args: &serde_json::Value) -> Result<String, String> {
     let len_str = get_arg(args, "length")?;
-    let len =
-        u32::from_str_radix(&len_str, 10).map_err(|e| format!("failed to parse length: {}", e))?;
+    let len = len_str.parse::<u32>().map_err(|e| format!("failed to parse length: {}", e))?;
     let result = generate_random_bytes(ton, ParamsOfGenerateRandomBytes { length: len })
         .map_err(|e| format!(" failed to generate random: {}", e))?;
     Ok(result.bytes)

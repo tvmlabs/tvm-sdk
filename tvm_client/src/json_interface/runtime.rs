@@ -15,16 +15,16 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::MutexGuard;
 
-use api_info::Module;
 use api_info::API;
+use api_info::Module;
 
 use super::modules::register_modules;
 use super::request::Request;
+use crate::ContextHandle;
 use crate::client::ClientConfig;
 use crate::client::ClientContext;
 use crate::client::Error;
 use crate::error::ClientResult;
-use crate::ContextHandle;
 
 pub(crate) trait SyncHandler {
     fn handle(&self, context: Arc<ClientContext>, params_json: &str) -> ClientResult<String>;
@@ -37,8 +37,8 @@ pub(crate) trait AsyncHandler {
 // Handlers
 
 pub(crate) struct RuntimeHandlers {
-    sync_handlers: HashMap<String, Box<dyn SyncHandler + Sync>>,
-    async_handlers: HashMap<String, Box<dyn AsyncHandler + Sync>>,
+    sync_handlers: HashMap<String, Box<dyn SyncHandler + Sync + Send>>,
+    async_handlers: HashMap<String, Box<dyn AsyncHandler + Sync + Send>>,
     api: API,
 }
 
@@ -53,15 +53,24 @@ impl RuntimeHandlers {
         handlers
     }
 
+    #[cfg_attr(not(feature = "api_info"), allow(dead_code))]
     pub fn add_module(&mut self, module: Module) {
         self.api.modules.push(module);
     }
 
-    pub fn register_sync(&mut self, function_name: String, handler: Box<dyn SyncHandler + Sync>) {
+    pub fn register_sync(
+        &mut self,
+        function_name: String,
+        handler: Box<dyn SyncHandler + Sync + Send>,
+    ) {
         self.sync_handlers.insert(function_name, handler);
     }
 
-    pub fn register_async(&mut self, function_name: String, handler: Box<dyn AsyncHandler + Sync>) {
+    pub fn register_async(
+        &mut self,
+        function_name: String,
+        handler: Box<dyn AsyncHandler + Sync + Send>,
+    ) {
         self.async_handlers.insert(function_name, handler);
     }
 }
@@ -119,6 +128,7 @@ impl Runtime {
         }
     }
 
+    #[cfg(feature = "api_info")]
     pub fn api() -> &'static API {
         &Self::handlers().api
     }

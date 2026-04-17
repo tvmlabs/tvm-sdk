@@ -16,17 +16,17 @@ use crate::boc::tvc::resolve_state_init_cell;
 use crate::json_interface::modules::ProcessingModule;
 use crate::net::ParamsOfQuery;
 use crate::net::ResultOfQuery;
-use crate::processing::types::DecodedOutput;
 use crate::processing::ErrorCode;
 use crate::processing::ParamsOfProcessMessage;
 use crate::processing::ParamsOfSendMessage;
 use crate::processing::ParamsOfWaitForTransaction;
 use crate::processing::ProcessingEvent;
 use crate::processing::ProcessingResponseType;
-use crate::tests::TestClient;
+use crate::processing::types::DecodedOutput;
 use crate::tests::EVENTS_OLD;
 use crate::tests::GIVER_V2;
 use crate::tests::HELLO;
+use crate::tests::TestClient;
 use crate::tvm::AccountForExecutor;
 use crate::tvm::ErrorCode as TvmErrorCode;
 use crate::tvm::ParamsOfRunExecutor;
@@ -153,12 +153,13 @@ async fn test_wait_message() {
     client.get_tokens_from_giver_async(&encoded.address, None).await;
 
     let encoded = client.encode_message(encode_params).await.unwrap();
-    let result = send_message
+    let _result = send_message
         .call_with_callback(
             ParamsOfSendMessage {
-                message: encoded.message.clone(),
-                send_events: true,
                 abi: Some(abi.clone()),
+                message: encoded.message.clone(),
+                thread_id: None,
+                send_events: true,
             },
             callback.clone(),
         )
@@ -169,10 +170,9 @@ async fn test_wait_message() {
         .call_with_callback(
             ParamsOfWaitForTransaction {
                 message: encoded.message.clone(),
-                shard_block_id: result.shard_block_id,
                 send_events: true,
                 abi: Some(abi.clone()),
-                sending_endpoints: Some(result.sending_endpoints),
+                ..Default::default()
             },
             callback.clone(),
         )
@@ -772,4 +772,61 @@ fn test_process_message_sync() {
             })),
         })
     );
+}
+
+#[allow(clippy::module_inception)]
+#[cfg(test)]
+mod tests {
+    use crate::processing::send_message::decode_send_message_result;
+    use crate::processing::tests::TestClient;
+
+    #[test]
+    fn test_decode_send_message_result_output() {
+        let client = TestClient::new();
+
+        let abi = crate::abi::Abi::Json(
+            json!({
+                "ABI version": 2,
+                "version": "2.4",
+                "header": ["pubkey", "time", "expire"],
+                "functions": [{
+                    "name": "sendTransaction",
+                    "inputs": [
+                            {"name":"dest","type":"address"},
+                            {"name":"value","type":"uint128"},
+                            {"name":"cc","type":"map(uint32,varuint32)"},
+                            {"name":"bounce","type":"bool"},
+                            {"name":"flags","type":"uint8"},
+                            {"name":"payload","type":"cell"}
+                    ],
+                    "outputs": [{"name":"value0","type":"address"}]
+                }],
+                "events": [{
+                    "name": "SentTransaction",
+                    "inputs": [
+                            {"name":"src","type":"address"},
+                            {"name":"dst","type":"address"},
+                            {"name":"value","type":"uint128"}
+                    ],
+                    "outputs": []
+                }]
+            })
+            .to_string(),
+        );
+        let body = json!(
+            "te6ccgEBAQEAKAAAS/4I/2WADu7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7w".to_string()
+        );
+        let expected =
+            json!({"value0": "0:7777777777777777777777777777777777777777777777777777777777777777"});
+
+        let result = decode_send_message_result(&client.context(), abi.clone(), &body);
+        assert!(result == Some(expected));
+
+        // event
+        let body = json!(
+            "te6ccgEBAgEAXQABS0UU8XeACMgteSt64fgM3MmkIPvL/p31cocoQ/E9IDq1jX0lMEvwAQBjgA7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u4AAAAAAAAAAAAAAAAAHoSBA="
+        );
+        let result = decode_send_message_result(&client.context(), abi, &body);
+        assert!(result.is_none());
+    }
 }

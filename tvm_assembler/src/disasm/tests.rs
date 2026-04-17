@@ -9,7 +9,6 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use failure::format_err;
 use similar::ChangeTag;
 use similar::TextDiff;
 use tvm_types::read_boc;

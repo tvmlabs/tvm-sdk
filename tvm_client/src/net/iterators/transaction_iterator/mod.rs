@@ -18,17 +18,17 @@ use serde_json::Value;
 
 use crate::client::ClientContext;
 use crate::error::ClientResult;
-use crate::net::iterators::block::BlockFields;
-use crate::net::iterators::block::BLOCK_TRANSACTIONS_FIELDS;
-use crate::net::iterators::block_iterator::BlockIterator;
-use crate::net::iterators::query_by_ids;
-use crate::net::iterators::register_iterator;
-use crate::net::iterators::transaction::TransactionFields;
-use crate::net::iterators::transaction::TRANSACTION_FIELDS;
-use crate::net::iterators::ResultOfIteratorNext;
 use crate::net::ChainIterator;
 use crate::net::ParamsOfCreateBlockIterator;
 use crate::net::RegisteredIterator;
+use crate::net::iterators::ResultOfIteratorNext;
+use crate::net::iterators::block::BLOCK_TRANSACTIONS_FIELDS;
+use crate::net::iterators::block::BlockFields;
+use crate::net::iterators::block_iterator::BlockIterator;
+use crate::net::iterators::query_by_ids;
+use crate::net::iterators::register_iterator;
+use crate::net::iterators::transaction::TRANSACTION_FIELDS;
+use crate::net::iterators::transaction::TransactionFields;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct ResumeState {
@@ -179,7 +179,7 @@ fn get_transfers(transaction: TransactionFields) -> Value {
     let is_bounced =
         transaction.bounce().map(|x| x.bounce_type() == BOUNCE_TYPE_OK).unwrap_or(false);
     if let Some(inbound) = transaction.in_message() {
-        if u64::from_str_radix(inbound.value(), 10).unwrap_or(0) > 0 {
+        if inbound.value().parse::<u64>().unwrap_or(0) > 0 {
             transfers.push(json!({
                 "message": inbound.id(),
                 "isBounced": is_bounced,
@@ -191,7 +191,7 @@ fn get_transfers(transaction: TransactionFields) -> Value {
     }
     if let Some(out_messages) = transaction.out_messages() {
         for outbound in out_messages {
-            if u64::from_str_radix(outbound.value(), 10).unwrap_or(0) > 0 {
+            if outbound.value().parse::<u64>().unwrap_or(0) > 0 {
                 transfers.push(json!({
                     "message": outbound.id(),
                     "isBounced": is_bounced,

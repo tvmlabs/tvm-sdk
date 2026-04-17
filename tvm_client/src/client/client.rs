@@ -9,39 +9,42 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 use lockfree::map::Map as LockfreeMap;
-use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
-use tokio::sync::oneshot;
+use serde::de::DeserializeOwned;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
+use tokio::sync::oneshot;
 use tvm_client_processing::MessageMonitor;
 
+use super::AppRequestResult;
+use super::Error;
+use super::ParamsOfAppRequest;
 #[cfg(not(feature = "wasm-base"))]
 use super::std_client_env::ClientEnv;
 #[cfg(feature = "wasm-base")]
 use super::wasm_client_env::ClientEnv;
-use super::AppRequestResult;
-use super::Error;
-use super::ParamsOfAppRequest;
 use crate::abi::AbiConfig;
-use crate::boc::cache::Bocs;
 use crate::boc::BocConfig;
+use crate::boc::cache::Bocs;
+use crate::client::BindingConfig;
 use crate::client::storage::KeyValueStorage;
 use crate::client::update_binding_config;
-use crate::client::BindingConfig;
+use crate::crypto::CryptoConfig;
 use crate::crypto::boxes::crypto_box::CryptoBox;
 use crate::crypto::boxes::crypto_box::DerivedKeys;
 use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::crypto::boxes::signing_box::SigningBox;
-use crate::crypto::CryptoConfig;
 use crate::debot::DEngine;
 use crate::error::ClientResult;
 use crate::json_interface::interop::ResponseType;
@@ -74,7 +77,6 @@ pub struct ClientContext {
 
     // client module
     pub(crate) env: Arc<ClientEnv>,
-    pub(crate) network_params: RwLock<Option<NetworkParams>>,
 
     // crypto module
     pub(crate) boxes: Boxes,
@@ -119,12 +121,11 @@ impl ClientContext {
         update_binding_config(&config.binding);
         let env = Arc::new(ClientEnv::new()?);
 
-        let server_link =
-            if config.network.server_address.is_some() || config.network.endpoints.is_some() {
-                Some(ServerLink::new(config.network.clone(), env.clone())?)
-            } else {
-                None
-            };
+        let server_link = if config.network.endpoints.is_some() {
+            Some(ServerLink::new(config.network.clone(), env.clone())?)
+        } else {
+            None
+        };
 
         let bocs = Arc::new(Bocs::new(config.boc.cache_max_size));
         let net = Arc::new(NetworkContext {
@@ -144,7 +145,6 @@ impl ClientContext {
             debots: LockfreeMap::new(),
             boxes: Default::default(),
             bocs,
-            network_params: RwLock::new(None),
             app_requests: Mutex::new(HashMap::new()),
             proofs_storage: Default::default(),
             derived_keys: DerivedKeys::new(env),

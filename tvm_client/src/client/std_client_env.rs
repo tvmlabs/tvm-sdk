@@ -9,7 +9,11 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
+use std::error::Error as StdError;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -18,12 +22,12 @@ use futures::Future;
 use futures::SinkExt;
 use futures::StreamExt;
 use lazy_static::lazy_static;
-use reqwest::header::HeaderMap;
-use reqwest::header::HeaderName;
-use reqwest::header::HeaderValue;
 use reqwest::Client as HttpClient;
 use reqwest::ClientBuilder;
 use reqwest::Method;
+use reqwest::header::HeaderMap;
+use reqwest::header::HeaderName;
+use reqwest::header::HeaderValue;
 use tokio::runtime::Runtime;
 #[cfg(test)]
 use tokio::sync::RwLock;
@@ -33,10 +37,10 @@ use super::Error;
 use super::FetchMethod;
 use super::FetchResult;
 use super::WebSocket;
+use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
 #[cfg(test)]
 use crate::client::network_mock::NetworkMock;
 use crate::client::storage::KeyValueStorage;
-use crate::client::LOCAL_STORAGE_DEFAULT_DIR_NAME;
 use crate::error::ClientResult;
 
 #[cfg(test)]
@@ -185,7 +189,7 @@ impl ClientEnv {
         let read = read.filter_map(|result| async move {
             match result {
                 Ok(message) => match message {
-                    WsMessage::Text(text) => Some(Ok(text)),
+                    WsMessage::Text(text) => Some(Ok(text.to_string())),
                     _ => None,
                 },
                 Err(err) => Some(Err(Error::websocket_receive_error(err))),
@@ -225,7 +229,13 @@ impl ClientEnv {
             request = request.body(body);
         }
 
-        let response = request.send().await.map_err(Error::http_request_send_error)?;
+        // let response = request.send().await.map_err(Error::http_request_send_error)?;
+        let result = request.send().await;
+        if let Err(e) = result {
+            return Err(Error::http_request_send_error(Self::flatten_error(e, url)));
+        }
+
+        let response = result.unwrap();
 
         Ok(FetchResult {
             headers: Self::header_map_to_string_map(response.headers()),
@@ -234,6 +244,17 @@ impl ClientEnv {
             remote_address: response.remote_addr().map(|x| x.to_string()),
             body: response.text().await.map_err(Error::http_request_parse_error)?,
         })
+    }
+
+    pub fn flatten_error(err: impl StdError + 'static, url: &str) -> anyhow::Error {
+        let mut parts = vec![err.to_string()];
+        let mut source = err.source();
+        while let Some(src) = source {
+            parts.push(src.to_string());
+            source = src.source();
+        }
+        parts.push(url.to_string());
+        anyhow::Error::msg(parts.join(": "))
     }
 }
 

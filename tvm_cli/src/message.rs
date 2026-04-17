@@ -12,21 +12,21 @@
 use chrono::Local;
 use chrono::TimeZone;
 use serde_json::json;
-use tvm_client::abi::encode_message;
 use tvm_client::abi::Abi;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::FunctionHeader;
 use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::Signer;
+use tvm_client::abi::encode_message;
 use tvm_types::base64_decode;
 
 use crate::config::Config;
 use crate::crypto::load_keypair;
+use crate::helpers::TonClient;
 use crate::helpers::create_client_local;
 use crate::helpers::load_abi;
 use crate::helpers::load_ton_address;
 use crate::helpers::now;
-use crate::helpers::TonClient;
 
 pub struct EncodedMessage {
     pub message_id: String,
@@ -82,7 +82,7 @@ pub fn prepare_message_params(
         abi,
         address: Some(addr.to_owned()),
         call_set,
-        signer: if keys.is_some() { Signer::Keys { keys: keys.unwrap() } } else { Signer::None },
+        signer: if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None },
         ..Default::default()
     })
 }

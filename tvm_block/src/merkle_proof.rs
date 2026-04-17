@@ -13,9 +13,6 @@ use std::cmp::max;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use tvm_types::error;
-use tvm_types::fail;
-use tvm_types::types::UInt256;
 use tvm_types::BuilderData;
 use tvm_types::Cell;
 use tvm_types::CellType;
@@ -23,7 +20,13 @@ use tvm_types::IBitstring;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UsageTree;
+use tvm_types::error;
+use tvm_types::fail;
+use tvm_types::types::UInt256;
 
+use crate::Deserializable;
+use crate::GetRepresentationHash;
+use crate::Serializable;
 use crate::accounts::Account;
 use crate::blocks::Block;
 use crate::blocks::BlockInfo;
@@ -34,13 +37,6 @@ use crate::merkle_update::MerkleUpdate;
 use crate::messages::Message;
 use crate::shard::ShardStateUnsplit;
 use crate::transactions::Transaction;
-use crate::Deserializable;
-use crate::GetRepresentationHash;
-use crate::Serializable;
-
-#[cfg(test)]
-#[path = "tests/test_merkle_proof.rs"]
-mod tests;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MerkleProof {
@@ -60,7 +56,7 @@ impl Deserializable for MerkleProof {
         if cell.pos() != 0 {
             fail!("Merkle proof have to fill full cell from its zeroth bit.")
         }
-        if CellType::try_from(cell.get_next_byte()?)? != CellType::MerkleProof {
+        if cell.get_next_byte()? != CellType::MERKLE_PROOF {
             fail!(BlockError::InvalidData("invalid Merkle proof root's cell type".to_string()))
         }
         self.hash.read_from(cell)?;
@@ -86,7 +82,7 @@ impl Serializable for MerkleProof {
             fail!("Merkle proof have to fill full cell from its zeroth bit.")
         }
         cell.set_type(CellType::MerkleProof);
-        cell.append_u8(u8::from(CellType::MerkleProof))?;
+        cell.append_u8(CellType::MERKLE_PROOF)?;
         self.hash.write_to(cell)?;
         cell.append_u16(self.depth)?;
         cell.checked_append_reference(self.proof.clone())?;
@@ -147,6 +143,10 @@ impl MerkleProof {
         pruned_branches: &mut Option<HashSet<UInt256>>,
         done_cells: &mut HashMap<UInt256, Cell>,
     ) -> Result<Cell> {
+        if cell.cell_type() == CellType::External {
+            fail!("External cell can not be included into Merkle proof");
+        }
+        // println!("traversing {:?}", cell);
         let child_merkle_depth = if cell.is_merkle() { merkle_depth + 1 } else { merkle_depth };
 
         let mut proof_cell = BuilderData::from_cell(cell)?;
@@ -169,7 +169,7 @@ impl MerkleProof {
                     done_cells,
                 )?
             } else {
-                let pbc = MerkleUpdate::make_pruned_branch_cell(&child, child_merkle_depth)?;
+                let pbc = MerkleUpdate::build_pruned_branch(&child, child_merkle_depth)?;
                 if let Some(pruned_branches) = pruned_branches.as_mut() {
                     pruned_branches.insert(child_repr_hash);
                 }
@@ -361,7 +361,7 @@ pub fn check_message_proof(
 }
 
 /// checks if account with given address is exist in shard state.
-/// Proof must contain account's root cell
+/// Proof must contain account's root cell as a pruned branch
 /// Returns info about the block corresponds to shard state the account belongs
 /// to.
 pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSeqNoAndShard> {
@@ -375,18 +375,18 @@ pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSe
         BlockError::WrongMerkleProof(format!("Error extracting accounts dict from proof: {}", err))
     })?;
 
-    let shard_acc = accounts.get_serialized(acc.get_addr().unwrap().get_address());
+    let shard_acc = accounts.account(&acc.get_addr().unwrap().get_address());
     if let Ok(Some(shard_acc)) = shard_acc {
-        let acc_root = shard_acc.account_cell();
+        let acc_root = shard_acc.account_cell()?;
         let acc_hash = Cell::hash(&acc_root, (max(acc_root.level(), 1) - 1) as usize);
         if acc.hash()? != acc_hash {
             fail!(BlockError::WrongMerkleProof("Wrong account's hash in proof".to_string()))
         } else {
-            return Ok(BlockSeqNoAndShard {
+            Ok(BlockSeqNoAndShard {
                 seq_no: ss.seq_no(),
                 vert_seq_no: ss.vert_seq_no(),
                 shard_id: ss.shard().clone(),
-            });
+            })
         }
     } else {
         fail!(BlockError::WrongMerkleProof("No account in proof".to_string()))

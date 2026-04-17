@@ -10,38 +10,105 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-diffy = { optional = true, version = "0.3.0" }
+chrono.workspace = true
+diffy = { workspace = true, optional = true }
 ed25519.workspace = true
 ed25519-dalek.workspace = true
-failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 log.workspace = true
 num.workspace = true
 num-traits.workspace = true
 rand.workspace = true
-similar = { features = ["bytes"], optional = true, version = "2.4.0" }
+serde_derive.workspace = true
+similar = { features = ["bytes"], optional = true, workspace = true }
 thiserror.workspace = true
-zstd = { default-features = false, optional = true, version = "0.13.0" }
-#
+wasmtime = { workspace = true, optional = true }
+wasmtime-wasi = { workspace = true, optional = true }
+wasmtime-wasi-io = { workspace = true, optional = true }
+zstd = { optional = true, workspace = true }
+
+tokio.workspace = true
 tvm_block.workspace = true
 tvm_types.workspace = true
+tvm_abi.workspace = true
+serde_json.workspace = true
+num-bigint.workspace = true
+semver.workspace = true
+serde.workspace = true
+
+# ZK dependencies (optional, included via "gosh" feature)
+regex = { workspace = true, optional = true }
+reqwest = { workspace = true, features = ["blocking", "json", "rustls"], optional = true }
+
+bls12_381 = { version = "0.8", optional = true }
+
+ark-bls12-381 = { version = "0.4", optional = true }
+ark-bn254 = { version = "0.4", optional = true }
+ark-ec = { version = "0.4", optional = true }
+ark-ff = { version = "0.4", optional = true }
+ark-groth16 = { version = "0.4", default-features = false, optional = true }
+ark-relations = { version = "0.4", optional = true }
+ark-serialize = { version = "0.4", optional = true }
+ark-snark = { version = "0.4", optional = true }
+byte-slice-cast = { version = "1", optional = true }
+ark-crypto-primitives = { version = "0.4", features = ["r1cs", "prf"], optional = true }
+ark-r1cs-std = { version = "0.4", optional = true }
+ark-std = { version = "0.4", optional = true }
+
+fastcrypto = { version = "0.1", optional = true }
+neptune = { version = "13", default-features = false, optional = true }
+
+once_cell = { version = "1", optional = true }
+halo2-base = { version = "0.5.1", optional = true }
+pse-poseidon = { git = "https://github.com/axiom-crypto/pse-poseidon.git", optional = true }
+
+schemars = { version = "0.8", optional = true }
+
+derive_more = { version = "0.99", optional = true }
+base64ct = { version = "1", features = ["alloc"], optional = true }
+
+itertools = { version = "0.13", optional = true }
+typenum = { version = "1", optional = true }
+tracing = { version = "0.1", optional = true }
+
+ff = { version = "0.13", features = ["derive"], optional = true }
+
+rand_chacha = { version = "0.2", optional = true }
+
 
 [dev-dependencies]
-criterion = "0.5.1"
-libloading = "0.8.1"
-log4rs = "1.2.0"
-pprof = { features = ["criterion", "flamegraph"], version = "0.13.0" }
-pretty_assertions = "1.4.0"
+base64.workspace = true
+criterion.workspace = true
+libloading = "0.8"
+log4rs.workspace = true
+pprof = { features = ["criterion", "flamegraph"], version = "0.14" }
+pretty_assertions.workspace = true
 
 [features]
+default = ["gosh"]
 fift_check = []
-gosh = ["tvm_block/gosh", "diffy", "similar", "zstd"]
+wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io"]
+gosh = [
+  "tvm_block/gosh", "diffy", "similar", "zstd",
+  # ZK dependencies:
+  "dep:ark-bls12-381", "dep:ark-bn254", "dep:ark-ec", "dep:ark-ff",
+  "dep:ark-groth16", "dep:ark-relations", "dep:ark-serialize", "dep:ark-snark",
+  "dep:ark-crypto-primitives", "dep:ark-r1cs-std", "dep:ark-std",
+  "dep:fastcrypto", "dep:neptune", "dep:bls12_381",
+  "dep:reqwest", "dep:regex", "dep:tracing", "dep:ff",
+  "dep:schemars", "dep:rand_chacha", "dep:base64ct",
+  "dep:byte-slice-cast", "dep:once_cell", "dep:derive_more",
+  "dep:itertools", "dep:typenum",
+  "dep:halo2-base", "dep:pse-poseidon",
+]
 log_file = []
 signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
 ci_run = []
+wasm_web = []                                                    # browser compatible wasm
+wasm_external = []
 
 [[bench]]
 harness = false

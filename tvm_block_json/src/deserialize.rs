@@ -16,19 +16,26 @@ use std::str::FromStr;
 
 use serde_json::Map;
 use serde_json::Value;
-use tvm_api::ton::ton_node::rempmessagestatus;
+use tvm_api::IntoBoxed;
 use tvm_api::ton::ton_node::RempMessageLevel;
 use tvm_api::ton::ton_node::RempMessageStatus;
 use tvm_api::ton::ton_node::RempReceipt;
-use tvm_api::IntoBoxed;
+use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_block::Account;
-use tvm_block::Augmentation;
 use tvm_block::BlockCreateFees;
 use tvm_block::BlockIdExt;
 use tvm_block::BlockLimits;
 use tvm_block::CatchainConfig;
 use tvm_block::ConfigParam0;
 use tvm_block::ConfigParam1;
+use tvm_block::ConfigParam2;
+use tvm_block::ConfigParam3;
+use tvm_block::ConfigParam4;
+use tvm_block::ConfigParam5;
+use tvm_block::ConfigParam6;
+use tvm_block::ConfigParam7;
+use tvm_block::ConfigParam8;
+use tvm_block::ConfigParam9;
 use tvm_block::ConfigParam10;
 use tvm_block::ConfigParam11;
 use tvm_block::ConfigParam12;
@@ -39,9 +46,7 @@ use tvm_block::ConfigParam16;
 use tvm_block::ConfigParam17;
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParam18Map;
-use tvm_block::ConfigParam2;
 use tvm_block::ConfigParam29;
-use tvm_block::ConfigParam3;
 use tvm_block::ConfigParam31;
 use tvm_block::ConfigParam32;
 use tvm_block::ConfigParam33;
@@ -50,13 +55,7 @@ use tvm_block::ConfigParam35;
 use tvm_block::ConfigParam36;
 use tvm_block::ConfigParam37;
 use tvm_block::ConfigParam39;
-use tvm_block::ConfigParam4;
 use tvm_block::ConfigParam40;
-use tvm_block::ConfigParam5;
-use tvm_block::ConfigParam6;
-use tvm_block::ConfigParam7;
-use tvm_block::ConfigParam8;
-use tvm_block::ConfigParam9;
 use tvm_block::ConfigParamEnum;
 use tvm_block::ConfigParams;
 use tvm_block::ConfigProposalSetup;
@@ -70,14 +69,14 @@ use tvm_block::FundamentalSmcAddresses;
 use tvm_block::GasLimitsPrices;
 use tvm_block::GlobalVersion;
 use tvm_block::Grams;
-use tvm_block::HashmapAugType;
 use tvm_block::LibDescr;
+use tvm_block::MASTERCHAIN_ID;
 use tvm_block::MandatoryParams;
 use tvm_block::McStateExtra;
 use tvm_block::MsgAddressInt;
 use tvm_block::MsgForwardPrices;
 use tvm_block::ParamLimits;
-use tvm_block::Serializable;
+use tvm_block::SHARD_FULL;
 use tvm_block::ShardAccount;
 use tvm_block::ShardIdent;
 use tvm_block::ShardStateUnsplit;
@@ -95,14 +94,12 @@ use tvm_block::WorkchainFormat;
 use tvm_block::WorkchainFormat0;
 use tvm_block::WorkchainFormat1;
 use tvm_block::Workchains;
-use tvm_block::MASTERCHAIN_ID;
-use tvm_block::SHARD_FULL;
+use tvm_types::Result;
+use tvm_types::UInt256;
 use tvm_types::base64_decode;
 use tvm_types::error;
 use tvm_types::fail;
 use tvm_types::read_single_root_boc;
-use tvm_types::Result;
-use tvm_types::UInt256;
 
 pub trait ParseJson {
     fn as_uint256(&self) -> Result<UInt256>;
@@ -653,11 +650,7 @@ impl StateParser {
                 let p = PathMap::cont(config, "p", p)?;
                 let public_key = hex::decode(p.get_str("public_key")?)?;
                 let weight = p.get_num("weight")? as u64;
-                let adnl_addr = if let Ok(adnl_addr) = p.get_uint256("adnl_addr") {
-                    Some(adnl_addr)
-                } else {
-                    None
-                };
+                let adnl_addr = p.get_uint256("adnl_addr").ok();
                 let bls_public_key = if let Ok(bls_public_key) = p.get_str("bls_public_key") {
                     let bls_public_key = hex::decode(bls_public_key)?;
                     Some(bls_public_key.as_slice().try_into()?)
@@ -1027,13 +1020,8 @@ impl StateParser {
                 let account = PathMap::cont(&map_path, "accounts", account)?;
                 let account = Account::construct_from_bytes(&account.get_base64("boc")?)?;
                 if let Some(account_id) = account.get_id() {
-                    let aug = account.aug()?;
-                    let account = ShardAccount::with_params(&account, UInt256::ZERO, 0)?;
-                    shard_accounts.set_builder_serialized(
-                        account_id,
-                        &account.write_to_new_cell()?,
-                        &aug,
-                    )?;
+                    let account = ShardAccount::with_params(&account, UInt256::ZERO, 0, None)?;
+                    shard_accounts.insert(&account_id.into_cell().data().try_into()?, &account)?;
                 }
                 Ok(())
             })?;

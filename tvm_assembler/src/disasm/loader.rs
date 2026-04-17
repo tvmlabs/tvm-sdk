@@ -3,11 +3,11 @@ use std::collections::HashMap;
 use std::ops::Not;
 
 use num_traits::Zero;
-use tvm_types::fail;
 use tvm_types::Cell;
 use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
+use tvm_types::fail;
 
 use super::handlers::Handlers;
 use super::types::Code;
@@ -107,7 +107,7 @@ macro_rules! create_handler_3r {
 macro_rules! check {
     ($expr:expr) => {
         if !$expr {
-            return Err(failure::err_msg(format!("check failed {}:{}", file!(), line!())));
+            fail!("check failed");
         }
     };
 }
@@ -115,7 +115,7 @@ macro_rules! check {
 macro_rules! check_eq {
     ($lhs:expr, $rhs:literal) => {
         if $lhs != $rhs {
-            return Err(failure::err_msg(format!("check failed {}:{}", file!(), line!())));
+            fail!("check failed");
         }
     };
 }

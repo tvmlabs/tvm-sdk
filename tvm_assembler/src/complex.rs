@@ -24,19 +24,19 @@ use tvm_types::HashmapType;
 use tvm_types::SliceData;
 use tvm_types::Status;
 
-use super::convert::to_big_endian_octet_string;
-use super::errors::OperationError;
-use super::errors::ParameterError;
-use super::errors::ToOperationParameterError;
-use super::parse::*;
 use super::CompileResult;
 use super::Engine;
 use super::EnsureParametersCountInRange;
 use super::Unit;
 use super::Units;
+use super::convert::to_big_endian_octet_string;
+use super::errors::OperationError;
+use super::errors::ParameterError;
+use super::errors::ToOperationParameterError;
+use super::parse::*;
+use crate::DbgInfo;
 use crate::debug::DbgNode;
 use crate::debug::DbgPos;
-use crate::DbgInfo;
 
 trait CommandBehaviourModifier {
     fn modify(code: Vec<u8>) -> Vec<u8>;
@@ -896,7 +896,7 @@ fn adjust_debug_map(map: &mut DbgInfo, before: SliceData, after: SliceData) -> S
     let hash_before = before.cell().repr_hash();
     let hash_after = after.cell().repr_hash();
     let entry_before =
-        map.remove(&hash_before).ok_or_else(|| failure::err_msg("Failed to remove old value."))?;
+        map.remove(&hash_before).ok_or_else(|| anyhow::anyhow!("Failed to remove old value."))?;
 
     let adjustment = after.pos();
     let mut entry_after = BTreeMap::new();

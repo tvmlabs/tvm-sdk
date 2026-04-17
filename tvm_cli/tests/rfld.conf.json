@@ -17,7 +17,7 @@
     "depool_fee": 0.5,
     "lifetime": 60,
     "no_answer": true,
-    "balance_in_tons": true,
+    "balance_in_vmshells": true,
     "local_run": false,
     "async_call": false,
     "debug_fail": "None",

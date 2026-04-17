@@ -9,37 +9,37 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-use std::cmp::max;
-use std::cmp::min;
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicU32;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
 
 use futures::Future;
 use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
 use serde_json::Value;
-use tokio::sync::watch;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
-use tvm_types::base64_encode;
+use tokio::sync::watch;
+use tvm_block::MsgAddressInt;
 use tvm_types::UInt256;
+use tvm_types::base64_encode;
+use url::Url;
 
 use super::ErrorCode;
+use super::tvm_gql::ExtMessage;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientError;
 use crate::error::ClientResult;
-use crate::net::endpoint::Endpoint;
-use crate::net::tvm_gql::GraphQLQuery;
-use crate::net::types::NetworkQueriesProtocol;
-use crate::net::websocket_link::WebsocketLink;
 use crate::net::Error;
 use crate::net::GraphQLQueryEvent;
 use crate::net::NetworkConfig;
@@ -49,11 +49,32 @@ use crate::net::ParamsOfQueryCounterparties;
 use crate::net::ParamsOfQueryOperation;
 use crate::net::ParamsOfWaitForCollection;
 use crate::net::PostRequest;
+use crate::net::endpoint::Endpoint;
+use crate::net::tvm_gql::GraphQLQuery;
+use crate::net::types::NetworkQueriesProtocol;
+use crate::net::websocket_link::WebsocketLink;
+use crate::processing::ThreadIdentifier;
 
 pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
+pub const API_VERSION: &str = "v2";
+pub const ENDPOINT_MESSAGES: &str = "messages";
+
+/// Maximum number of attempts for `query_http` (1 original + 2 retries).
+const QUERY_HTTP_MAX_ATTEMPTS: u32 = 3;
+/// Initial delay before the first retry in ms.
+const QUERY_HTTP_INITIAL_RETRY_DELAY_MS: u64 = 200;
+
+/// Exponential backoff delay: 200ms, 400ms, ...
+fn query_http_retry_delay_ms(attempt: u32) -> u64 {
+    QUERY_HTTP_INITIAL_RETRY_DELAY_MS * 2u64.pow(attempt)
+}
+
+fn is_retryable_http_status(status: u16) -> bool {
+    matches!(status, 429 | 500 | 502 | 503 | 504)
+}
 
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
@@ -71,6 +92,7 @@ pub(crate) enum EndpointStat {
     MessageUndelivered,
 }
 
+#[allow(dead_code)]
 pub(crate) struct ResolvedEndpoint {
     pub endpoint: Arc<Endpoint>,
     pub time_added: u64,
@@ -87,6 +109,11 @@ pub(crate) struct NetworkState {
     resume_timeout: AtomicU32,
     query_endpoint: RwLock<Option<Arc<Endpoint>>>,
     resolved_endpoints: RwLock<HashMap<String, ResolvedEndpoint>>,
+    bk_send_message_endpoint: RwLock<Option<Url>>,
+    rest_api_endpoint: RwLock<Url>,
+    bm_issuer_pubkey: RwLock<Option<String>>,
+    bm_token: RwLock<Option<Value>>,
+    use_https_for_rest_api: bool,
 }
 
 async fn query_by_url(
@@ -99,7 +126,7 @@ async fn query_by_url(
         .fetch(&format!("{}?query={}", address, query), FetchMethod::Get, None, None, timeout)
         .await?;
 
-    response.body_as_json()
+    response.body_as_json(false)
 }
 
 impl NetworkState {
@@ -107,6 +134,8 @@ impl NetworkState {
         client_env: Arc<ClientEnv>,
         config: NetworkConfig,
         endpoint_addresses: Vec<String>,
+        rest_api_endpoint: Url,
+        use_https_for_rest_api: bool,
     ) -> Self {
         let (sender, receiver) = watch::channel(false);
         let regulation =
@@ -123,6 +152,11 @@ impl NetworkState {
             resume_timeout: AtomicU32::new(0),
             query_endpoint: RwLock::new(None),
             resolved_endpoints: Default::default(),
+            bk_send_message_endpoint: RwLock::new(None),
+            rest_api_endpoint: RwLock::new(rest_api_endpoint),
+            bm_issuer_pubkey: RwLock::new(None),
+            bm_token: RwLock::new(None),
+            use_https_for_rest_api,
         }
     }
 
@@ -157,7 +191,7 @@ impl NetworkState {
 
     pub fn next_resume_timeout(&self) -> u32 {
         let timeout = self.resume_timeout.load(Ordering::Relaxed);
-        let next_timeout = min(max(timeout * 2, MIN_RESUME_TIMEOUT), MAX_RESUME_TIMEOUT); // 0, 0.5, 1, 2, 3, 3, 3...
+        let next_timeout = (timeout * 2).clamp(MIN_RESUME_TIMEOUT, MAX_RESUME_TIMEOUT); // 0, 0.5, 1, 2, 3, 3, 3...
         self.resume_timeout.store(next_timeout, Ordering::Relaxed);
         timeout
     }
@@ -196,6 +230,7 @@ impl NetworkState {
         *self.endpoint_addresses.write().await = addresses;
     }
 
+    #[allow(dead_code)]
     pub async fn get_addresses_for_sending(&self) -> Vec<String> {
         let mut addresses = self.endpoint_addresses.read().await.clone();
         addresses.shuffle(&mut rand::thread_rng());
@@ -338,6 +373,7 @@ impl NetworkState {
         lock.insert(address, ResolvedEndpoint { endpoint, time_added: self.client_env.now_ms() });
     }
 
+    #[allow(dead_code)]
     pub async fn get_resolved_endpoint(&self, address: &str) -> Option<Arc<Endpoint>> {
         let lock = self.resolved_endpoints.read().await;
         lock.get(address).and_then(|endpoint| {
@@ -347,6 +383,50 @@ impl NetworkState {
                 None
             }
         })
+    }
+
+    pub async fn select_send_message_endpoint(&self) -> Url {
+        let guarded_bk_endpoint = self.bk_send_message_endpoint.read().await;
+        if let Some(bk_endpoint) = guarded_bk_endpoint.as_ref() {
+            bk_endpoint.clone()
+        } else {
+            self.rest_api_endpoint.read().await.clone()
+        }
+    }
+
+    pub async fn get_rest_api_endpoint(&self) -> Url {
+        self.rest_api_endpoint.read().await.clone()
+    }
+
+    pub async fn update_bk_send_message_endpoint(&self, endpoint: Option<Url>) {
+        *self.bk_send_message_endpoint.write().await = endpoint
+    }
+
+    pub async fn get_bm_issuer_pubkey(&self) -> Option<String> {
+        self.bm_issuer_pubkey.read().await.clone()
+    }
+
+    pub async fn update_bm_issuer_pubkey(&self, address: Option<String>) {
+        *self.bm_issuer_pubkey.write().await = address
+    }
+
+    pub async fn get_bm_token(&self) -> Option<Value> {
+        self.bm_token.read().await.clone()
+    }
+
+    pub async fn update_bm_token(&self, token: &Value) {
+        *self.bm_token.write().await = Some(token.clone())
+    }
+
+    pub async fn update_bm_data(&self, token: &Value) {
+        let issuer_pubkey =
+            token.get("issuer").and_then(|issuer| issuer.get("bm").or_else(|| issuer.get("bk")));
+
+        if let Some(Value::String(pubkey)) = issuer_pubkey {
+            self.update_bm_issuer_pubkey(Some(pubkey.to_string())).await;
+        }
+
+        self.update_bm_token(token).await;
     }
 
     pub fn can_retry_network_error(&self, start: u64) -> bool {
@@ -365,23 +445,22 @@ pub(crate) struct ServerLink {
     state: Arc<NetworkState>,
 }
 
-fn strip_endpoint(endpoint: &str) -> &str {
+fn strip_endpoint(endpoint: &str) -> String {
     endpoint
         .trim_start_matches("https://")
         .trim_start_matches("http://")
         .trim_end_matches('/')
         .trim_end_matches('\\')
-}
-
-fn same_endpoint(a: &str, b: &str) -> bool {
-    strip_endpoint(a) == strip_endpoint(b)
+        .to_string()
 }
 
 fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
-    let mut result: Vec<String> = vec![];
+    let mut seen = std::collections::HashSet::new();
+    let mut result = Vec::new();
 
     for endpoint in endpoints {
-        if !result.iter().any(|val| same_endpoint(val, &endpoint)) {
+        let norm = strip_endpoint(&endpoint);
+        if seen.insert(norm) {
             result.push(endpoint);
         }
     }
@@ -389,20 +468,71 @@ fn replace_endpoints(endpoints: Vec<String>) -> Vec<String> {
     result
 }
 
+pub fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientResult<Url> {
+    // Set HTTP if scheme is not presented
+    let original = if original.contains("://") {
+        original.to_string()
+    } else {
+        format!("{}://{}", if use_https { "https" } else { "http" }, original)
+    };
+
+    let mut url = Url::parse(&original).map_err(Error::parse_url_failed)?;
+
+    if url.scheme() == "https" {
+        url.set_port(None).map_err(|_| Error::parse_url_failed("Can't set port"))?;
+    }
+    url.set_path(&format!("{API_VERSION}/"));
+    Ok(url)
+}
+
+fn get_redirection_data(data: &Value, use_https: bool) -> (Option<String>, Option<Url>) {
+    // TODO: Add type RedirectionData
+    let producers_opt = data.get("result").and_then(|res| res.get("producers")).or_else(|| {
+        data.get("node_error")
+            .and_then(|ne| ne.get("extensions"))
+            .and_then(|ext| ext.get("details"))
+            .and_then(|details| details.get("producers"))
+    });
+
+    let redirection_url = producers_opt
+        .and_then(|val| val.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|v| v.as_str())
+        .and_then(|s| construct_rest_api_endpoint(s, use_https).ok());
+
+    let thread_id = data
+        .get("node_error")
+        .and_then(|ne| ne.get("extensions"))
+        .and_then(|ext| ext.get("details"))
+        .and_then(|details| details.get("thread_id"))
+        .and_then(Value::as_str)
+        .map(String::from);
+
+    (thread_id, redirection_url)
+}
+
 impl ServerLink {
     pub fn new(config: NetworkConfig, client_env: Arc<ClientEnv>) -> ClientResult<Self> {
-        let endpoint_addresses = config
-            .endpoints
-            .clone()
-            .or(config.server_address.clone().map(|address| vec![address]))
-            .ok_or(crate::client::Error::net_module_not_init())?;
+        let endpoint_addresses = config.endpoints.clone().unwrap_or(vec!["localhost".to_string()]);
         if endpoint_addresses.is_empty() {
             return Err(crate::client::Error::net_module_not_init());
         }
+        let rest_api_addr = endpoint_addresses[0].clone();
+
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
 
-        let state =
-            Arc::new(NetworkState::new(client_env.clone(), config.clone(), endpoint_addresses));
+        let use_https_for_rest_api =
+            endpoint_addresses.first().map_or(false, |s| s.starts_with("https://"));
+        let rest_api_endpoint =
+            construct_rest_api_endpoint(&rest_api_addr, use_https_for_rest_api)?;
+
+        let state = Arc::new(NetworkState::new(
+            client_env.clone(),
+            config.clone(),
+            endpoint_addresses,
+            rest_api_endpoint,
+            use_https_for_rest_api,
+        ));
 
         Ok(ServerLink {
             config: config.clone(),
@@ -526,7 +656,7 @@ impl ServerLink {
         })
     }
 
-    pub(crate) async fn query_http(
+    pub(crate) async fn query_graphql(
         &self,
         query: &GraphQLQuery,
         endpoint: Option<&Endpoint>,
@@ -562,7 +692,6 @@ impl ServerLink {
                     query.timeout.unwrap_or(self.config.query_timeout),
                 )
                 .await;
-
             let result = match result {
                 Err(err) => Err(err),
                 Ok(response) => {
@@ -570,7 +699,7 @@ impl ServerLink {
                     if response.status == 401 {
                         Err(Error::unauthorized(&response))
                     } else {
-                        match response.body_as_json() {
+                        match response.body_as_json(false) {
                             Err(err) => Err(err),
                             Ok(value) => match Error::try_extract_graphql_error(&value) {
                                 Some(err) => Err(err),
@@ -602,6 +731,128 @@ impl ServerLink {
             }
 
             return result;
+        }
+    }
+
+    pub(crate) async fn query_http(&self, request: String, endpoint: &Url) -> ClientResult<Value> {
+        let mut headers = HashMap::new();
+        headers.insert("content-type".to_owned(), "application/json".to_owned());
+        for (name, value) in Endpoint::http_headers(&self.config) {
+            headers.insert(name, value);
+        }
+
+        let mut last_error = None;
+
+        for attempt in 0..QUERY_HTTP_MAX_ATTEMPTS {
+            let result = self
+                .client_env
+                .fetch(
+                    endpoint.as_str(),
+                    FetchMethod::Post,
+                    Some(headers.clone()),
+                    Some(request.clone()),
+                    self.config.query_timeout,
+                )
+                .await;
+
+            let remaining = QUERY_HTTP_MAX_ATTEMPTS - attempt - 1;
+
+            match result {
+                Err(err) => {
+                    if remaining > 0 && crate::client::Error::is_network_error(&err) {
+                        let delay = query_http_retry_delay_ms(attempt);
+                        log::warn!(
+                            "Retrying request to {}, attempt {}/{}, error: {}, delay: {}ms",
+                            endpoint,
+                            attempt + 1,
+                            QUERY_HTTP_MAX_ATTEMPTS,
+                            err.message,
+                            delay,
+                        );
+                        let _ = self.client_env.set_timer(delay).await;
+                        last_error = Some(err);
+                        continue;
+                    }
+                    return Err(err);
+                }
+                Ok(response) => {
+                    if remaining > 0 && is_retryable_http_status(response.status) {
+                        let delay = query_http_retry_delay_ms(attempt);
+                        log::warn!(
+                            "Retrying request to {}, attempt {}/{}, status: {}, delay: {}ms",
+                            endpoint,
+                            attempt + 1,
+                            QUERY_HTTP_MAX_ATTEMPTS,
+                            response.status,
+                            delay,
+                        );
+                        let _ = self.client_env.set_timer(delay).await;
+                        last_error = Some(crate::client::Error::http_request_send_error(format!(
+                            "Server responded with status {}",
+                            response.status
+                        )));
+                        continue;
+                    }
+
+                    log::debug!(
+                        "query_http response: endpoint={}, status={}, body={}",
+                        endpoint,
+                        response.status,
+                        response.body,
+                    );
+                    self.state.reset_resume_timeout();
+                    if response.status == 401 {
+                        return Err(Error::unauthorized(&response));
+                    } else if response.status == 404 {
+                        return Err(Error::not_found("The requested resource could not be found"));
+                    }
+                    return match response.body_as_json(true) {
+                        Err(err) => Err(err),
+                        Ok(value) => match Error::try_extract_send_messages_error(&value) {
+                            Some(err) => Err(err),
+                            None => Ok(value),
+                        },
+                    };
+                }
+            }
+        }
+        Err(Error::all_attempts_failed(last_error))
+    }
+
+    pub(crate) async fn http_get(&self, url: Url) -> ClientResult<Value> {
+        let mut headers = HashMap::new();
+        for (name, value) in Endpoint::http_headers(&self.config) {
+            headers.insert(name, value);
+        }
+        let traceparent = headers
+            .iter()
+            .find(|(name, _)| name.eq_ignore_ascii_case("traceparent"))
+            .map(|(_, value)| value.clone());
+
+        let result = self
+            .client_env
+            .fetch(url.as_ref(), FetchMethod::Get, Some(headers), None, self.config.query_timeout)
+            .await;
+
+        let result = match result {
+            Err(err) => Err(err),
+            Ok(response) => {
+                if response.status == 200 {
+                    response.body_as_json(true)
+                } else if response.status == 401 {
+                    Err(Error::unauthorized(&response))
+                } else if response.status == 404 {
+                    Err(Error::not_found(&format!("Resource not found: {url}")))
+                } else {
+                    // HTTP_CODE 500 and any other unhandled codes
+                    Err(Error::invalid_server_response(response.body))
+                }
+            }
+        };
+
+        match (traceparent, result) {
+            (Some(traceparent), Err(err)) => Err(err.add_trace(traceparent)),
+            (_, result) => result,
         }
     }
 
@@ -647,7 +898,7 @@ impl ServerLink {
         endpoint: Option<&Endpoint>,
     ) -> ClientResult<Value> {
         match self.config.queries_protocol {
-            NetworkQueriesProtocol::HTTP => self.query_http(query, endpoint).await,
+            NetworkQueriesProtocol::HTTP => self.query_graphql(query, endpoint).await,
             NetworkQueriesProtocol::WS => self.query_ws(query).await,
         }
     }
@@ -730,24 +981,122 @@ impl ServerLink {
             .remove(0))
     }
 
-    // Sends message to node
+    // Sends message to blockchain
     pub async fn send_message(
         &self,
-        key: &[u8],
-        value: &[u8],
-        endpoint: Option<&Endpoint>,
-    ) -> ClientResult<Option<ClientError>> {
-        let request = PostRequest { id: base64_encode(key), body: base64_encode(value) };
+        msg_id: &str,
+        msg_body: &[u8],
+        thread_id: ThreadIdentifier,
+        dst: MsgAddressInt,
+    ) -> ClientResult<Value> {
+        // This helper function adds "resource" part to the URL
+        fn ensure_resource(url: &Url) -> Url {
+            let resource = ENDPOINT_MESSAGES;
+            if url.path().ends_with(resource) {
+                url.clone()
+            } else {
+                url.join(ENDPOINT_MESSAGES).unwrap_or(url.clone())
+            }
+        }
+        let mut attempts = 0;
 
-        let result = self.query(&GraphQLQuery::with_post_requests(&[request]), endpoint).await;
+        let network_state = self.state();
+        let mut message = ExtMessage {
+            id: msg_id.to_string(),
+            body: base64_encode(msg_body),
+            expire_at: None,
+            thread_id: Some(thread_id.to_string()),
+            ext_message_token: network_state.get_bm_token().await,
+        };
 
-        // send message is always successful in order to process case when server
-        // received message but client didn't receive response
-        if let Err(err) = &result {
-            log::warn!("Post message error: {}", err.message);
+        let mut endpoint = network_state.select_send_message_endpoint().await;
+
+        let query = json!([message]).to_string();
+        log::debug!(
+            "send_message: id={}, dst={}, endpoint={}, body={}",
+            msg_id,
+            dst,
+            endpoint,
+            query
+        );
+        let mut result = self.query_http(query, &ensure_resource(&endpoint)).await;
+        match &result {
+            Ok(data) => log::debug!("send_message result: id={}, response={}", msg_id, data),
+            Err(err) => log::debug!("send_message error: id={}, error={}", msg_id, err.message),
+        }
+        while attempts < self.config.message_retries_count {
+            attempts += 1;
+            if let Ok(ref data) = result {
+                let (_, bk_url) = get_redirection_data(data, self.state.use_https_for_rest_api);
+                if bk_url.is_some() {
+                    network_state.update_bk_send_message_endpoint(bk_url).await;
+                }
+                if let Some(Value::Object(_)) = data.get("ext_message_token") {
+                    network_state.update_bm_data(&data["ext_message_token"]).await;
+                }
+            }
+
+            let Err(err) = result.as_mut() else { return result };
+            ensure_message_hash(&mut err.data, msg_id);
+
+            if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
+                network_state.update_bm_data(&err.data["ext_message_token"]).await;
+                message.ext_message_token = network_state.get_bm_token().await;
+            }
+
+            let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
+                return result;
+            };
+
+            let Some(code) = ext.get("code").and_then(Value::as_str) else {
+                return result;
+            };
+
+            if !["WRONG_PRODUCER", "THREAD_MISMATCH", "TOKEN_EXPIRED"].contains(&code) {
+                ensure_address(&mut err.data, Value::String(dst.to_string()));
+                return result;
+            }
+
+            if code == "TOKEN_EXPIRED" {
+                endpoint = network_state.get_rest_api_endpoint().await.clone();
+                network_state.update_bk_send_message_endpoint(None).await;
+            }
+
+            let (real_thread_id, redirect_url) =
+                get_redirection_data(&err.data, self.state.use_https_for_rest_api);
+
+            if let Some(thread_id) = real_thread_id {
+                message.set_thread_id(Some(thread_id));
+            }
+
+            if let Some(bk_endpoint) = redirect_url {
+                network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
+                endpoint = network_state.select_send_message_endpoint().await;
+            }
+            let query = json!([message]).to_string();
+            log::debug!(
+                "send_message retry: id={}, attempt={}, endpoint={}, body={}",
+                msg_id,
+                attempts,
+                endpoint,
+                query
+            );
+            result = self.query_http(query, &ensure_resource(&endpoint)).await;
+            match &result {
+                Ok(data) => {
+                    log::debug!("send_message retry result: id={}, response={}", msg_id, data)
+                }
+                Err(err) => {
+                    log::debug!("send_message retry error: id={}, error={}", msg_id, err.message)
+                }
+            }
         }
 
-        Ok(result.err())
+        if let Err(err) = result.as_mut() {
+            ensure_message_hash(&mut err.data, msg_id);
+        }
+
+        result
     }
 
     pub async fn send_messages(
@@ -805,6 +1154,7 @@ impl ServerLink {
         self.state.set_endpoint_addresses(endpoints).await;
     }
 
+    #[allow(dead_code)]
     pub async fn get_addresses_for_sending(&self) -> Vec<String> {
         self.state.get_addresses_for_sending().await
     }
@@ -825,3 +1175,50 @@ impl ServerLink {
         self.state.invalidate_querying_endpoint().await
     }
 }
+
+fn ensure_address(err_data: &mut Value, dst: Value) {
+    if let Some(addr) = err_data.pointer_mut("/node_error/extensions/details/address") {
+        if addr.is_null() {
+            *addr = dst;
+        }
+    } else if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("address".to_string(), dst);
+    }
+}
+
+fn ensure_message_hash(err_data: &mut Value, msg_id: &str) {
+    if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("message_hash".to_string(), Value::String(msg_id.to_string()));
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn test_construct_rest_endpoint() {
+    fn rest_url(origin: &str, use_https: bool) -> String {
+        construct_rest_api_endpoint(origin, use_https).unwrap().to_string()
+    }
+    // No scheme: use_https determines scheme, standard ports (80/443)
+    assert_eq!(rest_url("a.b.c", false), "http://a.b.c/v2/");
+    assert_eq!(rest_url("a.b.c", true), "https://a.b.c/v2/");
+    // Explicit port preserved for HTTP, stripped for HTTPS
+    assert_eq!(rest_url("a.b.c:1234", false), "http://a.b.c:1234/v2/");
+    assert_eq!(rest_url("a.b.c:1234", true), "https://a.b.c/v2/");
+    // Explicit scheme takes precedence over use_https
+    assert_eq!(rest_url("http://a.b.c", false), "http://a.b.c/v2/");
+    assert_eq!(rest_url("http://a.b.c", true), "http://a.b.c/v2/");
+    assert_eq!(rest_url("http://a.b.c:1234", false), "http://a.b.c:1234/v2/");
+    assert_eq!(rest_url("http://a.b.c:1234", true), "http://a.b.c:1234/v2/");
+    assert_eq!(rest_url("https://a.b.c", false), "https://a.b.c/v2/");
+    assert_eq!(rest_url("https://a.b.c", true), "https://a.b.c/v2/");
+    assert_eq!(rest_url("https://a.b.c:1234", false), "https://a.b.c/v2/");
+    assert_eq!(rest_url("https://a.b.c:1234", true), "https://a.b.c/v2/");
+}
+
+// #[cfg(test)]
+// #[path = "tests/test_server_link.rs"]
+// mod tests;

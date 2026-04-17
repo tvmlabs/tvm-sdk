@@ -2,16 +2,16 @@ use std::sync::Arc;
 
 use zeroize::Zeroize;
 
-use crate::crypto::nacl_box;
-use crate::crypto::nacl_box_keypair_from_secret_key;
-use crate::crypto::nacl_box_open;
+use crate::ClientContext;
 use crate::crypto::EncryptionBox;
 use crate::crypto::EncryptionBoxInfo;
 use crate::crypto::ParamsOfNaclBox;
 use crate::crypto::ParamsOfNaclBoxKeyPairFromSecret;
 use crate::crypto::ParamsOfNaclBoxOpen;
+use crate::crypto::nacl_box;
+use crate::crypto::nacl_box_keypair_from_secret_key;
+use crate::crypto::nacl_box_open;
 use crate::error::ClientResult;
-use crate::ClientContext;
 
 #[derive(
     Serialize, Deserialize, Clone, Debug, ApiType, Default, PartialEq, Zeroize, ZeroizeOnDrop,

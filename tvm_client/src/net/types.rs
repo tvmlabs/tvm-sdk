@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use serde::Deserialize;
 use serde::Deserializer;
 use tvm_types::base64_encode;
@@ -144,15 +147,6 @@ fn deserialize_next_remp_status_timeout<'de, D: Deserializer<'de>>(
     Ok(Option::deserialize(deserializer)?.unwrap_or(default_next_remp_status_timeout()))
 }
 
-#[derive(Debug, Clone, PartialEq, ApiType)]
-pub struct TrustedMcBlockId {
-    /// Trusted key-block sequence number
-    pub seq_no: u32,
-
-    /// Trusted key-block root hash, encoded as HEX
-    pub root_hash: String,
-}
-
 /// Network protocol used to perform GraphQL queries.
 #[derive(Serialize, Deserialize, Debug, Clone, ApiType)]
 pub enum NetworkQueriesProtocol {
@@ -167,13 +161,8 @@ pub enum NetworkQueriesProtocol {
 
 #[derive(Serialize, Deserialize, Debug, Clone, ApiType)]
 pub struct NetworkConfig {
-    /// **This field is deprecated, but left for backward-compatibility.**
-    /// Evernode endpoint.
-    pub server_address: Option<String>,
-
     /// List of Evernode endpoints. Any correct URL format can be specified,
-    /// including IP addresses. This parameter is prevailing over
-    /// `server_address`. Check the full list of [supported network endpoints](https://docs.evercloud.dev/products/evercloud/networks-endpoints).
+    /// including IP addresses.
     pub endpoints: Option<Vec<String>>,
 
     /// Deprecated. You must use `network.max_reconnect_timeout` that allows to
@@ -320,6 +309,8 @@ pub struct NetworkConfig {
 
     /// Access key to GraphQL API (Project secret)
     pub access_key: Option<String>,
+    /// Access token to the Node REST API
+    pub api_token: Option<String>,
 }
 
 impl NetworkConfig {
@@ -336,12 +327,15 @@ impl NetworkConfig {
             None
         }
     }
+
+    pub fn get_rest_api_header(&self) -> Option<(String, String)> {
+        self.api_token.as_ref().map(|token| ("Authorization".into(), format!("Bearer {token}")))
+    }
 }
 
 impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
-            server_address: None,
             endpoints: None,
             network_retries_count: default_network_retries_count(),
             max_reconnect_timeout: default_max_reconnect_timeout(),
@@ -359,6 +353,7 @@ impl Default for NetworkConfig {
             next_remp_status_timeout: default_next_remp_status_timeout(),
             signature_id: None,
             access_key: None,
+            api_token: None,
         }
     }
 }

@@ -4,25 +4,25 @@ use std::sync::Arc;
 use num_traits::cast::NumCast;
 use serde_json::Value;
 
+use super::JsonValue;
 use super::base64_interface::Base64Interface;
 use super::hex_interface::HexInterface;
 use super::json_lib_utils::bypass_json;
 use super::network_interface::NetworkInterface;
 use super::query_interface::QueryInterface;
 use super::sdk_interface::SdkInterface;
-use super::JsonValue;
 use crate::abi::Abi;
 use crate::abi::Error;
-use crate::boc::parse_message;
 use crate::boc::ParamsOfParse;
+use crate::boc::parse_message;
 use crate::debot::TonClient;
 use crate::encoding::decode_abi_number;
 use crate::encoding::slice_from_cell;
 use crate::error::ClientResult;
 pub type InterfaceResult = Result<(u32, Value), String>;
-use tvm_abi::token::Detokenizer;
 use tvm_abi::Contract;
 use tvm_abi::ParamType;
+use tvm_abi::token::Detokenizer;
 use tvm_sdk::AbiContract;
 
 use crate::boc::internal::deserialize_cell_from_boc;
@@ -75,7 +75,7 @@ pub trait DebotInterfaceExecutor {
 
     async fn try_execute(
         &self,
-        msg: &String,
+        msg: &str,
         interface_id: &String,
         abi_version: &str,
     ) -> Option<InterfaceResult> {
@@ -96,12 +96,12 @@ pub trait DebotInterfaceExecutor {
 
     async fn execute(
         client: TonClient,
-        msg: &String,
+        msg: &'life0 str,
         interface_id: &String,
         interfaces: &HashMap<String, Arc<dyn DebotInterface + Send + Sync>>,
         abi_version: &str,
     ) -> InterfaceResult {
-        let parsed = parse_message(client.clone(), ParamsOfParse { boc: msg.clone() })
+        let parsed = parse_message(client.clone(), ParamsOfParse { boc: msg.to_owned() })
             .map_err(|e| format!("{}", e))?;
 
         let body = parsed.parsed["body"]

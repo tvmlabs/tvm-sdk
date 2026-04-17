@@ -11,11 +11,11 @@
 
 use std::fmt;
 
-use tvm_types::types::ExceptionCode;
 use tvm_types::Result;
+use tvm_types::types::ExceptionCode;
 
-use crate::stack::integer::IntegerData;
 use crate::stack::StackItem;
+use crate::stack::integer::IntegerData;
 
 #[derive(Clone, PartialEq)]
 enum ExceptionType {
@@ -199,6 +199,7 @@ macro_rules! err {
     };
 }
 
+#[cfg(test)]
 macro_rules! custom_err {
     ($code:expr, $msg:literal, $($arg:tt)*) => {
         return Err(
