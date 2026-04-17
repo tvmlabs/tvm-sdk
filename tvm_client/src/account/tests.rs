@@ -56,7 +56,6 @@ async fn mock_server() -> JoinHandle<()> {
 }
 
 #[tokio::test]
-#[ignore = ""]
 async fn test_get_account() -> ClientResult<()> {
     let handle = mock_server().await;
     let contract_boc = "te6ccAAS";

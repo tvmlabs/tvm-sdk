@@ -163,10 +163,7 @@ where
 pub trait BoxedDeserializeDynamic: BoxedDeserialize {
     /// Read boxed type value with given `ConstructorNumber` using
     /// `Deserializer`
-    fn boxed_deserialize_to_box(
-        id: ConstructorNumber,
-        de: &mut Deserializer,
-    ) -> Result<TLObject>;
+    fn boxed_deserialize_to_box(id: ConstructorNumber, de: &mut Deserializer) -> Result<TLObject>;
 }
 
 #[cfg(feature = "ton")]
@@ -174,10 +171,7 @@ impl<D> BoxedDeserializeDynamic for D
 where
     D: BoxedDeserialize + AnyBoxedSerialize,
 {
-    fn boxed_deserialize_to_box(
-        id: ConstructorNumber,
-        de: &mut Deserializer,
-    ) -> Result<TLObject> {
+    fn boxed_deserialize_to_box(id: ConstructorNumber, de: &mut Deserializer) -> Result<TLObject> {
         Ok(TLObject::new(D::deserialize_boxed(id, de)?))
     }
 }
