@@ -1,5 +1,9 @@
+use std::sync::OnceLock;
+
 use gosh_zk_snark_halo2_utils::proof::Proof;
-use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::plonk::VerifyingKey;
+use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
 use halo2_base::utils::ScalarField;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
@@ -12,6 +16,36 @@ use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Status;
 use crate::utils::unpack_data_from_cell;
+
+/// Cached VK + KZG verifier params.  Built once on first access.
+///
+/// `VerifyingKey::read` internally constructs an `EvaluationDomain` for K=19
+/// which precomputes FFT twiddle factors for 2^19 elements — this takes
+/// several seconds, so it must be cached across calls.
+static VK_AND_PARAMS: OnceLock<(VerifyingKey<G1Affine>, ParamsKZG<Bn256>)> = OnceLock::new();
+
+fn get_vk_and_params() -> &'static (VerifyingKey<G1Affine>, ParamsKZG<Bn256>) {
+    VK_AND_PARAMS.get_or_init(|| {
+        let vk = crate::executor::zk_halo2_utils::build_dark_dex_w8_vk();
+        let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params();
+        (vk, params)
+    })
+}
+
+/// Force-initialize the cached VK and KZG params in a background thread.
+/// Call early during node startup so that by the time the first
+/// ZKHALO2VERIFY transaction arrives the heavy computation is already done.
+pub fn warmup_halo2() {
+    if VK_AND_PARAMS.get().is_some() {
+        return;
+    }
+    std::thread::Builder::new()
+        .name("halo2-warmup".into())
+        .spawn(|| {
+            let _ = get_vk_and_params();
+        })
+        .ok();
+}
 
 pub fn consume_uint64(b: &[u8]) -> tvm_types::Result<u64> {
     if b.len() != 32 {
@@ -86,13 +120,8 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
         }
     }
 
-    // Deserialize VK and KZG params from embedded const bytes on each call.
-    // No LazyLock — avoids poisoning / cdylib duplication issues in production.
-    // Cost is sub-millisecond vs. the ~100ms of actual proof verification.
-    let vk = crate::executor::zk_halo2_utils::build_dark_dex_w8_vk();
-    let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params();
-    //let res = proof.verify_with_vk(&vk, &params, &[&pub_inputs]);
-    let res = false;
+    let (vk, params) = get_vk_and_params();
+    let res = proof.verify_with_vk(vk, params, &[&pub_inputs]);
 
     engine.cc.stack.push(boolean!(res));
     Ok(())

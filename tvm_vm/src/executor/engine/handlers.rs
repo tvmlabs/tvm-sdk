@@ -409,6 +409,9 @@ impl Handlers {
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
                 .set(0x49, execute_halo2_proof_verification);
+            // Pre-build VK + KZG params in background so the first
+            // ZKHALO2VERIFY call doesn't block for seconds.
+            crate::executor::zk_halo2::warmup_halo2();
             #[cfg(feature = "wasmtime")]
             {
                 c7_handlers //
