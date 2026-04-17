@@ -153,6 +153,9 @@ pub struct Engine {
     engine_version: semver::Version,
 
     pub(in crate::executor) self_dapp_id: Option<UInt256>,
+
+    pub(in crate::executor) check_history_proof_hash:
+        Option<Arc<dyn Send + Sync + Fn(u64, u8, [u8; 32]) -> bool>>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -327,6 +330,7 @@ impl Engine {
             self_dapp_id: None,
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            check_history_proof_hash: None,
         }
     }
 
@@ -502,6 +506,13 @@ impl Engine {
 
     pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
         self.self_dapp_id = dapp_id;
+    }
+
+    pub fn set_check_history_proof_hash(
+        &mut self,
+        callback: Arc<dyn Send + Sync + Fn(u64, u8, [u8; 32]) -> bool>,
+    ) {
+        self.check_history_proof_hash = Some(callback);
     }
 
     #[cfg(feature = "wasmtime")]

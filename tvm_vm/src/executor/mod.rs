@@ -66,6 +66,10 @@ mod test_vergrth_bad_args;
 mod test_poseidon_bad_args;
 
 #[cfg(test)]
+#[path = "../tests/test_chk_hist_proof.rs"]
+mod test_chk_hist_proof;
+
+#[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
 
@@ -75,6 +79,7 @@ mod test_data;
 #[path = "../tests/test_helper.rs"]
 mod test_helper;
 
+pub mod chk_hist_proof;
 pub mod zk;
 
 pub mod zk_halo2;

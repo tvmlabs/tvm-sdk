@@ -861,6 +861,7 @@ impl Engine {
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
         POSEIDON                             => 0xC7, 0x50
+        CHKHISTPROOF                         => 0xC7, 0x51
     }
 
     fn add_commands<'a>(
