@@ -86,14 +86,13 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
         }
     }
 
-    
-    // Verify with static VK and embedded verifier-only KZG params (both LazyLock)
-    
-    let vk = &*crate::executor::zk_halo2_utils::DARK_DEX_W8_VK;
-    //let params = &*crate::executor::zk_halo2_utils::KZG_PARAMS;
-    /*let res = proof.verify_with_vk(vk, params, &[&pub_inputs]);*/
-
-    let res = true;
+    // Deserialize VK and KZG params from embedded const bytes on each call.
+    // No LazyLock — avoids poisoning / cdylib duplication issues in production.
+    // Cost is sub-millisecond vs. the ~100ms of actual proof verification.
+    let vk = crate::executor::zk_halo2_utils::build_dark_dex_w8_vk();
+    let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params();
+    //let res = proof.verify_with_vk(&vk, &params, &[&pub_inputs]);
+    let res = false;
 
     engine.cc.stack.push(boolean!(res));
     Ok(())

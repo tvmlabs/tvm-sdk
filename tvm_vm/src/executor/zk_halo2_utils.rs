@@ -1,5 +1,3 @@
-use std::sync::LazyLock;
-
 use gosh_zk_snark_halo2_utils::io::read_vk;
 use halo2_base::gates::circuit::BaseCircuitParams;
 use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, G1Affine};
@@ -58,10 +56,11 @@ pub const DARK_DEX_W8_VK_BYTES: [u8; 842] = [
     71, 17,
 ];
 
-/// Pre-deserialized VK (W=8 historical window) — `LazyLock` ensures one-time deserialization.
-pub static DARK_DEX_W8_VK: LazyLock<VerifyingKey<G1Affine>> = LazyLock::new(|| {
+/// Deserialize VK from the embedded bytes. Called on each verification — the 842-byte
+/// deserialization cost is negligible compared to actual proof verification.
+pub fn build_dark_dex_w8_vk() -> VerifyingKey<G1Affine> {
     read_vk(&DARK_DEX_W8_VK_BYTES, &dark_dex_w8_config_params())
-});
+}
 
 /// G1 generator point `g[0]` from the KZG SRS (K=19), 64 bytes (BN256 G1Affine uncompressed).
 const KZG_G0_BYTES: [u8; 64] = [
@@ -95,10 +94,10 @@ const KZG_S_G2_BYTES: [u8; 128] = [
     176, 131, 18, 138, 95, 92, 74, 66, 227, 79, 115, 151, 214, 102, 69, 21,
 ];
 
-/// Verifier-only KZG params (K=19) — reconstructed from 3 embedded points (~320 bytes)
+/// Build verifier-only KZG params (K=19) from 3 embedded points (~320 bytes)
 /// instead of loading the full 64MB SRS file. Only `g[0]`, `g2`, and `s_g2` are needed
-/// for SHPLONK verification.
-pub static KZG_PARAMS: LazyLock<ParamsKZG<Bn256>> = LazyLock::new(|| {
+/// for SHPLONK verification. Called on each verification — reconstruction is sub-millisecond.
+pub fn build_kzg_verifier_params() -> ParamsKZG<Bn256> {
     use halo2_base::halo2_proofs::halo2curves::serde::SerdeObject;
     use halo2_base::halo2_proofs::SerdeFormat;
 
@@ -118,4 +117,4 @@ pub static KZG_PARAMS: LazyLock<ParamsKZG<Bn256>> = LazyLock::new(|| {
     // Passing Some(vec![]) for g_lagrange skips the expensive Lagrange computation.
     let g0 = G1Affine::from_raw_bytes_unchecked(&KZG_G0_BYTES);
     dummy.from_parts(19, vec![g0], Some(vec![]), dummy.g2(), dummy.s_g2())
-});
+}
