@@ -256,6 +256,7 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
     Ok(keys)
 }
 
+#[derive(Debug)]
 pub struct SdkAddress {
     pub dapp_id: Option<String>,
     pub account_id: String,

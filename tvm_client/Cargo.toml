@@ -140,7 +140,12 @@ std = [
   "tvm_executor/default",
   "tvm_block_json/metrics",
 ]
-native-tls = ["dep:reqwest", "dep:tokio-tungstenite", "reqwest/native-tls", "tokio-tungstenite/native-tls"]
+native-tls = [
+  "dep:reqwest",
+  "dep:tokio-tungstenite",
+  "reqwest/native-tls",
+  "tokio-tungstenite/native-tls",
+]
 native-tls-vendored = [
   "dep:reqwest",
   "dep:tokio-tungstenite",
@@ -177,4 +182,11 @@ wasm_web = ["wasm-base", "tvm_vm/wasm_web", "tvm_executor/wasm_web"]
 getrandom02 = { package = "getrandom", version = "0.2", features = ["js"] }
 
 [package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-Oz", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-sign-ext", "--strip-debug", "--strip-producers"]
+wasm-opt = [
+  "-Oz",
+  "--enable-bulk-memory",
+  "--enable-nontrapping-float-to-int",
+  "--enable-sign-ext",
+  "--strip-debug",
+  "--strip-producers",
+]

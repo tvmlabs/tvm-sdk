@@ -765,7 +765,7 @@ impl ServerLink {
                             endpoint,
                             attempt + 1,
                             QUERY_HTTP_MAX_ATTEMPTS,
-                            err.message,
+                            err.message(),
                             delay,
                         );
                         let _ = self.client_env.set_timer(delay).await;
@@ -1023,7 +1023,7 @@ impl ServerLink {
         let mut result = self.query_http(query, &ensure_resource(&endpoint)).await;
         match &result {
             Ok(data) => log::debug!("send_message result: id={}, response={}", msg_id, data),
-            Err(err) => log::debug!("send_message error: id={}, error={}", msg_id, err.message),
+            Err(err) => log::debug!("send_message error: id={}, error={}", msg_id, err.message()),
         }
         while attempts < self.config.message_retries_count {
             attempts += 1;
@@ -1038,7 +1038,7 @@ impl ServerLink {
             }
 
             let Err(err) = result.as_mut() else { return result };
-            ensure_message_hash(&mut err.data, msg_id);
+            ensure_message_hash(err.data_mut(), msg_id);
 
             if let Some(Value::Object(_)) = err.data().get("ext_message_token") {
                 network_state.update_bm_data(&err.data()["ext_message_token"]).await;
@@ -1088,13 +1088,13 @@ impl ServerLink {
                     log::debug!("send_message retry result: id={}, response={}", msg_id, data)
                 }
                 Err(err) => {
-                    log::debug!("send_message retry error: id={}, error={}", msg_id, err.message)
+                    log::debug!("send_message retry error: id={}, error={}", msg_id, err.message())
                 }
             }
         }
 
         if let Err(err) = result.as_mut() {
-            ensure_message_hash(&mut err.data, msg_id);
+            ensure_message_hash(err.data_mut(), msg_id);
         }
 
         result

@@ -1711,6 +1711,6 @@ async fn query_http_retry_network_error() {
     let result = call_query_http(&client).await;
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert_eq!(err.code, crate::client::errors::ErrorCode::HttpRequestSendError as u32);
+    assert_eq!(err.code(), crate::client::errors::ErrorCode::HttpRequestSendError as u32);
     NetworkMock::assert_is_empty(&client).await;
 }

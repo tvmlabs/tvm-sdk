@@ -88,9 +88,7 @@ proc-macro2 = "1"
 quote = "1"
 rand = "0.8"
 regex = "1"
-reqwest = { version = "0.13", default-features = false, features = [
-  "rustls",
-] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 semver = "1"
 serde = "1"
 serde_derive = "1"
