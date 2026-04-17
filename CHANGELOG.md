@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.19] - 2026-04-17
+
+### Added
+- `tvm_client`: retry connection-level network errors before failing requests
+
+### Changed
+- `tvm_api` and `tvm_block_json`: gated TON-specific code behind the `ton` feature
+- TON-related dependencies are now optional to allow lighter builds without TON support
+
 ## [2.24.18] - 2026-04-13
 
 ### Added
