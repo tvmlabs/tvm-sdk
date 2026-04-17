@@ -25,7 +25,6 @@ members = [
 ]
 [workspace.package]
 version = "2.25.0"
-version = "2.24.17"
 
 rust-version = "1.76.0"
 
@@ -78,7 +77,6 @@ dirs = "6"
 ed25519 = "2"
 ed25519-dalek = "2"
 extfmt = "0.2"
-failure = "0.1.8"
 futures = "0.3"
 hex = "0.4"
 hex-literal = "1"

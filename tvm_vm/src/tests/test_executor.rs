@@ -49,7 +49,7 @@ use crate::utils::pack_data_to_cell;
 mod test_gas_consumption;
 
 #[allow(dead_code)]
-pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
+pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> tvm_types::Result<Cell> {
     // TODO: Cell size can maybe be increased up to 128?
     let cellsize = 120usize;
     let len = input.len();
@@ -81,7 +81,7 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::E
     Ok(cell) // return first cell
 }
 
-pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
+pub(super) fn rejoin_chain_of_cells(input: &Cell) -> tvm_types::Result<Vec<u8>> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();
     while cur_cell.reference(0).is_ok() {
@@ -1455,8 +1455,8 @@ fn test_run_wasm_fuel_error_from_hash() {
     println!("Wasm Return Status: {:?}", result);
 
     let res_error = result.expect_err("Test didn't error on fuel use");
-    println!("{:?}", res_error.as_fail());
-    assert_eq!(format!("{}", res_error.as_fail()), "VM Exception: 0 1");
+    println!("{:?}", res_error);
+    assert_eq!(format!("{}", res_error), "VM Exception: 0 1");
 }
 
 #[test]
