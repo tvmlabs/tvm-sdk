@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.24.19] - 2026-04-17
+## [2.24.20] - 2026-04-17
 
 ### Added
 - `tvm_client`: retry connection-level network errors before failing requests
