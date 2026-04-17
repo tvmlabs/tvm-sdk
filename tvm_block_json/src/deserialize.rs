@@ -1021,7 +1021,7 @@ impl StateParser {
                 let account = Account::construct_from_bytes(&account.get_base64("boc")?)?;
                 if let Some(account_id) = account.get_id() {
                     let account = ShardAccount::with_params(&account, UInt256::ZERO, 0, None)?;
-                    shard_accounts.insert(&account_id.into_cell().data().try_into()?, &account)?;
+                    shard_accounts.insert(&account_id.get_bytestring(0).into(), &account)?;
                 }
                 Ok(())
             })?;

@@ -22,21 +22,21 @@ pub struct CliError {
 }
 
 impl CliError {
-    pub fn with_message(message: String) -> Self {
-        Self { message, data: None }
+    pub fn with_message(message: impl Into<String>) -> Self {
+        Self { message: message.into(), data: None }
     }
 
-    pub fn with_message_and_data(message: String, data: Value) -> Self {
-        Self { message, data: Some(data) }
+    pub fn with_message_and_data(message: impl Into<String>, data: Value) -> Self {
+        Self { message: message.into(), data: Some(data) }
     }
 }
 
 impl From<ClientError> for CliError {
     fn from(e: ClientError) -> Self {
         if let Ok(data) = serde_json::to_value(&e) {
-            Self::with_message_and_data(e.message, data)
+            Self::with_message_and_data(e.message(), data)
         } else {
-            Self::with_message(e.message)
+            Self::with_message(e.message())
         }
     }
 }

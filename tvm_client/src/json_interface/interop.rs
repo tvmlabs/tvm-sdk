@@ -195,15 +195,18 @@ pub struct StringData {
     pub len: u32,
 }
 
+impl Default for StringData {
+    fn default() -> Self {
+        Self { content: null(), len: 0 }
+    }
+}
+
 impl StringData {
     pub fn new(s: &str) -> Self {
         Self { content: s.as_ptr(), len: s.len() as u32 }
     }
 
-    pub fn default() -> Self {
-        Self { content: null(), len: 0 }
-    }
-
+    #[allow(clippy::inherent_to_string)]
     pub fn to_string(&self) -> String {
         unsafe {
             let utf8 = std::slice::from_raw_parts(self.content, self.len as usize);

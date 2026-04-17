@@ -145,7 +145,7 @@ pub fn poseidon_bytes_axiom(
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
     let mut field_elements = Vec::new();
     for input in inputs {
-        let el = halo2_Fr::from_bytes_le(&input);
+        let el = halo2_Fr::from_bytes_le(input);
         field_elements.push(el);
     }
 
