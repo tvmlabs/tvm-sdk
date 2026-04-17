@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 #![allow(clippy::from_str_radix_10)]
 #![allow(clippy::or_fun_call)]
 #![allow(clippy::too_many_arguments)]
@@ -144,6 +147,12 @@ fn main() {
         }
         exit(1)
     }
+}
+
+fn find_arg_value<'a>(matches: &'a ArgMatches, name: &str) -> Option<&'a str> {
+    matches
+        .value_of(name)
+        .or_else(|| matches.subcommand().and_then(|(_, sub)| find_arg_value(sub, name)))
 }
 
 async fn main_internal() -> Result<(), String> {
@@ -932,6 +941,20 @@ async fn main_internal() -> Result<(), String> {
                 .takes_value(true),
         )
         .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("--json"))
+        .arg(
+            Arg::new("LOG_PATH")
+                .help("Path to a log file. All log output is appended to this file instead of stdout/stderr.")
+                .long("--log-path")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
+            Arg::new("LOG_FILTER")
+                .help("Comma-separated log filter. Prefix with '-' to exclude: 'tvm_client,-hyper'.")
+                .long("--log-filter")
+                .takes_value(true)
+                .global(true),
+        )
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
@@ -987,6 +1010,21 @@ async fn main_internal() -> Result<(), String> {
     })?;
 
     let is_json = matches.is_present("JSON");
+    helpers::set_json_mode(is_json);
+
+    let log_path = find_arg_value(&matches, "LOG_PATH")
+        .map(|v| v.to_string())
+        .or_else(|| env::var("TVM_CLI_LOG_PATH").ok());
+    let log_filter = find_arg_value(&matches, "LOG_FILTER")
+        .map(|v| v.to_string())
+        .or_else(|| env::var("TVM_CLI_LOG_FILTER").ok());
+    if let Some(ref filter) = log_filter {
+        helpers::init_log_filter(filter);
+    }
+    if let Some(ref path) = log_path {
+        helpers::init_log_file(path)?;
+        helpers::log_startup_info();
+    }
 
     command_parser(&matches, is_json).await.map_err(|e| {
         if e.is_empty() {

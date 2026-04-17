@@ -34,6 +34,7 @@ use term_browser::terminal_input;
 
 use crate::config::Config;
 use crate::helpers::load_ton_address;
+use crate::helpers::log_file_path;
 
 pub fn create_debot_command<'a, 'b>() -> Command<'a> {
     Command::new("debot")
@@ -92,7 +93,11 @@ pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String>
         loggers.push(WriteLogger::new(LevelFilter::Error, log_conf.clone(), file.unwrap()));
     }
 
-    if debug {
+    if let Some(path) = log_file_path() {
+        if let Ok(file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            loggers.push(WriteLogger::new(LevelFilter::Trace, log_conf.clone(), file));
+        }
+    } else if debug {
         loggers.push(TermLogger::new(
             LevelFilter::Debug,
             log_conf.clone(),

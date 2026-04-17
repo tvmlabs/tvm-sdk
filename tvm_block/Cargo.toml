@@ -14,7 +14,6 @@ base64.workspace = true
 crc.workspace = true
 ed25519.workspace = true
 ed25519-dalek.workspace = true
-failure.workspace = true
 hex.workspace = true
 log.workspace = true
 num.workspace = true
