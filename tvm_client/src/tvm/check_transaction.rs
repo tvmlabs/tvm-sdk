@@ -35,7 +35,7 @@ where
     };
 
     if real_tr {
-        error.data["transaction_id"] = transaction.id().to_string().into()
+        error.data_mut()["transaction_id"] = transaction.id().to_string().into()
     }
 
     Err(error)

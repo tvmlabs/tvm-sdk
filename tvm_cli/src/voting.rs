@@ -22,6 +22,7 @@ use crate::multisig::encode_transfer_body;
 pub async fn create_proposal(
     config: &Config,
     addr: &str,
+    dst_dapp_id: Option<&str>,
     keys: Option<&str>,
     dest: &str,
     text: &str,
@@ -56,14 +57,25 @@ pub async fn create_proposal(
         )
         .await
     } else {
-        call::call_contract(config, addr, MSIG_ABI, "submitTransaction", &params, keys, false, None)
-            .await
+        call::call_contract(
+            config,
+            addr,
+            MSIG_ABI,
+            "submitTransaction",
+            &params,
+            keys,
+            false,
+            None,
+            dst_dapp_id,
+        )
+        .await
     }
 }
 
 pub async fn vote(
     config: &Config,
     addr: &str,
+    dst_dapp_id: Option<&str>,
     keys: Option<&str>,
     trid: &str,
     lifetime: u32,
@@ -100,12 +112,18 @@ pub async fn vote(
             keys,
             false,
             None,
+            dst_dapp_id,
         )
         .await
     }
 }
 
-pub async fn decode_proposal(config: &Config, addr: &str, proposal_id: &str) -> Result<(), String> {
+pub async fn decode_proposal(
+    config: &Config,
+    addr: &str,
+    dst_dapp_id: Option<&str>,
+    proposal_id: &str,
+) -> Result<(), String> {
     // change to run
     let result = call::call_contract_with_result(
         config,
@@ -116,6 +134,7 @@ pub async fn decode_proposal(config: &Config, addr: &str, proposal_id: &str) -> 
         None,
         false,
         None,
+        dst_dapp_id,
     )
     .await?;
 

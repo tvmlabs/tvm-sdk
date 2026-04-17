@@ -65,15 +65,11 @@ pub(crate) fn decode_actions(
                     }
                     res.add_out_message(out_msg.clone());
                     res.log(format!("Action(SendMsg):\n{}", msg_printer(&out_msg)?));
-                    if let Some(b) = out_msg.body() {
-                        if abi_file.is_some() && function_name.is_some() && !out_msg.is_internal() {
-                            decode_body(
-                                abi_file.unwrap(),
-                                function_name.unwrap(),
-                                b,
-                                out_msg.is_internal(),
-                                res,
-                            )?;
+                    if let (Some(b), Some(abi_file), Some(function_name)) =
+                        (out_msg.body(), abi_file, function_name)
+                    {
+                        if !out_msg.is_internal() {
+                            decode_body(abi_file, function_name, b, out_msg.is_internal(), res)?;
                         }
                     }
                 }

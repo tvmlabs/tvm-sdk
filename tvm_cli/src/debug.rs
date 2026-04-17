@@ -67,6 +67,7 @@ use crate::contract_data_from_matches_or_config_alias;
 use crate::crypto::load_keypair;
 use crate::decode::msg_printer::serialize_msg;
 use crate::deploy::prepare_deploy_message;
+use crate::helpers::SdkAddress;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::construct_account_from_tvc;
 use crate::helpers::create_client;
@@ -78,7 +79,6 @@ use crate::helpers::is_json_mode;
 use crate::helpers::load_abi;
 use crate::helpers::load_debug_info;
 use crate::helpers::load_params;
-use crate::helpers::load_ton_address;
 use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
 use crate::helpers::query_with_limit;
@@ -728,7 +728,7 @@ async fn debug_call_command(
             .map_err(|e| format!(" failed to load account from the file {}: {}", input, e))?
     } else {
         ton_client = create_client(&full_config.config)?;
-        let address = load_ton_address(input, &full_config.config)?;
+        let address = SdkAddress::validate(input)?;
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
             .map_err(|e| format!("Failed to construct account: {}", e))?
@@ -871,7 +871,7 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
         Account::construct_from_file(input)
             .map_err(|e| format!(" failed to load account from the file {}: {}", input, e))?
     } else {
-        let address = load_ton_address(input, config)?;
+        let address = SdkAddress::validate(input)?;
         let account = query_account_field(ton_client.clone(), &address, "boc").await?;
         Account::construct_from_base64(&account)
             .map_err(|e| format!("Failed to construct account: {}", e))?
@@ -1379,7 +1379,7 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
     let lines = std::io::BufReader::new(file).lines();
     for line in lines.flatten() {
         if !line.is_empty() && !line.starts_with('#') {
-            addresses.push(load_ton_address(&line, config)?);
+            addresses.push(SdkAddress::validate(&line)?);
         }
     }
     if addresses.iter().collect::<HashSet<_>>().len() < addresses.len() {
@@ -1705,7 +1705,7 @@ impl<'a> DebugParams<'a> {
 
 pub async fn debug_error(e: &ClientError, debug_params: DebugParams<'_>) -> Result<(), String> {
     let result = format!("{:#}", e);
-    if e.code != SDK_EXECUTION_ERROR_CODE || !debug_params.check_debug() {
+    if e.code() != SDK_EXECUTION_ERROR_CODE || !debug_params.check_debug() {
         return Err(result);
     }
     if debug_params.config.is_json {
