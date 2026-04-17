@@ -8,6 +8,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt;
@@ -70,6 +74,8 @@ use crate::helpers::create_client;
 use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::get_blockchain_config;
+use crate::helpers::has_log_file;
+use crate::helpers::is_json_mode;
 use crate::helpers::load_abi;
 use crate::helpers::load_debug_info;
 use crate::helpers::load_params;
@@ -77,6 +83,7 @@ use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
 use crate::helpers::query_with_limit;
 use crate::helpers::wc_from_matches_or_config;
+use crate::helpers::write_log_record;
 use crate::message::prepare_message;
 use crate::print_args;
 use crate::replay::CONFIG_ADDR;
@@ -94,7 +101,7 @@ const DEFAULT_CONTRACT_PATH: &str = "contract.txns";
 const TRANSACTION_QUANTITY: u32 = 10;
 
 const TEST_MAX_LEVEL: log::LevelFilter = log::LevelFilter::Debug;
-const MAX_LEVEL: log::LevelFilter = log::LevelFilter::Warn;
+const MAX_LEVEL: log::LevelFilter = log::LevelFilter::Error;
 
 pub fn debug_level_from_env() -> log::LevelFilter {
     if let Ok(debug_level) = std::env::var("RUST_LOG") {
@@ -143,12 +150,20 @@ impl log::Log for DebugLogger {
                             .expect("Failed to write trace");
                     }
                     Err(_) => {
-                        println!("{}", record.args());
+                        if has_log_file() {
+                            write_log_record(record);
+                        } else {
+                            println!("{}", record.args());
+                        }
                     }
                 }
             }
             _ => {
-                if record.level() <= self.ordinary_log_level {
+                if has_log_file() {
+                    write_log_record(record);
+                } else if is_json_mode() {
+                    // suppress console log output in JSON mode
+                } else if record.level() <= self.ordinary_log_level {
                     match record.level() {
                         log::Level::Error | log::Level::Warn => {
                             eprintln!("{}", record.args());

@@ -1,3 +1,6 @@
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -43,7 +46,7 @@ async fn mock_server() -> JoinHandle<()> {
         }),
     );
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8600").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:18600").await.unwrap();
     let handle = tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
     });
@@ -59,7 +62,7 @@ async fn test_get_account() -> ClientResult<()> {
 
     let mut config = ClientConfig {
         network: NetworkConfig {
-            endpoints: Some(vec!["http://127.0.0.1".to_string()]),
+            endpoints: Some(vec!["http://127.0.0.1:18600".to_string()]),
             api_token: Some("secret".to_string()),
             ..Default::default()
         },

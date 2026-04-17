@@ -14,7 +14,6 @@ chrono.workspace = true
 diffy = { workspace = true, optional = true }
 ed25519.workspace = true
 ed25519-dalek.workspace = true
-failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 log.workspace = true

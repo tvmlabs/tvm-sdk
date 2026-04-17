@@ -19,27 +19,21 @@ pub trait JsonHelper {
 
 impl JsonHelper for Value {
     fn get_u64(&self, field: &str) -> Result<u64> {
-        self[field].as_u64().ok_or_else(|| {
-            failure::err_msg(format!("`{}` field must be an unsigned integer", field))
-        })
+        self[field]
+            .as_u64()
+            .ok_or_else(|| anyhow::anyhow!("`{field}` field must be an unsigned integer"))
     }
 
     fn get_i64(&self, field: &str) -> Result<i64> {
-        self[field]
-            .as_i64()
-            .ok_or_else(|| failure::err_msg(format!("`{}` field must be an integer", field)))
+        self[field].as_i64().ok_or_else(|| anyhow::anyhow!("`{field}` field must be an integer"))
     }
 
     fn get_str(&self, field: &str) -> Result<&str> {
-        self[field]
-            .as_str()
-            .ok_or_else(|| failure::err_msg(format!("`{}` field must be a string", field)))
+        self[field].as_str().ok_or_else(|| anyhow::anyhow!("`{field}` field must be a string"))
     }
 
     fn get_array(&self, field: &str) -> Result<&Vec<Value>> {
-        self[field]
-            .as_array()
-            .ok_or_else(|| failure::err_msg(format!("`{}` field must be an array", field)))
+        self[field].as_array().ok_or_else(|| anyhow::anyhow!("`{field}` field must be an array"))
     }
 
     fn take_string(&mut self) -> Option<String> {
