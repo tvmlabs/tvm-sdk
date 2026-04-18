@@ -150,7 +150,7 @@ pub struct ExecuteParams {
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
     pub check_history_proof_hash:
-        Option<Arc<dyn Send + Sync + Fn(u64, u8, [u8; 32]) -> bool>>,
+        Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
 }
 
 pub struct ActionPhaseResult {

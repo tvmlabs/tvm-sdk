@@ -54,13 +54,12 @@ fn make_hash_bytes() -> [u8; 32] {
     hash
 }
 
-fn push_chk_hist_proof_args(engine: &mut Engine, hash: &[u8; 32], block_height: u64, layer: i32) {
-    // Push in order: hash (bottom), block_height, layer_number (top)
+fn push_chk_hist_proof_args(engine: &mut Engine, hash: &[u8; 32], layer: i32) {
+    // Push in order: hash (bottom), layer_number (top)
     engine
         .cc
         .stack
         .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(hash)));
-    engine.cc.stack.push(StackItem::int(block_height));
     engine.cc.stack.push(StackItem::int(layer));
 }
 
@@ -70,11 +69,11 @@ fn test_chk_hist_proof_callback_returns_true() {
     let hash = make_hash_bytes();
     let expected_hash = hash;
 
-    engine.set_check_history_proof_hash(Arc::new(move |block_height, layer_number, h| {
-        block_height == 42 && layer_number == 3 && h == expected_hash
+    engine.set_check_history_proof_hash(Arc::new(move |layer_number, h| {
+        layer_number == 3 && h == expected_hash
     }));
 
-    push_chk_hist_proof_args(&mut engine, &hash, 42, 3);
+    push_chk_hist_proof_args(&mut engine, &hash, 3);
     execute_chk_hist_proof(&mut engine).unwrap();
 
     let result = engine.cc.stack.get(0).as_bool().unwrap();
@@ -86,9 +85,9 @@ fn test_chk_hist_proof_callback_returns_false() {
     let mut engine = setup_engine();
     let hash = make_hash_bytes();
 
-    engine.set_check_history_proof_hash(Arc::new(move |_block_height, _layer_number, _h| false));
+    engine.set_check_history_proof_hash(Arc::new(move |_layer_number, _h| false));
 
-    push_chk_hist_proof_args(&mut engine, &hash, 100, 5);
+    push_chk_hist_proof_args(&mut engine, &hash, 5);
     execute_chk_hist_proof(&mut engine).unwrap();
 
     let result = engine.cc.stack.get(0).as_bool().unwrap();
@@ -101,7 +100,7 @@ fn test_chk_hist_proof_no_callback() {
     let hash = make_hash_bytes();
     // No callback set — should return false
 
-    push_chk_hist_proof_args(&mut engine, &hash, 42, 3);
+    push_chk_hist_proof_args(&mut engine, &hash, 3);
     execute_chk_hist_proof(&mut engine).unwrap();
 
     let result = engine.cc.stack.get(0).as_bool().unwrap();
@@ -113,9 +112,9 @@ fn test_chk_hist_proof_layer_zero_range_error() {
     let mut engine = setup_engine();
     let hash = make_hash_bytes();
 
-    engine.set_check_history_proof_hash(Arc::new(move |_, _, _| true));
+    engine.set_check_history_proof_hash(Arc::new(move |_, _| true));
 
-    push_chk_hist_proof_args(&mut engine, &hash, 42, 0);
+    push_chk_hist_proof_args(&mut engine, &hash, 0);
     let result = execute_chk_hist_proof(&mut engine);
     assert!(result.is_err(), "layer_number=0 should cause RangeCheckError");
 }
@@ -125,9 +124,9 @@ fn test_chk_hist_proof_layer_eleven_range_error() {
     let mut engine = setup_engine();
     let hash = make_hash_bytes();
 
-    engine.set_check_history_proof_hash(Arc::new(move |_, _, _| true));
+    engine.set_check_history_proof_hash(Arc::new(move |_, _| true));
 
-    push_chk_hist_proof_args(&mut engine, &hash, 42, 11);
+    push_chk_hist_proof_args(&mut engine, &hash, 11);
     let result = execute_chk_hist_proof(&mut engine);
     assert!(result.is_err(), "layer_number=11 should cause RangeCheckError");
 }

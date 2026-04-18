@@ -56,7 +56,7 @@ pub struct VMSetup {
     termination_deadline: Option<Instant>,
     execution_timeout: Option<Duration>,
     check_history_proof_hash:
-        Option<Arc<dyn Send + Sync + Fn(u64, u8, [u8; 32]) -> bool>>,
+        Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
 }
 
 impl VMSetup {
@@ -205,7 +205,7 @@ impl VMSetup {
     /// Sets check_history_proof_hash callback
     pub fn set_check_history_proof_hash(
         mut self,
-        callback: Option<Arc<dyn Send + Sync + Fn(u64, u8, [u8; 32]) -> bool>>,
+        callback: Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
     ) -> VMSetup {
         self.check_history_proof_hash = callback;
         self
