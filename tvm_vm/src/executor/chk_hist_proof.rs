@@ -33,13 +33,13 @@ pub(super) fn execute_chk_hist_proof(engine: &mut Engine) -> Status {
 
     let result = match &engine.check_history_proof_hash {
         Some(callback) => {
-            log::info!("CHKHISTPROOF: callback present, calling with height={}, layer={}, hash={}", block_height, layer_number, hex::encode(hash_bytes));
+            eprintln!("CHKHISTPROOF: callback present, calling with height={}, layer={}, hash={}", block_height, layer_number, hex::encode(hash_bytes));
             let r = callback(block_height, layer_number, hash_bytes);
-            log::info!("CHKHISTPROOF: callback returned {}", r);
+            eprintln!("CHKHISTPROOF: callback returned {}", r);
             r
         }
         None => {
-            log::warn!("CHKHISTPROOF: NO callback set, returning false");
+            eprintln!("CHKHISTPROOF: NO callback set, returning false");
             false
         }
     };
