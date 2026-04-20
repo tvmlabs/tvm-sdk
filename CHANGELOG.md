@@ -2,16 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.24.20] - 2026-04-17
-
-### Added
-- `tvm_client`: retry connection-level network errors before failing requests
-- `tvm_client`: new `account.get_account` API returning account BOC, optional `dapp_id`, and state timestamp
-- `tvm_cli`: support for extended address parsing via `SdkAddress::from_str`, including `dapp_id` extraction from user-provided addresses
+## [2.24.20] - 2026-04-20
 
 ### Changed
 - `tvm_api` and `tvm_block_json`: gated TON-specific code behind the `ton` feature
 - TON-related dependencies are now optional to allow lighter builds without TON support
+
+## [2.24.19] - 2026-04-17
+
+### Added
+- `tvm_client`: new `account.get_account` API returning account BOC, optional `dapp_id`, and state timestamp
+- `tvm_cli`: support for extended address parsing via `SdkAddress::from_str`, including `dapp_id` extraction from user-provided addresses
+
+### Changed
 - `tvm_client`: `ClientError` now exposes accessor methods (`code()`, `message()`, `data()`, etc.) instead of relying on direct public field access, and now carries optional `traceparent`
 - `tvm_client`: `ParamsOfSendMessage` now includes `thread_id` and `dst_dapp_id`
 - `tvm_client`: `ParamsOfProcessMessage` now includes `dst_dapp_id`
