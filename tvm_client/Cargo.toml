@@ -125,6 +125,7 @@ pretty_assertions.workspace = true
 api_info = []
 default = ["std", "rustls-tls-webpki-roots", "api_info"]
 include-zstd = ["tvm_block/gosh", "tvm_vm/gosh"]
+ton = ["tvm_block_json/ton"]
 std = [
   "dep:reqwest",
   "dep:tokio-tungstenite",

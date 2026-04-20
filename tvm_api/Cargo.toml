@@ -14,16 +14,17 @@ anyhow.workspace = true
 byteorder.workspace = true
 extfmt.workspace = true
 hex.workspace = true
-lazy_static.workspace = true
+lazy_static = { workspace = true, optional = true }
 serde.workspace = true
 serde_derive.workspace = true
 thiserror.workspace = true
 #
-tvm_block.workspace = true
+tvm_block = { workspace = true, optional = true }
 tvm_types.workspace = true
 
-ordered-float = "4"
+ordered-float = { version = "4", optional = true }
 secstr = "0.5"
 
 [features]
 bytes_as_vec = []
+ton = ["dep:lazy_static", "dep:ordered-float", "dep:tvm_block"]

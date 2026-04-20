@@ -131,7 +131,7 @@ pub mod parser {
         }
 
         pub fn namespaces(&self) -> &[String] {
-            self.names_vec().map(|v| &v[..(v.len() - 1).max(0)]).unwrap_or(&[])
+            self.names_vec().map(|v| &v[..v.len().saturating_sub(1)]).unwrap_or(&[])
         }
 
         pub fn name(&self) -> Option<&str> {
