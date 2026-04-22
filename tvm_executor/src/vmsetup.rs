@@ -55,6 +55,8 @@ pub struct VMSetup {
     block_collation_was_finished: Arc<Mutex<bool>>,
     termination_deadline: Option<Instant>,
     execution_timeout: Option<Duration>,
+    check_history_proof_hash:
+        Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
 }
 
 impl VMSetup {
@@ -83,6 +85,7 @@ impl VMSetup {
             block_collation_was_finished: Arc::new(Mutex::new(false)),
             termination_deadline: None,
             execution_timeout: None,
+            check_history_proof_hash: None,
         }
     }
 
@@ -199,6 +202,15 @@ impl VMSetup {
         self
     }
 
+    /// Sets check_history_proof_hash callback
+    pub fn set_check_history_proof_hash(
+        mut self,
+        callback: Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
+    ) -> VMSetup {
+        self.check_history_proof_hash = callback;
+        self
+    }
+
     /// Sets account dapp_id
     pub fn set_dapp_id(mut self, dapp_id: Option<UInt256>) -> VMSetup {
         self.vm.set_dapp_id(dapp_id);
@@ -267,6 +279,9 @@ impl VMSetup {
         );
         vm.set_termination_deadline(self.termination_deadline);
         vm.set_execution_timeout(self.execution_timeout);
+        if let Some(callback) = self.check_history_proof_hash {
+            vm.set_check_history_proof_hash(callback);
+        }
         vm
     }
 }

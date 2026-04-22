@@ -43,6 +43,7 @@ use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 use crate::executor::zk::*;
 use crate::executor::zk_halo2::*;
 use crate::stack::integer::behavior::Quiet;
@@ -408,7 +409,11 @@ impl Handlers {
                 .set(0x46, execute_calculate_mbk)
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
-                .set(0x49, execute_halo2_proof_verification);
+                .set(0x49, execute_halo2_proof_verification)
+                .set(0x51, execute_chk_hist_proof);
+            // Pre-build VK + KZG params in background so the first
+            // ZKHALO2VERIFY call doesn't block for seconds.
+            crate::executor::zk_halo2::warmup_halo2();
             #[cfg(feature = "wasmtime")]
             {
                 c7_handlers //
