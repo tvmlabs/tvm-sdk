@@ -301,3 +301,192 @@ where
     u64::from_str_radix(&string, 16)
         .map_err(|err| D::Error::custom(format!("Error parsing shard: {}", err)))
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+    use tvm_block::AccStatusChange;
+    use tvm_block::AccountStatus;
+    use tvm_block::ComputeSkipReason;
+    use tvm_block::TransactionProcessingStatus;
+    use tvm_types::BuilderData;
+
+    use super::*;
+
+    #[derive(Debug, Deserialize, Serialize)]
+    struct UintHolder {
+        #[serde(with = "uint")]
+        value: u64,
+    }
+
+    #[test]
+    fn uint_deserializes_hex_and_null_and_serializes_hex() {
+        let holder: UintHolder = serde_json::from_value(json!({ "value": "0x2a" })).unwrap();
+        assert_eq!(holder.value, 42);
+
+        let holder: UintHolder = serde_json::from_value(json!({ "value": null })).unwrap();
+        assert_eq!(holder.value, 0);
+
+        assert_eq!(
+            serde_json::to_value(UintHolder { value: 255 }).unwrap(),
+            json!({
+                "value": "0xff"
+            })
+        );
+    }
+
+    #[test]
+    fn uint_rejects_missing_hex_prefix_and_bad_digits() {
+        let err = serde_json::from_value::<UintHolder>(json!({ "value": "42" })).unwrap_err();
+        assert!(err.to_string().contains("number must be prefixed with 0x"));
+
+        let err = serde_json::from_value::<UintHolder>(json!({ "value": "0xzz" })).unwrap_err();
+        assert!(err.to_string().contains("Error parsing number"));
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct EnumHolder {
+        #[serde(deserialize_with = "deserialize_tr_state")]
+        tr_state: TransactionProcessingStatus,
+        #[serde(deserialize_with = "deserialize_acc_state_change")]
+        acc_change: AccStatusChange,
+        #[serde(deserialize_with = "deserialize_skipped_reason")]
+        skipped_reason: Option<ComputeSkipReason>,
+        #[serde(deserialize_with = "deserialize_message_type")]
+        msg_type: MessageType,
+        #[serde(with = "account_status")]
+        account_status: AccountStatus,
+        #[serde(deserialize_with = "deserialize_shard")]
+        shard: u64,
+    }
+
+    #[test]
+    fn enum_deserializers_map_wire_numbers() {
+        let holder: EnumHolder = serde_json::from_value(json!({
+            "tr_state": 3,
+            "acc_change": 2,
+            "skipped_reason": 1,
+            "msg_type": 2,
+            "account_status": 1,
+            "shard": "8000000000000000"
+        }))
+        .unwrap();
+
+        assert_eq!(holder.tr_state, TransactionProcessingStatus::Finalized);
+        assert_eq!(holder.acc_change, AccStatusChange::Deleted);
+        assert_eq!(holder.skipped_reason, Some(ComputeSkipReason::BadState));
+        assert_eq!(holder.msg_type, MessageType::ExternalOutbound);
+        assert_eq!(holder.account_status, AccountStatus::AccStateActive);
+        assert_eq!(holder.shard, 0x8000_0000_0000_0000);
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct TransactionStateHolder {
+        #[serde(deserialize_with = "deserialize_tr_state")]
+        value: TransactionProcessingStatus,
+    }
+
+    #[test]
+    fn transaction_state_uses_unknown_for_non_numeric_values() {
+        let holder: TransactionStateHolder =
+            serde_json::from_value(json!({ "value": "bad" })).unwrap();
+        assert_eq!(holder.value, TransactionProcessingStatus::Unknown);
+
+        let err =
+            serde_json::from_value::<TransactionStateHolder>(json!({ "value": 9 })).unwrap_err();
+        assert!(err.to_string().contains("Invalid transaction state: 9"));
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SkippedReasonHolder {
+        #[serde(deserialize_with = "deserialize_skipped_reason")]
+        value: Option<ComputeSkipReason>,
+    }
+
+    #[test]
+    fn skipped_reason_uses_none_for_non_numeric_values() {
+        let holder: SkippedReasonHolder =
+            serde_json::from_value(json!({ "value": "bad" })).unwrap();
+        assert_eq!(holder.value, None);
+
+        let err = serde_json::from_value::<SkippedReasonHolder>(json!({ "value": 9 })).unwrap_err();
+        assert!(err.to_string().contains("Invalid skip reason: 9"));
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct MessageTypeHolder {
+        #[serde(deserialize_with = "deserialize_message_type")]
+        #[allow(dead_code)]
+        value: MessageType,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct AccountStatusHolder {
+        #[serde(with = "account_status")]
+        #[allow(dead_code)]
+        value: AccountStatus,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct AccountChangeHolder {
+        #[serde(deserialize_with = "deserialize_acc_state_change")]
+        #[allow(dead_code)]
+        value: AccStatusChange,
+    }
+
+    #[test]
+    fn enum_deserializers_reject_unknown_numeric_values() {
+        let err = serde_json::from_value::<MessageTypeHolder>(json!({ "value": 9 })).unwrap_err();
+        assert!(err.to_string().contains("Invalid message type: 9"));
+
+        let err = serde_json::from_value::<AccountStatusHolder>(json!({ "value": 9 })).unwrap_err();
+        assert!(err.to_string().contains("Invalid account status: 9"));
+
+        let err = serde_json::from_value::<AccountChangeHolder>(json!({ "value": 9 })).unwrap_err();
+        assert!(err.to_string().contains("Invalid account change state: 9"));
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
+    struct OptionalCellHolder {
+        #[serde(default, with = "opt_cell")]
+        body: Option<tvm_types::Cell>,
+    }
+
+    #[test]
+    fn opt_cell_roundtrips_some_and_none() {
+        let cell = BuilderData::with_raw(vec![0xab], 8).unwrap().into_cell().unwrap();
+        let value = serde_json::to_value(OptionalCellHolder { body: Some(cell.clone()) }).unwrap();
+        let decoded: OptionalCellHolder = serde_json::from_value(value).unwrap();
+        assert_eq!(decoded.body.unwrap(), cell);
+
+        assert_eq!(
+            serde_json::to_value(OptionalCellHolder { body: None }).unwrap(),
+            json!({
+                "body": null
+            })
+        );
+        let decoded: OptionalCellHolder = serde_json::from_value(json!({ "body": null })).unwrap();
+        assert!(decoded.body.is_none());
+    }
+
+    #[test]
+    fn opt_cell_rejects_invalid_base64() {
+        let err = serde_json::from_value::<OptionalCellHolder>(json!({ "body": "not-base64" }))
+            .unwrap_err();
+        assert!(err.to_string().contains("error decode base64"));
+    }
+
+    #[test]
+    fn transaction_and_account_status_to_u8_cover_all_variants() {
+        assert_eq!(transaction_status_to_u8(TransactionProcessingStatus::Unknown), 0);
+        assert_eq!(transaction_status_to_u8(TransactionProcessingStatus::Preliminary), 1);
+        assert_eq!(transaction_status_to_u8(TransactionProcessingStatus::Proposed), 2);
+        assert_eq!(transaction_status_to_u8(TransactionProcessingStatus::Finalized), 3);
+        assert_eq!(transaction_status_to_u8(TransactionProcessingStatus::Refused), 4);
+
+        assert_eq!(account_status_to_u8(AccountStatus::AccStateUninit), 0);
+        assert_eq!(account_status_to_u8(AccountStatus::AccStateActive), 1);
+        assert_eq!(account_status_to_u8(AccountStatus::AccStateFrozen), 2);
+        assert_eq!(account_status_to_u8(AccountStatus::AccStateNonexist), 3);
+    }
+}

@@ -745,3 +745,95 @@ impl Contract {
         Ok(Value::Null)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use tvm_abi::PublicKeyData;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::Serializable;
+    use tvm_block::StateInit;
+    use tvm_types::BuilderData;
+    use tvm_types::Cell;
+
+    use super::*;
+
+    fn test_cell(byte: u8) -> Cell {
+        BuilderData::with_raw(vec![byte], 8).unwrap().into_cell().unwrap()
+    }
+
+    fn boc(cell: &Cell) -> Vec<u8> {
+        tvm_types::boc::write_boc(cell).unwrap()
+    }
+
+    fn empty_state_init_boc() -> Vec<u8> {
+        tvm_types::boc::write_boc(&StateInit::default().serialize().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn contract_image_reports_missing_code_and_data_and_can_set_pubkey() {
+        let mut image = ContractImage::new().unwrap();
+
+        assert_eq!(image.get_public_key().unwrap(), None);
+        assert_eq!(
+            image.get_serialized_code().unwrap_err().to_string(),
+            "Invalid data: State init has no code"
+        );
+        assert_eq!(
+            image.get_serialized_data().unwrap_err().to_string(),
+            "Invalid data: State init has no data"
+        );
+
+        let key: PublicKeyData = [7; 32];
+        image.set_public_key(&key).unwrap();
+
+        assert_eq!(image.get_public_key().unwrap(), Some(key));
+        assert!(!image.get_serialized_data().unwrap().is_empty());
+    }
+
+    #[test]
+    fn contract_image_roundtrips_code_data_library_and_state_init_sources() {
+        let code = test_cell(0xaa);
+        let data = test_cell(0xbb);
+        let library = test_cell(0xcc);
+
+        let code_boc = boc(&code);
+        let data_boc = boc(&data);
+        let library_boc = boc(&library);
+
+        let mut code_cursor = Cursor::new(code_boc.clone());
+        let mut data_cursor = Cursor::new(data_boc.clone());
+        let mut library_cursor = Cursor::new(library_boc);
+        let image = ContractImage::from_code_data_and_library(
+            &mut code_cursor,
+            Some(&mut data_cursor),
+            Some(&mut library_cursor),
+        )
+        .unwrap();
+
+        assert_eq!(image.get_serialized_code().unwrap(), code_boc);
+        assert_eq!(image.get_serialized_data().unwrap(), data_boc);
+
+        let serialized = image.serialize().unwrap();
+        let roundtrip =
+            ContractImage::from_state_init(&mut Cursor::new(serialized.clone())).unwrap();
+        assert_eq!(roundtrip.serialize().unwrap(), serialized);
+
+        let from_cell =
+            ContractImage::from_cell(tvm_types::boc::read_single_root_boc(&serialized).unwrap())
+                .unwrap();
+        assert_eq!(from_cell.serialize().unwrap(), serialized);
+    }
+
+    #[test]
+    fn contract_image_from_state_init_and_key_and_msg_address_cover_branches() {
+        let key: PublicKeyData = [3; 32];
+        let mut state_init_cursor = Cursor::new(empty_state_init_boc());
+        let image = ContractImage::from_state_init_and_key(&mut state_init_cursor, &key).unwrap();
+
+        assert_eq!(image.get_public_key().unwrap(), Some(key));
+        assert!(matches!(image.msg_address(0), MsgAddressInt::AddrStd(_)));
+        assert!(matches!(image.msg_address(256), MsgAddressInt::AddrVar(_)));
+    }
+}
