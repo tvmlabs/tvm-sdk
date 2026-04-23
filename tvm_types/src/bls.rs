@@ -663,3 +663,29 @@ impl BlsSignature {
         Ok(res)
     }
 }
+
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generated_key_pair_can_sign_and_verify() {
+        let (public, secret) = gen_bls_key_pair().unwrap();
+        let message = b"bls-smoke";
+        let signature = sign(&secret, message).unwrap();
+
+        assert!(verify(&signature, message, &public).unwrap());
+        assert!(!verify(&signature, b"other-message", &public).unwrap());
+    }
+
+    #[test]
+    fn key_material_generation_is_deterministic_and_matches_secret_key_derivation() {
+        let ikm = [5u8; BLS_KEY_MATERIAL_LEN];
+        let (public_1, secret_1) = gen_bls_key_pair_based_on_key_material(&ikm).unwrap();
+        let (public_2, secret_2) = gen_bls_key_pair_based_on_key_material(&ikm).unwrap();
+
+        assert_eq!(public_1, public_2);
+        assert_eq!(secret_1, secret_2);
+        assert_eq!(gen_public_key_based_on_secret_key(&secret_1).unwrap(), public_1);
+    }
+}

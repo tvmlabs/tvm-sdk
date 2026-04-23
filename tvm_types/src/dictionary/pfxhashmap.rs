@@ -364,3 +364,39 @@ impl HashmapType for PfxHashmapE {
 }
 
 impl HashmapRemover for PfxHashmapE {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bits(value: usize, bit_len: usize) -> SliceData {
+        let mut builder = BuilderData::new();
+        builder.append_bits(value, bit_len).unwrap();
+        SliceData::load_bitstring(builder).unwrap()
+    }
+
+    fn value(byte: u8) -> SliceData {
+        SliceData::load_bitstring(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn constructors_preserve_bit_length_and_root() {
+        let empty = PfxHashmapE::with_bit_len(9);
+        assert_eq!(empty.bit_len(), 9);
+        assert!(empty.data().is_none());
+
+        let cell = value(0xaa).into_cell();
+        let map = PfxHashmapE::with_hashmap(5, Some(cell.clone()));
+        assert_eq!(map.bit_len(), 5);
+        assert_eq!(map.data().unwrap().repr_hash(), cell.repr_hash());
+    }
+
+    #[test]
+    fn display_shows_empty_and_non_empty_forms() {
+        let mut map = PfxHashmapE::with_bit_len(4);
+        assert_eq!(format!("{map}"), "Empty PfxHashmap");
+
+        map.set(bits(0b1010, 4), &value(0x11)).unwrap();
+        assert!(format!("{map}").starts_with("PfxHashmap: "));
+    }
+}

@@ -1476,3 +1476,49 @@ where
         Ok(rest)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::BuilderData;
+
+    fn byte_cell(byte: u8) -> Cell {
+        BuilderData::with_raw(vec![byte], 8).unwrap().into_cell().unwrap()
+    }
+
+    #[test]
+    fn simple_ordered_storage_reports_missing_entries() {
+        let mut storage = SimpleOrderedCellsStorage::default();
+        let cell = byte_cell(0xaa);
+
+        assert!(!storage.contains_hash(&cell.repr_hash()).unwrap());
+        assert!(storage.get_cell_by_index(0).is_err());
+        assert!(storage.get_rev_index_by_hash(&cell.repr_hash()).is_err());
+
+        storage.store_cell(cell.clone()).unwrap();
+        assert!(storage.contains_hash(&cell.repr_hash()).unwrap());
+        storage.push_cell(&cell.repr_hash()).unwrap();
+        assert_eq!(storage.get_cell_by_index(0).unwrap().repr_hash(), cell.repr_hash());
+        assert_eq!(storage.get_rev_index_by_hash(&cell.repr_hash()).unwrap(), 0);
+        storage.cleanup().unwrap();
+    }
+
+    #[test]
+    fn boc_writer_helpers_produce_same_output() {
+        let cell = byte_cell(0x5a);
+
+        let direct = write_boc(&cell).unwrap();
+
+        let mut to_dest = Vec::new();
+        write_boc_to(&cell, &mut to_dest).unwrap();
+        assert_eq!(direct, to_dest);
+
+        let mut owned = Vec::new();
+        BocWriter::with_owned_root(cell.clone()).unwrap().write(&mut owned).unwrap();
+        assert_eq!(direct, owned);
+
+        let writer = BocWriter::with_root(&cell).unwrap();
+        assert_eq!(writer.roots_count(), 1);
+        assert_eq!(writer.cells_count(), 1);
+    }
+}
