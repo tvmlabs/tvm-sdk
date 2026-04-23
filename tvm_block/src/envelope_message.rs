@@ -524,3 +524,65 @@ impl Deserializable for MsgEnvelope {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn roundtrip_address(value: &IntermediateAddress) -> IntermediateAddress {
+        IntermediateAddress::construct_from_cell(value.serialize().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn intermediate_address_constructors_cover_variants_and_errors() {
+        let src = IntermediateAddress::use_src_bits(12).unwrap();
+        let dest = IntermediateAddress::use_dest_bits(34).unwrap();
+
+        assert_eq!(src, 84);
+        assert_eq!(dest, 34);
+        assert_eq!(IntermediateAddress::default(), IntermediateAddress::full_src());
+        assert_eq!(IntermediateAddress::full_dest(), 96);
+        assert_eq!(IntermediateAddress::any_masterchain().workchain_id().unwrap(), -1);
+        assert_eq!(IntermediateAddress::any_masterchain().prefix().unwrap(), 0x8000_0000_0000_0000);
+        assert!(IntermediateAddress::full_src().workchain_id().is_err());
+        assert!(IntermediateAddress::full_dest().prefix().is_err());
+        assert!(IntermediateAddress::use_src_bits(FULL_BITS + 1).is_err());
+        assert!(IntermediateAddress::use_dest_bits(FULL_BITS + 1).is_err());
+    }
+
+    #[test]
+    fn intermediate_address_roundtrip_covers_regular_simple_and_ext() {
+        let regular = IntermediateAddress::use_dest_bits(7).unwrap();
+        let simple = IntermediateAddress::Simple(IntermediateAddressSimple::with_addr(
+            -1,
+            0x0123_4567_89ab_cdef,
+        ));
+        let ext =
+            IntermediateAddress::Ext(IntermediateAddressExt::with_addr(17, 0xfedc_ba98_7654_3210));
+
+        assert_eq!(roundtrip_address(&regular), regular);
+        assert_eq!(roundtrip_address(&simple), simple);
+        assert_eq!(roundtrip_address(&ext), ext);
+    }
+
+    #[test]
+    fn regular_simple_and_ext_mutators_work() {
+        let mut regular = IntermediateAddressRegular::default();
+        regular.set_use_src_bits(11).unwrap();
+        assert_eq!(regular.use_src_bits(), 11);
+        assert_eq!(regular.use_dest_bits(), FULL_BITS - 11);
+        assert!(regular.set_use_src_bits(FULL_BITS + 1).is_err());
+
+        let mut simple = IntermediateAddressSimple::default();
+        simple.set_workchain_id(-3);
+        simple.set_addr_pfx(0x55aa);
+        assert_eq!(simple.workchain_id(), -3);
+        assert_eq!(simple.addr_pfx(), 0x55aa);
+
+        let mut ext = IntermediateAddressExt::default();
+        ext.set_workchain_id(123);
+        ext.set_addr_pfx(0xaa55);
+        assert_eq!(ext.workchain_id(), 123);
+        assert_eq!(ext.addr_pfx(), 0xaa55);
+    }
+}

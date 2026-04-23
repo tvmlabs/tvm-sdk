@@ -1956,3 +1956,43 @@ impl Serializable for LibDescr {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn key_max_lt_new_calc_and_roundtrip() {
+        let mut value = KeyMaxLt::new();
+        let other = KeyMaxLt { key: true, max_end_lt: 99 };
+
+        assert_eq!(value, KeyMaxLt { key: false, max_end_lt: 0 });
+        value.calc(&other).unwrap();
+        assert_eq!(value, other);
+        assert_eq!(KeyMaxLt::construct_from_cell(other.serialize().unwrap()).unwrap(), other);
+    }
+
+    #[test]
+    fn key_ext_blk_ref_aug_and_master_block_id_use_end_lt() {
+        let value = KeyExtBlkRef {
+            key: true,
+            blk_ref: ExtBlkRef {
+                end_lt: 123,
+                seq_no: 7,
+                root_hash: UInt256::from([1; 32]),
+                file_hash: UInt256::from([2; 32]),
+            },
+        };
+
+        let aug = value.aug().unwrap();
+        assert_eq!(aug, KeyMaxLt { key: true, max_end_lt: 123 });
+
+        let (end_lt, block_id, key) = value.clone().master_block_id();
+        assert_eq!(end_lt, 123);
+        assert!(key);
+        assert_eq!(block_id.seq_no, 7);
+        assert_eq!(block_id.root_hash, UInt256::from([1; 32]));
+        assert_eq!(block_id.file_hash, UInt256::from([2; 32]));
+        assert_eq!(KeyExtBlkRef::construct_from_cell(value.serialize().unwrap()).unwrap(), value);
+    }
+}
