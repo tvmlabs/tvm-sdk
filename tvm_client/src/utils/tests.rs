@@ -222,3 +222,74 @@ fn get_address_type(
         )
         .map(|result| result.address_type)
 }
+
+#[test]
+fn json_helper_extracts_typed_fields() {
+    use super::json::JsonHelper;
+
+    let value = json!({
+        "u64": 42,
+        "i64": -7,
+        "str": "hello",
+        "array": [1, 2, 3]
+    });
+
+    assert_eq!(value.get_u64("u64").unwrap(), 42);
+    assert_eq!(value.get_u32("u64").unwrap(), 42);
+    assert_eq!(value.get_i64("i64").unwrap(), -7);
+    assert_eq!(value.get_i32("i64").unwrap(), -7);
+    assert_eq!(value.get_str("str").unwrap(), "hello");
+    assert_eq!(value.get_array("array").unwrap().len(), 3);
+}
+
+#[test]
+fn json_helper_reports_type_errors() {
+    use super::json::JsonHelper;
+
+    let value = json!({
+        "u64": "42",
+        "i64": "7",
+        "str": 10,
+        "array": {}
+    });
+
+    assert_eq!(
+        value.get_u64("u64").unwrap_err().to_string(),
+        "`u64` field must be an unsigned integer"
+    );
+    assert_eq!(value.get_i64("i64").unwrap_err().to_string(), "`i64` field must be an integer");
+    assert_eq!(value.get_str("str").unwrap_err().to_string(), "`str` field must be a string");
+    assert_eq!(value.get_array("array").unwrap_err().to_string(), "`array` field must be an array");
+    assert_eq!(
+        value.get_u64("missing").unwrap_err().to_string(),
+        "`missing` field must be an unsigned integer"
+    );
+}
+
+#[test]
+fn json_helper_take_string_consumes_only_strings() {
+    use super::json::JsonHelper;
+
+    let mut value = json!("owned");
+    assert_eq!(value.take_string(), Some("owned".to_owned()));
+    assert_eq!(value, serde_json::Value::Null);
+
+    let mut value = json!(42);
+    assert_eq!(value.take_string(), None);
+    assert_eq!(value, serde_json::Value::Null);
+}
+
+#[test]
+fn utility_errors_preserve_code_and_context() {
+    let compression = Error::compression_error("bad stream");
+    assert_eq!(compression.code(), ErrorCode::CompressionError as u32);
+    assert_eq!(compression.message(), "Compression error: bad stream");
+    assert_eq!(
+        compression.data()["core_version"],
+        serde_json::Value::String(crate::client::core_version())
+    );
+
+    let decompression = Error::decompression_error("bad frame");
+    assert_eq!(decompression.code(), ErrorCode::CompressionError as u32);
+    assert_eq!(decompression.message(), "Decompression error: bad frame");
+}

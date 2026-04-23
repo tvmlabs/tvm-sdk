@@ -152,3 +152,100 @@ where
 
     s.serialize_str(&format!("{:x}", num))
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    fn hex_str(value: &str) -> String {
+        hex::encode(value.as_bytes())
+    }
+
+    #[test]
+    fn ac_type_from_maps_known_and_unknown_values() {
+        assert!(matches!(AcType::from(0), AcType::Empty));
+        assert!(matches!(AcType::from(1), AcType::RunAction));
+        assert!(matches!(AcType::from(2), AcType::RunMethod));
+        assert!(matches!(AcType::from(3), AcType::SendMsg));
+        assert!(matches!(AcType::from(4), AcType::Invoke));
+        assert!(matches!(AcType::from(5), AcType::Print));
+        assert!(matches!(AcType::from(6), AcType::Goto));
+        assert!(matches!(AcType::from(10), AcType::CallEngine));
+        assert!(matches!(AcType::from(42), AcType::Unknown));
+    }
+
+    #[test]
+    fn action_helpers_extract_attributes() {
+        let action = DAction {
+            desc: "show".into(),
+            name: "run".into(),
+            action_type: AcType::CallEngine,
+            to: 7,
+            attrs: "instant,func=invoke,args=foo,sign=by_user,fargs=bar".into(),
+            misc: "misc".into(),
+        };
+
+        assert!(action.is_engine_call());
+        assert!(!action.is_invoke());
+        assert!(action.is_instant());
+        assert_eq!(action.func_attr().as_deref(), Some("invoke"));
+        assert_eq!(action.args_attr().as_deref(), Some("foo"));
+        assert!(action.sign_by_user());
+        assert_eq!(action.format_args().as_deref(), Some("bar"));
+    }
+
+    #[test]
+    fn action_constructors_keep_expected_defaults() {
+        let empty = DAction::empty();
+        assert!(matches!(empty.action_type, AcType::Empty));
+        assert!(empty.desc.is_empty());
+        assert!(empty.name.is_empty());
+        assert!(empty.attrs.is_empty());
+
+        let unknown = DAction::new("desc".into(), "name".into(), 255, 9);
+        assert!(matches!(unknown.action_type, AcType::Unknown));
+        assert_eq!(unknown.to, 9);
+        assert!(unknown.attrs.is_empty());
+        assert!(unknown.misc.is_empty());
+    }
+
+    #[test]
+    fn serde_roundtrip_uses_hex_strings_and_numeric_action_type() {
+        let value = json!({
+            "desc": hex_str("menu item"),
+            "name": hex_str("call"),
+            "actionType": "10",
+            "to": "15",
+            "attrs": hex_str("instant,func=go"),
+            "misc": "opaque",
+        });
+
+        let action: DAction = serde_json::from_value(value).unwrap();
+        assert_eq!(action.desc, "menu item");
+        assert_eq!(action.name, "call");
+        assert!(matches!(action.action_type, AcType::CallEngine));
+        assert_eq!(action.to, 15);
+        assert_eq!(action.attrs, "instant,func=go");
+        assert_eq!(action.misc, "opaque");
+
+        let serialized = serde_json::to_value(&action).unwrap();
+        assert_eq!(serialized["actionType"], "a");
+    }
+
+    #[test]
+    fn serde_rejects_invalid_action_type() {
+        let value = json!({
+            "desc": hex_str("menu item"),
+            "name": hex_str("call"),
+            "actionType": "not-a-number",
+            "to": "1",
+            "attrs": hex_str(""),
+            "misc": "",
+        });
+
+        let err = serde_json::from_value::<DAction>(value).err().unwrap().to_string();
+        assert!(err.contains("not-a-number"));
+    }
+}

@@ -59,3 +59,56 @@ where
         str_hex_to_utf8(&s).ok_or("failed to convert bytes to utf8 string".to_string()).unwrap();
     S::from_str(&s).map_err(de::Error::custom)
 }
+
+#[cfg(test)]
+mod tests {
+    use serde::Deserialize;
+    use serde_json::json;
+
+    use super::*;
+
+    fn hex_str(value: &str) -> String {
+        hex::encode(value.as_bytes())
+    }
+
+    #[test]
+    fn context_helpers_decode_strings_and_states() {
+        let context = DContext::new("menu".into(), vec![], 3);
+        assert_eq!(context.desc, "menu");
+        assert_eq!(context.id, 3);
+
+        let quit = DContext::new_quit();
+        assert_eq!(quit.id, STATE_EXIT);
+        assert!(quit.desc.is_empty());
+        assert!(quit.actions.is_empty());
+
+        assert_eq!(str_hex_to_utf8(&hex_str("hello")).as_deref(), Some("hello"));
+        assert_eq!(str_hex_to_utf8("zz"), None);
+    }
+
+    #[test]
+    fn context_deserializes_numeric_and_hex_fields() {
+        let value = json!({
+            "id": "253",
+            "desc": hex_str("current"),
+            "actions": [],
+        });
+
+        let context: DContext = serde_json::from_value(value).unwrap();
+        assert_eq!(context.id, STATE_CURRENT);
+        assert_eq!(context.desc, "current");
+        assert!(context.actions.is_empty());
+    }
+
+    #[test]
+    #[should_panic(expected = "failed to convert bytes to utf8 string")]
+    fn invalid_hex_panics_in_from_hex_to_utf8_str() {
+        #[derive(Deserialize)]
+        struct Wrapper {
+            #[serde(deserialize_with = "from_hex_to_utf8_str")]
+            value: String,
+        }
+
+        let _: Wrapper = serde_json::from_value(json!({ "value": "not-hex" })).unwrap();
+    }
+}
