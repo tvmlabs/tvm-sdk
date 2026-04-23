@@ -18,6 +18,7 @@ use std::path::Path;
 
 use serde_json::Map;
 use tvm_block::Block;
+use tvm_block::BlockProof;
 use tvm_block::GetRepresentationHash;
 use tvm_block::InMsg;
 use tvm_block::OutMsg;
@@ -121,6 +122,21 @@ fn parse_block(
         )
         .unwrap();
     (boc, cell.repr_hash(), parsed)
+}
+
+fn load_block(file_rel_path: &str) -> (Vec<u8>, tvm_types::Cell, Block, BlockIdExt) {
+    let in_path = Path::new("src/tests/data").join(file_rel_path);
+    let boc = read(in_path.clone()).unwrap_or_else(|_| panic!("Error reading file {:?}", in_path));
+    let cell = read_single_root_boc(&boc).expect("Error deserializing single root BOC");
+    let block = Block::construct_from_cell(cell.clone()).unwrap();
+    let info = block.read_info().unwrap();
+    let id = BlockIdExt::with_params(
+        info.shard().clone(),
+        info.seq_no(),
+        block.hash().unwrap().clone(),
+        UInt256::calc_file_hash(&boc),
+    );
+    (boc, cell, block, id)
 }
 
 #[ignore]
@@ -728,4 +744,55 @@ fn test_parse_requires_shard_state_when_accounts_enabled() {
         err.to_string()
             .contains("Shard state should be specified because the block parser was configured with account parsing")
     );
+}
+
+#[test]
+fn test_parse_light_block_and_proof_entries() {
+    let (boc, cell, block, id) =
+        load_block("18AFCDD25BE0989CE516504263EB351818A0FF8F6AB3689501C8E3B767EF413C.boc");
+    let proof_boc = read("src/tests/data/block_proof").unwrap();
+    let proof = BlockProof::construct_from_bytes(&proof_boc).unwrap();
+
+    let parser = BlockParser::<NoTrace, JsonFieldsReducer>::new(
+        BlockParserConfig {
+            blocks: Some(EntryConfig { reducer: None, sharding_depth: Some(3) }),
+            proofs: Some(EntryConfig { reducer: None, sharding_depth: Some(3) }),
+            accounts: None,
+            transactions: None,
+            messages: None,
+            max_account_bytes_size: None,
+            is_node_se: false,
+        },
+        None,
+    );
+
+    let parsed = parser
+        .parse(
+            ParsingBlock {
+                id: &id,
+                block: &block,
+                root: &cell,
+                shard_state: None,
+                data: &boc,
+                mc_seq_no: Some(123),
+                proof: Some(&proof),
+            },
+            false,
+        )
+        .unwrap();
+
+    assert!(parsed.accounts.is_empty());
+    assert!(parsed.transactions.is_empty());
+    assert!(parsed.messages.is_empty());
+
+    let block_entry = parsed.block.unwrap();
+    let proof_entry = parsed.proof.unwrap();
+    assert_eq!(block_entry.body["id"], serde_json::Value::String(id.root_hash().as_hex_string()));
+    assert_eq!(
+        proof_entry.body["id"],
+        serde_json::Value::String(proof.proof_for.root_hash.as_hex_string())
+    );
+    assert_eq!(block_entry.body["chain_order"], proof_entry.body["chain_order"]);
+    assert!(block_entry.partition.is_some());
+    assert!(proof_entry.partition.is_some());
 }

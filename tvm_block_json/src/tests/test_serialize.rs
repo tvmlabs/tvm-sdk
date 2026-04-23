@@ -15,11 +15,13 @@
 use std::fs::read;
 use std::path::Path;
 
+use num::BigInt;
 use pretty_assertions::assert_eq;
 #[cfg(feature = "ton")]
 use tvm_api::IntoBoxed;
 #[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::rempmessagestatus;
+use tvm_types::SliceData;
 use tvm_types::base64_decode;
 
 use super::*;
@@ -1472,6 +1474,47 @@ fn test_block_order() {
     .unwrap();
     let block = Block::construct_from_bytes(&block).unwrap();
     assert_eq!("17b00540960604", block_order(&block, 123).unwrap());
+}
+
+#[test]
+fn test_helper_formatters_and_scalar_serializers() {
+    assert_eq!(u64_to_string(15), "0f");
+    assert_eq!(bigint_to_string(&BigInt::from(255)), "01ff");
+    assert!(bigint_to_string(&BigInt::from(-255)).starts_with('-'));
+    assert_eq!(shard_to_string(0xABCD), "000000000000abcd");
+
+    let mut map = serde_json::Map::new();
+    serialize_grams(&mut map, "grams", &15u64.into(), SerializationMode::Standart);
+    serialize_u64(&mut map, "count", &31, SerializationMode::QServer);
+    serialize_lt(&mut map, "lt", &1_000_123, SerializationMode::Debug);
+    serialize_bigint(&mut map, "delta", &BigInt::from(-42), SerializationMode::Standart);
+
+    assert_eq!(map["grams_dec"], "15");
+    assert_eq!(map["grams"], "00f");
+    assert_eq!(map["count"], "0x1f");
+    assert_eq!(map["lt"], "1_123");
+    assert_eq!(map["delta_dec"], "-42");
+    assert!(map["delta"].as_str().unwrap().starts_with('-'));
+}
+
+#[test]
+fn test_construct_address_uses_std_and_var_forms() {
+    let std_addr = construct_address(0, AccountId::from([1; 32])).unwrap();
+    let var_addr = construct_address(300, SliceData::new(vec![0xAA, 0x80])).unwrap();
+
+    assert!(matches!(std_addr, MsgAddressInt::AddrStd(_)));
+    assert!(matches!(var_addr, MsgAddressInt::AddrVar(_)));
+}
+
+#[test]
+fn test_block_order_rejects_wrong_masterchain_seqno() {
+    let block = std::fs::read(
+        "src/tests/data/89ED400A43E76664437EFC9C79B84AC387493A9EE5E789338FF71C25F54218BE.boc",
+    )
+    .unwrap();
+    let block = Block::construct_from_bytes(&block).unwrap();
+
+    assert!(block_order(&block, 1).is_err());
 }
 
 #[test]
