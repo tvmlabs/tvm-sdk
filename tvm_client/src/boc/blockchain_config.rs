@@ -93,3 +93,66 @@ pub(crate) fn extract_config_from_zerostate(
 
     Ok(master.config().clone())
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::Block;
+    use tvm_block::BlockExtra;
+    use tvm_block::BlockInfo;
+    use tvm_block::ConfigParams;
+    use tvm_block::McBlockExtra;
+    use tvm_block::McStateExtra;
+    use tvm_block::MerkleUpdate;
+    use tvm_block::ShardStateUnsplit;
+    use tvm_block::ValueFlow;
+
+    use super::*;
+
+    fn test_block(extra: BlockExtra) -> Block {
+        Block::with_params(
+            0,
+            BlockInfo::default(),
+            ValueFlow::default(),
+            MerkleUpdate::default(),
+            extra,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn extract_config_from_block_handles_missing_and_present_master_data() {
+        let err = extract_config_from_block(&test_block(BlockExtra::new())).unwrap_err();
+        assert!(err.message().contains("not a masterchain block"));
+
+        let mut extra = BlockExtra::new();
+        extra.write_custom(Some(&McBlockExtra::default())).unwrap();
+        let err = extract_config_from_block(&test_block(extra)).unwrap_err();
+        assert!(err.message().contains("not a key block"));
+
+        let mut master = McBlockExtra::default();
+        let config = ConfigParams::default();
+        master.set_config(config.clone());
+        let mut extra = BlockExtra::new();
+        extra.write_custom(Some(&master)).unwrap();
+
+        let actual = extract_config_from_block(&test_block(extra)).unwrap();
+        assert_eq!(actual.serialize().unwrap().repr_hash(), config.serialize().unwrap().repr_hash());
+    }
+
+    #[test]
+    fn extract_config_from_zerostate_handles_missing_and_present_master_data() {
+        let err = extract_config_from_zerostate(&ShardStateUnsplit::default()).unwrap_err();
+        assert!(err.message().contains("not a masterchain state"));
+
+        let mut state = ShardStateUnsplit::default();
+        let master = McStateExtra { config: ConfigParams::default(), ..Default::default() };
+        let expected = master.config.clone();
+        state.write_custom(Some(&master)).unwrap();
+
+        let actual = extract_config_from_zerostate(&state).unwrap();
+        assert_eq!(
+            actual.serialize().unwrap().repr_hash(),
+            expected.serialize().unwrap().repr_hash()
+        );
+    }
+}
