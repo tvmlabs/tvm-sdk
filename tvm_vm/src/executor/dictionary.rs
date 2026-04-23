@@ -1374,3 +1374,220 @@ pub(super) fn execute_dictusetgetoptref(engine: &mut Engine) -> Status {
         valwriter_add_or_remove_refopt,
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::BuilderData;
+    use tvm_types::Cell;
+    use tvm_types::ExceptionCode;
+    use tvm_types::HashmapE;
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+
+    fn new_engine() -> Engine {
+        Engine::with_capabilities(0).setup(SliceData::default(), None, None, None)
+    }
+
+    fn key(bits: u8) -> SliceData {
+        SliceData::load_builder(BuilderData::with_raw(vec![bits << 4], 4).unwrap()).unwrap()
+    }
+
+    fn byte_slice(byte: u8) -> SliceData {
+        SliceData::new(vec![byte])
+    }
+
+    fn byte_builder(byte: u8) -> BuilderData {
+        BuilderData::with_raw(vec![byte], 8).unwrap()
+    }
+
+    fn byte_cell(byte: u8) -> Cell {
+        byte_builder(byte).into_cell().unwrap()
+    }
+
+    fn set_var(engine: &mut Engine, item: StackItem) {
+        engine.cmd.vars.clear();
+        engine.cmd.vars.extend([
+            StackItem::None,
+            StackItem::None,
+            StackItem::None,
+            item,
+        ]);
+    }
+
+    #[test]
+    fn try_unref_leaf_and_key_readers_cover_success_and_error_paths() {
+        let child = BuilderData::with_raw(vec![0xaa], 8).unwrap().into_cell().unwrap();
+        let mut builder = BuilderData::new();
+        builder.checked_append_reference(child.clone()).unwrap();
+        let slice = SliceData::load_builder(builder).unwrap();
+        assert_eq!(try_unref_leaf(slice).unwrap(), StackItem::Cell(child));
+
+        let slice = SliceData::new(vec![0x80]);
+        let err = try_unref_leaf(slice).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::DictionaryError));
+
+        let uint_key = keyreader_from_uint(&StackItem::int(10), 4).unwrap();
+        assert_eq!(uint_key.remaining_bits(), 4);
+
+        let err = keyreader_from_uint(&StackItem::int(-1), 4).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::IntegerOverflow));
+
+        let (key, negative) = read_key(&StackItem::int(-1), 4, 0).unwrap();
+        assert!(key.is_none());
+        assert!(negative);
+    }
+
+    #[test]
+    fn write_key_supports_slice_signed_and_unsigned_forms() {
+        let mut engine = new_engine();
+        let key = BuilderData::with_raw(vec![0b1010_0000], 4).unwrap();
+        let unsigned = write_key(&mut engine, key.clone(), 0).unwrap();
+        assert_eq!(unsigned, StackItem::int(10));
+
+        let mut engine = new_engine();
+        let signed = write_key(
+            &mut engine,
+            BuilderData::with_raw(vec![0b1111_0000], 4).unwrap(),
+            SIGN,
+        )
+        .unwrap();
+        assert_eq!(signed, StackItem::int(-1));
+
+        let mut engine = new_engine();
+        let slice = write_key(&mut engine, key, SLC).unwrap();
+        assert_eq!(slice.as_slice().unwrap().remaining_bits(), 4);
+    }
+
+    #[test]
+    fn value_readers_cover_slice_ref_and_optional_missing_paths() {
+        let mut engine = new_engine();
+        let lookup_key = key(0xa);
+
+        let mut slice_dict = HashmapE::with_bit_len(4);
+        let slice_value = byte_slice(0x55);
+        slice_dict.set(lookup_key.clone(), &slice_value).unwrap();
+        assert_eq!(
+            valreader_from_slice(&mut engine, &mut slice_dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Slice(slice_value))
+        );
+
+        let mut ref_dict = HashmapE::with_bit_len(4);
+        let child = byte_cell(0xaa);
+        ref_dict.setref(lookup_key.clone(), &child).unwrap();
+        assert_eq!(
+            valreader_from_ref(&mut engine, &mut ref_dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Cell(child.clone()))
+        );
+        assert_eq!(
+            valreader_from_refopt(&mut engine, &mut ref_dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Cell(child))
+        );
+
+        let mut empty_dict = HashmapE::with_bit_len(4);
+        assert_eq!(
+            valreader_from_refopt(&mut engine, &mut empty_dict, lookup_key).unwrap(),
+            Some(StackItem::None)
+        );
+    }
+
+    #[test]
+    fn value_writers_cover_add_replace_remove_and_refopt_paths() {
+        let mut engine = new_engine();
+        let mut dict = HashmapE::with_bit_len(4);
+        let lookup_key = key(0x3);
+
+        set_var(&mut engine, StackItem::Slice(byte_slice(0x11)));
+        assert_eq!(valwriter_add_slice(&mut engine, &mut dict, lookup_key.clone()).unwrap(), None);
+
+        set_var(&mut engine, StackItem::Slice(byte_slice(0x22)));
+        assert_eq!(
+            valwriter_add_slice(&mut engine, &mut dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Slice(byte_slice(0x11)))
+        );
+
+        set_var(&mut engine, StackItem::Slice(byte_slice(0x33)));
+        assert_eq!(
+            valwriter_replace_slice(&mut engine, &mut dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Slice(byte_slice(0x11)))
+        );
+        assert_eq!(
+            valwriter_remove_slice(&mut engine, &mut dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Slice(byte_slice(0x33)))
+        );
+
+        set_var(&mut engine, StackItem::builder(byte_builder(0x44)));
+        assert_eq!(
+            valwriter_add_builder(&mut engine, &mut dict, lookup_key.clone()).unwrap(),
+            None
+        );
+        set_var(&mut engine, StackItem::builder(byte_builder(0x55)));
+        assert_eq!(
+            valwriter_replace_builder(&mut engine, &mut dict, lookup_key.clone()).unwrap(),
+            Some(StackItem::Slice(SliceData::load_builder(byte_builder(0x44)).unwrap()))
+        );
+
+        let ref_key = key(0x4);
+        let ref_cell = byte_cell(0x66);
+        set_var(&mut engine, StackItem::Cell(ref_cell.clone()));
+        assert_eq!(valwriter_to_ref(&mut engine, &mut dict, ref_key.clone()).unwrap(), None);
+        assert_eq!(
+            valwriter_remove_ref(&mut engine, &mut dict, ref_key.clone()).unwrap(),
+            Some(StackItem::Cell(ref_cell.clone()))
+        );
+
+        let without_unref_key = key(0x5);
+        set_var(&mut engine, StackItem::Cell(ref_cell.clone()));
+        assert_eq!(
+            valwriter_add_ref_without_unref(&mut engine, &mut dict, without_unref_key.clone())
+                .unwrap(),
+            None
+        );
+        set_var(&mut engine, StackItem::Cell(byte_cell(0x77)));
+        let existing =
+            valwriter_add_ref_without_unref(&mut engine, &mut dict, without_unref_key).unwrap();
+        assert!(existing.unwrap().as_slice().unwrap().remaining_references() > 0);
+
+        let opt_key = key(0x6);
+        dict.setref(opt_key.clone(), &ref_cell).unwrap();
+        set_var(&mut engine, StackItem::None);
+        assert_eq!(
+            valwriter_add_or_remove_refopt(&mut engine, &mut dict, opt_key.clone()).unwrap(),
+            Some(StackItem::Cell(ref_cell.clone()))
+        );
+        assert!(dict.get(opt_key.clone()).unwrap().is_none());
+
+        set_var(&mut engine, StackItem::Cell(byte_cell(0x88)));
+        assert_eq!(
+            valwriter_add_or_remove_refopt(&mut engine, &mut dict, opt_key.clone()).unwrap(),
+            Some(StackItem::None)
+        );
+        assert!(dict.get(opt_key).unwrap().is_some());
+    }
+
+    #[test]
+    fn finder_and_iterator_cover_ordering_and_reference_modes() {
+        let mut engine = new_engine();
+        let mut dict = HashmapE::with_bit_len(4);
+        dict.set(key(0x2), &byte_slice(0x20)).unwrap();
+        dict.set(key(0xa), &byte_slice(0xa0)).unwrap();
+
+        let (min_key, min_value) = finder(&mut engine, &dict, MIN).unwrap().unwrap();
+        assert_eq!(write_key(&mut engine, min_key, 0).unwrap(), StackItem::int(2));
+        assert_eq!(min_value, StackItem::Slice(byte_slice(0x20)));
+
+        let (iter_key, iter_value) = iter_reader(&mut engine, &dict, key(0x3), NEXT).unwrap().unwrap();
+        assert_eq!(write_key(&mut engine, iter_key, 0).unwrap(), StackItem::int(10));
+        assert_eq!(iter_value, StackItem::Slice(byte_slice(0xa0)));
+
+        let mut ref_dict = HashmapE::with_bit_len(4);
+        let child = byte_cell(0x99);
+        ref_dict.setref(key(0x7), &child).unwrap();
+        let (max_key, max_value) = finder(&mut engine, &ref_dict, REF).unwrap().unwrap();
+        assert_eq!(write_key(&mut engine, max_key, 0).unwrap(), StackItem::int(7));
+        assert_eq!(max_value, StackItem::Cell(child));
+
+        assert!(finder(&mut engine, &HashmapE::with_bit_len(4), MIN).unwrap().is_none());
+    }
+}

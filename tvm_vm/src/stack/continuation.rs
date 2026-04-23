@@ -568,3 +568,136 @@ impl fmt::Display for ContinuationType {
         write!(f, "{}", name)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::BuilderData;
+    use tvm_types::ExceptionCode;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+
+    fn sample_slice() -> SliceData {
+        SliceData::new(vec![0x80])
+    }
+
+    #[test]
+    fn move_and_copy_without_stack_preserve_expected_fields() {
+        let body = sample_slice();
+        let mut cont = ContinuationData::with_type(ContinuationType::PushInt(7));
+        let moved = ContinuationData::move_without_stack(&mut cont, body.clone());
+        assert_eq!(moved.code(), &body);
+        assert_eq!(moved.type_of, ContinuationType::PushInt(7));
+        assert!(cont.code().is_empty());
+        assert_eq!(cont.type_of, ContinuationType::Ordinary);
+
+        let mut full = ContinuationData::with_code(sample_slice());
+        full.nargs = 3;
+        full.stack.push(StackItem::int(10));
+        let copied = full.copy_without_stack();
+        assert_eq!(copied.code(), full.code());
+        assert_eq!(copied.nargs, 3);
+        assert!(copied.stack.is_empty());
+    }
+
+    #[test]
+    fn drain_reference_and_display_cover_special_paths() {
+        let mut cont = ContinuationData::with_code(SliceData::default());
+        let err = cont.drain_reference().unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::InvalidOpcode));
+
+        let child = BuilderData::with_raw(vec![0xaa], 8).unwrap().into_cell().unwrap();
+        let mut root = BuilderData::new();
+        root.checked_append_reference(child.clone()).unwrap();
+        let root = root.into_cell().unwrap();
+        let mut cont = ContinuationData::with_code(SliceData::load_cell(root).unwrap());
+        assert_eq!(cont.drain_reference().unwrap(), child);
+
+        assert_eq!(ContinuationType::CatchRevert(3).to_string(), "catch-revert");
+        assert_eq!(ContinuationType::ExcQuit.to_string(), "exception-quit");
+        assert!(
+            ContinuationData::with_type(ContinuationType::TryCatch)
+                .to_string()
+                .contains("type: try-catch")
+        );
+    }
+
+    #[test]
+    fn old_serialization_roundtrips_and_rejects_catch_revert() {
+        let body = sample_slice();
+        let mut cont =
+            ContinuationData::with_type(ContinuationType::RepeatLoopBody(body.clone(), 9));
+        cont.nargs = 2;
+        cont.stack.push(StackItem::int(1));
+
+        let (builder, gas) = cont.serialize_old().unwrap();
+        assert!(gas > 0);
+        let mut slice = SliceData::load_builder(builder).unwrap();
+        let (decoded, decode_gas) = ContinuationData::deserialize_old(&mut slice).unwrap();
+        assert_eq!(decoded, cont);
+        assert!(decode_gas > 0);
+
+        let err = ContinuationData::with_type(ContinuationType::CatchRevert(1))
+            .serialize_old()
+            .unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::UnknownError));
+    }
+
+    #[test]
+    fn savelist_helpers_and_withdraw_cover_mutation_paths() {
+        let mut cont = ContinuationData::with_code(sample_slice());
+        assert!(cont.can_put_to_savelist_once(2));
+
+        let mut item = StackItem::continuation(ContinuationData::new_empty());
+        assert!(cont.put_to_savelist(2, &mut item).unwrap().is_none());
+        assert!(!cont.can_put_to_savelist_once(2));
+        assert_eq!(
+            cont.remove_from_savelist(2).unwrap(),
+            StackItem::continuation(ContinuationData::new_empty())
+        );
+
+        cont.move_to_end();
+        assert!(cont.code().is_empty());
+
+        let mut withdrawn = ContinuationData::with_type(ContinuationType::Quit(13));
+        withdrawn.stack.push(StackItem::int(1));
+        let taken = withdrawn.withdraw();
+        assert_eq!(taken.type_of, ContinuationType::Quit(13));
+        assert_eq!(taken.stack.depth(), 1);
+        assert_eq!(withdrawn, ContinuationData::new_empty());
+    }
+
+    #[test]
+    fn serialize_and_deserialize_roundtrip_multiple_continuation_types() {
+        let variants = vec![
+            ContinuationData::with_type(ContinuationType::TryCatch),
+            ContinuationData::with_type(ContinuationType::CatchRevert(4)),
+            ContinuationData::with_type(ContinuationType::PushInt(17)),
+            ContinuationData::with_type(ContinuationType::Quit(9)),
+            ContinuationData::with_type(ContinuationType::AgainLoopBody(sample_slice())),
+            ContinuationData::with_type(ContinuationType::UntilLoopCondition(sample_slice())),
+            ContinuationData::with_type(ContinuationType::ExcQuit),
+            ContinuationData::with_type(ContinuationType::RepeatLoopBody(sample_slice(), 3)),
+            ContinuationData::with_type(ContinuationType::WhileLoopCondition(
+                sample_slice(),
+                SliceData::new(vec![0x40]),
+            )),
+        ];
+
+        for mut cont in variants {
+            cont.nargs = 2;
+            cont.stack.push(StackItem::int(1));
+            let mut save = StackItem::continuation(ContinuationData::new_empty());
+            cont.put_to_savelist(0, &mut save).unwrap();
+
+            let mut gas = 0;
+            let builder = cont.serialize(&mut gas).unwrap();
+            assert!(gas >= 0);
+
+            let cell = builder.into_cell().unwrap();
+            let mut slice = SliceData::load_cell(cell).unwrap();
+            let decoded = ContinuationData::deserialize(&mut slice, &mut gas).unwrap();
+            assert_eq!(decoded, cont);
+        }
+    }
+}

@@ -270,3 +270,95 @@ impl VMSetup {
         vm
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+    use std::time::Instant;
+
+    use tvm_block::CurrencyCollection;
+    use tvm_types::Cell;
+    use tvm_types::SliceData;
+    use tvm_vm::executor::gas::gas_state::Gas;
+    use tvm_vm::smart_contract_info::SmartContractInfo;
+    use tvm_vm::stack::Stack;
+    use tvm_vm::stack::StackItem;
+
+    use super::VMSetup;
+    use super::VMSetupContext;
+    use crate::BlockchainConfig;
+
+    fn setup() -> VMSetup {
+        VMSetup::with_context(
+            SliceData::default(),
+            VMSetupContext {
+                capabilities: 1,
+                block_version: 7,
+                #[cfg(feature = "signature_with_id")]
+                signature_id: 17,
+            },
+        )
+    }
+
+    #[test]
+    fn deprecated_contract_info_builders_store_control_register_seven() {
+        let base_info = SmartContractInfo {
+            capabilities: 1,
+            ..SmartContractInfo::with_myself(SliceData::default())
+        };
+
+        let with_config = setup()
+            .set_contract_info_with_config(base_info.clone(), &BlockchainConfig::default())
+            .unwrap();
+        assert!(with_config.ctrls.get(7).unwrap().as_tuple().is_ok());
+
+        let with_flag = setup().set_contract_info(base_info, true).unwrap();
+        let c7 = with_flag.ctrls.get(7).unwrap().as_tuple().unwrap();
+        let tuple = c7[0].as_tuple().unwrap();
+        assert_eq!(tuple.len(), 12);
+    }
+
+    #[test]
+    fn data_stack_gas_and_runtime_options_are_stored() {
+        let data = Cell::default();
+        let stack = Stack::new();
+        let deadline = Some(Instant::now());
+        let timeout = Some(Duration::from_secs(3));
+
+        let setup = setup()
+            .set_data(data.clone())
+            .unwrap()
+            .set_stack(stack.clone())
+            .set_gas(Gas::empty())
+            .set_libraries(vec![])
+            .set_debug(true)
+            .set_termination_deadline(deadline)
+            .set_execution_timeout(timeout)
+            .set_dapp_id(None);
+
+        assert_eq!(setup.ctrls.get(4).unwrap().as_cell().unwrap(), &data);
+        assert_eq!(setup.stack.as_ref().unwrap().depth(), stack.depth());
+        assert!(setup.gas.is_some());
+        assert_eq!(setup.libraries.len(), 0);
+        assert_eq!(setup.termination_deadline, deadline);
+        assert_eq!(setup.execution_timeout, timeout);
+    }
+
+    #[test]
+    fn create_applies_context_to_engine() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(77u64));
+
+        let info = SmartContractInfo {
+            capabilities: 1,
+            balance: CurrencyCollection::with_grams(77),
+            ..SmartContractInfo::with_myself(SliceData::default())
+        };
+
+        let engine = setup().set_smart_contract_info(info).unwrap().set_stack(stack).create();
+
+        assert_eq!(engine.block_version(), 7);
+        #[cfg(feature = "signature_with_id")]
+        assert_eq!(engine.signature_id(), 17);
+    }
+}

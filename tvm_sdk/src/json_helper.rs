@@ -304,10 +304,12 @@ where
 
 #[cfg(test)]
 mod tests {
+    use serde::de::Visitor;
     use serde_json::json;
     use tvm_block::AccStatusChange;
     use tvm_block::AccountStatus;
     use tvm_block::ComputeSkipReason;
+    use tvm_block::MsgAddressInt;
     use tvm_block::TransactionProcessingStatus;
     use tvm_types::BuilderData;
 
@@ -452,6 +454,18 @@ mod tests {
         body: Option<tvm_types::Cell>,
     }
 
+    #[derive(Debug, Deserialize, Serialize)]
+    struct AddressHolder {
+        #[serde(with = "address")]
+        value: MsgAddressInt,
+    }
+
+    #[derive(Debug, Deserialize, Serialize)]
+    struct StatusSerdeHolder {
+        #[serde(with = "account_status")]
+        status: AccountStatus,
+    }
+
     #[test]
     fn opt_cell_roundtrips_some_and_none() {
         let cell = BuilderData::with_raw(vec![0xab], 8).unwrap().into_cell().unwrap();
@@ -474,6 +488,55 @@ mod tests {
         let err = serde_json::from_value::<OptionalCellHolder>(json!({ "body": "not-base64" }))
             .unwrap_err();
         assert!(err.to_string().contains("error decode base64"));
+    }
+
+    #[test]
+    fn opt_cell_rejects_valid_base64_with_invalid_boc() {
+        let invalid_boc = tvm_types::base64_encode("not a boc");
+        let err = serde_json::from_value::<OptionalCellHolder>(json!({ "body": invalid_boc }))
+            .unwrap_err();
+        assert!(err.to_string().contains("BOC read error"));
+    }
+
+    #[test]
+    fn address_and_account_status_roundtrip_through_serde() {
+        let address = MsgAddressInt::with_standart(None, 0, [0x11; 32].into()).unwrap();
+        let serialized = serde_json::to_value(AddressHolder { value: address.clone() }).unwrap();
+        assert_eq!(serialized, json!({ "value": address.to_string() }));
+
+        let decoded: AddressHolder = serde_json::from_value(serialized).unwrap();
+        assert_eq!(decoded.value, address);
+
+        let status = StatusSerdeHolder { status: AccountStatus::AccStateFrozen };
+        assert_eq!(serde_json::to_value(&status).unwrap(), json!({ "status": 2 }));
+    }
+
+    #[test]
+    fn address_and_shard_deserializers_report_errors() {
+        let err = serde_json::from_value::<AddressHolder>(json!({ "value": "not-an-address" }))
+            .unwrap_err();
+        assert!(err.to_string().contains("Address parsing error"));
+
+        #[derive(Debug, Deserialize)]
+        struct ShardHolder {
+            #[serde(deserialize_with = "deserialize_shard")]
+            #[allow(dead_code)]
+            value: u64,
+        }
+
+        let err = serde_json::from_value::<ShardHolder>(json!({ "value": "zzz" })).unwrap_err();
+        assert!(err.to_string().contains("Error parsing shard"));
+    }
+
+    #[test]
+    fn string_visitor_handles_some_and_unit() {
+        let from_unit = StringVisitor.visit_unit::<serde::de::value::Error>().unwrap();
+        assert_eq!(from_unit, "null");
+
+        let deserializer =
+            serde::de::value::StrDeserializer::<serde::de::value::Error>::new("hello");
+        let from_some = StringVisitor.visit_some(deserializer).unwrap();
+        assert_eq!(from_some, "hello");
     }
 
     #[test]
