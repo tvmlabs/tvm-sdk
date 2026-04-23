@@ -50,3 +50,43 @@ pub fn verify_groth16(
     let public_inputs = FieldElement::deserialize_vector(proof_public_inputs_as_bytes)?;
     pvk.verify(&public_inputs, &proof)
 }
+
+#[cfg(test)]
+mod tests {
+    use ark_bn254::Fq12;
+    use ark_bn254::G1Affine;
+    use ark_bn254::G2Affine;
+
+    use super::*;
+    use crate::executor::zk_stuff::error::ZkCryptoError;
+
+    fn sample_pvk() -> PreparedVerifyingKey {
+        PreparedVerifyingKey {
+            vk_gamma_abc_g1: vec![G1Affine::default()],
+            alpha_g1_beta_g2: Fq12::default(),
+            gamma_g2_neg_pc: G2Affine::default(),
+            delta_g2_neg_pc: G2Affine::default(),
+        }
+    }
+
+    #[test]
+    fn prepare_pvk_bytes_rejects_invalid_verifying_key() {
+        assert!(matches!(prepare_pvk_bytes(&[]), Err(ZkCryptoError::InvalidInput)));
+    }
+
+    #[test]
+    fn verify_groth16_in_bytes_requires_scalar_aligned_inputs() {
+        assert!(matches!(
+            verify_groth16_in_bytes(&[], &[], &[], &[], &[1u8], &[]),
+            Err(ZkCryptoError::InputLengthWrong(SCALAR_SIZE))
+        ));
+    }
+
+    #[test]
+    fn verify_groth16_reports_invalid_proof_bytes() {
+        assert!(matches!(
+            verify_groth16(&sample_pvk(), &[0u8; SCALAR_SIZE], &[1u8]),
+            Err(ZkCryptoError::InvalidInput)
+        ));
+    }
+}

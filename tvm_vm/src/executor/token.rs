@@ -1132,3 +1132,40 @@ pub(super) fn execute_calculate_miner_reward(engine: &mut Engine) -> Status {
     engine.cc.stack.push(int!(rmv as u128));
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+    use crate::stack::Stack;
+
+    fn engine_with_stack(stack: Stack) -> Engine {
+        Engine::with_capabilities(0).setup(SliceData::default(), None, Some(stack), None)
+    }
+
+    #[test]
+    fn ecc_mint_adds_action_for_valid_inputs() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(10_u64));
+        stack.push(StackItem::int(5_u32));
+        let mut engine = engine_with_stack(stack);
+        let before = engine.ctrl(5).unwrap().clone();
+
+        execute_ecc_mint(&mut engine).unwrap();
+
+        assert_ne!(engine.ctrl(5).unwrap(), &before);
+    }
+
+    #[test]
+    fn ecc_mint_rejects_currency_id_out_of_range() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(10_u64));
+        stack.push(StackItem::int(256_u32));
+        let mut engine = engine_with_stack(stack);
+
+        let err = execute_ecc_mint(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::RangeCheckError));
+    }
+}
