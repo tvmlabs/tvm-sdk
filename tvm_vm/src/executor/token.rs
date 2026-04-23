@@ -1168,4 +1168,53 @@ mod tests {
         let err = execute_ecc_mint(&mut engine).unwrap_err();
         assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::RangeCheckError));
     }
+
+    #[test]
+    fn helper_lists_and_reward_inputs_cover_edge_cases() {
+        assert_eq!(to_umbnlst(&vec![1, 1]), vec![0, 1u64 << 31, 1u64 << 32]);
+        assert_eq!(to_umbnlst(&vec![0, 0]), vec![0, 0, 0]);
+
+        let bclst = build_bclst(&[0, MV_X2 as u64, MV_X3 as u64]);
+        assert_eq!(build_bclst(&[7]), Vec::<u64>::new());
+        assert_eq!(bclst.len(), 2);
+        assert!(bclst.iter().all(|value| *value > 0));
+
+        assert_eq!(compute_rmv(100, 3, &[], 0, &[]), 0);
+        assert_eq!(compute_rmv(100, 3, &[10, 20], 0, &[5]), 0);
+        assert_eq!(compute_rmv(100, 3, &[0, 0], 0, &[5, 6]), 0);
+        assert_eq!(compute_rmv(100, 3, &[10, 20], 99, &[1, 1]), 200);
+    }
+
+    #[test]
+    fn params_and_repcoef_helpers_cover_boundary_paths() {
+        let params = params_from_types(vec![
+            ParamType::Uint(32),
+            ParamType::Bool,
+            ParamType::Array(Box::new(ParamType::Uint(8))),
+        ]);
+        assert_eq!(params[0].name, "a");
+        assert_eq!(params[1].name, "b");
+        assert_eq!(params[2].name, "c");
+
+        assert_eq!(repcoef_int(0), 1_000_000_000);
+        assert_eq!(repcoef_int(MAXRT), 3_000_000_000);
+        assert!(repcoef_int(1) > 1_000_000_000);
+    }
+
+    #[test]
+    fn tap_coef_helper_handles_limits_and_updates_counters() {
+        let rem = ((K_B as i128) * ONE_Q40 + 17) as u64;
+        assert_eq!(calc_tap_coef_with_params(12_000, 5, 10, rem, 4, 3, 2), (0, 17, 4, 3, 2, 12_000));
+        assert_eq!(calc_tap_coef_with_params(10, 5, 0, 9, 4, 3, 2), (0, 9, 4, 3, 2, 10));
+
+        let (tap_coef, new_rem, new_dur, new_modified, new_taps_5min, new_total_taps) =
+            calc_tap_coef_with_params(0, 5, 12, 0, 7, 11, 3);
+        assert_eq!(tap_coef, 303);
+        assert_eq!(new_rem, 70_075_481_960_600);
+        assert_eq!(new_dur, 19);
+        assert_eq!(new_modified, 20);
+        assert_eq!(new_taps_5min, 8);
+        assert_eq!(new_total_taps, 5);
+        assert!(new_rem < ((K_B as i128) * ONE_Q40) as u64);
+    }
 }

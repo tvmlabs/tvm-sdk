@@ -399,4 +399,71 @@ mod tests {
         map.set(bits(0b1010, 4), &value(0x11)).unwrap();
         assert!(format!("{map}").starts_with("PfxHashmap: "));
     }
+
+    #[test]
+    fn builder_and_reference_wrappers_cover_replace_get_and_remove_paths() {
+        let mut map = PfxHashmapE::with_bit_len(8);
+        let key = bits(0b10110011, 8);
+        let builder = BuilderData::with_raw(vec![0x33], 8).unwrap();
+        let cell = builder.clone().into_cell().unwrap();
+
+        assert!(map.get(key.clone()).unwrap().is_none());
+        assert!(map.set_builder_with_gas(key.clone(), &builder, &mut 0).unwrap().is_none());
+        assert_eq!(map.get(key.clone()).unwrap().unwrap(), value(0x33));
+
+        assert!(
+            map.replace_builder_with_gas(bits(0b00001111, 8), &builder, &mut 0).unwrap().is_none()
+        );
+        assert_eq!(
+            map.replace_builder_with_gas(
+                key.clone(),
+                &BuilderData::with_raw(vec![0x44], 8).unwrap(),
+                &mut 0
+            )
+            .unwrap()
+            .unwrap(),
+            value(0x33)
+        );
+        assert_eq!(map.get(key.clone()).unwrap().unwrap(), value(0x44));
+
+        assert!(map.setref_with_gas(bits(0b01010101, 8), &cell, &mut 0).unwrap().is_none());
+        assert!(map.is_prefix(bits(0b0101, 4)).unwrap());
+        assert!(map.replaceref_with_gas(bits(0b11110000, 8), &cell, &mut 0).unwrap().is_none());
+        assert!(map.remove_with_gas(bits(0b11110000, 8), &mut 0).unwrap().is_none());
+    }
+
+    #[test]
+    fn prefix_queries_and_plain_wrappers_cover_leaf_navigation() {
+        let mut map = PfxHashmapE::with_bit_len(4);
+        map.set(bits(0b1011, 4), &value(0xaa)).unwrap();
+        map.set_with_gas(bits(0b1100, 4), &value(0xbb), &mut 0).unwrap();
+        map.set_builder(bits(0b0110, 4), &BuilderData::with_raw(vec![0xcc], 8).unwrap()).unwrap();
+
+        assert_eq!(map.get_with_gas(bits(0b1011, 4), &mut 0).unwrap().unwrap(), value(0xaa));
+        assert_eq!(
+            map.replace_with_gas(bits(0b1011, 4), &value(0xdd), &mut 0).unwrap().unwrap(),
+            value(0xaa)
+        );
+        assert_eq!(map.get(bits(0b1011, 4)).unwrap().unwrap(), value(0xdd));
+
+        let leaf_ref = BuilderData::with_raw(vec![0xee], 8).unwrap().into_cell().unwrap();
+        assert!(map.setref(bits(0b0011, 4), &leaf_ref).unwrap().is_none());
+        assert!(map.remove(bits(0b0011, 4)).unwrap().is_some());
+
+        let (path, leaf, suffix) =
+            map.get_prefix_leaf_with_gas(bits(0b1011, 4), &mut 0).unwrap();
+        assert_eq!(path, bits(0b1011, 4));
+        assert!(leaf.is_some());
+        assert!(suffix.is_empty());
+
+        let (path, leaf, suffix) = map.get_prefix_leaf_with_gas(bits(0b101101, 6), &mut 0).unwrap();
+        assert_eq!(path, bits(0b1011, 4));
+        assert!(leaf.is_some());
+        assert_eq!(suffix, bits(0b01, 2));
+
+        let (path, leaf, suffix) = map.get_leaf_by_prefix(bits(0b10, 2)).unwrap();
+        assert_eq!(path, bits(0b1011, 4));
+        assert!(leaf.is_some());
+        assert!(suffix.is_empty());
+    }
 }

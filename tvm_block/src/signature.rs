@@ -462,3 +462,104 @@ impl Deserializable for BlockProof {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+    use ed25519_dalek::{SigningKey, VerifyingKey};
+    use ed25519::signature::Signer;
+    use tvm_types::*;
+
+    #[test]
+    fn test_crypto_signature_new_default() {
+        let cs = CryptoSignature::new();
+        let cs2 = CryptoSignature::default();
+        assert_eq!(cs, cs2);
+    }
+
+    #[test]
+    fn test_crypto_signature_from_bytes_valid() {
+        let sk = SigningKey::generate(&mut rand::thread_rng());
+        let sig = sk.sign(b"test");
+        let cs = CryptoSignature::from_bytes(&sig.to_bytes()).unwrap();
+        assert_eq!(cs.to_bytes(), sig.to_bytes());
+    }
+
+    #[test]
+    fn test_crypto_signature_from_bytes_invalid() {
+        assert!(CryptoSignature::from_bytes(&[0u8; 63]).is_err());
+        assert!(CryptoSignature::from_bytes(&[0u8; 65]).is_err());
+    }
+
+    #[test]
+    fn test_crypto_signature_to_r_s_bytes() {
+        let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
+        let (r, s) = cs.to_r_s_bytes();
+        assert_eq!(r, [1u8; 32]);
+        assert_eq!(s, [2u8; 32]);
+    }
+
+    #[test]
+    fn test_sig_pub_key_new_default() {
+        let spk = SigPubKey::new();
+        let spk2 = SigPubKey::default();
+        assert_eq!(spk, spk2);
+    }
+
+    #[test]
+    fn test_sig_pub_key_from_bytes_and_verify() {
+        let sk = SigningKey::generate(&mut rand::thread_rng());
+        let pk: VerifyingKey = (&sk).into();
+        let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
+        let data = b"test data";
+        let sig = sk.sign(data);
+        let cs = CryptoSignature::from_bytes(&sig.to_bytes()).unwrap();
+        assert!(spk.verify_signature(data, &cs));
+    }
+
+    #[test]
+    fn test_sig_pub_key_partial_eq_uint256() {
+        let sk = SigningKey::generate(&mut rand::thread_rng());
+        let pk: VerifyingKey = (&sk).into();
+        let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
+        let uint256 = UInt256::from(pk.to_bytes());
+        assert_eq!(spk, uint256);
+    }
+
+    #[test]
+    fn test_block_signatures_pure_new_and_weight() {
+        let bsp = BlockSignaturesPure::new();
+        assert_eq!(bsp.count(), 0);
+        assert_eq!(bsp.weight(), 0);
+        let bsp = BlockSignaturesPure::with_weight(999);
+        assert_eq!(bsp.weight(), 999);
+    }
+
+    #[test]
+    fn test_block_signatures_pure_check_signatures() {
+        let mut bsp = BlockSignaturesPure::new();
+        let sk = SigningKey::generate(&mut rand::thread_rng());
+        let pk: VerifyingKey = (&sk).into();
+        let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
+        let vd = crate::validators::ValidatorDescr {
+            public_key: spk,
+            weight: 100,
+            ..Default::default()
+        };
+        let data = b"test data";
+        let sig = sk.sign(data);
+        let cs = CryptoSignature::from_bytes(&sig.to_bytes()).unwrap();
+        let node_id = vd.compute_node_id_short();
+        bsp.add_sigpair(CryptoSignaturePair::with_params(node_id, cs));
+        let weight = bsp.check_signatures(&[vd], data).unwrap();
+        assert!(weight > 0);
+    }
+
+    #[test]
+    fn test_block_proof_new() {
+        let bp = BlockProof::new();
+        assert_eq!(bp.proof_for, BlockIdExt::default());
+        assert!(bp.signatures.is_none());
+    }
+}

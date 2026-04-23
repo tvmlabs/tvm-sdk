@@ -603,3 +603,74 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         stack
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::Account;
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::Message;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::MsgAddressInt;
+    use tvm_types::SliceData;
+    use tvm_types::UInt256;
+
+    use super::OrdinaryTransactionExecutor;
+    use crate::ExecuteParams;
+    use crate::TransactionExecutor;
+    use crate::error::ExecutorError as LocalExecutorError;
+
+    fn address(byte: u8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
+    }
+
+    #[test]
+    fn execute_requires_input_message() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::with_address(address(1));
+        let err = executor
+            .execute_with_params(None, &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap_err();
+
+        assert!(err.to_string().contains("Ordinary transaction must have input message"));
+    }
+
+    #[test]
+    fn execute_rejects_external_outbound_messages() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::with_address(address(1));
+        let msg = Message::with_ext_out_header(ExtOutMessageHeader::default());
+        let err = executor
+            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap_err();
+
+        assert_eq!(
+            err.downcast::<LocalExecutorError>().unwrap(),
+            LocalExecutorError::InvalidExtMessage
+        );
+    }
+
+    #[test]
+    fn execute_uses_message_destination_when_account_does_not_exist() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::default();
+        let msg = Message::with_ext_in_header(ExternalInboundMessageHeader::new(
+            MsgAddressExt::with_extern(SliceData::default()).unwrap(),
+            address(7),
+        ));
+
+        let err = executor
+            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap_err();
+
+        assert!(
+            matches!(
+                err.downcast_ref::<LocalExecutorError>(),
+                Some(LocalExecutorError::NoFundsToImportMsg)
+                    | Some(LocalExecutorError::ExtMsgComputeSkipped(_))
+                    | Some(LocalExecutorError::NoAcceptError(_, _))
+            ),
+            "{err}"
+        );
+    }
+}

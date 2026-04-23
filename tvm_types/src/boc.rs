@@ -1521,4 +1521,27 @@ mod tests {
         assert_eq!(writer.roots_count(), 1);
         assert_eq!(writer.cells_count(), 1);
     }
+
+    #[test]
+    fn writer_rejects_duplicate_roots_and_reader_handles_empty_input() {
+        let cell = byte_cell(0x33);
+
+        assert!(BocWriter::with_roots([cell.clone(), cell]).is_err());
+        assert!(read_boc([]).is_err());
+        assert!(read_single_root_boc([]).is_err());
+    }
+
+    #[test]
+    fn multi_root_roundtrip_preserves_root_order() {
+        let left = byte_cell(0x10);
+        let right = byte_cell(0x20);
+
+        let mut boc = Vec::new();
+        BocWriter::with_roots([left.clone(), right.clone()]).unwrap().write(&mut boc).unwrap();
+
+        let result = read_boc(&boc).unwrap();
+        assert_eq!(result.roots.len(), 2);
+        assert_eq!(result.roots[0].repr_hash(), left.repr_hash());
+        assert_eq!(result.roots[1].repr_hash(), right.repr_hash());
+    }
 }

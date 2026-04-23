@@ -30,3 +30,13 @@ pub use blockchain_config::*;
 pub fn build_commit() -> Option<&'static str> {
     std::option_env!("BUILD_GIT_COMMIT")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::build_commit;
+
+    #[test]
+    fn build_commit_matches_compile_time_env() {
+        assert_eq!(build_commit(), option_env!("BUILD_GIT_COMMIT"));
+    }
+}

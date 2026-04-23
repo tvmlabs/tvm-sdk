@@ -688,4 +688,51 @@ mod tests {
         assert_eq!(secret_1, secret_2);
         assert_eq!(gen_public_key_based_on_secret_key(&secret_1).unwrap(), public_1);
     }
+
+    #[test]
+    fn key_pair_deserialize_rejects_mismatched_public_key() {
+        let pair = gen_bls_key_pair_based_on_key_material(&[7u8; BLS_KEY_MATERIAL_LEN]).unwrap();
+        let mut corrupted_public = pair.0;
+        corrupted_public[0] ^= 0x01;
+
+        assert!(BlsKeyPair::deserialize(&(corrupted_public, pair.1)).is_err());
+    }
+
+    #[test]
+    fn nodes_info_validation_and_roundtrip_cover_error_paths() {
+        assert!(NodesInfo::with_data(HashMap::new(), 1).is_err());
+        assert!(NodesInfo::with_data(HashMap::from([(0u16, 0u16)]), 1).is_err());
+        assert!(NodesInfo::with_data(HashMap::from([(2u16, 1u16)]), 2).is_err());
+        assert!(NodesInfo::merge_multiple(&[]).is_err());
+        assert!(NodesInfo::deserialize(&[0, 1, 0]).is_err());
+        assert!(NodesInfo::deserialize(&[0, 0, 0, 0, 0, 1]).is_err());
+
+        let nodes = NodesInfo::with_data(HashMap::from([(0u16, 1u16), (2u16, 3u16)]), 4).unwrap();
+        let serialized = nodes.serialize();
+        assert_eq!(NodesInfo::deserialize(&serialized).unwrap(), nodes);
+    }
+
+    #[test]
+    fn aggregate_signature_helpers_cover_success_and_basic_errors() {
+        let message = b"aggregate-bls";
+        let (pk1, sk1) =
+            gen_bls_key_pair_based_on_key_material(&[1u8; BLS_KEY_MATERIAL_LEN]).unwrap();
+        let (pk2, sk2) =
+            gen_bls_key_pair_based_on_key_material(&[2u8; BLS_KEY_MATERIAL_LEN]).unwrap();
+
+        let sig1 = sign_and_add_node_info(&sk1, message, 0, 2).unwrap();
+        let sig2 = sign_and_add_node_info(&sk2, message, 1, 2).unwrap();
+        let aggregated = aggregate_two_bls_signatures(&sig1, &sig2).unwrap();
+        let nodes_info = get_nodes_info_from_sig(&aggregated).unwrap();
+        let aggregated_public =
+            aggregate_public_keys_based_on_nodes_info(&[&pk1, &pk2], &nodes_info).unwrap();
+
+        assert!(truncate_nodes_info_and_verify(&aggregated, &aggregated_public, message).unwrap());
+        assert_eq!(truncate_nodes_info_from_sig(&aggregated).unwrap().len(), BLS_SIG_LEN);
+        assert!(aggregate_public_keys(&[]).is_err());
+        assert!(aggregate_bls_signatures(&[]).is_err());
+        assert!(aggregate_public_keys_based_on_nodes_info(&[&pk1], &nodes_info).is_err());
+        assert!(sign_and_add_node_info(&sk1, b"", 0, 2).is_err());
+        assert!(add_node_info_to_sig(sign(&sk1, message).unwrap(), 2, 2).is_err());
+    }
 }
