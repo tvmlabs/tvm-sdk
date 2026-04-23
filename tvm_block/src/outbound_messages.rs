@@ -1312,4 +1312,52 @@ mod tests {
     fn transit_reimport_cell(value: &OutMsg) -> Option<Cell> {
         value.reimport_cell()
     }
+
+    #[test]
+    fn out_msg_helpers_cover_immediate_dequeue_short_and_error_paths() {
+        let message = sample_message_with_lt(66);
+        let message_cell = message.serialize().unwrap();
+        let transaction = Transaction::default();
+        let transaction_cell = transaction.serialize().unwrap();
+        let envelope = MsgEnvelope::with_message_and_fee(&message, Grams::from(5)).unwrap();
+        let envelope_cell = envelope.serialize().unwrap();
+        let in_msg = InMsg::external(message_cell.clone(), transaction_cell.clone());
+        let in_msg_cell = in_msg.serialize().unwrap();
+
+        let immediate =
+            OutMsg::immediate(envelope_cell.clone(), transaction_cell.clone(), in_msg_cell.clone());
+        assert_eq!(immediate.tag(), OUT_MSG_IMM);
+        assert_eq!(immediate.read_reimport_message().unwrap().unwrap(), in_msg);
+        assert_eq!(immediate.at_and_lt().unwrap(), Some((10, 66)));
+
+        let dequeue_immediate =
+            OutMsg::dequeue_immediate(envelope_cell.clone(), in_msg_cell.clone());
+        assert_eq!(dequeue_immediate.tag(), OUT_MSG_DEQ_IMM);
+        assert_eq!(dequeue_immediate.reimport_cell(), Some(in_msg_cell.clone()));
+
+        let next_prefix = AccountIdPrefixFull::workchain(-1, 0xABCD_0000_0000_0000);
+        let dequeue_short = OutMsg::dequeue_short(UInt256::from([7; 32]), &next_prefix, 555);
+        assert_eq!(dequeue_short.tag(), OUT_MSG_DEQ_SHORT);
+        assert_eq!(dequeue_short.transaction_cell(), None);
+        assert!(dequeue_short.read_message_hash().is_err());
+        assert_eq!(
+            OutMsg::construct_from_cell(dequeue_short.serialize().unwrap()).unwrap(),
+            dequeue_short
+        );
+
+        let transit = OutMsg::transit(envelope_cell, in_msg_cell, false);
+        assert_eq!(transit.exported_value().unwrap().grams, Grams::from(5));
+
+        assert!(OutMsg::None.read_message().is_err());
+        assert!(OutMsg::None.read_out_message().is_err());
+        assert!(OutMsg::None.message_cell().is_err());
+        assert!(OutMsg::None.serialize().is_err());
+    }
+
+    #[test]
+    fn out_msg_rejects_invalid_constructor_tag() {
+        let mut invalid = BuilderData::new();
+        invalid.append_bits(0b101, 3).unwrap();
+        assert!(OutMsg::construct_from_cell(invalid.into_cell().unwrap()).is_err());
+    }
 }

@@ -1995,4 +1995,85 @@ mod tests {
         assert_eq!(block_id.file_hash, UInt256::from([2; 32]));
         assert_eq!(KeyExtBlkRef::construct_from_cell(value.serialize().unwrap()).unwrap(), value);
     }
+
+    #[test]
+    fn future_split_merge_and_shard_descr_helpers_cover_all_variants() {
+        let none =
+            ShardDescr::with_params(1, 10, 20, UInt256::from([1; 32]), FutureSplitMerge::None);
+        let split = ShardDescr::with_params(
+            2,
+            20,
+            30,
+            UInt256::from([2; 32]),
+            FutureSplitMerge::Split { split_utime: 100, interval: 7 },
+        );
+        let merge = ShardDescr::with_params(
+            3,
+            30,
+            40,
+            UInt256::from([3; 32]),
+            FutureSplitMerge::Merge { merge_utime: 200, interval: 9 },
+        );
+
+        assert!(none.is_fsm_none());
+        assert!(!split.fsm_equal(&merge));
+        assert!(split.is_fsm_split());
+        assert!(merge.is_fsm_merge());
+        assert_eq!(split.fsm_utime(), 100);
+        assert_eq!(split.fsm_interval(), 7);
+        assert_eq!(split.fsm_utime_end(), 107);
+        assert_eq!(merge.fsm_utime(), 200);
+        assert_eq!(merge.fsm_utime_end(), 209);
+        assert_eq!(
+            FutureSplitMerge::construct_from_cell(split.split_merge_at.serialize().unwrap())
+                .unwrap(),
+            split.split_merge_at
+        );
+        assert_eq!(
+            FutureSplitMerge::construct_from_cell(merge.split_merge_at.serialize().unwrap())
+                .unwrap(),
+            merge.split_merge_at
+        );
+    }
+
+    #[test]
+    fn collators_and_shard_block_ref_roundtrip_and_display() {
+        let collators = ShardCollators {
+            prev: CollatorRange { collator: 1, start: 10, finish: 20 },
+            prev2: Some(CollatorRange { collator: 2, start: 21, finish: 30 }),
+            current: CollatorRange { collator: 3, start: 31, finish: 40 },
+            next: CollatorRange { collator: 4, start: 41, finish: 50 },
+            next2: Some(CollatorRange { collator: 5, start: 51, finish: 60 }),
+            updated_at: 777,
+        };
+        let text = format!("{}", collators);
+        assert!(text.contains("prev: 1 (10..20)"));
+        assert!(text.contains("next2: 5 (51..60)"));
+        assert_eq!(
+            ShardCollators::construct_from_cell(collators.serialize().unwrap()).unwrap(),
+            collators
+        );
+
+        let block_id = BlockIdExt {
+            shard_id: ShardIdent::full(0),
+            seq_no: 11,
+            root_hash: UInt256::from([4; 32]),
+            file_hash: UInt256::from([5; 32]),
+        };
+        let shard_ref = ShardBlockRef::with_params(&block_id, 12345);
+        let roundtrip = ShardBlockRef::construct_from_cell(shard_ref.serialize().unwrap()).unwrap();
+        assert_eq!(roundtrip, shard_ref);
+        assert_eq!(roundtrip.clone().into_block_id(ShardIdent::full(0)).unwrap(), block_id);
+    }
+
+    #[test]
+    fn lib_descr_requires_publishers_and_roundtrips_with_publisher() {
+        let empty = LibDescr::new(Cell::default());
+        assert!(empty.serialize().is_err());
+
+        let value = LibDescr::from_lib_data_by_publisher(Cell::default(), AccountId::from([8; 32]));
+        assert_eq!(value.lib(), &Cell::default());
+        assert!(!value.publishers().is_empty());
+        assert_eq!(LibDescr::construct_from_cell(value.serialize().unwrap()).unwrap(), value);
+    }
 }
