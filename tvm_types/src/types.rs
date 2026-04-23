@@ -16,7 +16,7 @@ use std::fmt::UpperHex;
 use std::str;
 use std::str::FromStr;
 
-pub type Error = failure::Error;
+pub type Error = anyhow::Error;
 pub type Result<T> = std::result::Result<T, Error>;
 use num::FromPrimitive;
 use smallvec::SmallVec;
@@ -32,30 +32,26 @@ pub type Status = Result<()>;
 #[macro_export]
 macro_rules! error {
     ($error:literal) => {
-        failure::err_msg(format!("{} {}:{}", $error, file!(), line!()))
+        $crate::anyhow::anyhow!("{} {}:{}", $error, file!(), line!())
     };
     ($error:expr) => {
-        failure::Error::from($error)
+        <$crate::anyhow::Error>::from($error)
     };
     ($fmt:expr, $($arg:tt)+) => {
-        failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
+        $crate::anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())
     };
 }
 
 #[macro_export]
 macro_rules! fail {
     ($error:literal) => {
-        return Err(failure::err_msg(format!("{} {}:{}", $error, file!(), line!())))
+        return Err($crate::anyhow::anyhow!("{} {}:{}", $error, file!(), line!()))
     };
-    // uncomment to explicit panic for any ExceptionCode
-    // (ExceptionCode::CellUnderflow) => {
-    //     panic!("{}", error!(ExceptionCode::CellUnderflow))
-    // };
     ($error:expr) => {
         return Err(error!($error))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err(failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())))
+        return Err($crate::anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
     };
 }
 

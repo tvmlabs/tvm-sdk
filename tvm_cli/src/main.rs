@@ -9,9 +9,14 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 #![allow(clippy::from_str_radix_10)]
 #![allow(clippy::or_fun_call)]
 #![allow(clippy::too_many_arguments)]
+
+use std::str::FromStr;
 
 mod account;
 mod call;
@@ -69,7 +74,6 @@ use getconfig::query_global_config;
 use helpers::contract_data_from_matches_or_config_alias;
 use helpers::create_client_local;
 use helpers::load_abi;
-use helpers::load_ton_address;
 use helpers::query_raw;
 use multisig::create_multisig_command;
 use multisig::multisig_command;
@@ -93,6 +97,7 @@ use crate::config::FullConfig;
 use crate::config::resolve_net_name;
 use crate::getconfig::gen_update_config_message;
 use crate::helpers::AccountSource;
+use crate::helpers::SdkAddress;
 use crate::helpers::abi_from_matches_or_config;
 use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
@@ -146,6 +151,12 @@ fn main() {
     }
 }
 
+fn find_arg_value<'a>(matches: &'a ArgMatches, name: &str) -> Option<&'a str> {
+    matches
+        .value_of(name)
+        .or_else(|| matches.subcommand().and_then(|(_, sub)| find_arg_value(sub, name)))
+}
+
 async fn main_internal() -> Result<(), String> {
     let version_string = env!("CARGO_PKG_VERSION");
 
@@ -170,6 +181,11 @@ async fn main_internal() -> Result<(), String> {
         .long("--thread")
         .takes_value(true)
         .help("The identifier of the thread in which the message should be processed.");
+
+    let dst_dapp_id_arg = Arg::new("DST_DAPP_ID")
+        .long("--dst-dapp-id")
+        .takes_value(true)
+        .help("Destination DApp identifier (64-char hex). Required for sending ext messages to accounts in non-root dapps.");
 
     let method_opt_arg = Arg::new("METHOD")
         .takes_value(true)
@@ -230,7 +246,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(wc_arg.clone())
         .arg(tvc_arg.clone())
         .arg(alias_arg_long.clone())
-        .arg(multi_params_arg.clone());
+        .arg(multi_params_arg.clone())
+        .arg(dst_dapp_id_arg.clone());
 
     let address_boc_tvc_arg = Arg::new("ADDRESS").takes_value(true).help(
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
@@ -370,7 +387,8 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone())
         .arg(sign_arg.clone())
         .arg(keys_arg.clone())
-        .arg(wc_arg.clone());
+        .arg(wc_arg.clone())
+        .arg(dst_dapp_id_arg.clone());
 
     let output_arg = Arg::new("OUTPUT")
         .short('o')
@@ -418,7 +436,8 @@ async fn main_internal() -> Result<(), String> {
                 .takes_value(true)
                 .help("Message to send. Message data should be specified in quotes."),
         )
-        .arg(abi_arg.clone());
+        .arg(abi_arg.clone())
+        .arg(dst_dapp_id_arg.clone());
 
     let message_cmd = Command::new("message")
         .allow_hyphen_values(true)
@@ -878,7 +897,8 @@ async fn main_internal() -> Result<(), String> {
 
     let sendfile_cmd = Command::new("sendfile")
         .about("Sends the boc file with an external inbound message to account.")
-        .arg(Arg::new("BOC").required(true).takes_value(true).help("Message boc file."));
+        .arg(Arg::new("BOC").required(true).takes_value(true).help("Message boc file."))
+        .arg(dst_dapp_id_arg.clone());
 
     let fetch_block_cmd = Command::new("fetch-block")
         .about("Fetches a block.")
@@ -932,6 +952,20 @@ async fn main_internal() -> Result<(), String> {
                 .takes_value(true),
         )
         .arg(Arg::new("JSON").help("Cli prints output in json format.").short('j').long("--json"))
+        .arg(
+            Arg::new("LOG_PATH")
+                .help("Path to a log file. All log output is appended to this file instead of stdout/stderr.")
+                .long("--log-path")
+                .takes_value(true)
+                .global(true),
+        )
+        .arg(
+            Arg::new("LOG_FILTER")
+                .help("Comma-separated log filter. Prefix with '-' to exclude: 'tvm_client,-hyper'.")
+                .long("--log-filter")
+                .takes_value(true)
+                .global(true),
+        )
         .subcommand(version_cmd)
         .subcommand(genphrase_cmd)
         .subcommand(genpubkey_cmd)
@@ -987,6 +1021,21 @@ async fn main_internal() -> Result<(), String> {
     })?;
 
     let is_json = matches.is_present("JSON");
+    helpers::set_json_mode(is_json);
+
+    let log_path = find_arg_value(&matches, "LOG_PATH")
+        .map(|v| v.to_string())
+        .or_else(|| env::var("TVM_CLI_LOG_PATH").ok());
+    let log_filter = find_arg_value(&matches, "LOG_FILTER")
+        .map(|v| v.to_string())
+        .or_else(|| env::var("TVM_CLI_LOG_FILTER").ok());
+    if let Some(ref filter) = log_filter {
+        helpers::init_log_filter(filter);
+    }
+    if let Some(ref path) = log_path {
+        helpers::init_log_file(path)?;
+        helpers::log_startup_info();
+    }
 
     command_parser(&matches, is_json).await.map_err(|e| {
         if e.is_empty() {
@@ -1195,12 +1244,13 @@ fn getkeypair_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
 async fn send_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let message = matches.value_of("MESSAGE");
     let abi = Some(abi_from_matches_or_config(matches, config)?);
+    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
 
     if !config.is_json {
         print_args!(message, abi);
     }
 
-    call_contract_with_msg(config, message.unwrap().to_owned(), &abi.unwrap()).await
+    call_contract_with_msg(config, message.unwrap().to_owned(), &abi.unwrap(), dst_dapp_id).await
 }
 
 async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
@@ -1264,20 +1314,21 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
     if !config.is_json {
         print_args!(address, method, params, abi, keys, lifetime, output);
     }
-    let address = load_ton_address(address.unwrap(), config)?;
+    let sdk_addr = SdkAddress::from_str(address.unwrap())?;
 
     match call {
         CallType::Call | CallType::Fee => {
             let is_fee = matches!(call, CallType::Fee);
             call_contract(
                 config,
-                address.as_str(),
+                &sdk_addr.account_id,
                 &abi.unwrap(),
                 method.unwrap(),
                 &params.unwrap(),
                 keys,
                 is_fee,
                 thread_id,
+                sdk_addr.dapp_id.as_deref(),
             )
             .await
         }
@@ -1298,7 +1349,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
                 .transpose()?;
             generate_message(
                 config,
-                address.as_str(),
+                &sdk_addr.account_id,
                 &abi.unwrap(),
                 method.unwrap(),
                 &params.unwrap(),
@@ -1331,17 +1382,18 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
         print_args!(address, method, params, abi, keys);
     }
 
-    let address = load_ton_address(address.unwrap().as_str(), config)?;
+    let sdk_addr = SdkAddress::from_str(address.unwrap().as_str())?;
 
     call_contract(
         config,
-        address.as_str(),
+        &sdk_addr.account_id,
         &abi.unwrap(),
         method.unwrap(),
         &params.unwrap(),
         keys,
         false,
         thread_id,
+        sdk_addr.dapp_id.as_deref(),
     )
     .await
 }
@@ -1364,7 +1416,7 @@ async fn runget_command(matches: &ArgMatches, config: &Config) -> Result<(), Str
     let address = if source_type != AccountSource::NETWORK {
         address.unwrap().to_string()
     } else {
-        load_ton_address(address.unwrap(), config)?
+        SdkAddress::validate(address.unwrap())?
     };
     let bc_config = matches.value_of("BCCONFIG");
     run_get_method(config, &address, method.unwrap(), params, source_type, bc_config).await
@@ -1390,6 +1442,7 @@ async fn deploy_command(
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
+    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         print_args!(tvc, params, abi, keys, opt_wc, alias);
@@ -1405,6 +1458,7 @@ async fn deploy_command(
                 wc,
                 false,
                 alias,
+                dst_dapp_id,
             )
             .await
         }
@@ -1431,6 +1485,7 @@ async fn deploy_command(
                 wc,
                 true,
                 None,
+                dst_dapp_id,
             )
             .await
         }
@@ -1448,6 +1503,7 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let keys = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.value_of("ALIAS");
+    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         print_args!(tvc, params, abi, keys, opt_wc, alias);
@@ -1461,6 +1517,7 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
         wc,
         false,
         alias,
+        dst_dapp_id,
     )
     .await
 }
@@ -1562,7 +1619,7 @@ async fn account_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     let mut formatted_list = vec![];
     for address in addresses_list.iter() {
         if !is_boc {
-            let formatted = load_ton_address(address, config)?;
+            let formatted = SdkAddress::validate(address)?;
             formatted_list.push(formatted);
         } else {
             if !std::path::Path::new(address).exists() {
@@ -1584,7 +1641,7 @@ async fn dump_accounts_command(matches: &ArgMatches, config: &Config) -> Result<
     let addresses_list = matches.values_of("ADDRESS").unwrap().collect::<Vec<_>>();
     let mut formatted_list = vec![];
     for address in addresses_list.iter() {
-        let formatted = load_ton_address(address, config)?;
+        let formatted = SdkAddress::validate(address)?;
         formatted_list.push(formatted);
     }
     let path = matches.value_of("PATH");
@@ -1597,7 +1654,7 @@ async fn dump_accounts_command(matches: &ArgMatches, config: &Config) -> Result<
 
 async fn account_wait_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS").unwrap();
-    let address = load_ton_address(address, config)?;
+    let address = SdkAddress::validate(address)?;
     let timeout = matches
         .value_of("TIMEOUT")
         .unwrap_or("30")
@@ -1621,7 +1678,7 @@ async fn storage_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     if !config.is_json {
         print_args!(address, period);
     }
-    let address = load_ton_address(address.unwrap(), config)?;
+    let address = SdkAddress::validate(address.unwrap())?;
     let period = period
         .map(|val| {
             u32::from_str_radix(val, 10).map_err(|e| format!("failed to parse period: {}", e))
@@ -1641,12 +1698,13 @@ async fn proposal_create_command(matches: &ArgMatches, config: &Config) -> Resul
     if !config.is_json {
         print_args!(address, comment, keys, lifetime);
     }
-    let address = load_ton_address(address.unwrap(), config)?;
+    let sdk_addr = SdkAddress::from_str(address.unwrap())?;
     let lifetime = parse_lifetime(lifetime, config)?;
 
     create_proposal(
         config,
-        address.as_str(),
+        &sdk_addr.account_id,
+        sdk_addr.dapp_id.as_deref(),
         keys,
         dest.unwrap(),
         comment.unwrap(),
@@ -1665,10 +1723,19 @@ async fn proposal_vote_command(matches: &ArgMatches, config: &Config) -> Result<
     if !config.is_json {
         print_args!(address, id, keys, lifetime);
     }
-    let address = load_ton_address(address.unwrap(), config)?;
+    let sdk_addr = SdkAddress::from_str(address.unwrap())?;
     let lifetime = parse_lifetime(lifetime, config)?;
 
-    vote(config, address.as_str(), keys, id.unwrap(), lifetime, offline).await?;
+    vote(
+        config,
+        &sdk_addr.account_id,
+        sdk_addr.dapp_id.as_deref(),
+        keys,
+        id.unwrap(),
+        lifetime,
+        offline,
+    )
+    .await?;
     println!("{{}}");
     Ok(())
 }
@@ -1679,8 +1746,8 @@ async fn proposal_decode_command(matches: &ArgMatches, config: &Config) -> Resul
     if !config.is_json {
         print_args!(address, id);
     }
-    let address = load_ton_address(address.unwrap(), config)?;
-    decode_proposal(config, address.as_str(), id.unwrap()).await
+    let sdk_addr = SdkAddress::from_str(address.unwrap())?;
+    decode_proposal(config, &sdk_addr.account_id, sdk_addr.dapp_id.as_deref(), id.unwrap()).await
 }
 
 async fn getconfig_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
@@ -1747,8 +1814,9 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
 
 async fn sendfile_command(m: &ArgMatches, config: &Config) -> Result<(), String> {
     let boc = m.value_of("BOC");
+    let dst_dapp_id = m.value_of("DST_DAPP_ID");
     if !config.is_json {
         print_args!(boc);
     }
-    sendfile::sendfile(config, boc.unwrap()).await
+    sendfile::sendfile(config, boc.unwrap(), dst_dapp_id).await
 }

@@ -9,7 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
-// 2022-2025 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
 //
 
 use std::collections::HashMap;
@@ -24,7 +24,6 @@ use futures::Future;
 use futures::Stream;
 use futures::StreamExt;
 use rand::seq::SliceRandom;
-use reqwest::Url;
 use serde_json::Value;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -32,6 +31,7 @@ use tokio::sync::watch;
 use tvm_block::MsgAddressInt;
 use tvm_types::UInt256;
 use tvm_types::base64_encode;
+use url::Url;
 
 use super::ErrorCode;
 use super::tvm_gql::ExtMessage;
@@ -55,13 +55,25 @@ use crate::net::types::NetworkQueriesProtocol;
 use crate::net::websocket_link::WebsocketLink;
 use crate::processing::ThreadIdentifier;
 
-pub const MAX_TIMEOUT: u32 = i32::MAX as u32;
 pub const MIN_RESUME_TIMEOUT: u32 = 500;
 pub const MAX_RESUME_TIMEOUT: u32 = 3000;
 pub const ENDPOINT_CACHE_TIMEOUT: u64 = 10 * 60 * 1000;
 pub const API_VERSION: &str = "v2";
-pub const REST_API_PORT: u16 = 8600;
 pub const ENDPOINT_MESSAGES: &str = "messages";
+
+/// Maximum number of attempts for `query_http` (1 original + 2 retries).
+const QUERY_HTTP_MAX_ATTEMPTS: u32 = 3;
+/// Initial delay before the first retry in ms.
+const QUERY_HTTP_INITIAL_RETRY_DELAY_MS: u64 = 200;
+
+/// Exponential backoff delay: 200ms, 400ms, ...
+fn query_http_retry_delay_ms(attempt: u32) -> u64 {
+    QUERY_HTTP_INITIAL_RETRY_DELAY_MS * 2u64.pow(attempt)
+}
+
+fn is_retryable_http_status(status: u16) -> bool {
+    matches!(status, 429 | 500 | 502 | 503 | 504)
+}
 
 pub(crate) struct Subscription {
     pub unsubscribe: Pin<Box<dyn Future<Output = ()> + Send>>,
@@ -464,14 +476,7 @@ pub fn construct_rest_api_endpoint(original: &str, use_https: bool) -> ClientRes
     };
 
     let mut url = Url::parse(&original).map_err(Error::parse_url_failed)?;
-    let port = url
-        .port_or_known_default()
-        .ok_or_else(|| Error::parse_url_failed("Missing port in URL"))?;
 
-    // Set the port for the REST API if no specific port is specified
-    if (url.scheme() == "http" && port == 80) || (url.scheme() == "https" && port == 443) {
-        url.set_port(Some(REST_API_PORT)).map_err(|_| Error::parse_url_failed("Can't set port"))?;
-    }
     if url.scheme() == "https" {
         url.set_port(None).map_err(|_| Error::parse_url_failed("Can't set port"))?;
     }
@@ -516,7 +521,7 @@ impl ServerLink {
         let endpoint_addresses = replace_endpoints(endpoint_addresses);
 
         let use_https_for_rest_api =
-            endpoint_addresses.first().map_or(false, |s| s.starts_with("https://"));
+            endpoint_addresses.first().is_some_and(|s| s.starts_with("https://"));
         let rest_api_endpoint =
             construct_rest_api_endpoint(&rest_api_addr, use_https_for_rest_api)?;
 
@@ -597,12 +602,12 @@ impl ServerLink {
                     ));
                 }
                 Some(GraphQLQueryEvent::Error(err)) => {
-                    if err.code == ErrorCode::NetworkModuleSuspended as u32
-                        || err.code == ErrorCode::NetworkModuleResumed as u32
+                    if err.code() == ErrorCode::NetworkModuleSuspended as u32
+                        || err.code() == ErrorCode::NetworkModuleResumed as u32
                     {
                         continue;
                     }
-                    let is_retryable = err.code != ErrorCode::GraphqlWebsocketInitError as u32
+                    let is_retryable = err.code() != ErrorCode::GraphqlWebsocketInitError as u32
                         && crate::client::Error::is_network_error(&err);
                     if !is_retryable || !self.state.can_retry_network_error(start) {
                         return Err(err);
@@ -735,10 +740,9 @@ impl ServerLink {
             headers.insert(name, value);
         }
 
-        let start = self.client_env.now_ms();
-
         let mut last_error = None;
-        for _ in 0..1 {
+
+        for attempt in 0..QUERY_HTTP_MAX_ATTEMPTS {
             let result = self
                 .client_env
                 .fetch(
@@ -750,37 +754,66 @@ impl ServerLink {
                 )
                 .await;
 
-            let result = match result {
-                Err(err) => Err(err),
+            let remaining = QUERY_HTTP_MAX_ATTEMPTS - attempt - 1;
+
+            match result {
+                Err(err) => {
+                    if remaining > 0 && crate::client::Error::is_network_error(&err) {
+                        let delay = query_http_retry_delay_ms(attempt);
+                        log::warn!(
+                            "Retrying request to {}, attempt {}/{}, error: {}, delay: {}ms",
+                            endpoint,
+                            attempt + 1,
+                            QUERY_HTTP_MAX_ATTEMPTS,
+                            err.message(),
+                            delay,
+                        );
+                        let _ = self.client_env.set_timer(delay).await;
+                        last_error = Some(err);
+                        continue;
+                    }
+                    return Err(err);
+                }
                 Ok(response) => {
+                    if remaining > 0 && is_retryable_http_status(response.status) {
+                        let delay = query_http_retry_delay_ms(attempt);
+                        log::warn!(
+                            "Retrying request to {}, attempt {}/{}, status: {}, delay: {}ms",
+                            endpoint,
+                            attempt + 1,
+                            QUERY_HTTP_MAX_ATTEMPTS,
+                            response.status,
+                            delay,
+                        );
+                        let _ = self.client_env.set_timer(delay).await;
+                        last_error = Some(crate::client::Error::http_request_send_error(format!(
+                            "Server responded with status {}",
+                            response.status
+                        )));
+                        continue;
+                    }
+
+                    log::debug!(
+                        "query_http response: endpoint={}, status={}, body={}",
+                        endpoint,
+                        response.status,
+                        response.body,
+                    );
                     self.state.reset_resume_timeout();
                     if response.status == 401 {
-                        Err(Error::unauthorized(&response))
+                        return Err(Error::unauthorized(&response));
                     } else if response.status == 404 {
-                        Err(Error::not_found("The requested resource could not be found"))
-                    } else {
-                        match response.body_as_json(true) {
-                            Err(err) => Err(err),
-                            Ok(value) => match Error::try_extract_send_messages_error(&value) {
-                                Some(err) => Err(err),
-                                None => Ok(value),
-                            },
-                        }
+                        return Err(Error::not_found("The requested resource could not be found"));
                     }
-                }
-            };
-
-            if let Err(err) = &result {
-                if crate::client::Error::is_network_error(err)
-                    && self.state.can_retry_network_error(start)
-                {
-                    let _ =
-                        self.client_env.set_timer(self.state.next_resume_timeout() as u64).await;
-                    last_error = Some(err.clone());
-                    continue;
+                    return match response.body_as_json(true) {
+                        Err(err) => Err(err),
+                        Ok(value) => match Error::try_extract_send_messages_error(&value) {
+                            Some(err) => Err(err),
+                            None => Ok(value),
+                        },
+                    };
                 }
             }
-            return result;
         }
         Err(Error::all_attempts_failed(last_error))
     }
@@ -836,12 +869,12 @@ impl ServerLink {
                 }
                 Some(GraphQLQueryEvent::Complete) => break,
                 Some(GraphQLQueryEvent::Error(err)) => {
-                    if err.code == ErrorCode::NetworkModuleSuspended as u32
-                        || err.code == ErrorCode::NetworkModuleResumed as u32
+                    if err.code() == ErrorCode::NetworkModuleSuspended as u32
+                        || err.code() == ErrorCode::NetworkModuleResumed as u32
                     {
                         continue;
                     }
-                    let is_retryable = err.code != ErrorCode::GraphqlWebsocketInitError as u32
+                    let is_retryable = err.code() != ErrorCode::GraphqlWebsocketInitError as u32
                         && crate::client::Error::is_network_error(&err);
                     result = Err(err);
                     if !is_retryable || !self.state.can_retry_network_error(start) {
@@ -954,6 +987,7 @@ impl ServerLink {
         msg_body: &[u8],
         thread_id: ThreadIdentifier,
         dst: MsgAddressInt,
+        dst_dapp_id: Option<String>,
     ) -> ClientResult<Value> {
         // This helper function adds "resource" part to the URL
         fn ensure_resource(url: &Url) -> Url {
@@ -973,12 +1007,24 @@ impl ServerLink {
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
             ext_message_token: network_state.get_bm_token().await,
+            dst_dapp_id,
         };
 
         let mut endpoint = network_state.select_send_message_endpoint().await;
 
         let query = json!([message]).to_string();
+        log::debug!(
+            "send_message: id={}, dst={}, endpoint={}, body={}",
+            msg_id,
+            dst,
+            endpoint,
+            query
+        );
         let mut result = self.query_http(query, &ensure_resource(&endpoint)).await;
+        match &result {
+            Ok(data) => log::debug!("send_message result: id={}, response={}", msg_id, data),
+            Err(err) => log::debug!("send_message error: id={}, error={}", msg_id, err.message()),
+        }
         while attempts < self.config.message_retries_count {
             attempts += 1;
             if let Ok(ref data) = result {
@@ -992,13 +1038,14 @@ impl ServerLink {
             }
 
             let Err(err) = result.as_mut() else { return result };
+            ensure_message_hash(err.data_mut(), msg_id);
 
-            if let Some(Value::Object(_)) = err.data.get("ext_message_token") {
-                network_state.update_bm_data(&err.data["ext_message_token"]).await;
+            if let Some(Value::Object(_)) = err.data().get("ext_message_token") {
+                network_state.update_bm_data(&err.data()["ext_message_token"]).await;
                 message.ext_message_token = network_state.get_bm_token().await;
             }
 
-            let Some(ext) = err.data.get("node_error").and_then(|e| e.get("extensions")) else {
+            let Some(ext) = err.data().get("node_error").and_then(|e| e.get("extensions")) else {
                 return result;
             };
 
@@ -1007,7 +1054,7 @@ impl ServerLink {
             };
 
             if !["WRONG_PRODUCER", "THREAD_MISMATCH", "TOKEN_EXPIRED"].contains(&code) {
-                ensure_address(&mut err.data, Value::String(dst.to_string()));
+                ensure_address(err.data_mut(), Value::String(dst.to_string()));
                 return result;
             }
 
@@ -1017,7 +1064,7 @@ impl ServerLink {
             }
 
             let (real_thread_id, redirect_url) =
-                get_redirection_data(&err.data, self.state.use_https_for_rest_api);
+                get_redirection_data(err.data(), self.state.use_https_for_rest_api);
 
             if let Some(thread_id) = real_thread_id {
                 message.set_thread_id(Some(thread_id));
@@ -1027,8 +1074,27 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
                 endpoint = network_state.select_send_message_endpoint().await;
             }
-            result =
-                self.query_http(json!([message]).to_string(), &ensure_resource(&endpoint)).await;
+            let query = json!([message]).to_string();
+            log::debug!(
+                "send_message retry: id={}, attempt={}, endpoint={}, body={}",
+                msg_id,
+                attempts,
+                endpoint,
+                query
+            );
+            result = self.query_http(query, &ensure_resource(&endpoint)).await;
+            match &result {
+                Ok(data) => {
+                    log::debug!("send_message retry result: id={}, response={}", msg_id, data)
+                }
+                Err(err) => {
+                    log::debug!("send_message retry error: id={}, error={}", msg_id, err.message())
+                }
+            }
+        }
+
+        if let Err(err) = result.as_mut() {
+            ensure_message_hash(err.data_mut(), msg_id);
         }
 
         result
@@ -1048,7 +1114,7 @@ impl ServerLink {
         // Send messages is always successful in order to process case when server
         // received message but client didn't receive response
         if let Err(err) = &result {
-            log::warn!("Send messages error: {}", err.message);
+            log::warn!("Send messages error: {}", err.message());
         }
 
         Ok(result.err())
@@ -1116,12 +1182,18 @@ fn ensure_address(err_data: &mut Value, dst: Value) {
         if addr.is_null() {
             *addr = dst;
         }
-    } else {
-        if let Some(details) =
-            err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
-        {
-            details.insert("address".to_string(), dst);
-        }
+    } else if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("address".to_string(), dst);
+    }
+}
+
+fn ensure_message_hash(err_data: &mut Value, msg_id: &str) {
+    if let Some(details) =
+        err_data.pointer_mut("/node_error/extensions/details").and_then(Value::as_object_mut)
+    {
+        details.insert("message_hash".to_string(), Value::String(msg_id.to_string()));
     }
 }
 
@@ -1131,12 +1203,15 @@ fn test_construct_rest_endpoint() {
     fn rest_url(origin: &str, use_https: bool) -> String {
         construct_rest_api_endpoint(origin, use_https).unwrap().to_string()
     }
-    assert_eq!(rest_url("a.b.c", false), "http://a.b.c:8600/v2/");
+    // No scheme: use_https determines scheme, standard ports (80/443)
+    assert_eq!(rest_url("a.b.c", false), "http://a.b.c/v2/");
     assert_eq!(rest_url("a.b.c", true), "https://a.b.c/v2/");
+    // Explicit port preserved for HTTP, stripped for HTTPS
     assert_eq!(rest_url("a.b.c:1234", false), "http://a.b.c:1234/v2/");
     assert_eq!(rest_url("a.b.c:1234", true), "https://a.b.c/v2/");
-    assert_eq!(rest_url("http://a.b.c", false), "http://a.b.c:8600/v2/");
-    assert_eq!(rest_url("http://a.b.c", true), "http://a.b.c:8600/v2/");
+    // Explicit scheme takes precedence over use_https
+    assert_eq!(rest_url("http://a.b.c", false), "http://a.b.c/v2/");
+    assert_eq!(rest_url("http://a.b.c", true), "http://a.b.c/v2/");
     assert_eq!(rest_url("http://a.b.c:1234", false), "http://a.b.c:1234/v2/");
     assert_eq!(rest_url("http://a.b.c:1234", true), "http://a.b.c:1234/v2/");
     assert_eq!(rest_url("https://a.b.c", false), "https://a.b.c/v2/");

@@ -19,19 +19,28 @@ use std::hash::Hash;
 use std::io::Read;
 use std::io::Write;
 use std::io::{self};
+#[cfg(feature = "ton")]
 use std::sync::Arc;
 
 use thiserror::Error;
+#[cfg(feature = "ton")]
 use tvm_block::BlockIdExt;
+#[cfg(feature = "ton")]
 use tvm_block::ShardIdent;
+#[cfg(feature = "ton")]
 use tvm_types::Ed25519KeyOption;
+#[cfg(feature = "ton")]
 use tvm_types::KeyOption;
 use tvm_types::Result;
 use tvm_types::UInt256;
+#[cfg(feature = "ton")]
 use tvm_types::fail;
 
+#[cfg(feature = "ton")]
 use crate::ton::ton_node::RempMessageLevel;
+#[cfg(feature = "ton")]
 use crate::ton::ton_node::RempMessageStatus;
+#[cfg(feature = "ton")]
 use crate::ton_prelude::TLObject;
 
 macro_rules! _invalid_id {
@@ -42,6 +51,7 @@ macro_rules! _invalid_id {
 }
 
 pub mod secure;
+#[cfg(feature = "ton")]
 #[allow(non_camel_case_types)]
 pub mod ton;
 mod ton_prelude;
@@ -149,35 +159,33 @@ where
 }
 
 /// Trait for deserializing any value represented `Object` TL type
+#[cfg(feature = "ton")]
 pub trait BoxedDeserializeDynamic: BoxedDeserialize {
     /// Read boxed type value with given `ConstructorNumber` using
     /// `Deserializer`
-    fn boxed_deserialize_to_box(
-        id: ConstructorNumber,
-        de: &mut Deserializer,
-    ) -> Result<ton::TLObject>;
+    fn boxed_deserialize_to_box(id: ConstructorNumber, de: &mut Deserializer) -> Result<TLObject>;
 }
 
+#[cfg(feature = "ton")]
 impl<D> BoxedDeserializeDynamic for D
 where
     D: BoxedDeserialize + AnyBoxedSerialize,
 {
-    fn boxed_deserialize_to_box(
-        id: ConstructorNumber,
-        de: &mut Deserializer,
-    ) -> Result<ton::TLObject> {
-        Ok(ton::TLObject::new(D::deserialize_boxed(id, de)?))
+    fn boxed_deserialize_to_box(id: ConstructorNumber, de: &mut Deserializer) -> Result<TLObject> {
+        Ok(TLObject::new(D::deserialize_boxed(id, de)?))
     }
 }
 
 /// Struct representing every boxed type for deserializing `Object` TL type
+#[cfg(feature = "ton")]
 #[derive(Clone, Copy)]
 pub struct DynamicDeserializer {
     id: ConstructorNumber,
     type_name: &'static str,
-    ton: fn(ConstructorNumber, &mut Deserializer) -> Result<ton::TLObject>,
+    ton: fn(ConstructorNumber, &mut Deserializer) -> Result<TLObject>,
 }
 
+#[cfg(feature = "ton")]
 impl DynamicDeserializer {
     #[inline(always)]
     pub fn from<D: BoxedDeserializeDynamic>(
@@ -298,6 +306,7 @@ pub trait Function: AnyBoxedSerialize {
     type Reply: BoxedDeserialize + AnyBoxedSerialize;
 }
 
+#[cfg(feature = "ton")]
 impl BareDeserialize for BlockIdExt {
     fn deserialize_bare(de: &mut Deserializer) -> Result<Self> {
         let shard = ShardIdent::with_tagged_prefix(
@@ -314,6 +323,7 @@ impl BareDeserialize for BlockIdExt {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BareSerialize for BlockIdExt {
     fn constructor(&self) -> ConstructorNumber {
         crate::ton::ton_node::blockidext::TL_TAG
@@ -330,6 +340,7 @@ impl BareSerialize for BlockIdExt {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BoxedDeserialize for BlockIdExt {
     fn possible_constructors() -> Vec<crate::ConstructorNumber> {
         vec![crate::ton::ton_node::blockidext::TL_TAG]
@@ -344,6 +355,7 @@ impl BoxedDeserialize for BlockIdExt {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BoxedSerialize for BlockIdExt {
     fn serialize_boxed(&self) -> (ConstructorNumber, &dyn BareSerialize) {
         (crate::ton::ton_node::blockidext::TL_TAG, self)
@@ -369,6 +381,7 @@ impl BareSerialize for UInt256 {
     }
 }
 
+#[cfg(feature = "ton")]
 impl fmt::Display for RempMessageStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -407,6 +420,7 @@ impl fmt::Display for RempMessageStatus {
     }
 }
 
+#[cfg(feature = "ton")]
 impl TryFrom<u8> for RempMessageLevel {
     type Error = tvm_types::Error;
 
@@ -422,6 +436,7 @@ impl TryFrom<u8> for RempMessageLevel {
     }
 }
 
+#[cfg(feature = "ton")]
 impl From<&RempMessageLevel> for u8 {
     fn from(val: &RempMessageLevel) -> Self {
         match val {
@@ -434,6 +449,7 @@ impl From<&RempMessageLevel> for u8 {
     }
 }
 
+#[cfg(feature = "ton")]
 fn downcast_with_error<D: AnyBoxedSerialize>(object: TLObject) -> Result<D> {
     match object.downcast() {
         Ok(result) => Ok(result),
@@ -444,6 +460,7 @@ fn downcast_with_error<D: AnyBoxedSerialize>(object: TLObject) -> Result<D> {
 }
 
 /// Deserialize boxed TL object from bytes
+#[cfg(feature = "ton")]
 pub fn deserialize_boxed(bytes: impl AsRef<[u8]>) -> Result<TLObject> {
     let mut reader = bytes.as_ref();
     let mut de = Deserializer::new(&mut reader);
@@ -451,6 +468,7 @@ pub fn deserialize_boxed(bytes: impl AsRef<[u8]>) -> Result<TLObject> {
 }
 
 /// Deserialize bundle of boxed TL objects from bytes
+#[cfg(feature = "ton")]
 pub fn deserialize_boxed_bundle(bytes: impl AsRef<[u8]>) -> Result<Vec<TLObject>> {
     let mut bytes = bytes.as_ref();
     let mut de = Deserializer::new(&mut bytes);
@@ -470,6 +488,7 @@ pub fn deserialize_boxed_bundle(bytes: impl AsRef<[u8]>) -> Result<Vec<TLObject>
 }
 
 /// Deserialize bundle of boxed TL objects from bytes and return suffix position
+#[cfg(feature = "ton")]
 pub fn deserialize_boxed_bundle_with_suffix(
     bytes: impl AsRef<[u8]>,
 ) -> Result<(Vec<TLObject>, usize)> {
@@ -495,6 +514,7 @@ pub fn deserialize_boxed_bundle_with_suffix(
 }
 
 /// Deserialize boxed TL object from bytes then downcast to given type
+#[cfg(feature = "ton")]
 pub fn deserialize_typed<D: AnyBoxedSerialize>(bytes: impl AsRef<[u8]>) -> Result<D> {
     let object = deserialize_boxed(bytes)?;
     downcast_with_error(object)
@@ -502,6 +522,7 @@ pub fn deserialize_typed<D: AnyBoxedSerialize>(bytes: impl AsRef<[u8]>) -> Resul
 
 /// Deserialize boxed TL object from bytes then downcast to given type and
 /// return suffix position
+#[cfg(feature = "ton")]
 pub fn deserialize_typed_with_suffix<D: AnyBoxedSerialize>(
     bytes: impl AsRef<[u8]>,
 ) -> Result<(D, usize)> {
@@ -573,6 +594,7 @@ pub fn tag_from_data(data: &[u8]) -> u32 {
     if data.len() < 4 { 0 } else { u32::from_le_bytes([data[0], data[1], data[2], data[3]]) }
 }
 
+#[cfg(feature = "ton")]
 impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {
     type Error = tvm_types::Error;
 
@@ -583,6 +605,7 @@ impl TryFrom<&Arc<dyn KeyOption>> for ton::PublicKey {
     }
 }
 
+#[cfg(feature = "ton")]
 impl TryFrom<&ton::PublicKey> for Arc<dyn KeyOption> {
     type Error = tvm_types::Error;
 
@@ -596,6 +619,7 @@ impl TryFrom<&ton::PublicKey> for Arc<dyn KeyOption> {
     }
 }
 
+#[cfg(feature = "ton")]
 pub trait Signing
 where
     Self: BareSerialize + Sized,

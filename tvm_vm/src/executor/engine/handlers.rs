@@ -43,6 +43,7 @@ use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
+#[cfg(feature = "gosh")]
 use crate::executor::zk::*;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;

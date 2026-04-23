@@ -27,25 +27,24 @@ async-trait.workspace = true
 base64.workspace = true
 chrono.workspace = true
 clap = "3"
-failure.workspace = true
 futures.workspace = true
 hex.workspace = true
-indicatif = "0.17.7"
-lazy_static = "1.5.0"
+indicatif = "0.17"
+lazy_static.workspace = true
 log = { workspace = true, features = ["std"] }
 num-bigint.workspace = true
 num-traits.workspace = true
-qr2term = "0.3.1"
+qr2term = "0.3"
 regex.workspace = true
 reqwest.workspace = true
 serde = { features = ["derive"], workspace = true }
 serde_derive.workspace = true
 serde_json.workspace = true
-simplelog = "0.12.1"
+simplelog = "0.12"
 thiserror.workspace = true
 tokio = { features = ["full"], workspace = true }
-tokio-retry = "0.3.0"
-url = "2.5.0"
+tokio-retry = "0.3"
+url.workspace = true
 #
 tvm_abi.workspace = true
 tvm_assembler.workspace = true
@@ -58,9 +57,9 @@ tvm_types.workspace = true
 tvm_vm.workspace = true
 
 [dev-dependencies]
-assert_cmd = "2.0.13"
-predicates = "3.1.0"
-string-error = "0.1.0"
+assert_cmd = "2"
+predicates = "3"
+string-error = "0.1"
 
 [[bin]]
 name = "tvm-cli"

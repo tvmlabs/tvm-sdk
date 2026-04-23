@@ -773,7 +773,11 @@ impl DEngine {
 
         match process_message(
             self.ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: call_params, send_events: true },
+            ParamsOfProcessMessage {
+                message_encode_params: call_params,
+                send_events: true,
+                dst_dapp_id: None,
+            },
             callback,
         )
         .await
@@ -861,16 +865,16 @@ impl DEngine {
     }
 
     async fn handle_sdk_err(&self, err: ClientError) -> String {
-        if err.code == ErrorCode::EncodeDeployMessageFailed as u32
-            || err.code == ErrorCode::EncodeRunMessageFailed as u32
+        if err.code() == ErrorCode::EncodeDeployMessageFailed as u32
+            || err.code() == ErrorCode::EncodeRunMessageFailed as u32
         {
             // when debot's function argument has invalid format
             "Invalid parameter".to_string()
-        } else if err.code >= (ClientError::TVM as u32)
-            && err.code < (ClientError::PROCESSING as u32)
+        } else if err.code() >= (ClientError::TVM as u32)
+            && err.code() < (ClientError::PROCESSING as u32)
         {
             // when debot function throws an exception
-            if let Some(e) = err.data["exit_code"].as_i64() {
+            if let Some(e) = err.data()["exit_code"].as_i64() {
                 Self::run(
                     self.ton.clone(),
                     self.state.clone(),
@@ -888,12 +892,12 @@ impl DEngine {
                         })
                     })
                 })
-                .unwrap_or(err.message)
+                .unwrap_or(err.message().to_string())
             } else {
-                err.message
+                err.message().to_string()
             }
         } else {
-            err.message
+            err.message().to_string()
         }
     }
 }

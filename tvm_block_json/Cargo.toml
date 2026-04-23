@@ -10,7 +10,6 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-failure.workspace = true
 hex.workspace = true
 lazy_static.workspace = true
 log.workspace = true
@@ -21,11 +20,15 @@ serde_derive.workspace = true
 serde_json = { workspace = true, features = ["preserve_order"] }
 thiserror.workspace = true
 #
-tvm_api.workspace = true
+tvm_api = { workspace = true, optional = true }
 tvm_block.workspace = true
 tvm_types.workspace = true
 
-metrics = "0.22"
+metrics = { version = "0.22", optional = true }
+
+[features]
+metrics = ["dep:metrics"]
+ton = ["dep:tvm_api", "tvm_api/ton"]
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions.workspace = true

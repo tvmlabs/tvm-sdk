@@ -291,7 +291,7 @@ pub fn prepare_hex_representation(init_x: &str, y: BigUint) -> String {
 }
 
 pub fn prepare_proof_and_public_key_cells_for_stack(
-    eph_pubkey: &Vec<u8>,
+    eph_pubkey: &[u8],
     zk_login_inputs: &ZkLoginInputs,
     all_jwk: &HashMap<JwkId, JWK>,
     max_epoch: u64,

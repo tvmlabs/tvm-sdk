@@ -818,18 +818,18 @@ async fn test_method_error(
 
     let error = run_tvm(client, account_boc, abi, &fail_message).await.unwrap_err();
 
-    assert_eq!(error.data["contract_error"].as_str(), EXPECTED_ERROR);
+    assert_eq!(error.data()["contract_error"].as_str(), EXPECTED_ERROR);
 
     let error = run_executor(client, account_boc, abi, &fail_message).await.unwrap_err();
 
-    assert_eq!(error.data["contract_error"].as_str(), EXPECTED_ERROR);
+    assert_eq!(error.data()["contract_error"].as_str(), EXPECTED_ERROR);
 
     let error = process_message(client, &fail_msg_params).await.unwrap_err();
 
     if TestClient::node_se() {
-        assert_eq!(error.data["contract_error"].as_str(), EXPECTED_ERROR);
+        assert_eq!(error.data()["contract_error"].as_str(), EXPECTED_ERROR);
     } else {
-        assert_eq!(error.data["local_error"]["data"]["contract_error"].as_str(), EXPECTED_ERROR);
+        assert_eq!(error.data()["local_error"]["data"]["contract_error"].as_str(), EXPECTED_ERROR);
     }
 }
 
@@ -1246,7 +1246,7 @@ async fn test_signature_id() {
         .await
         .unwrap_err();
     assert_eq!(
-        result.data["exit_code"].as_i64().unwrap(),
+        result.data()["exit_code"].as_i64().unwrap(),
         StdContractError::InvalidSignature as i64
     );
 }
