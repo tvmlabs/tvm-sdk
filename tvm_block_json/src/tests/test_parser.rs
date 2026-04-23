@@ -665,3 +665,67 @@ fn test_transaction_id_in_msg() {
         );
     }
 }
+
+#[test]
+fn test_block_parser_new_uses_block_sharding_depth() {
+    let parser = BlockParser::<NoTrace, JsonFieldsReducer>::new(
+        BlockParserConfig {
+            blocks: Some(EntryConfig { reducer: None, sharding_depth: Some(7) }),
+            proofs: None,
+            accounts: None,
+            transactions: None,
+            messages: None,
+            max_account_bytes_size: None,
+            is_node_se: false,
+        },
+        None,
+    );
+
+    assert_eq!(parser.block_sharding_depth, 7);
+    assert!(parser.config.blocks.is_some());
+}
+
+#[test]
+fn test_parse_requires_shard_state_when_accounts_enabled() {
+    let boc = read("src/tests/data/block.boc").unwrap();
+    let cell = read_single_root_boc(&boc).unwrap();
+    let block = Block::construct_from_cell(cell.clone()).unwrap();
+    let id = BlockIdExt::with_params(
+        block.read_info().unwrap().shard().clone(),
+        block.read_info().unwrap().seq_no(),
+        cell.repr_hash(),
+        UInt256::calc_file_hash(&boc),
+    );
+    let parser = BlockParser::<NoTrace, JsonFieldsReducer>::new(
+        BlockParserConfig {
+            blocks: None,
+            proofs: None,
+            accounts: Some(EntryConfig { reducer: None, sharding_depth: None }),
+            transactions: None,
+            messages: None,
+            max_account_bytes_size: None,
+            is_node_se: false,
+        },
+        None,
+    );
+
+    let err = match parser.parse(
+        ParsingBlock {
+            id: &id,
+            block: &block,
+            root: &cell,
+            shard_state: None,
+            data: &boc,
+            mc_seq_no: None,
+            proof: None,
+        },
+        false,
+    ) {
+        Ok(_) => panic!("must fail without shard state"),
+        Err(err) => err,
+    };
+    assert!(
+        err.to_string()
+            .contains("Shard state should be specified because the block parser was configured with account parsing")
+    );
+}

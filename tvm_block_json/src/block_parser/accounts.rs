@@ -288,3 +288,38 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
         ParsedEntry::reduced(doc, partition, self.accounts_config)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::read;
+
+    use tvm_block::Block;
+    use tvm_block::Deserializable;
+    use tvm_types::BuilderData;
+    use tvm_types::IBitstring;
+    use tvm_types::read_single_root_boc;
+
+    use super::read_accounts;
+
+    #[test]
+    fn read_accounts_rejects_invalid_shard_state_tag() {
+        let mut builder = BuilderData::new();
+        builder.append_u32(0xDEAD_BEEF).unwrap();
+        let cell = builder.into_cell().unwrap();
+
+        assert!(read_accounts(cell).is_err());
+    }
+
+    #[test]
+    fn read_accounts_reads_real_shard_state_accounts() {
+        let boc = read(
+            "src/tests/data/89ED400A43E76664437EFC9C79B84AC387493A9EE5E789338FF71C25F54218BE.boc",
+        )
+        .unwrap();
+        let cell = read_single_root_boc(&boc).unwrap();
+        let block = Block::construct_from_cell(cell).unwrap();
+        let state_update = block.state_update.read_struct().unwrap();
+        assert!(read_accounts(state_update.old).is_ok());
+        assert!(read_accounts(state_update.new).is_ok());
+    }
+}

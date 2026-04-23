@@ -1474,6 +1474,49 @@ fn test_block_order() {
     assert_eq!("17b00540960604", block_order(&block, 123).unwrap());
 }
 
+#[test]
+fn test_serialization_mode_helpers() {
+    assert!(SerializationMode::Standart.is_standart());
+    assert!(!SerializationMode::QServer.is_standart());
+    assert!(!SerializationMode::Debug.is_standart());
+
+    assert!(!SerializationMode::Standart.is_q_server());
+    assert!(SerializationMode::QServer.is_q_server());
+    assert!(SerializationMode::Debug.is_q_server());
+}
+
+#[test]
+fn test_signed_currency_collection_from_cc_add_and_sub() {
+    let empty = SignedCurrencyCollection::new();
+    assert_eq!(empty.grams.to_string(), "0");
+    assert!(empty.other.is_empty());
+
+    let mut left = CurrencyCollection::with_grams(10);
+    left.set_other(1, 20).unwrap();
+    left.set_other(2, 30).unwrap();
+    let mut signed = SignedCurrencyCollection::from_cc(&left).unwrap();
+    assert_eq!(signed.grams.to_string(), "10");
+    assert_eq!(signed.other[&1].to_string(), "20");
+    assert_eq!(signed.other[&2].to_string(), "30");
+
+    let mut right = CurrencyCollection::with_grams(4);
+    right.set_other(2, 5).unwrap();
+    right.set_other(3, 7).unwrap();
+    let right = SignedCurrencyCollection::from_cc(&right).unwrap();
+
+    signed.add(&right);
+    assert_eq!(signed.grams.to_string(), "14");
+    assert_eq!(signed.other[&1].to_string(), "20");
+    assert_eq!(signed.other[&2].to_string(), "35");
+    assert_eq!(signed.other[&3].to_string(), "7");
+
+    signed.sub(&right);
+    assert_eq!(signed.grams.to_string(), "10");
+    assert_eq!(signed.other[&1].to_string(), "20");
+    assert_eq!(signed.other[&2].to_string(), "30");
+    assert_eq!(signed.other[&3].to_string(), "0");
+}
+
 #[cfg(feature = "ton")]
 fn se_deserialise_remp_status(status: RempMessageStatus) {
     let rr = tvm_api::ton::ton_node::rempreceipt::RempReceipt {

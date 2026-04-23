@@ -306,3 +306,180 @@ fn ext_addr_slice(addr: &MsgAddressExt) -> Option<SliceData> {
         MsgAddressExt::AddrNone => None,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::fs::read;
+    use std::sync::Arc;
+    use std::sync::Mutex;
+    use std::time::SystemTime;
+
+    use tvm_block::AccountStatus;
+    use tvm_block::Block;
+    use tvm_block::BlockIdExt;
+    use tvm_block::Deserializable;
+    use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::Message;
+    use tvm_block::MsgAddrStd;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::Transaction;
+    use tvm_types::UInt256;
+    use tvm_types::read_single_root_boc;
+
+    use super::MessageAdditionalFields;
+    use super::ParserTransactions;
+    use super::PreparedMessage;
+    use crate::BlockParserConfig;
+    use crate::EntryConfig;
+    use crate::NoReduce;
+    use crate::ParserTraceEvent;
+    use crate::ParserTracer;
+    use crate::ParsingBlock;
+
+    #[derive(Clone)]
+    struct TestTracer {
+        events: Arc<Mutex<Vec<ParserTraceEvent>>>,
+    }
+
+    impl ParserTracer for TestTracer {
+        fn trace(
+            &self,
+            _block_id: &UInt256,
+            _message_id: Option<&UInt256>,
+            _time: SystemTime,
+            event: ParserTraceEvent,
+        ) {
+            self.events.lock().unwrap().push(event);
+        }
+    }
+
+    fn load_fixture_block() -> (BlockIdExt, Block, tvm_types::Cell) {
+        let boc = read("src/tests/data/block.boc").unwrap();
+        let cell = read_single_root_boc(&boc).unwrap();
+        let block = Block::construct_from_cell(cell.clone()).unwrap();
+        (BlockIdExt::default(), block, cell)
+    }
+
+    #[test]
+    fn prepared_message_sets_optional_fields() {
+        let tr_id = UInt256::from([1; 32]);
+        let mut prepared = PreparedMessage {
+            doc: HashMap::from([("id".to_owned(), serde_json::Value::String("msg".to_owned()))])
+                .into_iter()
+                .collect(),
+            src_partition: None,
+            dst_partition: None,
+        };
+        prepared.set_additional_fields(
+            &MessageAdditionalFields::DST,
+            3,
+            &tr_id,
+            &Some("chain"),
+            &Some("code-hash".to_owned()),
+        );
+
+        assert_eq!(prepared.doc["dst_transaction_id"], tr_id.as_hex_string());
+        assert_eq!(prepared.doc["dst_chain_order"], "chain03");
+        assert_eq!(prepared.doc["dst_code_hash"], "code-hash");
+    }
+
+    #[test]
+    fn parser_transactions_new_and_external_message_flow_use_priority_config() {
+        let (id, block, root) = load_fixture_block();
+        let data = [];
+        let parsing = ParsingBlock {
+            id: &id,
+            block: &block,
+            root: &root,
+            data: &data,
+            mc_seq_no: None,
+            proof: None,
+            shard_state: None,
+        };
+        let tracer_events = Arc::new(Mutex::new(Vec::new()));
+        let tracer = Some(TestTracer { events: tracer_events.clone() });
+        let config = BlockParserConfig {
+            blocks: None,
+            proofs: None,
+            accounts: None,
+            transactions: Some(EntryConfig { sharding_depth: Some(5), reducer: None::<NoReduce> }),
+            messages: Some(EntryConfig { sharding_depth: Some(4), reducer: None::<NoReduce> }),
+            max_account_bytes_size: None,
+            is_node_se: false,
+        };
+
+        let parser = ParserTransactions::new(&config, &tracer, &parsing, false);
+        assert_eq!(parser.transactions_sharding_depth, 5);
+        assert_eq!(parser.messages_sharding_depth, 4);
+        assert!(!parser.with_proofs);
+    }
+
+    #[test]
+    fn block_parser_traces_external_in_messages() {
+        let (id, block, root) = load_fixture_block();
+        let dst = MsgAddressInt::AddrStd(MsgAddrStd::with_address(None, 0, [7; 32].into()));
+        let message = Message::with_ext_in_header(ExternalInboundMessageHeader::new(
+            MsgAddressExt::AddrNone,
+            dst.clone(),
+        ));
+        let mut transaction =
+            Transaction::with_address_and_status(dst.get_address(), AccountStatus::AccStateActive);
+        transaction.set_now(123);
+        transaction.write_in_msg(Some(&message)).unwrap();
+
+        let tracer_events = Arc::new(Mutex::new(Vec::new()));
+        let tracer = Some(TestTracer { events: tracer_events.clone() });
+        let data = [];
+        let parsing = ParsingBlock {
+            id: &id,
+            block: &block,
+            root: &root,
+            data: &data,
+            mc_seq_no: None,
+            proof: None,
+            shard_state: None,
+        };
+        let parser = ParserTransactions::new(
+            &BlockParserConfig {
+                blocks: None,
+                proofs: None,
+                accounts: None,
+                transactions: None,
+                messages: Some(EntryConfig { sharding_depth: Some(4), reducer: None::<NoReduce> }),
+                max_account_bytes_size: None,
+                is_node_se: false,
+            },
+            &tracer,
+            &parsing,
+            false,
+        );
+        let mut prepared_messages = HashMap::new();
+        parser
+            .parse_messages_from_transaction(
+                &transaction,
+                UInt256::from([9; 32]),
+                Some("ord"),
+                &Some("code".to_owned()),
+                &mut prepared_messages,
+            )
+            .unwrap();
+
+        assert!(
+            tracer_events
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|event| matches!(event, ParserTraceEvent::MsgIdFound))
+        );
+        assert_eq!(prepared_messages.len(), 1);
+        let prepared = prepared_messages.values().next().unwrap();
+        assert_eq!(
+            prepared.doc["dst_transaction_id"],
+            "0909090909090909090909090909090909090909090909090909090909090909"
+        );
+        assert_eq!(prepared.doc["dst_chain_order"], "ord00");
+        assert_eq!(prepared.doc["dst_code_hash"], "code");
+    }
+}
