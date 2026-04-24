@@ -607,13 +607,17 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 #[cfg(test)]
 mod tests {
     use tvm_block::Account;
+    use tvm_block::CurrencyCollection;
     use tvm_block::ExtOutMessageHeader;
     use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::InternalMessageHeader;
     use tvm_block::Message;
     use tvm_block::MsgAddressExt;
     use tvm_block::MsgAddressInt;
+    use tvm_types::BuilderData;
     use tvm_types::SliceData;
     use tvm_types::UInt256;
+    use tvm_vm::stack::integer::IntegerData;
 
     use super::OrdinaryTransactionExecutor;
     use crate::ExecuteParams;
@@ -622,6 +626,58 @@ mod tests {
 
     fn address(byte: u8) -> MsgAddressInt {
         MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
+    }
+
+    fn body(byte: u8) -> SliceData {
+        SliceData::load_builder(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn reports_ordinary_transaction_and_empty_stack_without_message() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let account = Account::with_address(address(1));
+
+        assert!(executor.ordinary_transaction());
+        assert!(executor.build_stack(None, &account).is_empty());
+    }
+
+    #[test]
+    fn build_stack_for_external_inbound_message() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::with_address(address(1));
+        account.set_balance(CurrencyCollection::with_grams(123));
+        let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader::new(
+            MsgAddressExt::with_extern(SliceData::default()).unwrap(),
+            address(7),
+        ));
+        msg.set_body(body(0xab));
+
+        let stack = executor.build_stack(Some(&msg), &account);
+
+        assert_eq!(stack.depth(), 5);
+        assert!(stack.get(0).as_bool().unwrap());
+        assert_eq!(stack.get(1).as_slice().unwrap().remaining_bits(), 8);
+        assert_eq!(stack.get(4).as_integer().unwrap(), &<IntegerData as From<u64>>::from(123_u64));
+        assert!(stack.get(2).as_cell().is_ok());
+    }
+
+    #[test]
+    fn build_stack_for_internal_message_uses_message_value() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let account = Account::with_address(address(1));
+        let mut msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(2),
+            address(1),
+            CurrencyCollection::with_grams(77),
+        ));
+        msg.set_body(body(0xcd));
+
+        let stack = executor.build_stack(Some(&msg), &account);
+
+        assert_eq!(stack.depth(), 5);
+        assert!(!stack.get(0).as_bool().unwrap());
+        assert_eq!(stack.get(3).as_integer().unwrap(), &<IntegerData as From<u64>>::from(77_u64));
+        assert_eq!(stack.get(1).as_slice().unwrap().remaining_bits(), 8);
     }
 
     #[test]
