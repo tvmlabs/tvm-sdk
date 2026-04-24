@@ -1145,6 +1145,14 @@ mod tests {
         Engine::with_capabilities(0).setup(SliceData::default(), None, Some(stack), None)
     }
 
+    fn stack_uint(stack: &Stack, index: usize) -> u128 {
+        stack.get(index).as_integer().unwrap().into(0..=u128::MAX).unwrap()
+    }
+
+    fn empty_cell_item() -> StackItem {
+        StackItem::Cell(BuilderData::new().into_cell().unwrap())
+    }
+
     #[test]
     fn ecc_mint_adds_action_for_valid_inputs() {
         let mut stack = Stack::new();
@@ -1167,6 +1175,126 @@ mod tests {
 
         let err = execute_ecc_mint(&mut engine).unwrap_err();
         assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::RangeCheckError));
+    }
+
+    #[test]
+    fn token_action_instructions_append_actions() {
+        let cases: Vec<(fn(&mut Engine) -> Status, Vec<StackItem>)> = vec![
+            (execute_ecc_burn, vec![StackItem::int(11_u64), StackItem::int(3_u32)]),
+            (execute_exchange_shell, vec![StackItem::int(7_u64)]),
+            (execute_mint_shell, vec![StackItem::int(9_u64)]),
+            (execute_mint_shellq, vec![StackItem::int(13_u64)]),
+            (execute_send_to_dapp_config, vec![StackItem::int(17_u64)]),
+        ];
+
+        for (execute, items) in cases {
+            let mut stack = Stack::new();
+            for item in items {
+                stack.push(item);
+            }
+            let mut engine = engine_with_stack(stack);
+            let before = engine.ctrl(5).unwrap().clone();
+
+            execute(&mut engine).unwrap();
+
+            assert_ne!(engine.ctrl(5).unwrap(), &before);
+        }
+    }
+
+    #[test]
+    fn arithmetic_instruction_wrappers_push_expected_results() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0_u128));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_repcoef(&mut engine).unwrap();
+        assert_eq!(stack_uint(&engine.cc.stack, 0), 1_000_000_000);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(TTMT + 1));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_mbk(&mut engine).unwrap();
+        assert_eq!(stack_uint(&engine.cc.stack, 0), TOTALSUPPLY * KRBK_NUM / KRBK_DEN);
+
+        let mut stack = Stack::new();
+        stack.push(empty_cell_item());
+        stack.push(StackItem::int(5_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(10_u128));
+        stack.push(StackItem::int(4_u128));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_block_manager_reward(&mut engine).unwrap();
+        assert_eq!(stack_uint(&engine.cc.stack, 0), 8);
+
+        let mut stack = Stack::new();
+        stack.push(empty_cell_item());
+        stack.push(StackItem::int(TOTALSUPPLY / 10));
+        stack.push(StackItem::int(TOTALSUPPLY / 10));
+        stack.push(StackItem::int(5_u128));
+        stack.push(StackItem::int(4_u128));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_block_manager_reward(&mut engine).unwrap();
+        assert_eq!(stack_uint(&engine.cc.stack, 0), 0);
+    }
+
+    #[test]
+    fn reward_adjustment_wrappers_handle_zero_average_inputs() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(90_u128));
+        stack.push(StackItem::int(1_u128));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_adjustment_reward(&mut engine).unwrap();
+        assert!(stack_uint(&engine.cc.stack, 0) <= 90);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(90_u128));
+        stack.push(StackItem::int(1_u128));
+        stack.push(StackItem::boolean(true));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_adjustment_reward_bmmv(&mut engine).unwrap();
+        assert!(stack_uint(&engine.cc.stack, 0) <= 90);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(90_u128));
+        stack.push(StackItem::int(1_u128));
+        stack.push(StackItem::boolean(false));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_adjustment_reward_bmmv(&mut engine).unwrap();
+        assert!(stack_uint(&engine.cc.stack, 0) <= 90);
+    }
+
+    #[test]
+    fn min_stake_wrappers_cover_empty_and_non_empty_rewards() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(100_u128));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_min_stake(&mut engine).unwrap();
+        assert_eq!(stack_uint(&engine.cc.stack, 0), SBK_BASE_START);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(100_u128));
+        stack.push(StackItem::int(100_u128));
+        let mut engine = engine_with_stack(stack);
+        execute_calculate_min_stake_bm(&mut engine).unwrap();
+        assert!(stack_uint(&engine.cc.stack, 0) > 0);
+    }
+
+    #[test]
+    fn balance_and_dapp_helpers_cover_positive_and_error_paths() {
+        let mut engine = engine_with_stack(Stack::new());
+        execute_get_available_balance(&mut engine).unwrap();
+        assert_eq!(stack_uint(&engine.cc.stack, 0), 0);
+
+        let err = execute_my_dapp_id(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::DAppIdNotSet));
     }
 
     #[test]
@@ -1199,12 +1327,19 @@ mod tests {
         assert_eq!(repcoef_int(0), 1_000_000_000);
         assert_eq!(repcoef_int(MAXRT), 3_000_000_000);
         assert!(repcoef_int(1) > 1_000_000_000);
+
+        assert_eq!(exp_neg_q32(13_i64 << 32), 0);
+        assert_eq!(calc_mbk(TTMT + 1, KRBK_NUM, KRBK_DEN), TOTALSUPPLY * KRBK_NUM / KRBK_DEN);
+        assert!(calc_one_minus_fstk_q32_int(0) <= ONE_Q32 as u128);
     }
 
     #[test]
     fn tap_coef_helper_handles_limits_and_updates_counters() {
         let rem = ((K_B as i128) * ONE_Q40 + 17) as u64;
-        assert_eq!(calc_tap_coef_with_params(12_000, 5, 10, rem, 4, 3, 2), (0, 17, 4, 3, 2, 12_000));
+        assert_eq!(
+            calc_tap_coef_with_params(12_000, 5, 10, rem, 4, 3, 2),
+            (0, 17, 4, 3, 2, 12_000)
+        );
         assert_eq!(calc_tap_coef_with_params(10, 5, 0, 9, 4, 3, 2), (0, 9, 4, 3, 2, 10));
 
         let (tap_coef, new_rem, new_dur, new_modified, new_taps_5min, new_total_taps) =
@@ -1216,5 +1351,10 @@ mod tests {
         assert_eq!(new_taps_5min, 8);
         assert_eq!(new_total_taps, 5);
         assert!(new_rem < ((K_B as i128) * ONE_Q40) as u64);
+
+        assert_eq!(calc_interval_integral_q40(10, 10), 0);
+        assert_eq!(fixed_ln_q40(0), 0);
+        assert!(fixed_exp_q40(11_i128 << SHIFT_Q40) > 0);
+        assert!(fixed_exp_q40(-(11_i128 << SHIFT_Q40)) > 0);
     }
 }
