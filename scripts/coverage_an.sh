@@ -192,6 +192,7 @@ cat > "$MANIFEST" <<EOF
 - \`tvm_vm\`: \`gosh\` feature. This repo default also enables \`gosh\`.
 - \`tvm_executor\`: default features plus \`signature_with_id\`.
 - \`tvm_client\`: \`default-features = false\`, features \`std\` and \`rustls-tls-webpki-roots\`.
+- \`tvm_client/tests/mock_blockchain.rs\`: integration harness for local HTTP GraphQL fixtures.
 - \`tests/rust/aerospike_store\` dependency subset is covered by \`tvm_block\` and \`tvm_types\` default feature runs.
 
 ## Coverage runs
@@ -239,6 +240,11 @@ run_step \
   "tvm-client-std-rustls-webpki-roots-lib-release" \
   "coverage: cargo test --release --lib for tvm_client without defaults, with std and rustls webpki roots" \
   cargo llvm-cov --no-report --release --lib --no-fail-fast "${CARGO_JOBS[@]}" -p tvm_client --no-default-features --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
+
+run_step \
+  "tvm-client-mock-blockchain-integration-release" \
+  "coverage: cargo test --release --test mock_blockchain for tvm_client mock blockchain integration" \
+  cargo llvm-cov --no-report --release --test mock_blockchain --no-fail-fast "${CARGO_JOBS[@]}" -p tvm_client --no-default-features --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
 
 run_step \
   "coverage-html" \
