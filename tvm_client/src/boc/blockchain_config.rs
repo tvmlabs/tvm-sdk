@@ -96,15 +96,19 @@ pub(crate) fn extract_config_from_zerostate(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use tvm_block::Block;
     use tvm_block::BlockExtra;
     use tvm_block::BlockInfo;
     use tvm_block::ConfigParams;
+    use tvm_block::Deserializable;
     use tvm_block::McBlockExtra;
     use tvm_block::McStateExtra;
     use tvm_block::MerkleUpdate;
     use tvm_block::ShardStateUnsplit;
     use tvm_block::ValueFlow;
+    use tvm_types::base64_decode;
 
     use super::*;
 
@@ -117,6 +121,22 @@ mod tests {
             extra,
         )
         .unwrap()
+    }
+
+    fn config_boc(config: &ConfigParams) -> String {
+        let cell = config.serialize().unwrap();
+        base64_encode(tvm_types::boc::write_boc(&cell).unwrap())
+    }
+
+    fn object_boc(object: &impl Serializable) -> String {
+        let cell = object.serialize().unwrap();
+        base64_encode(tvm_types::boc::write_boc(&cell).unwrap())
+    }
+
+    fn decoded_config_hash(config_boc: &str) -> tvm_types::UInt256 {
+        let bytes = base64_decode(config_boc).unwrap();
+        let cell = tvm_types::boc::read_single_root_boc(bytes).unwrap();
+        ConfigParams::construct_from_cell(cell).unwrap().serialize().unwrap().repr_hash()
     }
 
     #[test]
@@ -157,5 +177,58 @@ mod tests {
             actual.serialize().unwrap().repr_hash(),
             expected.serialize().unwrap().repr_hash()
         );
+    }
+
+    #[test]
+    fn get_blockchain_config_reads_key_block_boc() {
+        let context = Arc::new(ClientContext::new(Default::default()).unwrap());
+        let mut master = McBlockExtra::default();
+        let config = ConfigParams::default();
+        master.set_config(config.clone());
+        let mut extra = BlockExtra::new();
+        extra.write_custom(Some(&master)).unwrap();
+
+        let result = get_blockchain_config(
+            context,
+            ParamsOfGetBlockchainConfig { block_boc: object_boc(&test_block(extra)) },
+        )
+        .unwrap();
+
+        assert_eq!(result.config_boc, config_boc(&config));
+        assert_eq!(
+            decoded_config_hash(&result.config_boc),
+            config.serialize().unwrap().repr_hash()
+        );
+    }
+
+    #[test]
+    fn get_blockchain_config_reads_zerostate_boc_after_block_parse_fails() {
+        let context = Arc::new(ClientContext::new(Default::default()).unwrap());
+        let mut state = ShardStateUnsplit::default();
+        let master = McStateExtra { config: ConfigParams::default(), ..Default::default() };
+        let expected = master.config.clone();
+        state.write_custom(Some(&master)).unwrap();
+
+        let result = get_blockchain_config(
+            context,
+            ParamsOfGetBlockchainConfig { block_boc: object_boc(&state) },
+        )
+        .unwrap();
+
+        assert_eq!(result.config_boc, config_boc(&expected));
+    }
+
+    #[test]
+    fn get_blockchain_config_reports_invalid_input() {
+        let context = Arc::new(ClientContext::new(Default::default()).unwrap());
+        let result = get_blockchain_config(
+            context,
+            ParamsOfGetBlockchainConfig { block_boc: base64_encode([0xde, 0xad, 0xbe, 0xef]) },
+        );
+
+        match result {
+            Ok(_) => panic!("expected invalid BOC error"),
+            Err(err) => assert!(err.message().contains("zerostate"), "{err:?}"),
+        }
     }
 }

@@ -700,16 +700,64 @@ mod tests {
 
     #[test]
     fn nodes_info_validation_and_roundtrip_cover_error_paths() {
+        assert!(NodesInfo::create_node_info(0, 0).is_err());
+        assert!(NodesInfo::create_node_info(2, 2).is_err());
         assert!(NodesInfo::with_data(HashMap::new(), 1).is_err());
         assert!(NodesInfo::with_data(HashMap::from([(0u16, 0u16)]), 1).is_err());
         assert!(NodesInfo::with_data(HashMap::from([(2u16, 1u16)]), 2).is_err());
         assert!(NodesInfo::merge_multiple(&[]).is_err());
+        assert!(NodesInfo::merge_multiple(&[&NodesInfo::create_node_info(1, 0).unwrap()]).is_err());
         assert!(NodesInfo::deserialize(&[0, 1, 0]).is_err());
         assert!(NodesInfo::deserialize(&[0, 0, 0, 0, 0, 1]).is_err());
+        assert!(NodesInfo::deserialize(&[0, 2, 0, 2, 0, 1]).is_err());
 
         let nodes = NodesInfo::with_data(HashMap::from([(0u16, 1u16), (2u16, 3u16)]), 4).unwrap();
         let serialized = nodes.serialize();
         assert_eq!(NodesInfo::deserialize(&serialized).unwrap(), nodes);
+
+        let left = NodesInfo::create_node_info(3, 0).unwrap();
+        let right = NodesInfo::create_node_info(3, 0).unwrap();
+        let merged = NodesInfo::merge(&left, &right).unwrap();
+        assert_eq!(merged.map[&0], 2);
+        assert!(NodesInfo::merge(&left, &NodesInfo::create_node_info(4, 0).unwrap()).is_err());
+
+        let third = NodesInfo::create_node_info(3, 1).unwrap();
+        let merged = NodesInfo::merge_multiple(&[&left, &right, &third]).unwrap();
+        assert_eq!(merged.map[&0], 2);
+        assert_eq!(merged.map[&1], 1);
+    }
+
+    #[test]
+    fn random_helper_shapes_are_valid() {
+        let msg = generate_random_msg();
+        assert!((2..100).contains(&msg.len()));
+
+        assert_eq!(generate_random_msg_of_fixed_len(12).len(), 12);
+
+        let indexes = gen_signer_indexes(5, 3);
+        assert_eq!(indexes.len(), 3);
+        assert!(indexes.iter().all(|index| *index < 5));
+        assert!(gen_random_index(5) < 5);
+
+        let nodes = create_random_nodes_info(5, 4);
+        assert_eq!(nodes.total_num_of_nodes, 5);
+        assert_eq!(nodes.map.values().sum::<u16>(), 4);
+        assert!(nodes.map.keys().all(|index| *index < 5));
+    }
+
+    #[test]
+    fn signature_node_info_helpers_reject_malformed_inputs() {
+        let sig = [9u8; BLS_SIG_LEN];
+
+        assert!(BlsSignature::deserialize(&sig).is_err());
+        assert!(BlsSignature::add_node_info_to_sig(sig, 0, 0).is_err());
+        assert!(BlsSignature::add_node_info_to_sig(sig, 2, 2).is_err());
+
+        let mut invalid_nodes_info = sig.to_vec();
+        invalid_nodes_info.extend_from_slice(&[0, 2, 0, 2, 0, 1]);
+        assert!(BlsSignature::deserialize(&invalid_nodes_info).is_err());
+        assert!(get_nodes_info_from_sig(&invalid_nodes_info).is_err());
+        assert!(truncate_nodes_info_from_sig(&invalid_nodes_info).is_err());
     }
 
     #[test]
@@ -726,12 +774,24 @@ mod tests {
         let nodes_info = get_nodes_info_from_sig(&aggregated).unwrap();
         let aggregated_public =
             aggregate_public_keys_based_on_nodes_info(&[&pk1, &pk2], &nodes_info).unwrap();
+        let aggregated_via_slice = aggregate_bls_signatures(&[&sig1, &sig2]).unwrap();
+        let direct_aggregated_public = aggregate_public_keys(&[&pk1, &pk2]).unwrap();
 
         assert!(truncate_nodes_info_and_verify(&aggregated, &aggregated_public, message).unwrap());
+        assert!(
+            truncate_nodes_info_and_verify(
+                &aggregated_via_slice,
+                &direct_aggregated_public,
+                message
+            )
+            .unwrap()
+        );
         assert_eq!(truncate_nodes_info_from_sig(&aggregated).unwrap().len(), BLS_SIG_LEN);
         assert!(aggregate_public_keys(&[]).is_err());
         assert!(aggregate_bls_signatures(&[]).is_err());
         assert!(aggregate_public_keys_based_on_nodes_info(&[&pk1], &nodes_info).is_err());
+        assert!(aggregate_public_keys_based_on_nodes_info(&[], &nodes_info).is_err());
+        assert!(sign(&sk1, b"").is_err());
         assert!(sign_and_add_node_info(&sk1, b"", 0, 2).is_err());
         assert!(add_node_info_to_sig(sign(&sk1, message).unwrap(), 2, 2).is_err());
     }
