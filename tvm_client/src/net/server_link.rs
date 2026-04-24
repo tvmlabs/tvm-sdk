@@ -1067,7 +1067,19 @@ impl ServerLink {
                 get_redirection_data(err.data(), self.state.use_https_for_rest_api);
 
             if let Some(thread_id) = real_thread_id {
-                message.set_thread_id(Some(thread_id));
+                // Guard against malformed thread_id strings in node error payloads
+                // (e.g. nodes that accidentally serialize Debug instead of hex),
+                // which would otherwise make every retry fail with HTTP 400
+                // "thread_id can not be parsed" on the receiving node.
+                if ThreadIdentifier::try_from(thread_id.clone()).is_ok() {
+                    message.set_thread_id(Some(thread_id));
+                } else {
+                    log::warn!(
+                        "send_message: ignoring malformed thread_id from node response: {}",
+                        thread_id
+                    );
+                    message.set_thread_id(None);
+                }
             }
 
             if let Some(bk_endpoint) = redirect_url {
