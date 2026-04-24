@@ -865,3 +865,106 @@ fn test_shard_descr_ref_shard_blocks() {
     let rsb = RefShardBlocks::with_ids(ids.iter()).unwrap();
     assert_eq!(collect_ref_shard_blocks(&rsb).unwrap(), ids);
 }
+
+#[test]
+fn test_shard_ident_full() {
+    let s = ShardIdentFull::new(0, 0x8000000000000000);
+    assert_eq!(s.workchain_id, 0);
+    assert_eq!(s.prefix, 0x8000000000000000);
+    
+    // Test Display
+    let display = format!("{}", s);
+    assert!(display.contains("0:"));
+    
+    // Test LowerHex
+    let hex = format!("{:x}", s);
+    assert!(hex.contains("0:"));
+    
+    // Test serialization
+    let mut builder = BuilderData::new();
+    s.write_to(&mut builder).unwrap();
+    let cell = builder.into_cell().unwrap();
+    let mut slice = SliceData::load_cell(cell).unwrap();
+    
+    let mut restored = ShardIdentFull::default();
+    restored.read_from(&mut slice).unwrap();
+    assert_eq!(restored.workchain_id, s.workchain_id);
+    assert_eq!(restored.prefix, s.prefix);
+}
+
+#[test]
+fn test_shard_hashes_iterate_shards_for_workchain() {
+    let mut shard_hashes = ShardHashes::default();
+    
+    // Add workchain 0
+    for n in 0..3i32 {
+        let descr = ShardDescr::with_params(
+            n * 10, n * 5, n * 7,
+            UInt256::from([n as u8; 32]),
+            FutureSplitMerge::None,
+        );
+        let shards = BinTree::with_item(&descr).unwrap();
+        shard_hashes.set(&n, &InRefValue(shards)).unwrap();
+    }
+    
+    let mut count = 0;
+    shard_hashes.iterate_shards_for_workchain(0, |_ident, _descr| {
+        count += 1;
+        Ok(true)
+    }).unwrap();
+    assert!(count > 0);
+    
+    // Non-existent workchain
+    shard_hashes.iterate_shards_for_workchain(999, |_ident, _descr| {
+        Ok(true)
+    }).unwrap();
+}
+
+#[test]
+fn test_shard_hashes_iterate_shards() {
+    let mut shard_hashes = ShardHashes::default();
+    
+    for wc in 0..2i32 {
+        let descr = ShardDescr::with_params(
+            wc * 10, wc * 5, wc * 7,
+            UInt256::from([wc as u8; 32]),
+            FutureSplitMerge::None,
+        );
+        let shards = BinTree::with_item(&descr).unwrap();
+        shard_hashes.set(&wc, &InRefValue(shards)).unwrap();
+    }
+    
+    let mut count = 0;
+    shard_hashes.iterate_shards(|_ident, _descr| {
+        count += 1;
+        Ok(true)
+    }).unwrap();
+    assert!(count > 0);
+}
+
+#[test]
+fn test_shard_hashes_has_workchain() {
+    let mut shard_hashes = ShardHashes::default();
+    
+    let descr = ShardDescr::with_params(
+        0, 0, 0, UInt256::default(), FutureSplitMerge::None,
+    );
+    let shards = BinTree::with_item(&descr).unwrap();
+    shard_hashes.set(&0i32, &InRefValue(shards)).unwrap();
+    
+    assert!(shard_hashes.has_workchain(0).unwrap());
+    assert!(!shard_hashes.has_workchain(1).unwrap());
+}
+
+#[test]
+fn test_shard_fees_augmentation() {
+    let fee1 = ShardFeeCreated::with_fee(CurrencyCollection::with_grams(100));
+    let fee2 = ShardFeeCreated::with_fee(CurrencyCollection::with_grams(200));
+    
+    let aug1: ShardFeeCreated = fee1.aug().unwrap();
+    let aug2: ShardFeeCreated = fee2.aug().unwrap();
+    
+    // Test that aug returns a clone
+    assert_eq!(aug1.fees.grams.as_u128(), 100);
+    assert_eq!(aug2.fees.grams.as_u128(), 200);
+}
