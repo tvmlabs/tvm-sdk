@@ -45,10 +45,11 @@ pub fn deserialize_cell_from_base64(
 }
 
 pub fn deserialize_message_from_cell(cell: tvm_types::Cell, name: &str) -> ClientResult<Message> {
-    let tip = "Please check that you have specified the message's BOC, not body, as a parameter.";
-    let tip_full = if !tip.is_empty() { format!(".\nTip: {}", tip) } else { "".to_string() };
     let res = Message::construct_from_cell(cell);
     res.map_err(|err| {
+        let tip =
+            "Please check that you have specified the message's BOC, not body, as a parameter.";
+        let tip_full = format!(".\nTip: {}", tip);
         Error::invalid_boc(format!("cannot deserialize {} from BOC: {}{}", name, err, tip_full))
     })
 }

@@ -213,7 +213,7 @@ impl Shape {
         }
         for i in 0..children {
             let child = &cell.reference(i).unwrap();
-            map.extend(self.refs[i].captures(child)?.into_iter());
+            map.extend(self.refs[i].captures(child)?);
         }
         Ok(map)
     }

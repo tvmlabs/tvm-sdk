@@ -1386,45 +1386,45 @@ impl Engine {
                     cell = self.load_library_cell(cell)?;
                     continue;
                 }
-                CellType::MerkleProof => {
-                    if self.check_capabilities(GlobalCapabilities::CapResolveMerkleCell as u64) {
-                        self.try_use_gas(Gas::load_cell_price(true))?;
-                        let mut slice = SliceData::load_cell(cell.clone())?;
-                        slice.move_by(8)?;
-                        let hash = slice.get_next_hash()?;
-                        cell = cell.reference(0)?.virtualize(1);
-                        if cell.repr_hash() != hash {
-                            return err!(
-                                ExceptionCode::CellUnderflow,
-                                "hash of merkle proof cell is not corresponded to child cell"
-                            );
-                        }
-                        continue;
+                CellType::MerkleProof
+                    if self.check_capabilities(GlobalCapabilities::CapResolveMerkleCell as u64) =>
+                {
+                    self.try_use_gas(Gas::load_cell_price(true))?;
+                    let mut slice = SliceData::load_cell(cell.clone())?;
+                    slice.move_by(8)?;
+                    let hash = slice.get_next_hash()?;
+                    cell = cell.reference(0)?.virtualize(1);
+                    if cell.repr_hash() != hash {
+                        return err!(
+                            ExceptionCode::CellUnderflow,
+                            "hash of merkle proof cell is not corresponded to child cell"
+                        );
                     }
+                    continue;
                 }
-                CellType::MerkleUpdate => {
-                    if self.check_capabilities(GlobalCapabilities::CapResolveMerkleCell as u64) {
-                        self.try_use_gas(Gas::load_cell_price(true))?;
-                        let mut slice = SliceData::load_cell(cell.clone())?;
-                        slice.move_by(8)?;
-                        let hash = slice.get_next_hash()?;
-                        if cell.reference(0)?.virtualize(1).repr_hash() != hash {
-                            return err!(
-                                ExceptionCode::CellUnderflow,
-                                "hash of merkle update cell is not corresponded to child cell"
-                            );
-                        }
-                        slice.move_by(16)?;
-                        let hash = slice.get_next_hash()?;
-                        cell = cell.reference(1)?.virtualize(1);
-                        if cell.repr_hash() != hash {
-                            return err!(
-                                ExceptionCode::CellUnderflow,
-                                "hash of merkle update cell is not corresponded to child cell"
-                            );
-                        }
-                        continue;
+                CellType::MerkleUpdate
+                    if self.check_capabilities(GlobalCapabilities::CapResolveMerkleCell as u64) =>
+                {
+                    self.try_use_gas(Gas::load_cell_price(true))?;
+                    let mut slice = SliceData::load_cell(cell.clone())?;
+                    slice.move_by(8)?;
+                    let hash = slice.get_next_hash()?;
+                    if cell.reference(0)?.virtualize(1).repr_hash() != hash {
+                        return err!(
+                            ExceptionCode::CellUnderflow,
+                            "hash of merkle update cell is not corresponded to child cell"
+                        );
                     }
+                    slice.move_by(16)?;
+                    let hash = slice.get_next_hash()?;
+                    cell = cell.reference(1)?.virtualize(1);
+                    if cell.repr_hash() != hash {
+                        return err!(
+                            ExceptionCode::CellUnderflow,
+                            "hash of merkle update cell is not corresponded to child cell"
+                        );
+                    }
+                    continue;
                 }
                 _ => (),
             }

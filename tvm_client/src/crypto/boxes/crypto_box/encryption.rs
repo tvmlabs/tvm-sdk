@@ -39,7 +39,7 @@ async fn apply_chacha20(
     let password = get_password(password_provider).await?;
     let key = context.derived_keys.derive(&password.0, salt)?;
     let mut cipher = chacha20::ChaCha20::new_from_slices(&key.0, nonce)
-        .map_err(|e| Error::crypto_box_secret_serialization_error(e))?;
+        .map_err(Error::crypto_box_secret_serialization_error)?;
     let mut output = SecretBuf(secret.into());
     cipher.apply_keystream(&mut output.0);
 

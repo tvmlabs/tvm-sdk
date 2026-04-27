@@ -69,7 +69,13 @@ pub(crate) fn decode_actions(
                         (out_msg.body(), abi_file, function_name)
                     {
                         if !(out_msg.is_internal() || out_msg.is_cross_dapp()) {
-                            decode_body(abi_file, function_name, b, out_msg.is_internal() || out_msg.is_cross_dapp(), res)?;
+                            decode_body(
+                                abi_file,
+                                function_name,
+                                b,
+                                out_msg.is_internal() || out_msg.is_cross_dapp(),
+                                res,
+                            )?;
                         }
                     }
                 }
