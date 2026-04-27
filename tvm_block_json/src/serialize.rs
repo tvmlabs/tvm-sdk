@@ -19,8 +19,11 @@ use num_traits::sign::Signed;
 use serde_json::Map;
 use serde_json::Value;
 use shard_accounts::ShardAccounts;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::RempMessageLevel;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::RempMessageStatus;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::RempReceipt;
 use tvm_block::*;
 use tvm_types::AccountId;
@@ -2464,6 +2467,7 @@ pub fn debug_state_full(state: ShardStateUnsplit) -> Result<String> {
     Ok(format!("{:#}", serde_json::json!(map)))
 }
 
+#[cfg(feature = "ton")]
 fn serialize_block_id_ext(map: &mut Map<String, Value>, id: &BlockIdExt, mc: bool) {
     if mc {
         serialize_uint256(map, "mc_block_id", id.root_hash());
@@ -2478,6 +2482,7 @@ fn serialize_block_id_ext(map: &mut Map<String, Value>, id: &BlockIdExt, mc: boo
     }
 }
 
+#[cfg(feature = "ton")]
 pub fn db_serialize_remp_status(
     status: &RempReceipt,
     signature: &[u8],

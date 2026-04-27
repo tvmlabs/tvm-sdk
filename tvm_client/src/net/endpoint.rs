@@ -227,10 +227,6 @@ impl Endpoint {
     pub fn next_latency_detection_time(&self) -> u64 {
         self.next_latency_detection_time.load(Ordering::Relaxed)
     }
-
-    pub fn remp_enabled(&self) -> bool {
-        self.remp_enabled.load(Ordering::Relaxed)
-    }
 }
 
 fn current_traceparent() -> String {

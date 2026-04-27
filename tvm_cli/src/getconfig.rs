@@ -300,7 +300,7 @@ async fn query_config(ton: &TonClient, result: &str) -> Result<Option<Value>, St
             Ok(Some(result[0]["master"]["config"].clone()))
         }
         Err(e) => {
-            if e.message.contains("Server responded with code 400") {
+            if e.message().contains("Server responded with code 400") {
                 Ok(None)
             } else {
                 Err(format!("failed to query master block config: {}", e))

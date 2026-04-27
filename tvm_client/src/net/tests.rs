@@ -37,9 +37,9 @@ async fn bad_request() {
 
     if let Err(err) = result {
         println!("{:?}", err);
-        assert_eq!(err.code, ErrorCode::QueryFailed as u32);
+        assert_eq!(err.code(), ErrorCode::QueryFailed as u32);
         assert_eq!(
-            err.message,
+            err.message(),
             "Query failed: Graphql server returned error: Syntax Error: Expected Name, found <EOF>.."
         );
     } else {
@@ -71,7 +71,7 @@ async fn not_authorized_response_code() {
         .await;
 
     if let Err(err) = result {
-        assert_eq!(err.code, super::ErrorCode::Unauthorized as u32);
+        assert_eq!(err.code(), super::ErrorCode::Unauthorized as u32);
     } else {
         panic!("Error expected");
     }
@@ -100,10 +100,10 @@ async fn not_authorized_response_text() {
         )
         .await;
     if let Err(err) = result {
-        println!("{}", err.message);
-        assert_ne!(err.message, "Unauthorized");
+        println!("{}", err.message());
+        assert_ne!(err.message(), "Unauthorized");
         assert_ne!(
-            err.message,
+            err.message(),
             "Query failed: Can not send http request: Server responded with code 401"
         );
     } else {
@@ -565,7 +565,11 @@ async fn subscribe_for_transactions_with_addresses() {
     // deploy to create second transaction
     client
         .net_process_message(
-            ParamsOfProcessMessage { message_encode_params: deploy_params, send_events: false },
+            ParamsOfProcessMessage {
+                message_encode_params: deploy_params,
+                send_events: false,
+                dst_dapp_id: None,
+            },
             TestClient::default_callback,
         )
         .await
@@ -599,6 +603,7 @@ async fn subscribe_for_transactions_with_addresses() {
                     ..Default::default()
                 },
                 send_events: false,
+                dst_dapp_id: None,
             },
             TestClient::default_callback,
         )
@@ -616,10 +621,10 @@ async fn subscribe_for_transactions_with_addresses() {
     // and both subscriptions received notification about resume
     let notifications = notifications.lock().await;
     assert_eq!(notifications.len(), 4);
-    assert_eq!(notifications[2].code, Error::network_module_resumed().code);
-    assert!(!notifications[2].data["query_url"].is_null());
-    assert_eq!(notifications[3].code, Error::network_module_resumed().code);
-    assert!(!notifications[3].data["query_url"].is_null());
+    assert_eq!(notifications[2].code(), Error::network_module_resumed().code());
+    assert!(!notifications[2].data()["query_url"].is_null());
+    assert_eq!(notifications[3].code(), Error::network_module_resumed().code());
+    assert!(!notifications[3].data()["query_url"].is_null());
 
     let _: () = subscription_client.request_async("net.unsubscribe", handle1).await.unwrap();
     let _: () = subscription_client.request_async("net.unsubscribe", handle2).await.unwrap();
@@ -1090,7 +1095,7 @@ async fn querying_endpoint_selection() {
     assert_eq!(
         match &result {
             Ok(_) => "ok",
-            Err(e) => &e.message,
+            Err(e) => e.message(),
         },
         "Query failed: Can not send http request: Network error"
     );
@@ -1706,6 +1711,6 @@ async fn query_http_retry_network_error() {
     let result = call_query_http(&client).await;
     assert!(result.is_err());
     let err = result.unwrap_err();
-    assert_eq!(err.code, crate::client::errors::ErrorCode::HttpRequestSendError as u32);
+    assert_eq!(err.code(), crate::client::errors::ErrorCode::HttpRequestSendError as u32);
     NetworkMock::assert_is_empty(&client).await;
 }

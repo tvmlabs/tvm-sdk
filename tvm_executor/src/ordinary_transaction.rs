@@ -90,11 +90,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut binding = in_msg.cloned();
         let in_msg: Option<&mut Message> = binding.as_mut();
 
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
 
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;

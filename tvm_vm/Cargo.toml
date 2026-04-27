@@ -39,7 +39,11 @@ serde.workspace = true
 
 # ZK dependencies (optional, included via "gosh" feature)
 regex = { workspace = true, optional = true }
-reqwest = { workspace = true, features = ["blocking", "json", "rustls"], optional = true }
+reqwest = { workspace = true, features = [
+  "blocking",
+  "json",
+  "rustls",
+], optional = true }
 
 bls12_381 = { version = "0.8", optional = true }
 
@@ -52,7 +56,10 @@ ark-relations = { version = "0.4", optional = true }
 ark-serialize = { version = "0.4", optional = true }
 ark-snark = { version = "0.4", optional = true }
 byte-slice-cast = { version = "1", optional = true }
-ark-crypto-primitives = { version = "0.4", features = ["r1cs", "prf"], optional = true }
+ark-crypto-primitives = { version = "0.4", features = [
+  "r1cs",
+  "prf",
+], optional = true }
 ark-r1cs-std = { version = "0.4", optional = true }
 ark-std = { version = "0.4", optional = true }
 
@@ -90,24 +97,46 @@ default = ["gosh"]
 fift_check = []
 wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io"]
 gosh = [
-  "tvm_block/gosh", "diffy", "similar", "zstd",
+  "tvm_block/gosh",
+  "diffy",
+  "similar",
+  "zstd",
   # ZK dependencies:
-  "dep:ark-bls12-381", "dep:ark-bn254", "dep:ark-ec", "dep:ark-ff",
-  "dep:ark-groth16", "dep:ark-relations", "dep:ark-serialize", "dep:ark-snark",
-  "dep:ark-crypto-primitives", "dep:ark-r1cs-std", "dep:ark-std",
-  "dep:fastcrypto", "dep:neptune", "dep:bls12_381",
-  "dep:reqwest", "dep:regex", "dep:tracing", "dep:ff",
-  "dep:schemars", "dep:rand_chacha", "dep:base64ct",
-  "dep:byte-slice-cast", "dep:once_cell", "dep:derive_more",
-  "dep:itertools", "dep:typenum",
-  "dep:halo2-base", "dep:pse-poseidon",
+  "dep:ark-bls12-381",
+  "dep:ark-bn254",
+  "dep:ark-ec",
+  "dep:ark-ff",
+  "dep:ark-groth16",
+  "dep:ark-relations",
+  "dep:ark-serialize",
+  "dep:ark-snark",
+  "dep:ark-crypto-primitives",
+  "dep:ark-r1cs-std",
+  "dep:ark-std",
+  "dep:fastcrypto",
+  "dep:neptune",
+  "dep:bls12_381",
+  "dep:reqwest",
+  "dep:regex",
+  "dep:tracing",
+  "dep:ff",
+  "dep:schemars",
+  "dep:rand_chacha",
+  "dep:base64ct",
+  "dep:byte-slice-cast",
+  "dep:once_cell",
+  "dep:derive_more",
+  "dep:itertools",
+  "dep:typenum",
+  "dep:halo2-base",
+  "dep:pse-poseidon",
 ]
 log_file = []
 signature_no_check = []
 signature_with_id = ["tvm_block/signature_with_id"]
 verbose = []
 ci_run = []
-wasm_web = []                                                    # browser compatible wasm
+wasm_web = [] # browser compatible wasm
 wasm_external = []
 
 [[bench]]

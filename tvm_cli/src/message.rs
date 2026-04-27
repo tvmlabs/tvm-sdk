@@ -9,6 +9,8 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 
+use std::str::FromStr;
+
 use chrono::Local;
 use chrono::TimeZone;
 use serde_json::json;
@@ -22,10 +24,10 @@ use tvm_types::base64_decode;
 
 use crate::config::Config;
 use crate::crypto::load_keypair;
+use crate::helpers::SdkAddress;
 use crate::helpers::TonClient;
 use crate::helpers::create_client_local;
 use crate::helpers::load_abi;
-use crate::helpers::load_ton_address;
 use crate::helpers::now;
 
 pub struct EncodedMessage {
@@ -167,8 +169,9 @@ pub async fn generate_message(
 ) -> Result<(), String> {
     let ton = create_client_local()?;
 
-    let ton_addr =
-        load_ton_address(addr, config).map_err(|e| format!("failed to parse address: {}", e))?;
+    let ton_addr = SdkAddress::from_str(addr)
+        .map_err(|e| format!("failed to parse address: {}", e))?
+        .to_string();
 
     let abi = load_abi(abi, config).await?;
 

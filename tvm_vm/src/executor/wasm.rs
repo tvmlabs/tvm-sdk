@@ -2033,13 +2033,7 @@ impl wasi::io::poll::Host for MyState {
             wasmtime::component::Resource<wasi::io::poll::Pollable>,
         >,
     ) -> wasmtime::component::__internal::Vec<u32> {
-        (0..{
-            match in_.len().try_into() {
-                Ok(l) => l,
-                Err(_e) => u32::MAX,
-            }
-        })
-            .collect()
+        (0..{ in_.len().try_into().unwrap_or(u32::MAX) }).collect()
     }
 }
 
@@ -2049,7 +2043,7 @@ impl wasi::random::random::Host for MyState {
             0;
             match len.try_into() {
                 Ok(k) => k,
-                Err(_) => u16::max_value().into(),
+                Err(_) => u16::MAX.into(),
             }
         ];
         self.random_source.fill_bytes(&mut vector);
@@ -2067,7 +2061,7 @@ impl wasi::random::insecure::Host for MyState {
             0;
             match len.try_into() {
                 Ok(k) => k,
-                Err(_) => u16::max_value().into(),
+                Err(_) => u16::MAX.into(),
             }
         ];
         self.random_source.fill_bytes(&mut vector);
@@ -2124,7 +2118,7 @@ impl HasData for MyLibrary {
 }
 // This is a custom linker method, adding only sync, non-io wasi dependencies.
 // If more deps are needed, add them in there!
-fn add_to_linker_gosh<'a, T: WasiView + 'static>(
+fn add_to_linker_gosh<T: WasiView + 'static>(
     wasm_linker: &mut wasmtime::component::Linker<T>,
 ) -> Result<(), wasmtime::Error> {
     use wasmtime_wasi::p2::bindings::cli;

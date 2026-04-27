@@ -228,11 +228,8 @@ pub trait TransactionExecutor {
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
         log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
@@ -591,6 +588,7 @@ pub trait TransactionExecutor {
             .set_engine_mv_config(params.mvconfig.clone());
 
         #[cfg(feature = "wasmtime")]
+        #[allow(clippy::unnecessary_operation)]
         {
             vm_setup = vm_setup
                 .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
@@ -1696,7 +1694,7 @@ fn outmsg_action_handler(
     };
 
     if let Some(int_header) = msg.int_header_mut() {
-        let mut fwd_prices = fwd_prices_basic.clone();
+        let fwd_prices = fwd_prices_basic.clone();
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {

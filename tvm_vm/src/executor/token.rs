@@ -333,12 +333,8 @@ pub(super) fn execute_calculate_adjustment_reward(engine: &mut Engine) -> Status
     //_calc_reward_num - number of calculate
     //_reward_last_time - time of last calculate
     let mbkt = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let rbkmin;
-    if t < TTMT {
-        rbkmin = rbkprev / 3 * 2;
-    } else {
-        rbkmin = 0;
-    }
+
+    let rbkmin = if t < TTMT { rbkprev / 3 * 2 } else { 0 };
     if drbkavg == 0 {
         drbkavg = 1;
     }
@@ -356,23 +352,17 @@ pub(super) fn execute_calculate_adjustment_reward_bmmv(engine: &mut Engine) -> S
     let rbmprev = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?; //previous value of rewardadjustment (not minimum)
     let mut drbmavg = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let mbmt = engine.cmd.var(4).as_integer()?.into(0..=u128::MAX)?; //sum of reward token (minted, include slash token)
-    let rbmmin;
-    if t < TTMT {
-        rbmmin = rbmprev / 3 * 2;
-    } else {
-        rbmmin = 0;
-    }
-    let rbm;
+
+    let rbmmin = if t < TTMT { rbmprev / 3 * 2 } else { 0 };
+
     if drbmavg == 0 {
         drbmavg = 1;
     }
-    if is_bm {
-        rbm = (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
+    let rbm = if is_bm {
+        (((calc_mbk(t + drbmavg, KRBM_NUM, KRBM_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
     } else {
-        rbm = (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin))
-            .min(rbmprev);
-    }
+        (((calc_mbk(t + drbmavg, KRMV_NUM, KRMV_DEN) - mbmt) / drbmavg).max(rbmmin)).min(rbmprev)
+    };
     engine.cc.stack.push(int!(rbm));
     Ok(())
 }
@@ -417,12 +407,9 @@ pub(super) fn execute_calculate_block_manager_reward(engine: &mut Engine) -> Sta
     let mbm = engine.cmd.var(2).as_integer()?.into(0..=u128::MAX)?;
     let count_bm = engine.cmd.var(3).as_integer()?.into(0..=u128::MAX)?;
     let _pubkey_cell = engine.cmd.var(4).as_cell()?;
-    let reward;
-    if mbm >= TOTALSUPPLY / 10 || count_bm == 0 {
-        reward = 0;
-    } else {
-        reward = radj * depoch / count_bm;
-    }
+
+    let reward =
+        if mbm >= TOTALSUPPLY / 10 || count_bm == 0 { 0 } else { radj * depoch / count_bm };
     engine.cc.stack.push(int!(reward));
     Ok(())
 }
@@ -512,7 +499,7 @@ fn to_umbnlst(weights: &Vec<u64>) -> Vec<u64> {
     out
 }
 
-fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
+fn build_bclst(umbnlst: &[u64]) -> Vec<u64> {
     let len = umbnlst.len();
     let mut bclst = Vec::new();
 
@@ -540,7 +527,7 @@ fn build_bclst(umbnlst: &Vec<u64>) -> Vec<u64> {
     bclst
 }
 
-fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Vec<u64>) -> i128 {
+fn compute_rmv(rpc: i128, tap_num: i128, bclst: &[u64], mbi: u64, taplst: &[u64]) -> i128 {
     let mut denom: i128 = 0;
     let len = bclst.len();
     let len_tap = taplst.len();
@@ -557,14 +544,9 @@ fn compute_rmv(rpc: i128, tap_num: i128, bclst: &Vec<u64>, mbi: u64, taplst: &Ve
     if denom == 0 {
         return 0;
     }
-    let new_mbi;
-    if mbi >= len as u64 {
-        new_mbi = len as u64 - 1;
-    } else {
-        new_mbi = mbi;
-    }
-    let numer = rpc * tap_num * bclst[new_mbi as usize] as i128;
 
+    let new_mbi = if mbi >= len as u64 { len as u64 - 1 } else { mbi };
+    let numer = rpc * tap_num * bclst[new_mbi as usize] as i128;
     numer / denom
 }
 

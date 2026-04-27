@@ -57,7 +57,7 @@ fn calc_tree_cells(cell: &Cell, hashes: &mut HashSet<UInt256>) -> (usize, usize,
     let mut refs_count = cell.references_count();
     hashes.insert(cell.repr_hash());
 
-    for i in 0..refs_count {
+    for i in 0..cell.references_count() {
         let cell = cell.reference(i).unwrap();
         if hashes.contains(&cell.repr_hash()) {
             continue;
