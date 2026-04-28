@@ -645,10 +645,7 @@ impl fmt::Display for CrossDappMessageHeader {
 
 impl Serializable for CrossDappMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_one()?// tag 1101
-            .append_bit_one()?
-            .append_bit_zero()?
-            .append_bit_one()?
+        cell.append_tag(0b110101, 6)?
             .append_bit_bool(self.ihr_disabled)?
             .append_bit_bool(self.bounce)?
             .append_bit_bool(self.bounced)?;
