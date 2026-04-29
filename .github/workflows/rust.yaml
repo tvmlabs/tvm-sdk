@@ -34,7 +34,7 @@ jobs:
       # - run: cargo clippy -- -D warnings
 
   test:
-    name: Test
+    name: Test / Priority Units
     runs-on: ubuntu-latest
     env:
       CARGO_TERM_COLOR: always
@@ -59,7 +59,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Run priority feature tests
+      - name: Run priority unit tests
         run: |
           cargo nextest run -r --lib --no-fail-fast \
             -p tvm_abi \
@@ -70,8 +70,40 @@ jobs:
             -p tvm_vm \
             -p tvm_executor \
             --features tvm_vm/gosh,tvm_executor/signature_with_id
+
+  test-client:
+    name: Test / tvm_client
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
+      RUSTC_WRAPPER: sccache
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: rui314/setup-mold@v1
+      - uses: mozilla-actions/sccache-action@v0.0.10
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
+      - name: Setup cargo cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Run tvm_client tests
+        run: |
           cargo nextest run -r --lib --no-fail-fast --no-tests warn \
             -p tvm_client \
             --no-default-features \
             --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
-          cargo nextest run -r --test mock_blockchain --no-fail-fast -p tvm_client --no-default-features --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
+          cargo nextest run -r --test mock_blockchain --no-fail-fast \
+            -p tvm_client \
+            --no-default-features \
+            --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
