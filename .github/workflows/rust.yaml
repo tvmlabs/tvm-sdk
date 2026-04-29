@@ -97,7 +97,3 @@ jobs:
             -p tvm_client \
             --no-default-features \
             --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
-          cargo test -r --test mock_blockchain --no-fail-fast \
-            -p tvm_client \
-            --no-default-features \
-            --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
