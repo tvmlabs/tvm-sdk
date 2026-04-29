@@ -450,8 +450,7 @@ mod tests {
         assert!(map.setref(bits(0b0011, 4), &leaf_ref).unwrap().is_none());
         assert!(map.remove(bits(0b0011, 4)).unwrap().is_some());
 
-        let (path, leaf, suffix) =
-            map.get_prefix_leaf_with_gas(bits(0b1011, 4), &mut 0).unwrap();
+        let (path, leaf, suffix) = map.get_prefix_leaf_with_gas(bits(0b1011, 4), &mut 0).unwrap();
         assert_eq!(path, bits(0b1011, 4));
         assert!(leaf.is_some());
         assert!(suffix.is_empty());

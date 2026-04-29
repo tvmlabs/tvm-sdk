@@ -590,12 +590,15 @@ mod tests {
         assert_eq!(raw.clone().inner(), [0xab; 32]);
         assert_eq!(raw.clone().into_vec(), vec![0xab; 32]);
 
-        let slice = SliceData::load_builder(BuilderData::with_raw(vec![0xcd; 32], 256).unwrap())
-            .unwrap();
+        let slice =
+            SliceData::load_builder(BuilderData::with_raw(vec![0xcd; 32], 256).unwrap()).unwrap();
         let from_slice = UInt256::try_from(slice.clone()).unwrap();
         assert_eq!(from_slice, UInt256::from([0xcd; 32]));
         assert_eq!(from_slice, slice);
-        assert_eq!(&from_slice, &SliceData::load_builder(BuilderData::with_raw(vec![0xcd; 32], 256).unwrap()).unwrap());
+        assert_eq!(
+            &from_slice,
+            &SliceData::load_builder(BuilderData::with_raw(vec![0xcd; 32], 256).unwrap()).unwrap()
+        );
 
         let from_vec = UInt256::from(vec![0x11, 0x22, 0x33]);
         assert_eq!(&from_vec.as_slice()[..3], &[0x11, 0x22, 0x33]);

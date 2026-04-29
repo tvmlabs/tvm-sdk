@@ -201,10 +201,10 @@ mod tests {
     use std::hash::BuildHasher;
     use std::hash::Hasher;
 
-    use crate::cell::usage_cell::UInt256HashBuilder;
     use crate::BuilderData;
     use crate::Cell;
     use crate::UsageTree;
+    use crate::cell::usage_cell::UInt256HashBuilder;
     use crate::read_single_root_boc;
 
     #[test]
