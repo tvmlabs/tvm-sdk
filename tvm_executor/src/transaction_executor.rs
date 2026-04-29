@@ -2234,6 +2234,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn build_contract_info_uses_account_balance_address_and_seed() {
         let executor = DummyExecutor::new();
         let balance = CurrencyCollection::with_grams(123);

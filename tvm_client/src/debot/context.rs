@@ -104,6 +104,7 @@ mod tests {
     #[should_panic(expected = "failed to convert bytes to utf8 string")]
     fn invalid_hex_panics_in_from_hex_to_utf8_str() {
         #[derive(Deserialize)]
+        #[allow(dead_code)]
         struct Wrapper {
             #[serde(deserialize_with = "from_hex_to_utf8_str")]
             value: String,

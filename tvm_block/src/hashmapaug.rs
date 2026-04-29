@@ -916,6 +916,8 @@ impl Augmentation<u8> for u8 {
 
 #[cfg(test)]
 mod tests {
+    #![allow(dead_code)]
+
     use std::fmt;
 
     use tvm_types::hm_label;

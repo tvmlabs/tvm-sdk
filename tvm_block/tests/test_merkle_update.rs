@@ -53,7 +53,6 @@ use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 use tvm_types::*;
 mod common;
-use common::write_read_and_assert;
 
 #[test]
 fn test_merkle_update() {

@@ -289,7 +289,7 @@ fn test_sig_pub_key_verify_signature_invalid_key() {
     // Create different key and verify - should fail
     let sk2 = SigningKey::generate(&mut rand::thread_rng());
     let pk2: ed25519_dalek::VerifyingKey = (&sk2).into();
-    let spk2 = SigPubKey::from_bytes(&pk2.to_bytes()).unwrap();
+    let _spk2 = SigPubKey::from_bytes(&pk2.to_bytes()).unwrap();
     // This tests the success path, but we need invalid pubkey
     
     // Test with invalid public key bytes (all zeros might not be valid)
@@ -345,7 +345,7 @@ fn test_block_signatures_pure_check_signatures_bad_signature() {
     
     // Create a DIFFERENT key pair for the bad signature
     let sk2 = ed25519_dalek::SigningKey::generate(&mut rand::thread_rng());
-    let pk2: ed25519_dalek::VerifyingKey = (&sk2).into();
+    let _pk2: ed25519_dalek::VerifyingKey = (&sk2).into();
     
     // Create signature using DIFFERENT key (sk2) - this won't verify with spk
     let data = b"test data";

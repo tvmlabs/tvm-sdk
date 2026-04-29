@@ -309,38 +309,20 @@ fn ext_addr_slice(addr: &MsgAddressExt) -> Option<SliceData> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+
     use std::fs::read;
     use std::sync::Arc;
     use std::sync::Mutex;
     use std::time::SystemTime;
 
-    use tvm_block::AccountStatus;
     use tvm_block::Block;
     use tvm_block::BlockIdExt;
-    use tvm_block::CommonMsgInfo;
-    use tvm_block::CurrencyCollection;
     use tvm_block::Deserializable;
-    use tvm_block::ExtOutMessageHeader;
-    use tvm_block::ExternalInboundMessageHeader;
-    use tvm_block::InternalMessageHeader;
     use tvm_block::Message;
-    use tvm_block::MsgAddrStd;
-    use tvm_block::MsgAddressExt;
-    use tvm_block::MsgAddressInt;
-    use tvm_block::MsgAddressIntOrNone;
-    use tvm_block::Transaction;
-    use tvm_types::SliceData;
     use tvm_types::UInt256;
     use tvm_types::read_single_root_boc;
 
-    use super::MessageAdditionalFields;
     use super::ParserTransactions;
-    use super::PreparedMessage;
-    use super::ext_addr_slice;
-    use super::get_message_partitions;
-    use super::msg_dst_slice;
-    use super::msg_src_slice;
     use crate::BlockParserConfig;
     use crate::EntryConfig;
     use crate::NoReduce;

@@ -690,13 +690,12 @@ mod tests {
             let mut save = StackItem::continuation(ContinuationData::new_empty());
             cont.put_to_savelist(0, &mut save).unwrap();
 
-            let mut gas = 0;
-            let builder = cont.serialize(&mut gas).unwrap();
-            assert!(gas >= 0);
+            let mut gas_consumer = 0u64;
+            let builder = cont.serialize(&mut gas_consumer).unwrap();
 
             let cell = builder.into_cell().unwrap();
             let mut slice = SliceData::load_cell(cell).unwrap();
-            let decoded = ContinuationData::deserialize(&mut slice, &mut gas).unwrap();
+            let decoded = ContinuationData::deserialize(&mut slice, &mut gas_consumer).unwrap();
             assert_eq!(decoded, cont);
         }
     }

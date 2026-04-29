@@ -465,11 +465,11 @@ impl Deserializable for BlockProof {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::str::FromStr;
-    use ed25519_dalek::{SigningKey, VerifyingKey};
     use ed25519::signature::Signer;
-    use tvm_types::*;
+    use ed25519_dalek::SigningKey;
+    use ed25519_dalek::VerifyingKey;
+
+    use super::*;
 
     #[test]
     fn test_crypto_signature_new_default() {

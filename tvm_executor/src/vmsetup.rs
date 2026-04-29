@@ -301,6 +301,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(deprecated)]
     fn deprecated_contract_info_builders_store_control_register_seven() {
         let base_info = SmartContractInfo {
             capabilities: 1,
