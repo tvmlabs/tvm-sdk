@@ -1143,3 +1143,89 @@ impl Serializable for ShardStateUnsplit {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn account_prefix_and_shard_ident_helpers_cover_routing_primitives() {
+        let src_addr = MsgAddressInt::with_standart(None, 0, AccountId::from([0x11; 32])).unwrap();
+        let dst_addr = MsgAddressInt::with_standart(None, 0, AccountId::from([0xF0; 32])).unwrap();
+        let src = AccountIdPrefixFull::checked_prefix(&src_addr).unwrap();
+        let dst = AccountIdPrefixFull::prefix(&dst_addr).unwrap();
+        let mut copied = AccountIdPrefixFull::default();
+
+        assert!(AccountIdPrefixFull::prefix_to(&src_addr, &mut copied));
+        assert_eq!(copied, src);
+        assert!(src.is_valid());
+        assert!(!src.is_masterchain());
+        assert_eq!(src.workchain_id(), 0);
+        assert_eq!(src.interpolate_addr(&dst, 0), src);
+        assert_eq!(src.interpolate_addr(&dst, FULL_BITS), dst);
+        assert_ne!(src.interpolate_addr(&dst, 40), src);
+        assert!(src.count_matching_bits(&dst) < FULL_BITS + 32);
+    }
+
+    #[test]
+    fn shard_ident_relationships_and_serialization_cover_simple_branches() {
+        let full = ShardIdent::full(0);
+        let (left, right) = full.split().unwrap();
+        let merged = left.merge().unwrap();
+
+        assert_eq!(merged, full);
+        assert!(left.is_left_child());
+        assert!(right.is_right_child());
+        assert!(full.is_parent_for(&left));
+        assert!(left.is_child_for(&full));
+        assert!(full.is_ancestor_for(&left));
+        assert!(left.intersect_with(&left));
+        assert!(!left.intersect_with(&ShardIdent::full(1)));
+        assert!(left.is_neighbor_for(&right));
+        assert_eq!(left.sibling(), right);
+        assert!(full.contains_prefix(0, 0));
+        assert_eq!(ShardIdent::construct_from_cell(left.serialize().unwrap()).unwrap(), left);
+
+        let mut invalid = BuilderData::new();
+        invalid.append_u8(0xC0).unwrap();
+        invalid.append_u32(0).unwrap();
+        invalid.append_u64(0).unwrap();
+        assert!(ShardIdent::construct_from_cell(invalid.into_cell().unwrap()).is_err());
+    }
+
+    #[test]
+    fn shard_state_split_roundtrip_and_unsplit_conflict_paths() {
+        let split = ShardStateSplit::with_left_right(Cell::default(), Cell::default());
+        let split_state = ShardState::SplitState(split.clone());
+        assert_eq!(
+            ShardState::construct_from_cell(split_state.serialize().unwrap()).unwrap(),
+            split_state
+        );
+
+        let mut unsplit = ShardStateUnsplit::with_ident(ShardIdent::full(0));
+        unsplit.set_seq_no(1);
+        unsplit.set_vert_seq_no(2);
+        unsplit.set_gen_time_ms(3_456);
+        unsplit.set_gen_lt(7);
+        unsplit.set_min_ref_mc_seqno(8);
+        assert_eq!(unsplit.gen_time(), 3);
+        assert_eq!(unsplit.gen_time_ms(), 3_456);
+        assert_eq!(unsplit.gen_time_ms_part(), 456);
+        assert!(!unsplit.before_split());
+        unsplit.set_before_split(true);
+        assert!(unsplit.before_split());
+
+        let mut rewards = CopyleftRewards::default();
+        rewards.add_copyleft_reward(&AccountId::from([1; 32]), &1u64.into()).unwrap();
+        assert!(unsplit.set_copyleft_reward(rewards).is_err());
+        assert!(unsplit.copyleft_rewards().is_err());
+
+        unsplit.custom = Some(ChildCell::with_cell(Cell::default()));
+        unsplit.set_ref_shard_blocks(Some(RefShardBlocks::default()));
+        assert!(unsplit.serialize().is_err());
+
+        let mut invalid = BuilderData::new();
+        invalid.append_u32(0xDEAD_BEEF).unwrap();
+        assert!(ShardState::construct_from_cell(invalid.into_cell().unwrap()).is_err());
+    }
+}
