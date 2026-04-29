@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.21] - 2026-04-29
+
+### Added
+- `--block-seq-no` option for `tvm-debugger run` that allows to set block seq no for TVM execution
+
+
 ## [2.24.20] - 2026-04-20
 
 ### Changed
