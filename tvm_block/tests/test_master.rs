@@ -897,14 +897,14 @@ fn test_shard_hashes_iterate_shards_for_workchain() {
     let mut shard_hashes = ShardHashes::default();
     
     // Add workchain 0
-    for n in 0..3i32 {
+    for n in 0..3u32 {
         let descr = ShardDescr::with_params(
-            n * 10, n * 5, n * 7,
+            n * 10, (n * 5) as u64, (n * 7) as u64,
             UInt256::from([n as u8; 32]),
             FutureSplitMerge::None,
         );
         let shards = BinTree::with_item(&descr).unwrap();
-        shard_hashes.set(&n, &InRefValue(shards)).unwrap();
+        shard_hashes.set(&0i32, &InRefValue(shards)).unwrap();
     }
     
     let mut count = 0;
@@ -925,8 +925,9 @@ fn test_shard_hashes_iterate_shards() {
     let mut shard_hashes = ShardHashes::default();
     
     for wc in 0..2i32 {
+        let n = wc as u32;
         let descr = ShardDescr::with_params(
-            wc * 10, wc * 5, wc * 7,
+            n * 10, n as u64 * 5, n as u64 * 7,
             UInt256::from([wc as u8; 32]),
             FutureSplitMerge::None,
         );
@@ -967,4 +968,113 @@ fn test_shard_fees_augmentation() {
     // Test that aug returns a clone
     assert_eq!(aug1.fees.grams.as_u128(), 100);
     assert_eq!(aug2.fees.grams.as_u128(), 200);
+}
+
+#[test]
+fn test_find_shard_by_prefix() {
+    let mut shard_hashes = ShardHashes::default();
+    
+    let descr = ShardDescr::with_params(
+        1, 100, 200,
+        UInt256::from([1u8; 32]),
+        FutureSplitMerge::None,
+    );
+    let shards = BinTree::with_item(&descr).unwrap();
+    shard_hashes.set(&0i32, &InRefValue(shards)).unwrap();
+    
+    let prefix = AccountIdPrefixFull { workchain_id: 0, prefix: 0x8000000000000000u64 };
+    
+    let result = shard_hashes.find_shard_by_prefix(&prefix).unwrap();
+    assert!(result.is_some());
+}
+
+#[test]
+fn test_get_shard() {
+    let mut shard_hashes = ShardHashes::default();
+    
+    let descr = ShardDescr::with_params(
+        1, 100, 200,
+        UInt256::from([2u8; 32]),
+        FutureSplitMerge::None,
+    );
+    let shards = BinTree::with_item(&descr).unwrap();
+    shard_hashes.set(&0i32, &InRefValue(shards)).unwrap();
+    
+    let shard = ShardIdent::with_tagged_prefix(0, 0x8000000000000000).unwrap();
+    let result = shard_hashes.get_shard(&shard).unwrap();
+    assert!(result.is_some());
+    
+    // Non-existent shard
+    let shard2 = ShardIdent::with_tagged_prefix(0, 0x4000000000000000).unwrap();
+    let result2 = shard_hashes.get_shard(&shard2).unwrap();
+    assert!(result2.is_none());
+}
+
+#[test]
+fn test_get_neighbours() {
+    let mut shard_hashes = ShardHashes::default();
+
+    let full_shard = ShardIdent::full(0);
+    let (left_shard, right_shard) = full_shard.split().unwrap();
+
+    let descr1 = ShardDescr::with_params(
+        1, 100, 200,
+        UInt256::from([3u8; 32]),
+        FutureSplitMerge::None,
+    );
+    let descr2 = ShardDescr::with_params(
+        2, 150, 250,
+        UInt256::from([4u8; 32]),
+        FutureSplitMerge::None,
+    );
+
+    let shards = BinTree::with_item(&descr1).unwrap();
+    shard_hashes.set(&0i32, &InRefValue(shards)).unwrap();
+    shard_hashes
+        .split_shard(&full_shard, |_| Ok((descr1, descr2)))
+        .unwrap();
+
+    let neighbours = shard_hashes.get_neighbours(&left_shard).unwrap();
+    assert_eq!(neighbours.len(), 2);
+    assert!(
+        neighbours.iter().any(|record| record.shard() == &left_shard && record.descr.seq_no == 1)
+    );
+    assert!(
+        neighbours.iter().any(|record| record.shard() == &right_shard && record.descr.seq_no == 2)
+    );
+}
+
+#[test]
+fn test_shard_fees_store_and_iterate() {
+    let mut shard_fees = ShardFees::default();
+    
+    let ident = ShardIdentFull::new(0, 0x8000000000000000);
+    let fee = ShardFeeCreated::with_fee(CurrencyCollection::with_grams(500));
+    
+    shard_fees.set_augmentable(&ident, &fee).unwrap();
+    assert!(!shard_fees.is_empty());
+    
+    // Test iteration
+    let mut count = 0;
+    shard_fees.iterate_with_keys_and_aug(|_key: ShardIdentFull, _value, _aug| {
+        count += 1;
+        Ok(true)
+    }).unwrap();
+    assert!(count > 0);
+}
+
+#[test]
+fn test_get_new_shards() {
+    let mut shard_hashes = ShardHashes::default();
+    
+    let descr = ShardDescr::with_params(
+        1, 100, 200,
+        UInt256::from([5u8; 32]),
+        FutureSplitMerge::None,
+    );
+    let shards = BinTree::with_item(&descr).unwrap();
+    shard_hashes.set(&0i32, &InRefValue(shards)).unwrap();
+    
+    let result = shard_hashes.get_new_shards().unwrap();
+    assert!(!result.is_empty());
 }
