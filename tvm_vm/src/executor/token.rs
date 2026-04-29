@@ -6,6 +6,7 @@ use tvm_abi::Param;
 use tvm_abi::ParamType;
 use tvm_abi::TokenValue;
 use tvm_abi::contract::ABI_VERSION_2_2;
+#[cfg(feature = "wasmtime")]
 use tvm_abi::contract::ABI_VERSION_2_4;
 use tvm_block::ACTION_BURNECC;
 use tvm_block::ACTION_CNVRTSHELLQ;
@@ -34,6 +35,7 @@ use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Exception;
 use crate::types::Status;
+#[cfg(feature = "wasmtime")]
 use crate::utils::unpack_data_from_cell;
 
 pub const ECC_NACKL_KEY: u32 = 1;
