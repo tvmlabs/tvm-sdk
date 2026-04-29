@@ -8,7 +8,7 @@ use super::dinterface::decode_answer_id;
 use super::dinterface::decode_prompt;
 use crate::config::Config;
 use crate::debot::term_browser::terminal_input;
-use crate::helpers::load_ton_address;
+use crate::helpers::SdkAddress;
 
 const ID: &str = "d7ed1bd8e6230871116f4522e58df0a93c5520c56f4ade23ef3d8919a984653b";
 
@@ -62,8 +62,7 @@ impl AddressInput {
         let answer_id = decode_answer_id(args)?;
         let prompt = decode_prompt(args)?;
         let value = terminal_input(&prompt, |val| {
-            let _ = load_ton_address(val, &self.config)
-                .map_err(|e| format!("Invalid address: {}", e))?;
+            let _ = SdkAddress::validate(val).map_err(|e| format!("Invalid address: {}", e))?;
             Ok(())
         });
         Ok((answer_id, json!({ "value": value })))
@@ -72,8 +71,7 @@ impl AddressInput {
     fn select(&self, args: &Value) -> InterfaceResult {
         let answer_id = decode_answer_id(args)?;
         let value = terminal_input("", |val| {
-            let _ = load_ton_address(val, &self.config)
-                .map_err(|e| format!("Invalid address: {}", e))?;
+            let _ = SdkAddress::validate(val).map_err(|e| format!("Invalid address: {}", e))?;
             Ok(())
         });
         Ok((answer_id, json!({ "value": value })))

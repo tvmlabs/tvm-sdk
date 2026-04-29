@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "2.24.18"
+version = "2.24.20"
 
 rust-version = "1.76.0"
 
@@ -43,8 +43,8 @@ debug = 1
 inherits = 'release'
 
 [profile.dev]
-# Must always use panic = "abort" to avoid needing to define the unstable eh_personality lang item.
-panic = "abort"
+# Tests require unwind; keeping dev on unwind avoids profile mismatches in `cargo test`.
+panic = "unwind"
 # Enable only a small amount of optimization in debug mode
 opt-level = 1
 
@@ -56,12 +56,8 @@ opt-level = 3
 opt-level = "z"   # Optimize for size.
 lto = true        # Enable Link Time Optimization
 codegen-units = 1 # Reduce number of codegen units to increase optimizations.
-panic = "abort"   # Abort on panic
+panic = "unwind"  # Keep release-test builds compatible with the test harness.
 strip = true      # Automatically strip symbols from the binary.
-
-[profile.test]
-# IMPORTANT! because with "abort" it will complain https://github.com/rust-lang/cargo/issues/6313
-panic = "unwind"
 
 [workspace.dependencies]
 anyhow = "1"
@@ -92,9 +88,7 @@ proc-macro2 = "1"
 quote = "1"
 rand = "0.8"
 regex = "1"
-reqwest = { version = "0.13", default-features = false, features = [
-  "rustls",
-] }
+reqwest = { version = "0.13", default-features = false, features = ["rustls"] }
 semver = "1"
 serde = "1"
 serde_derive = "1"

@@ -177,6 +177,7 @@ pub async fn send_message_and_wait(
     abi: Option<Abi>,
     msg: String,
     config: &Config,
+    dst_dapp_id: Option<&str>,
 ) -> Result<Value, String> {
     if !config.is_json {
         println!("Processing... ");
@@ -185,7 +186,12 @@ pub async fn send_message_and_wait(
     let callback = |_| async move {};
     let result = tvm_client::processing::send_message(
         tvm_client.clone(),
-        ParamsOfSendMessage { message: msg.clone(), abi: abi.clone(), ..Default::default() },
+        ParamsOfSendMessage {
+            message: msg.clone(),
+            abi: abi.clone(),
+            dst_dapp_id: dst_dapp_id.map(ToString::to_string),
+            ..Default::default()
+        },
         callback,
     )
     .await
@@ -201,6 +207,7 @@ pub async fn send_message(
     abi: Option<Abi>,
     config: &Config,
     thread_id: Option<&str>,
+    dst_dapp_id: Option<&str>,
 ) -> Result<Value, String> {
     if !config.is_json {
         println!("Processing... ");
@@ -213,6 +220,7 @@ pub async fn send_message(
             message: msg.clone(),
             abi,
             thread_id: thread_id.map(ToString::to_string),
+            dst_dapp_id: dst_dapp_id.map(ToString::to_string),
             ..Default::default()
         },
         callback,
@@ -227,6 +235,7 @@ pub async fn process_message(
     ton: TonClient,
     msg: ParamsOfEncodeMessage,
     config: &Config,
+    dst_dapp_id: Option<&str>,
 ) -> Result<Value, ClientError> {
     let callback = |event| async move {
         if let ProcessingEvent::DidSend {
@@ -239,17 +248,26 @@ pub async fn process_message(
             println!("MessageId: {}", message_id)
         }
     };
+    let dst_dapp_id = dst_dapp_id.map(ToString::to_string);
     let res = if !config.is_json {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: msg.clone(), ..Default::default() },
+            ParamsOfProcessMessage {
+                message_encode_params: msg.clone(),
+                dst_dapp_id: dst_dapp_id.clone(),
+                ..Default::default()
+            },
             callback,
         )
         .await
     } else {
         tvm_client::processing::process_message(
             ton.clone(),
-            ParamsOfProcessMessage { message_encode_params: msg.clone(), send_events: true },
+            ParamsOfProcessMessage {
+                message_encode_params: msg.clone(),
+                send_events: true,
+                dst_dapp_id,
+            },
             |_| async move {},
         )
         .await
@@ -267,6 +285,7 @@ pub async fn call_contract_with_result(
     keys: Option<String>,
     is_fee: bool,
     thread_id: Option<&str>,
+    dst_dapp_id: Option<&str>,
 ) -> Result<Value, String> {
     let tvm_client = if config.debug_fail != *"None" {
         init_debug_logger(&format!("call_{}_{}.log", addr, method))?;
@@ -275,7 +294,16 @@ pub async fn call_contract_with_result(
         create_client_verbose(config)?
     };
     call_contract_with_client(
-        tvm_client, config, addr, abi_path, method, params, keys, is_fee, thread_id,
+        tvm_client,
+        config,
+        addr,
+        abi_path,
+        method,
+        params,
+        keys,
+        is_fee,
+        thread_id,
+        dst_dapp_id,
     )
     .await
 }
@@ -290,6 +318,7 @@ pub async fn call_contract_with_client(
     keys: Option<String>,
     is_fee: bool,
     thread_id: Option<&str>,
+    dst_dapp_id: Option<&str>,
 ) -> Result<Value, String> {
     let abi = load_abi(abi_path, config).await?;
 
@@ -311,7 +340,7 @@ pub async fn call_contract_with_client(
         }
     }
 
-    send_message(tvm_client.clone(), msg, Some(abi), config, thread_id).await
+    send_message(tvm_client.clone(), msg, Some(abi), config, thread_id, dst_dapp_id).await
 }
 
 pub fn print_json_result(result: Value, config: &Config) -> Result<(), String> {
@@ -334,10 +363,20 @@ pub async fn call_contract(
     keys: Option<String>,
     is_fee: bool,
     thread_id: Option<&str>,
+    dst_dapp_id: Option<&str>,
 ) -> Result<(), String> {
-    let result =
-        call_contract_with_result(config, addr, abi_path, method, params, keys, is_fee, thread_id)
-            .await?;
+    let result = call_contract_with_result(
+        config,
+        addr,
+        abi_path,
+        method,
+        params,
+        keys,
+        is_fee,
+        thread_id,
+        dst_dapp_id,
+    )
+    .await?;
     if !config.is_json {
         println!("Succeeded.");
     }
@@ -349,6 +388,7 @@ pub async fn call_contract_with_msg(
     config: &Config,
     str_msg: String,
     abi_path: &str,
+    dst_dapp_id: Option<&str>,
 ) -> Result<(), String> {
     let ton = create_client_verbose(config)?;
     let abi = load_abi(abi_path, config).await?;
@@ -370,7 +410,7 @@ pub async fn call_contract_with_msg(
         println!("  \"Parameters\": {},", params.1);
         println!("}}");
     }
-    let result = send_message_and_wait(ton, Some(abi), msg.message, config).await?;
+    let result = send_message_and_wait(ton, Some(abi), msg.message, config, dst_dapp_id).await?;
 
     if !config.is_json {
         println!("Succeeded.");

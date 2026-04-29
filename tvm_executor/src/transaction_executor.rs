@@ -228,11 +228,8 @@ pub trait TransactionExecutor {
         let old_hash = account_root.repr_hash();
         let minted_shell: &mut i128 = &mut 0;
         let mut account = Account::construct_from_cell(account_root.clone())?;
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
         log::trace!(target: "executor", "previous_state {:?}, account {:?}, state {:?}, minted_shell {:?}", is_previous_state_active, account, account.state(), minted_shell);
         let mut transaction =
             self.execute_with_params(in_msg, &mut account, params, minted_shell)?;
@@ -590,6 +587,7 @@ pub trait TransactionExecutor {
             .set_engine_mv_config(params.mvconfig.clone());
 
         #[cfg(feature = "wasmtime")]
+        #[allow(clippy::unnecessary_operation)]
         {
             vm_setup = vm_setup
                 .set_wasm_hash_whitelist(params.wasm_hash_whitelist.clone())
@@ -761,7 +759,7 @@ pub trait TransactionExecutor {
         need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
-        let mut need_to_reserve = need_to_burn.as_u64_quiet().clone();
+        let mut need_to_reserve = need_to_burn.as_u64_quiet();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
         let mut acc_remaining_balance = acc_balance.clone();
@@ -981,7 +979,7 @@ pub trait TransactionExecutor {
                 }
                 OutAction::MintShellToken { value } => {
                     if available_credit != INFINITY_CREDIT
-                        && value as i128 + minted_shell.clone() as i128 > available_credit
+                        && value as i128 + *minted_shell > available_credit
                     {
                         RESULT_CODE_NOT_ENOUGH_GRAMS
                     } else {
@@ -997,14 +995,14 @@ pub trait TransactionExecutor {
                     }
                 }
                 OutAction::MintShellQToken { mut value } => {
-                    if available_credit != INFINITY_CREDIT {
-                        if value as i128 + minted_shell.clone() as i128 > available_credit {
-                            if minted_shell.clone() as i128 >= available_credit {
-                                value = 0;
-                            } else {
-                                let new_value = available_credit - *minted_shell;
-                                value = new_value.try_into()?;
-                            }
+                    if available_credit != INFINITY_CREDIT
+                        && value as i128 + *minted_shell > available_credit
+                    {
+                        if *minted_shell >= available_credit {
+                            value = 0;
+                        } else {
+                            let new_value = available_credit - *minted_shell;
+                            value = new_value.try_into()?;
                         }
                     }
                     match acc_remaining_balance.grams.add(&(Grams::from(value))) {
@@ -1384,11 +1382,9 @@ fn compute_new_state(
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
                             };
-                            if sign_bit {
-                                if data.get_next_bits(512).is_err() {
-                                    log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
-                                    return Ok(Some(ComputeSkipReason::BadState));
-                                }
+                            if sign_bit && data.get_next_bits(512).is_err() {
+                                log::error!(target: "executor", "Failed to get 512-bit signature from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
                             }
                             let pubkey_bit = match data.get_next_bit() {
                                 Ok(bit) => bit,
@@ -1397,11 +1393,9 @@ fn compute_new_state(
                                     return Ok(Some(ComputeSkipReason::BadState));
                                 }
                             };
-                            if pubkey_bit {
-                                if data.get_next_bits(256).is_err() {
-                                    log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
-                                    return Ok(Some(ComputeSkipReason::BadState));
-                                }
+                            if pubkey_bit && data.get_next_bits(256).is_err() {
+                                log::error!(target: "executor", "Failed to get 256-bit public key from external message body");
+                                return Ok(Some(ComputeSkipReason::BadState));
                             }
                             if data.get_next_u64().is_err() {
                                 log::error!(target: "executor", "Failed to get timestamp (u64) from external message body");
@@ -1695,7 +1689,7 @@ fn outmsg_action_handler(
     };
 
     if let Some(int_header) = msg.int_header_mut() {
-        let mut fwd_prices = fwd_prices_basic.clone();
+        let fwd_prices = fwd_prices_basic.clone();
         match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
             Ok(new_dst) => int_header.dst = new_dst,
             Err(type_error) => {

@@ -392,13 +392,11 @@ impl DocAttr {
             Ok(Meta::NameValue(ref meta)) => {
                 return get_value_of("doc", meta).map(DocAttr::Doc).unwrap_or(DocAttr::None);
             }
-            Ok(Meta::List(ref list)) => {
-                if path_is(&list.path, "doc") {
-                    if let Some(NestedMeta::Meta(Meta::NameValue(meta))) = list.nested.first() {
-                        return get_value_of("summary", meta)
-                            .map(DocAttr::Summary)
-                            .unwrap_or(DocAttr::None);
-                    }
+            Ok(Meta::List(ref list)) if path_is(&list.path, "doc") => {
+                if let Some(NestedMeta::Meta(Meta::NameValue(meta))) = list.nested.first() {
+                    return get_value_of("summary", meta)
+                        .map(DocAttr::Summary)
+                        .unwrap_or(DocAttr::None);
                 }
             }
             _ => (),
