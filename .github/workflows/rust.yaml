@@ -19,7 +19,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy, rustfmt
@@ -42,13 +42,15 @@ jobs:
       SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
       RUSTC_WRAPPER: sccache
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: rui314/setup-mold@v1
-      - uses: mozilla-actions/sccache-action@v0.0.9
-      - uses: taiki-e/install-action@nextest
+      - uses: mozilla-actions/sccache-action@v0.0.10
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
       - name: Setup cargo cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry/index/
@@ -59,11 +61,17 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Run priority feature tests
         run: |
-          cargo nextest run -r --lib --no-fail-fast -p tvm_abi
-          cargo nextest run -r --lib --no-fail-fast -p tvm_block -p tvm_types
-          cargo nextest run -r --lib --no-fail-fast -p tvm_block_json
-          cargo nextest run -r --lib --no-fail-fast -p tvm_sdk
-          cargo nextest run -r --lib --no-fail-fast -p tvm_vm --features tvm_vm/gosh
-          cargo nextest run -r --lib --no-fail-fast -p tvm_executor --features tvm_executor/signature_with_id,tvm_vm/gosh
-          cargo nextest run -r --lib --no-fail-fast -p tvm_client --no-default-features --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
+          cargo nextest run -r --lib --no-fail-fast \
+            -p tvm_abi \
+            -p tvm_block \
+            -p tvm_types \
+            -p tvm_block_json \
+            -p tvm_sdk \
+            -p tvm_vm \
+            -p tvm_executor \
+            --features tvm_vm/gosh,tvm_executor/signature_with_id
+          cargo nextest run -r --lib --no-fail-fast --no-tests warn \
+            -p tvm_client \
+            --no-default-features \
+            --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
           cargo nextest run -r --test mock_blockchain --no-fail-fast -p tvm_client --no-default-features --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
