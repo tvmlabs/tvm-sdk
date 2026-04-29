@@ -12,9 +12,9 @@ use std::fs::File;
 use std::io::Read;
 use std::str::FromStr;
 
+use ed25519_dalek::Signer;
 use ed25519_dalek::SigningKey;
 use ed25519_dalek::VerifyingKey;
-use ed25519_dalek::Signer;
 use tvm_block::Block;
 use tvm_block::ConfigParamEnum;
 use tvm_block::ShardIdent;
@@ -189,11 +189,11 @@ fn test_crypto_signature_from_r_s_invalid_len() {
     // r too short
     let result = CryptoSignature::from_r_s(&[1; 31], &[2; 32]);
     assert!(result.is_err());
-    
+
     // s too short
     let result = CryptoSignature::from_r_s(&[1; 32], &[2; 31]);
     assert!(result.is_err());
-    
+
     // both too long
     let result = CryptoSignature::from_r_s(&[1; 33], &[2; 33]);
     assert!(result.is_err());
@@ -202,15 +202,24 @@ fn test_crypto_signature_from_r_s_invalid_len() {
 #[test]
 fn test_crypto_signature_from_r_s_str_invalid_hex() {
     // invalid hex for r
-    let result = CryptoSignature::from_r_s_str("zzzz", "fc8c299052904d83df1a6a7477d883dd7f67e16d9767cc0bb56b39d961688d08");
+    let result = CryptoSignature::from_r_s_str(
+        "zzzz",
+        "fc8c299052904d83df1a6a7477d883dd7f67e16d9767cc0bb56b39d961688d08",
+    );
     assert!(result.is_err());
-    
+
     // invalid hex for s
-    let result = CryptoSignature::from_r_s_str("fff30bb892ac26faf24b3fcd2e6445813e53e96820f7419af069da8b5fa1cfff", "zzzz");
+    let result = CryptoSignature::from_r_s_str(
+        "fff30bb892ac26faf24b3fcd2e6445813e53e96820f7419af069da8b5fa1cfff",
+        "zzzz",
+    );
     assert!(result.is_err());
-    
+
     // wrong length hex for r (too short)
-    let result = CryptoSignature::from_r_s_str("fff30bb892ac26faf24b3fcd2e6445813e53e96820f7419af069da8b5fa1c", "fc8c299052904d83df1a6a7477d883dd7f67e16d9767cc0bb56b39d961688d08");
+    let result = CryptoSignature::from_r_s_str(
+        "fff30bb892ac26faf24b3fcd2e6445813e53e96820f7419af069da8b5fa1c",
+        "fc8c299052904d83df1a6a7477d883dd7f67e16d9767cc0bb56b39d961688d08",
+    );
     assert!(result.is_err());
 }
 
@@ -221,32 +230,34 @@ fn test_crypto_signature_from_str() {
     let data = b"test";
     let signature = sk.sign(data);
     let hex_str = hex::encode(signature.to_bytes());
-    
+
     // This should succeed
     let sig = CryptoSignature::from_str(&hex_str);
     assert!(sig.is_ok());
-    
+
     // invalid hex string
     let sig = CryptoSignature::from_str("zzzz");
     assert!(sig.is_err());
-    
+
     // too short hex string (less than 128 chars = 64 bytes)
-    let sig = CryptoSignature::from_str("fff30bb892ac26faf24b3fcd2e6445813e53e96820f7419af069da8b5fa1cfff");
+    let sig = CryptoSignature::from_str(
+        "fff30bb892ac26faf24b3fcd2e6445813e53e96820f7419af069da8b5fa1cfff",
+    );
     assert!(sig.is_err());
 }
 
 #[test]
 fn test_crypto_signature_read_from_invalid_tag() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     // Create data with wrong tag (not 0x5)
     let mut builder = BuilderData::new();
     builder.append_bits(0x7 as usize, 4).unwrap(); // wrong tag
     builder.append_raw(&[1; 64], 64 * 8).unwrap();
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let mut sig = CryptoSignature::default();
     let result = sig.read_from(&mut slice);
     assert!(result.is_err());
@@ -256,14 +267,14 @@ fn test_crypto_signature_read_from_invalid_tag() {
 fn test_sig_pub_key_from_str() {
     use ed25519_dalek::SigningKey;
     use ed25519_dalek::VerifyingKey;
-    
+
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: VerifyingKey = (&sk).into();
     let hex_str = hex::encode(pk.to_bytes());
-    
+
     let spk = SigPubKey::from_str(&hex_str);
     assert!(spk.is_ok());
-    
+
     // invalid hex
     let spk = SigPubKey::from_str("zzzz");
     assert!(spk.is_err());
@@ -272,26 +283,26 @@ fn test_sig_pub_key_from_str() {
 #[test]
 fn test_sig_pub_key_verify_signature_invalid_key() {
     use ed25519_dalek::SigningKey;
-    
+
     // Create key pair
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     // Sign data
     let data = b"test data";
     let signature = sk.sign(data);
     let crypto_sig = CryptoSignature::from_bytes(&signature.to_bytes()).unwrap();
-    
+
     // Verify with correct key - should pass
     assert!(spk.verify_signature(data, &crypto_sig));
-    
+
     // Create different key and verify - should fail
     let sk2 = SigningKey::generate(&mut rand::thread_rng());
     let pk2: ed25519_dalek::VerifyingKey = (&sk2).into();
     let _spk2 = SigPubKey::from_bytes(&pk2.to_bytes()).unwrap();
     // This tests the success path, but we need invalid pubkey
-    
+
     // Test with invalid public key bytes (all zeros might not be valid)
     let invalid_key = SigPubKey::from_bytes(&[0; 32]).unwrap();
     // This might test the Err(_) => false branch
@@ -300,16 +311,16 @@ fn test_sig_pub_key_verify_signature_invalid_key() {
 
 #[test]
 fn test_sig_pub_key_read_from_invalid_tag() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     // Create data with wrong tag (not 0x8e81278a)
     let mut builder = BuilderData::new();
     builder.append_u32(0x12345678).unwrap(); // wrong tag
     builder.append_raw(&[1; 32], 32 * 8).unwrap();
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let result = SigPubKey::construct_from(&mut slice);
     assert!(result.is_err());
 }
@@ -318,10 +329,10 @@ fn test_sig_pub_key_read_from_invalid_tag() {
 fn test_block_signatures_pure_set_weight() {
     let mut bsp = BlockSignaturesPure::new();
     assert_eq!(bsp.weight(), 0);
-    
+
     bsp.set_weight(12345);
     assert_eq!(bsp.weight(), 12345);
-    
+
     bsp.set_weight(0);
     assert_eq!(bsp.weight(), 0);
 }
@@ -329,12 +340,12 @@ fn test_block_signatures_pure_set_weight() {
 #[test]
 fn test_block_signatures_pure_check_signatures_bad_signature() {
     let mut bsp = BlockSignaturesPure::new();
-    
+
     // Create a valid key pair
     let sk = ed25519_dalek::SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     // Create validator first, then compute node_id_short the same way
     let vd = crate::validators::ValidatorDescr {
         public_key: spk.clone(),
@@ -342,35 +353,35 @@ fn test_block_signatures_pure_check_signatures_bad_signature() {
         ..Default::default()
     };
     let node_id_short = vd.compute_node_id_short();
-    
+
     // Create a DIFFERENT key pair for the bad signature
     let sk2 = ed25519_dalek::SigningKey::generate(&mut rand::thread_rng());
     let _pk2: ed25519_dalek::VerifyingKey = (&sk2).into();
-    
+
     // Create signature using DIFFERENT key (sk2) - this won't verify with spk
     let data = b"test data";
     let bad_signature = sk2.sign(data);
     let bad_crypto_sig = CryptoSignature::from_bytes(&bad_signature.to_bytes()).unwrap();
-    
+
     let csp = CryptoSignaturePair::with_params(node_id_short, bad_crypto_sig);
     bsp.add_sigpair(csp);
-    
+
     let result = bsp.check_signatures(&[vd], data);
     assert!(result.is_err());
 }
 
 #[test]
 fn test_block_signatures_read_from_invalid_tag() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     // Create data with wrong tag (not 0x11)
     let mut builder = BuilderData::new();
     builder.append_u8(0x22).unwrap(); // wrong tag
     // Add some dummy data for ValidatorBaseInfo and BlockSignaturesPure
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let mut bs = BlockSignatures::new();
     let result = bs.read_from(&mut slice);
     assert!(result.is_err());
@@ -380,19 +391,19 @@ fn test_block_signatures_read_from_invalid_tag() {
 fn test_block_proof_write_to_without_signatures() {
     use tvm_block::*;
     use tvm_types::*;
-    
+
     let bp = BlockProof::with_params(
         BlockIdExt::with_params(ShardIdent::default(), 43434, UInt256::rand(), UInt256::rand()),
         SliceData::new(vec![0x65, 0x08, 0x71, 0x36, 0x10, 0x00, 0x41, 0x00, 0x80]).into_cell(),
         None, // No signatures
     );
-    
+
     // Serialize and deserialize
     let mut builder = BuilderData::new();
     bp.write_to(&mut builder).unwrap();
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let mut bp2 = BlockProof::new();
     let result = bp2.read_from(&mut slice);
     assert!(result.is_ok());
@@ -401,15 +412,15 @@ fn test_block_proof_write_to_without_signatures() {
 
 #[test]
 fn test_block_proof_read_from_invalid_tag() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     // Create data with wrong tag (not 0xC3)
     let mut builder = BuilderData::new();
     builder.append_u8(0x99).unwrap(); // wrong tag
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let mut bp = BlockProof::new();
     let result = bp.read_from(&mut slice);
     assert!(result.is_err());
@@ -870,7 +881,7 @@ fn test_crypto_signature_to_bytes() {
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     let bytes = cs.to_bytes();
     assert_eq!(bytes.len(), ed25519_dalek::SIGNATURE_LENGTH);
-    
+
     // Test to_r_s_bytes
     let (r, s) = cs.to_r_s_bytes();
     assert_eq!(r.len(), 32);
@@ -890,7 +901,7 @@ fn test_sig_pub_key_key_bytes() {
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     let bytes = spk.key_bytes();
     assert_eq!(bytes.len(), 32);
 }
@@ -901,7 +912,7 @@ fn test_sig_pub_key_as_slice() {
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     let slice = spk.as_slice();
     assert_eq!(slice.len(), 32);
 }
@@ -912,10 +923,10 @@ fn test_sig_pub_key_partial_eq_uint256() {
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     let uint256 = UInt256::from(pk.to_bytes());
     assert_eq!(spk, uint256);
-    
+
     let different = UInt256::from([255; 32]);
     assert_ne!(spk, different);
 }
@@ -926,7 +937,7 @@ fn test_block_signatures_pure_signatures_method() {
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     let csp = CryptoSignaturePair::with_params(UInt256::from([1; 32]), cs);
     bsp.add_sigpair(csp);
-    
+
     let sigs = bsp.signatures();
     assert!(sigs.is_empty() == false || bsp.count() > 0);
 }
@@ -936,7 +947,7 @@ fn test_block_signatures_fields() {
     let vi = ValidatorBaseInfo::with_params(123, 456);
     let bsp = BlockSignaturesPure::with_weight(789);
     let bs = BlockSignatures::with_params(vi.clone(), bsp.clone());
-    
+
     assert_eq!(bs.validator_info, vi);
     assert_eq!(bs.pure_signatures.weight(), 789);
 }
@@ -945,15 +956,16 @@ fn test_block_signatures_fields() {
 fn test_block_proof_fields() {
     use tvm_block::*;
     use tvm_types::*;
-    
-    let proof_for = BlockIdExt::with_params(ShardIdent::default(), 100, UInt256::rand(), UInt256::rand());
+
+    let proof_for =
+        BlockIdExt::with_params(ShardIdent::default(), 100, UInt256::rand(), UInt256::rand());
     let root = SliceData::new(vec![0x01, 0x02]).into_cell();
     let bs = BlockSignatures::new();
-    
+
     let bp = BlockProof::with_params(proof_for.clone(), root.clone(), Some(bs));
     assert_eq!(bp.proof_for, proof_for);
     assert!(bp.signatures.is_some());
-    
+
     let bp2 = BlockProof::with_params(proof_for.clone(), root, None);
     assert!(bp2.signatures.is_none());
 }
@@ -963,7 +975,7 @@ fn test_crypto_signature_pair_with_params_and_access() {
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     let node_id = UInt256::from([42; 32]);
     let csp = CryptoSignaturePair::with_params(node_id.clone(), cs.clone());
-    
+
     assert_eq!(csp.node_id_short, node_id);
     assert_eq!(csp.sign, cs);
 }
@@ -973,7 +985,7 @@ fn test_block_signatures_pure_with_weight_and_const() {
     let bsp = BlockSignaturesPure::with_weight(999);
     assert_eq!(bsp.weight(), 999);
     assert_eq!(bsp.count(), 0);
-    
+
     let bsp2 = BlockSignaturesPure::new();
     assert_eq!(bsp2.weight(), 0);
 }
@@ -990,7 +1002,7 @@ fn test_write_read_block_signatures() {
     let mut bsp = BlockSignaturesPure::new();
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     bsp.add_sigpair(CryptoSignaturePair::with_params(UInt256::from([3; 32]), cs));
-    
+
     let bs = BlockSignatures::with_params(ValidatorBaseInfo::default(), bsp);
     write_read_and_assert(bs);
 }
@@ -999,14 +1011,15 @@ fn test_write_read_block_signatures() {
 fn test_write_read_block_proof_with_signatures() {
     use tvm_block::*;
     use tvm_types::*;
-    
-    let proof_for = BlockIdExt::with_params(ShardIdent::default(), 100, UInt256::rand(), UInt256::rand());
+
+    let proof_for =
+        BlockIdExt::with_params(ShardIdent::default(), 100, UInt256::rand(), UInt256::rand());
     let root = SliceData::new(vec![0x01, 0x02]).into_cell();
     let mut bsp = BlockSignaturesPure::new();
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     bsp.add_sigpair(CryptoSignaturePair::with_params(UInt256::from([3; 32]), cs));
     let bs = BlockSignatures::with_params(ValidatorBaseInfo::default(), bsp);
-    
+
     let bp = BlockProof::with_params(proof_for, root, Some(bs));
     write_read_and_assert(bp);
 }
@@ -1017,7 +1030,7 @@ fn test_crypto_signature_from_bytes_invalid_len() {
     let bytes = [1; 63];
     let result = CryptoSignature::from_bytes(&bytes);
     assert!(result.is_err());
-    
+
     // Too long
     let bytes = [1; 65];
     let result = CryptoSignature::from_bytes(&bytes);
@@ -1030,11 +1043,11 @@ fn test_crypto_signature_verify_success() {
     let sk = ed25519_dalek::SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     let data = b"test data for signing";
     let signature = sk.sign(data);
     let crypto_sig = CryptoSignature::from_bytes(&signature.to_bytes()).unwrap();
-    
+
     // This should succeed
     assert!(spk.verify_signature(data, &crypto_sig));
 }
@@ -1042,29 +1055,26 @@ fn test_crypto_signature_verify_success() {
 #[test]
 fn test_block_signatures_pure_check_signatures_success() {
     let mut bsp = BlockSignaturesPure::new();
-    
+
     // Create key pair
     let sk = ed25519_dalek::SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     // Create validator
-    let vd = crate::validators::ValidatorDescr {
-        public_key: spk,
-        weight: 100,
-        ..Default::default()
-    };
-    
+    let vd =
+        crate::validators::ValidatorDescr { public_key: spk, weight: 100, ..Default::default() };
+
     // Sign data
     let data = b"test data for verification";
     let signature = sk.sign(data);
     let crypto_sig = CryptoSignature::from_bytes(&signature.to_bytes()).unwrap();
-    
+
     // Add valid signature pair
     let node_id_short = vd.compute_node_id_short();
     let csp = CryptoSignaturePair::with_params(node_id_short, crypto_sig);
     bsp.add_sigpair(csp);
-    
+
     // This should succeed
     let weight = bsp.check_signatures(&[vd], data).unwrap();
     assert!(weight > 0);
@@ -1074,28 +1084,29 @@ fn test_block_signatures_pure_check_signatures_success() {
 fn test_block_proof_with_signatures_write_read() {
     use tvm_block::*;
     use tvm_types::*;
-    
-    let proof_for = BlockIdExt::with_params(ShardIdent::default(), 100, UInt256::rand(), UInt256::rand());
+
+    let proof_for =
+        BlockIdExt::with_params(ShardIdent::default(), 100, UInt256::rand(), UInt256::rand());
     let root = SliceData::new(vec![0x01, 0x02]).into_cell();
-    
+
     // Create signatures
     let mut bsp = BlockSignaturesPure::new();
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     bsp.add_sigpair(CryptoSignaturePair::with_params(UInt256::from([3; 32]), cs));
     let bs = BlockSignatures::with_params(ValidatorBaseInfo::default(), bsp);
-    
+
     let bp = BlockProof::with_params(proof_for.clone(), root.clone(), Some(bs));
-    
+
     // Serialize
     let mut builder = BuilderData::new();
     bp.write_to(&mut builder).unwrap();
     let cell = builder.into_cell().unwrap();
-    
+
     // Deserialize
     let mut slice = SliceData::load_cell(cell).unwrap();
     let mut bp2 = BlockProof::new();
     bp2.read_from(&mut slice).unwrap();
-    
+
     assert_eq!(bp2.proof_for, proof_for);
     assert!(bp2.signatures.is_some());
 }
@@ -1103,17 +1114,17 @@ fn test_block_proof_with_signatures_write_read() {
 #[test]
 fn test_crypto_signature_serialize_deserialize() {
     let cs = CryptoSignature::from_r_s(&[10; 32], &[20; 32]).unwrap();
-    
+
     // Serialize
     let mut builder = BuilderData::new();
     cs.write_to(&mut builder).unwrap();
     let cell = builder.into_cell().unwrap();
-    
+
     // Deserialize
     let mut slice = SliceData::load_cell(cell).unwrap();
     let mut cs2 = CryptoSignature::default();
     cs2.read_from(&mut slice).unwrap();
-    
+
     assert_eq!(cs, cs2);
 }
 
@@ -1123,16 +1134,16 @@ fn test_sig_pub_key_serialize_deserialize() {
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
+
     // Serialize
     let mut builder = BuilderData::new();
     spk.write_to(&mut builder).unwrap();
     let cell = builder.into_cell().unwrap();
-    
+
     // Deserialize
     let mut slice = SliceData::load_cell(cell).unwrap();
     let spk2 = SigPubKey::construct_from(&mut slice).unwrap();
-    
+
     assert_eq!(spk, spk2);
 }
 
@@ -1143,7 +1154,7 @@ fn test_crypto_signature_from_bytes_success() {
     let data = b"test";
     let signature = sk.sign(data);
     let bytes = signature.to_bytes();
-    
+
     // This should succeed
     let cs = CryptoSignature::from_bytes(&bytes).unwrap();
     assert_eq!(cs.to_bytes(), bytes);
@@ -1160,15 +1171,15 @@ fn test_sig_pub_key_verify_signature_error_branch() {
 
 #[test]
 fn test_crypto_signature_read_from_not_enough_bits() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     // Create a cell with only the tag but not enough bits for signature
     let mut builder = BuilderData::new();
     builder.append_bits(0x5, 4).unwrap(); // CRYPTO_SIGNATURE_TAG
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let mut cs = CryptoSignature::default();
     let result = cs.read_from(&mut slice);
     assert!(result.is_err());
@@ -1176,27 +1187,27 @@ fn test_crypto_signature_read_from_not_enough_bits() {
 
 #[test]
 fn test_sig_pub_key_read_from_not_enough_data() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     let mut builder = BuilderData::new();
     builder.append_u32(0x12345678).unwrap(); // wrong tag
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let result = SigPubKey::construct_from(&mut slice);
     assert!(result.is_err());
 }
 
 #[test]
 fn test_block_signatures_pure_read_from_invalid_data() {
-    use tvm_types::SliceData;
     use tvm_types::BuilderData;
-    
+    use tvm_types::SliceData;
+
     let builder = BuilderData::new();
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
-    
+
     let mut bsp = BlockSignaturesPure::default();
     let result = bsp.read_from(&mut slice);
     assert!(result.is_err());
@@ -1216,24 +1227,21 @@ fn test_verify_signature_error_branch_direct() {
 fn test_block_signatures_pure_check_signatures_no_validator_match() {
     // Test when validator is not in map (line 321: } else { branch)
     let mut bsp = BlockSignaturesPure::new();
-    
+
     // Add a signature
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     let csp = CryptoSignaturePair::with_params(UInt256::from([99; 32]), cs);
     bsp.add_sigpair(csp);
-    
+
     // Create validator with DIFFERENT node_id_short
     use ed25519_dalek::SigningKey;
     let sk = SigningKey::generate(&mut rand::thread_rng());
     let pk: ed25519_dalek::VerifyingKey = (&sk).into();
     let spk = SigPubKey::from_bytes(&pk.to_bytes()).unwrap();
-    
-    let vd = crate::validators::ValidatorDescr {
-        public_key: spk,
-        weight: 100,
-        ..Default::default()
-    };
-    
+
+    let vd =
+        crate::validators::ValidatorDescr { public_key: spk, weight: 100, ..Default::default() };
+
     let data = b"test data";
     let weight = bsp.check_signatures(&[vd], data).unwrap();
     assert_eq!(weight, 0); // No match, no weight added
@@ -1257,7 +1265,7 @@ fn test_crypto_signature_from_bytes_too_long() {
 fn test_block_proof_with_signatures_full_cycle() {
     use tvm_block::*;
     use tvm_types::*;
-    
+
     // Create signatures
     let mut bsp = BlockSignaturesPure::new();
     for i in 0..3 {
@@ -1265,28 +1273,24 @@ fn test_block_proof_with_signatures_full_cycle() {
         let csp = CryptoSignaturePair::with_params(UInt256::from([i; 32]), cs);
         bsp.add_sigpair(csp);
     }
-    
+
     let bs = BlockSignatures::with_params(ValidatorBaseInfo::default(), bsp);
-    
-    let proof_for = BlockIdExt::with_params(
-        ShardIdent::default(),
-        999,
-        UInt256::rand(),
-        UInt256::rand()
-    );
+
+    let proof_for =
+        BlockIdExt::with_params(ShardIdent::default(), 999, UInt256::rand(), UInt256::rand());
     let root = SliceData::new(vec![0x01, 0x02, 0x03]).into_cell();
-    
+
     let bp = BlockProof::with_params(proof_for.clone(), root, Some(bs));
-    
+
     // Serialize and deserialize
     let mut builder = BuilderData::new();
     bp.write_to(&mut builder).unwrap();
     let cell = builder.into_cell().unwrap();
-    
+
     let mut slice = SliceData::load_cell(cell).unwrap();
     let mut bp2 = BlockProof::new();
     bp2.read_from(&mut slice).unwrap();
-    
+
     assert_eq!(bp2.proof_for, proof_for);
     assert!(bp2.signatures.is_some());
 }
