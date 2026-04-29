@@ -388,7 +388,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            params.dapp_id
+                            params.dapp_id.clone()
                         }
                     } else {
                         None

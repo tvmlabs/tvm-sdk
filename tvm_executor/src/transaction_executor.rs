@@ -1050,11 +1050,12 @@ pub trait TransactionExecutor {
             }
         }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
-            if let Some(header) = out_msg.int_header_mut() {
-                header.set_src_dapp_id(message_src_dapp_id.clone().clone());
-            }
-            if let Some(header) = out_msg.cross_dapp_header_mut() {
-                header.set_dst_dapp_id(message_src_dapp_id.clone().unwrap());
+            if let Err(err_code) =
+                normalize_and_validate_out_msg_dapp_ids(&mut out_msg, &message_src_dapp_id)
+            {
+                if process_err_code(err_code, i, &mut phase)? {
+                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                }
             }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
@@ -2130,6 +2131,42 @@ fn check_libraries(init: &StateInit, disable_set_lib: bool, text: &str, msg: &Me
     }
 }
 
+fn normalize_and_validate_out_msg_dapp_ids(
+    msg: &mut Message,
+    effective_src_dapp_id: &Option<UInt256>,
+) -> std::result::Result<(), i32> {
+    if let Some(header) = msg.int_header_mut() {
+        header.set_src_dapp_id(effective_src_dapp_id.clone());
+        if let Some(dst_dapp_id) = header.dst_dapp_id() {
+            if effective_src_dapp_id.as_ref() != Some(dst_dapp_id) {
+                log::warn!(
+                    target: "executor",
+                    "Incorrect internal out message dst dapp id {:?}, effective src dapp id {:?}",
+                    dst_dapp_id,
+                    effective_src_dapp_id
+                );
+                return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
+            }
+        }
+    } else if let Some(header) = msg.cross_dapp_header_mut() {
+        let Some(effective_src_dapp_id) = effective_src_dapp_id else {
+            log::warn!(target: "executor", "Cross-dapp out message produced without effective src dapp id");
+            return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
+        };
+        header.set_src_dapp_id(effective_src_dapp_id.clone());
+        if header.dst_dapp_id() == effective_src_dapp_id {
+            log::warn!(
+                target: "executor",
+                "Incorrect cross-dapp out message dst dapp id {:?}: same as effective src dapp id",
+                effective_src_dapp_id
+            );
+            return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
+        }
+    }
+
+    Ok(())
+}
+
 /// Calculate new account according to inbound message.
 /// If message has no value, account will not created.
 /// If hash of state_init is equal to account address (or flag check address is
@@ -2203,5 +2240,105 @@ fn action_type(action: &OutAction) -> String {
         OutAction::SendToDappConfigToken { value: _ } => "SendToDappConfigToken".to_string(),
         OutAction::ExchangeShell { value: _ } => "ExchangeShell".to_string(),
         _ => "Unknown".to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::CrossDappMessageHeader;
+    use tvm_block::InternalMessageHeader;
+
+    use super::*;
+
+    fn dapp_id(value: u8) -> UInt256 {
+        UInt256::from([value; 32])
+    }
+
+    fn internal_message(dst_dapp_id: Option<UInt256>) -> Message {
+        let mut header = InternalMessageHeader::default();
+        header.set_dst_dapp_id(dst_dapp_id);
+        Message::with_int_header(header)
+    }
+
+    fn cross_dapp_message(src_dapp_id: UInt256, dst_dapp_id: UInt256) -> Message {
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src_dapp_id(src_dapp_id);
+        header.set_dst_dapp_id(dst_dapp_id);
+        Message::with_cross_dapp_header(header)
+    }
+
+    #[test]
+    fn normalizes_internal_out_message_src_dapp_id() {
+        let effective_src_dapp_id = Some(dapp_id(2));
+        let mut msg = internal_message(effective_src_dapp_id.clone());
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
+
+        assert_eq!(msg.int_header().unwrap().src_dapp_id(), &effective_src_dapp_id);
+    }
+
+    #[test]
+    fn rejects_internal_out_message_to_other_dapp() {
+        let effective_src_dapp_id = Some(dapp_id(1));
+        let mut msg = internal_message(Some(dapp_id(2)));
+
+        let err =
+            normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap_err();
+
+        assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
+    }
+
+    #[test]
+    fn allows_internal_out_message_without_dst_dapp_id() {
+        let mut msg = internal_message(None);
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &Some(dapp_id(1))).unwrap();
+
+        assert_eq!(msg.int_header().unwrap().dst_dapp_id(), &None);
+    }
+
+    #[test]
+    fn normalizes_cross_dapp_out_message_src_dapp_id() {
+        let effective_src_dapp_id = Some(dapp_id(1));
+        let mut msg = cross_dapp_message(dapp_id(9), dapp_id(2));
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
+
+        let header = msg.cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), effective_src_dapp_id.as_ref().unwrap());
+        assert_eq!(header.dst_dapp_id(), &dapp_id(2));
+    }
+
+    #[test]
+    fn allows_cross_dapp_out_message_from_deploy_effective_src_dapp_id() {
+        let deploy_src_dapp_id = Some(dapp_id(7));
+        let mut msg = cross_dapp_message(dapp_id(9), dapp_id(2));
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &deploy_src_dapp_id).unwrap();
+
+        assert_eq!(
+            msg.cross_dapp_header().unwrap().src_dapp_id(),
+            deploy_src_dapp_id.as_ref().unwrap()
+        );
+    }
+
+    #[test]
+    fn rejects_cross_dapp_out_message_to_same_dapp() {
+        let effective_src_dapp_id = Some(dapp_id(1));
+        let mut msg = cross_dapp_message(dapp_id(9), dapp_id(1));
+
+        let err =
+            normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap_err();
+
+        assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
+    }
+
+    #[test]
+    fn rejects_cross_dapp_out_message_without_effective_src_dapp_id() {
+        let mut msg = cross_dapp_message(dapp_id(1), dapp_id(2));
+
+        let err = normalize_and_validate_out_msg_dapp_ids(&mut msg, &None).unwrap_err();
+
+        assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
     }
 }
