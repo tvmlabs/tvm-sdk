@@ -913,3 +913,39 @@ impl Augmentation<u8> for u8 {
         unreachable!()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #![allow(dead_code)]
+
+    use std::fmt;
+
+    use tvm_types::hm_label;
+
+    use super::*;
+
+    define_HashmapAugE!(TestAugMap, 8, u8, u8, u8);
+
+    impl HashmapAugRemover<u8, u8, u8> for TestAugMap {}
+
+    #[test]
+    fn hashmap_aug_new_set_get_roundtrip_and_delete() {
+        let mut map = TestAugMap::new();
+        assert_eq!(map.get(&1).unwrap(), None);
+        assert_eq!(*map.root_extra(), 0);
+
+        map.set(&1, &10, &10).unwrap();
+        map.set(&2, &5, &5).unwrap();
+
+        assert_eq!(map.get(&1).unwrap(), Some(10));
+        assert_eq!(map.get_with_aug(&2).unwrap(), Some((5, 5)));
+        assert_eq!(*map.root_extra(), 10);
+
+        let parsed = TestAugMap::construct_from_cell(map.serialize().unwrap()).unwrap();
+        assert_eq!(parsed.get(&1).unwrap(), Some(10));
+        assert_eq!(*parsed.root_extra(), 10);
+
+        map.del(&1).unwrap();
+        assert_eq!(map.get(&1).unwrap(), None);
+    }
+}

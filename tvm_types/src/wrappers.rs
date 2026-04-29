@@ -317,4 +317,35 @@ mod tests {
         let mut output = [0u8; 10]; // Output buffer with a length mismatch
         base64_decode_to_exact_slice(input, &mut output).unwrap();
     }
+
+    #[test]
+    fn test_base64_encode_url_safe_uses_url_alphabet() {
+        let encoded = base64_encode_url_safe([0xfb, 0xef, 0xff]);
+        assert!(encoded.contains('-'));
+        assert!(encoded.contains('_'));
+    }
+
+    #[test]
+    fn test_aes_ctr_encrypts_and_decrypts_selected_range() {
+        let key = [7u8; 32];
+        let ctr = [9u8; 16];
+        let mut cipher = AesCtr::with_params(&key, &ctr).unwrap();
+        let mut buf = *b"abcdef";
+        let original = buf;
+
+        cipher.apply_keystream(&mut buf, 1..5).unwrap();
+        assert_ne!(buf, original);
+        assert_eq!(buf[0], original[0]);
+        assert_eq!(buf[5], original[5]);
+
+        let mut decipher = AesCtr::with_params(&key, &ctr).unwrap();
+        decipher.apply_keystream(&mut buf, 1..5).unwrap();
+        assert_eq!(buf, original);
+    }
+
+    #[test]
+    fn test_aes_ctr_rejects_invalid_key_or_counter_length() {
+        assert!(AesCtr::with_params(&[1u8; 31], &[2u8; 16]).is_err());
+        assert!(AesCtr::with_params(&[1u8; 32], &[2u8; 15]).is_err());
+    }
 }

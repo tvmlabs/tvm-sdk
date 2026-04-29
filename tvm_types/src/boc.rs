@@ -1476,3 +1476,212 @@ where
         Ok(rest)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::BuilderData;
+
+    fn byte_cell(byte: u8) -> Cell {
+        BuilderData::with_raw(vec![byte], 8).unwrap().into_cell().unwrap()
+    }
+
+    #[test]
+    fn simple_ordered_storage_reports_missing_entries() {
+        let mut storage = SimpleOrderedCellsStorage::default();
+        let cell = byte_cell(0xaa);
+
+        assert!(!storage.contains_hash(&cell.repr_hash()).unwrap());
+        assert!(storage.get_cell_by_index(0).is_err());
+        assert!(storage.get_rev_index_by_hash(&cell.repr_hash()).is_err());
+
+        storage.store_cell(cell.clone()).unwrap();
+        assert!(storage.contains_hash(&cell.repr_hash()).unwrap());
+        storage.push_cell(&cell.repr_hash()).unwrap();
+        assert_eq!(storage.get_cell_by_index(0).unwrap().repr_hash(), cell.repr_hash());
+        assert_eq!(storage.get_rev_index_by_hash(&cell.repr_hash()).unwrap(), 0);
+        storage.cleanup().unwrap();
+    }
+
+    #[test]
+    fn boc_writer_helpers_produce_same_output() {
+        let cell = byte_cell(0x5a);
+
+        let direct = write_boc(&cell).unwrap();
+
+        let mut to_dest = Vec::new();
+        write_boc_to(&cell, &mut to_dest).unwrap();
+        assert_eq!(direct, to_dest);
+
+        let mut owned = Vec::new();
+        BocWriter::with_owned_root(cell.clone()).unwrap().write(&mut owned).unwrap();
+        assert_eq!(direct, owned);
+
+        let writer = BocWriter::with_root(&cell).unwrap();
+        assert_eq!(writer.roots_count(), 1);
+        assert_eq!(writer.cells_count(), 1);
+    }
+
+    #[test]
+    fn write_ex_roundtrip_covers_index_crc_and_custom_sizes() {
+        let cell = byte_cell(0xa5);
+        let mut boc = Vec::new();
+
+        BocWriter::with_root(&cell)
+            .unwrap()
+            .write_ex(&mut boc, true, true, Some(2), Some(3))
+            .unwrap();
+
+        let result = read_boc(&boc).unwrap();
+        assert_eq!(result.roots.len(), 1);
+        assert_eq!(result.roots[0].repr_hash(), cell.repr_hash());
+        assert!(result.header.index_included);
+        assert!(result.header.has_crc);
+        assert_eq!(result.header.ref_size, 2);
+        assert_eq!(result.header.offset_size, 3);
+        assert_eq!(result.header.roots_count, 1);
+        assert_eq!(result.header.cells_count, 1);
+    }
+
+    #[test]
+    fn writer_rejects_duplicate_roots_and_reader_handles_empty_input() {
+        let cell = byte_cell(0x33);
+
+        assert!(BocWriter::with_roots([cell.clone(), cell]).is_err());
+        assert!(read_boc([]).is_err());
+        assert!(read_single_root_boc([]).is_err());
+    }
+
+    #[test]
+    fn writer_and_reader_obey_abort_callbacks() {
+        let cell = byte_cell(0x44);
+        let abort = || true;
+
+        assert!(
+            BocWriter::with_params(
+                [cell.clone()],
+                MAX_SAFE_DEPTH,
+                SimpleOrderedCellsStorage::default(),
+                &abort,
+            )
+            .is_err()
+        );
+
+        let boc = write_boc(&cell).unwrap();
+        let mut cursor = Cursor::new(&boc);
+        assert!(BocReader::new().set_abort(&abort).read(&mut cursor).is_err());
+    }
+
+    #[test]
+    fn multi_root_roundtrip_preserves_root_order() {
+        let left = byte_cell(0x10);
+        let right = byte_cell(0x20);
+
+        let mut boc = Vec::new();
+        BocWriter::with_roots([left.clone(), right.clone()]).unwrap().write(&mut boc).unwrap();
+
+        let result = read_boc(&boc).unwrap();
+        assert_eq!(result.roots.len(), 2);
+        assert_eq!(result.roots[0].repr_hash(), left.repr_hash());
+        assert_eq!(result.roots[1].repr_hash(), right.repr_hash());
+        assert!(read_single_root_boc(&boc).is_err());
+    }
+
+    #[test]
+    fn read_inmem_matches_stream_reader() {
+        let cell = byte_cell(0x66);
+        let mut boc = Vec::new();
+        BocWriter::with_root(&cell).unwrap().write_ex(&mut boc, true, false, None, None).unwrap();
+
+        let stream = read_boc(&boc).unwrap();
+        let inmem = BocReader::new().read_inmem(Arc::new(boc)).unwrap();
+
+        assert_eq!(stream.header.index_included, inmem.header.index_included);
+        assert_eq!(stream.roots[0].repr_hash(), inmem.roots[0].repr_hash());
+    }
+
+    #[test]
+    fn crc_mismatch_is_rejected_by_stream_and_inmem_readers() {
+        let cell = byte_cell(0x77);
+        let mut boc = Vec::new();
+        BocWriter::with_root(&cell).unwrap().write_ex(&mut boc, false, true, None, None).unwrap();
+        *boc.last_mut().unwrap() ^= 0xff;
+
+        assert!(read_boc(&boc).is_err());
+        assert!(BocReader::new().read_inmem(Arc::new(boc)).is_err());
+    }
+
+    #[test]
+    fn malformed_headers_are_rejected() {
+        let cell = byte_cell(0x88);
+        let boc = write_boc(&cell).unwrap();
+
+        let mut cases = Vec::new();
+
+        let mut unknown_tag = boc.clone();
+        unknown_tag[..4].copy_from_slice(&0_u32.to_be_bytes());
+        cases.push(unknown_tag);
+
+        let mut non_zero_flags = boc.clone();
+        non_zero_flags[4] = 0b0000_1001;
+        cases.push(non_zero_flags);
+
+        let mut cache_without_index = boc.clone();
+        cache_without_index[4] = 0b0010_0001;
+        cases.push(cache_without_index);
+
+        let mut zero_ref_size = boc.clone();
+        zero_ref_size[4] = 0;
+        cases.push(zero_ref_size);
+
+        let mut zero_offset_size = boc.clone();
+        zero_offset_size[5] = 0;
+        cases.push(zero_offset_size);
+
+        let mut zero_cells = boc.clone();
+        zero_cells[6] = 0;
+        cases.push(zero_cells);
+
+        let mut zero_roots = boc.clone();
+        zero_roots[7] = 0;
+        cases.push(zero_roots);
+
+        let mut absent_cells = boc.clone();
+        absent_cells[6] = 2;
+        absent_cells[8] = 1;
+        cases.push(absent_cells);
+
+        let mut invalid_root_index = boc;
+        invalid_root_index[10] = 1;
+        cases.push(invalid_root_index);
+
+        for data in cases {
+            assert!(BocReader::read_header(&mut Cursor::new(data)).is_err());
+        }
+    }
+
+    #[test]
+    fn malformed_reference_index_is_rejected() {
+        let child = byte_cell(0x22);
+        let mut builder = BuilderData::with_raw(vec![0x11], 8).unwrap();
+        builder.checked_append_reference(child).unwrap();
+        let root = builder.into_cell().unwrap();
+        let mut boc = write_boc(&root).unwrap();
+
+        let mut cursor = Cursor::new(&boc);
+        let _ = BocReader::read_header(&mut cursor).unwrap();
+        let first_cell_offset = cursor.position() as usize;
+        let raw_len = full_len(&boc[first_cell_offset..first_cell_offset + 2]);
+        boc[first_cell_offset + raw_len] = 0;
+
+        assert!(read_boc(&boc).is_err());
+    }
+
+    #[test]
+    fn number_of_bytes_to_fit_handles_boundaries() {
+        assert_eq!(BocWriter::<SimpleOrderedCellsStorage>::number_of_bytes_to_fit(0), 0);
+        assert_eq!(BocWriter::<SimpleOrderedCellsStorage>::number_of_bytes_to_fit(1), 1);
+        assert_eq!(BocWriter::<SimpleOrderedCellsStorage>::number_of_bytes_to_fit(0xff), 1);
+        assert_eq!(BocWriter::<SimpleOrderedCellsStorage>::number_of_bytes_to_fit(0x100), 2);
+    }
+}

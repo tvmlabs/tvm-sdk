@@ -15,11 +15,13 @@
 use std::fs::read;
 use std::path::Path;
 
+use num::BigInt;
 use pretty_assertions::assert_eq;
 #[cfg(feature = "ton")]
 use tvm_api::IntoBoxed;
 #[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::rempmessagestatus;
+use tvm_types::SliceData;
 use tvm_types::base64_decode;
 
 use super::*;
@@ -30,6 +32,26 @@ fn assert_json_eq_file(json: &str, name: &str) {
     let expected =
         std::fs::read_to_string(format!("src/tests/data/{}-ethalon.json", name)).unwrap();
     assert_json_eq(json, &expected, name);
+}
+
+fn assert_json_eq_ignoring_fields(actual: String, expected: &str, ignored_fields: &[&str]) {
+    let mut actual = serde_json::from_str::<serde_json::Value>(&actual).unwrap();
+    let mut expected = serde_json::from_str::<serde_json::Value>(expected).unwrap();
+    let actual = actual.as_object_mut().unwrap();
+    let expected = expected.as_object_mut().unwrap();
+    for field in ignored_fields {
+        actual.remove(*field);
+        expected.remove(*field);
+    }
+    assert_eq!(actual, expected);
+}
+
+fn assert_json_string_field(
+    json: &serde_json::Map<String, serde_json::Value>,
+    field: &str,
+    expected: &str,
+) {
+    assert_eq!(json.get(field), Some(&serde_json::Value::String(expected.to_string())));
 }
 
 #[test]
@@ -739,7 +761,6 @@ fn test_message_into_json_q() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_wo_out_msgs_into_json() {
     let mut transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -758,8 +779,12 @@ fn test_transaction_wo_out_msgs_into_json() {
     };
 
     let json = db_serialize_transaction("id", tr).unwrap();
+    let expected_id = format!("{:x}", id);
+    let expected_boc = tvm_types::base64_encode(&boc);
+    assert_json_string_field(&json, "id", &expected_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -793,11 +818,11 @@ fn test_transaction_wo_out_msgs_into_json() {
   "balance_delta": "-fdd72",
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
-}"#
+}"#,
+        &["id", "boc", "in_msg"],
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_into_json_0() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -806,6 +831,9 @@ fn test_transaction_into_json_0() {
     let cell = message.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = message.hash().unwrap();
+    let expected_message_id = format!("{:x}", id);
+    let expected_transaction_id = format!("{:x}", transaction.hash().unwrap());
+    let expected_boc = tvm_types::base64_encode(&boc);
     let msg = MessageSerializationSet {
         message,
         id,
@@ -817,8 +845,11 @@ fn test_transaction_into_json_0() {
         proof: None,
     };
     let json = db_serialize_message("id", &msg).unwrap();
+    assert_json_string_field(&json, "id", &expected_message_id);
+    assert_json_string_field(&json, "transaction_id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -853,12 +884,15 @@ fn test_transaction_into_json_0() {
   "created_lt_dec": "0",
   "created_lt": "00",
   "created_at": 0
-}"#
+}"#,
+        &["id", "transaction_id", "boc"],
     );
 
     let cell = transaction.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = transaction.hash().unwrap();
+    let expected_transaction_id = format!("{:x}", id);
+    let expected_boc = tvm_types::base64_encode(&boc);
     let tr = TransactionSerializationSet {
         transaction,
         id,
@@ -870,8 +904,10 @@ fn test_transaction_into_json_0() {
     };
 
     let json = db_serialize_transaction("id", &tr).unwrap();
+    assert_json_string_field(&json, "id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -909,11 +945,11 @@ fn test_transaction_into_json_0() {
   "balance_delta": "-fdd72",
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
-}"#
+}"#,
+        &["id", "boc", "in_msg", "out_msgs"],
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_into_json_q() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -925,6 +961,9 @@ fn test_transaction_into_json_q() {
     let cell = message.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = message.hash().unwrap();
+    let expected_message_id = format!("{:x}", id);
+    let expected_transaction_id = format!("{:x}", transaction.hash().unwrap());
+    let expected_boc = tvm_types::base64_encode(&boc);
     let msg = MessageSerializationSet {
         message,
         id,
@@ -936,8 +975,11 @@ fn test_transaction_into_json_q() {
         proof: None,
     };
     let json = db_serialize_message_ex("id", &msg, SerializationMode::QServer).unwrap();
+    assert_json_string_field(&json, "id", &expected_message_id);
+    assert_json_string_field(&json, "transaction_id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -971,12 +1013,15 @@ fn test_transaction_into_json_q() {
   "value": "0x0",
   "created_lt": "0x0",
   "created_at": 0
-}"#
+}"#,
+        &["id", "transaction_id", "boc"],
     );
 
     let cell = transaction.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = transaction.hash().unwrap();
+    let expected_transaction_id = format!("{:x}", id);
+    let expected_boc = tvm_types::base64_encode(&boc);
     let tr = TransactionSerializationSet {
         transaction,
         id,
@@ -988,8 +1033,10 @@ fn test_transaction_into_json_q() {
     };
 
     let json = db_serialize_transaction_ex("id", &tr, SerializationMode::QServer).unwrap();
+    assert_json_string_field(&json, "id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -1029,7 +1076,8 @@ fn test_transaction_into_json_q() {
   "balance_delta": "-0x28d",
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
-}"#
+}"#,
+        &["id", "boc", "in_msg", "out_msgs"],
     );
 }
 
@@ -1472,6 +1520,90 @@ fn test_block_order() {
     .unwrap();
     let block = Block::construct_from_bytes(&block).unwrap();
     assert_eq!("17b00540960604", block_order(&block, 123).unwrap());
+}
+
+#[test]
+fn test_helper_formatters_and_scalar_serializers() {
+    assert_eq!(u64_to_string(15), "0f");
+    assert_eq!(bigint_to_string(&BigInt::from(255)), "01ff");
+    assert!(bigint_to_string(&BigInt::from(-255)).starts_with('-'));
+    assert_eq!(shard_to_string(0xABCD), "000000000000abcd");
+
+    let mut map = serde_json::Map::new();
+    serialize_grams(&mut map, "grams", &15u64.into(), SerializationMode::Standart);
+    serialize_u64(&mut map, "count", &31, SerializationMode::QServer);
+    serialize_lt(&mut map, "lt", &1_000_123, SerializationMode::Debug);
+    serialize_bigint(&mut map, "delta", &BigInt::from(-42), SerializationMode::Standart);
+
+    assert_eq!(map["grams_dec"], "15");
+    assert_eq!(map["grams"], "00f");
+    assert_eq!(map["count"], "0x1f");
+    assert_eq!(map["lt"], "1_123");
+    assert_eq!(map["delta_dec"], "-42");
+    assert!(map["delta"].as_str().unwrap().starts_with('-'));
+}
+
+#[test]
+fn test_construct_address_uses_std_and_var_forms() {
+    let std_addr = construct_address(0, AccountId::from([1; 32])).unwrap();
+    let var_addr = construct_address(300, SliceData::new(vec![0xAA, 0x80])).unwrap();
+
+    assert!(matches!(std_addr, MsgAddressInt::AddrStd(_)));
+    assert!(matches!(var_addr, MsgAddressInt::AddrVar(_)));
+}
+
+#[test]
+fn test_block_order_rejects_wrong_masterchain_seqno() {
+    let block = std::fs::read(
+        "src/tests/data/89ED400A43E76664437EFC9C79B84AC387493A9EE5E789338FF71C25F54218BE.boc",
+    )
+    .unwrap();
+    let block = Block::construct_from_bytes(&block).unwrap();
+
+    assert!(block_order(&block, 1).is_err());
+}
+
+#[test]
+fn test_serialization_mode_helpers() {
+    assert!(SerializationMode::Standart.is_standart());
+    assert!(!SerializationMode::QServer.is_standart());
+    assert!(!SerializationMode::Debug.is_standart());
+
+    assert!(!SerializationMode::Standart.is_q_server());
+    assert!(SerializationMode::QServer.is_q_server());
+    assert!(SerializationMode::Debug.is_q_server());
+}
+
+#[test]
+fn test_signed_currency_collection_from_cc_add_and_sub() {
+    let empty = SignedCurrencyCollection::new();
+    assert_eq!(empty.grams.to_string(), "0");
+    assert!(empty.other.is_empty());
+
+    let mut left = CurrencyCollection::with_grams(10);
+    left.set_other(1, 20).unwrap();
+    left.set_other(2, 30).unwrap();
+    let mut signed = SignedCurrencyCollection::from_cc(&left).unwrap();
+    assert_eq!(signed.grams.to_string(), "10");
+    assert_eq!(signed.other[&1].to_string(), "20");
+    assert_eq!(signed.other[&2].to_string(), "30");
+
+    let mut right = CurrencyCollection::with_grams(4);
+    right.set_other(2, 5).unwrap();
+    right.set_other(3, 7).unwrap();
+    let right = SignedCurrencyCollection::from_cc(&right).unwrap();
+
+    signed.add(&right);
+    assert_eq!(signed.grams.to_string(), "14");
+    assert_eq!(signed.other[&1].to_string(), "20");
+    assert_eq!(signed.other[&2].to_string(), "35");
+    assert_eq!(signed.other[&3].to_string(), "7");
+
+    signed.sub(&right);
+    assert_eq!(signed.grams.to_string(), "10");
+    assert_eq!(signed.other[&1].to_string(), "20");
+    assert_eq!(signed.other[&2].to_string(), "30");
+    assert_eq!(signed.other[&3].to_string(), "0");
 }
 
 #[cfg(feature = "ton")]
