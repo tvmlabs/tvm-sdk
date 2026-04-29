@@ -198,6 +198,11 @@ impl UsageTree {
 
 #[cfg(test)]
 mod tests {
+    use std::hash::BuildHasher;
+    use std::hash::Hasher;
+
+    use crate::cell::usage_cell::UInt256HashBuilder;
+    use crate::BuilderData;
     use crate::Cell;
     use crate::UsageTree;
     use crate::read_single_root_boc;
@@ -246,6 +251,91 @@ mod tests {
         for child in cell.clone_references() {
             traverse_cell_inner(&child, visited_cells, usage_tree, drop_usage_tree_after);
         }
+    }
+
+    fn byte_cell(value: u8) -> Cell {
+        BuilderData::with_raw(vec![value], 8).unwrap().into_cell().unwrap()
+    }
+
+    fn parent_cell(children: [Cell; 2]) -> Cell {
+        BuilderData::with_raw_and_refs(Vec::<u8>::new(), 0, children).unwrap().into_cell().unwrap()
+    }
+
+    #[test]
+    fn usage_tree_tracks_visits_and_take_visited_set_resets_state() {
+        let left = byte_cell(0x11);
+        let right = byte_cell(0x22);
+        let root = parent_cell([left.clone(), right.clone()]);
+        let usage = UsageTree::with_params(root.clone(), false);
+        let usage_root = usage.root_cell();
+
+        assert_eq!(usage.total_visited_count(), 0);
+        assert!(usage_root.reference(0).is_ok());
+        assert_eq!(usage.total_visited_count(), 1);
+        assert!(usage.contains(&root.repr_hash()));
+
+        let left_usage = usage_root.reference(0).unwrap();
+        let _ = left_usage.data();
+        assert_eq!(usage.total_visited_count(), 2);
+        assert!(usage.contains(&left.repr_hash()));
+        assert!(!usage.contains(&right.repr_hash()));
+
+        let taken = usage.take_visited_set();
+        assert!(taken.contains(&root.repr_hash()));
+        assert!(taken.contains(&left.repr_hash()));
+        assert!(!taken.contains(&right.repr_hash()));
+        assert_eq!(usage.total_visited_count(), 0);
+        assert!(usage.build_visited_set().is_empty());
+    }
+
+    #[test]
+    fn use_cell_opt_wraps_cell_and_marks_on_load_when_requested() {
+        let usage = UsageTree::with_root(byte_cell(0x55));
+        let wrapped = byte_cell(0x77);
+        let mut cell_opt = Some(wrapped.clone());
+
+        usage.use_cell_opt(&mut cell_opt, true);
+
+        let wrapped_opt = cell_opt.unwrap();
+        assert_eq!(usage.total_visited_count(), 1);
+        assert_eq!(wrapped_opt.repr_hash(), wrapped.repr_hash());
+        assert!(usage.contains(&wrapped.repr_hash()));
+    }
+
+    #[test]
+    fn subtree_map_and_external_wrappers_cover_remaining_usage_paths() {
+        let left = byte_cell(0x10);
+        let right = byte_cell(0x20);
+        let root = parent_cell([left.clone(), right.clone()]);
+        let usage = UsageTree::with_params(root.clone(), true);
+        let usage_root = usage.root_cell();
+
+        let left_usage = usage_root.reference(0).unwrap();
+        let right_usage = usage_root.reference(1).unwrap();
+        assert_eq!(left_usage.raw_data().unwrap().last(), Some(&0x10));
+        assert_eq!(right_usage.to_external().unwrap().repr_hash(), right.repr_hash());
+
+        let taken = usage.take_visited_map();
+        let subtree =
+            UsageTree::build_visited_subtree_inner(&taken, &|hash| hash == &root.repr_hash())
+                .unwrap();
+        assert!(subtree.contains(&root.repr_hash()));
+        assert!(subtree.contains(&left.repr_hash()));
+        assert!(subtree.contains(&right.repr_hash()));
+
+        assert!(taken.contains_key(&root.repr_hash()));
+        assert!(taken.contains_key(&left.repr_hash()));
+        assert!(taken.contains_key(&right.repr_hash()));
+        assert!(usage.build_visited_set().is_empty());
+    }
+
+    #[test]
+    fn uint256_hasher_uses_first_u64_bytes() {
+        let mut hasher = UInt256HashBuilder.build_hasher();
+        hasher.write(&[1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(hasher.finish(), u64::from_le_bytes([1, 2, 3, 4, 5, 6, 7, 8]));
+        hasher.write_u64(42);
+        assert_eq!(hasher.finish(), 42);
     }
 }
 
