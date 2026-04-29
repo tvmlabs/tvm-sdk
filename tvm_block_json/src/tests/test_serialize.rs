@@ -34,6 +34,26 @@ fn assert_json_eq_file(json: &str, name: &str) {
     assert_json_eq(json, &expected, name);
 }
 
+fn assert_json_eq_ignoring_fields(actual: String, expected: &str, ignored_fields: &[&str]) {
+    let mut actual = serde_json::from_str::<serde_json::Value>(&actual).unwrap();
+    let mut expected = serde_json::from_str::<serde_json::Value>(expected).unwrap();
+    let actual = actual.as_object_mut().unwrap();
+    let expected = expected.as_object_mut().unwrap();
+    for field in ignored_fields {
+        actual.remove(*field);
+        expected.remove(*field);
+    }
+    assert_eq!(actual, expected);
+}
+
+fn assert_json_string_field(
+    json: &serde_json::Map<String, serde_json::Value>,
+    field: &str,
+    expected: &str,
+) {
+    assert_eq!(json.get(field), Some(&serde_json::Value::String(expected.to_string())));
+}
+
 #[test]
 fn test_account_into_json_without_hash_0() {
     let account = generate_test_account_by_init_code_hash(false);
@@ -741,7 +761,6 @@ fn test_message_into_json_q() {
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_wo_out_msgs_into_json() {
     let mut transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -760,8 +779,12 @@ fn test_transaction_wo_out_msgs_into_json() {
     };
 
     let json = db_serialize_transaction("id", tr).unwrap();
+    let expected_id = format!("{:x}", id);
+    let expected_boc = tvm_types::base64_encode(&boc);
+    assert_json_string_field(&json, "id", &expected_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -795,11 +818,11 @@ fn test_transaction_wo_out_msgs_into_json() {
   "balance_delta": "-fdd72",
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
-}"#
+}"#,
+        &["id", "boc", "in_msg"],
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_into_json_0() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -808,6 +831,9 @@ fn test_transaction_into_json_0() {
     let cell = message.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = message.hash().unwrap();
+    let expected_message_id = format!("{:x}", id);
+    let expected_transaction_id = format!("{:x}", transaction.hash().unwrap());
+    let expected_boc = tvm_types::base64_encode(&boc);
     let msg = MessageSerializationSet {
         message,
         id,
@@ -819,8 +845,11 @@ fn test_transaction_into_json_0() {
         proof: None,
     };
     let json = db_serialize_message("id", &msg).unwrap();
+    assert_json_string_field(&json, "id", &expected_message_id);
+    assert_json_string_field(&json, "transaction_id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -855,12 +884,15 @@ fn test_transaction_into_json_0() {
   "created_lt_dec": "0",
   "created_lt": "00",
   "created_at": 0
-}"#
+}"#,
+        &["id", "transaction_id", "boc"],
     );
 
     let cell = transaction.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = transaction.hash().unwrap();
+    let expected_transaction_id = format!("{:x}", id);
+    let expected_boc = tvm_types::base64_encode(&boc);
     let tr = TransactionSerializationSet {
         transaction,
         id,
@@ -872,8 +904,10 @@ fn test_transaction_into_json_0() {
     };
 
     let json = db_serialize_transaction("id", &tr).unwrap();
+    assert_json_string_field(&json, "id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -911,11 +945,11 @@ fn test_transaction_into_json_0() {
   "balance_delta": "-fdd72",
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
-}"#
+}"#,
+        &["id", "boc", "in_msg", "out_msgs"],
     );
 }
 
-#[ignore]
 #[test]
 fn test_transaction_into_json_q() {
     let transaction = generate_tranzaction(AccountId::from([55; 32]));
@@ -927,6 +961,9 @@ fn test_transaction_into_json_q() {
     let cell = message.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = message.hash().unwrap();
+    let expected_message_id = format!("{:x}", id);
+    let expected_transaction_id = format!("{:x}", transaction.hash().unwrap());
+    let expected_boc = tvm_types::base64_encode(&boc);
     let msg = MessageSerializationSet {
         message,
         id,
@@ -938,8 +975,11 @@ fn test_transaction_into_json_q() {
         proof: None,
     };
     let json = db_serialize_message_ex("id", &msg, SerializationMode::QServer).unwrap();
+    assert_json_string_field(&json, "id", &expected_message_id);
+    assert_json_string_field(&json, "transaction_id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -973,12 +1013,15 @@ fn test_transaction_into_json_q() {
   "value": "0x0",
   "created_lt": "0x0",
   "created_at": 0
-}"#
+}"#,
+        &["id", "transaction_id", "boc"],
     );
 
     let cell = transaction.serialize().unwrap();
     let boc = write_boc(&cell).unwrap();
     let id = transaction.hash().unwrap();
+    let expected_transaction_id = format!("{:x}", id);
+    let expected_boc = tvm_types::base64_encode(&boc);
     let tr = TransactionSerializationSet {
         transaction,
         id,
@@ -990,8 +1033,10 @@ fn test_transaction_into_json_q() {
     };
 
     let json = db_serialize_transaction_ex("id", &tr, SerializationMode::QServer).unwrap();
+    assert_json_string_field(&json, "id", &expected_transaction_id);
+    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_eq!(
+    assert_json_eq_ignoring_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -1031,7 +1076,8 @@ fn test_transaction_into_json_q() {
   "balance_delta": "-0x28d",
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
-}"#
+}"#,
+        &["id", "boc", "in_msg", "out_msgs"],
     );
 }
 
