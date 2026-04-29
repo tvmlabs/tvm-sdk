@@ -2154,14 +2154,6 @@ fn normalize_and_validate_out_msg_dapp_ids(
             return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
         };
         header.set_src_dapp_id(effective_src_dapp_id.clone());
-        if header.dst_dapp_id() == effective_src_dapp_id {
-            log::warn!(
-                target: "executor",
-                "Incorrect cross-dapp out message dst dapp id {:?}: same as effective src dapp id",
-                effective_src_dapp_id
-            );
-            return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
-        }
     }
 
     Ok(())
@@ -2323,14 +2315,15 @@ mod tests {
     }
 
     #[test]
-    fn rejects_cross_dapp_out_message_to_same_dapp() {
+    fn allows_cross_dapp_out_message_to_same_dapp() {
         let effective_src_dapp_id = Some(dapp_id(1));
         let mut msg = cross_dapp_message(dapp_id(9), dapp_id(1));
 
-        let err =
-            normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap_err();
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
 
-        assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
+        let header = msg.cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), effective_src_dapp_id.as_ref().unwrap());
+        assert_eq!(header.dst_dapp_id(), effective_src_dapp_id.as_ref().unwrap());
     }
 
     #[test]
