@@ -320,7 +320,6 @@ fn prepare_data_for_bench(
 // (`blocks_count`) named by their seqno starting from `start_number` in the
 // `root_path`/blocks dir, and shard state for start block in `root_path`/states
 // dir (named like the start block)
-#[ignore]
 #[test]
 fn merkle_update_apply_benchmark() {
     let max_threads = 4;
@@ -328,6 +327,12 @@ fn merkle_update_apply_benchmark() {
     let root_path = "/full-node-test";
     let shard = "0c00000000000000";
     let start_block = 4440457;
+    let start_state_path = format!("{}/states/{}/{}", root_path, shard, start_block);
+
+    if !Path::new(&start_state_path).exists() {
+        println!("Skipping benchmark: missing {}", start_state_path);
+        return;
+    }
 
     for threads in 1..=max_threads {
         // Prepare
