@@ -8,6 +8,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+.an'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc-auto.an'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -216,3 +217,32 @@ jobs:
           gh release upload "${{ github.ref_name }}" \
             artifacts-*/**.tar.gz \
             --clobber
+
+  trigger-acki-nacki:
+    needs:
+      - release
+    if: endsWith(github.ref_name, '-rc-auto.an')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger downstream pipeline
+        env:
+          WOODPECKER_HOST: ${{ secrets.WOODPECKER_HOST }}
+          WOODPECKER_TOKEN: ${{ secrets.WOODPECKER_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          version="${TAG%-rc-auto.an}"
+          test_branch="${version}-rc.an-release-testing"
+
+          payload=$(jq -n \
+            --arg tb "$test_branch" \
+            --arg t "$TAG" \
+            --arg a "$ACTOR" \
+            '{branch: "dev", variables: {test_branch: $tb, tag: $t, actor: $a}}')
+
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${WOODPECKER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            -o /dev/null -w "HTTP %{http_code}\n" \
+            "${WOODPECKER_HOST}"
