@@ -113,7 +113,7 @@ impl Error {
             ComputeSkipReason::Suspended => Self::account_is_suspended(address),
         };
 
-        error.data["phase"] = "computeSkipped".into();
+        error.data_mut()["phase"] = "computeSkipped".into();
 
         error
     }
@@ -139,8 +139,8 @@ impl Error {
             },
         );
 
-        if show_tips && !error.message.to_lowercase().contains("exit code") {
-            error.message.push_str(&format!(", exit code: {}", exit_code));
+        if show_tips && !error.message().to_lowercase().contains("exit code") {
+            error.message_mut().push_str(&format!(", exit code: {}", exit_code));
 
             let tip = match exit_code {
                 0 => Some(
@@ -165,48 +165,48 @@ impl Error {
             };
 
             if let Some(tip) = tip {
-                error.message.push_str(&format!("\nTip: {}", tip));
+                error.message_mut().push_str(&format!("\nTip: {}", tip));
             }
         }
 
-        error.data["phase"] = "computeVm".into();
-        error.data["exit_code"] = exit_code.into();
-        error.data["exit_arg"] = serde_json::json!(exit_arg);
-        error.data["account_address"] = address.to_string().into();
+        error.data_mut()["phase"] = "computeVm".into();
+        error.data_mut()["exit_code"] = exit_code.into();
+        error.data_mut()["exit_arg"] = serde_json::json!(exit_arg);
+        error.data_mut()["account_address"] = address.to_string().into();
         if let Some(gas_used) = gas_used {
-            error.data["gas_used"] = gas_used.into();
+            error.data_mut()["gas_used"] = gas_used.into();
         }
 
         if let Some(error_code) = ExceptionCode::from_usize(exit_code as usize)
             .or(ExceptionCode::from_usize(!exit_code as usize))
         {
-            error.message.push_str(&format!(" ({})", error_code));
-            error.data["description"] = error_code.to_string().into();
+            error.message_mut().push_str(&format!(" ({})", error_code));
+            error.data_mut()["description"] = error_code.to_string().into();
             if error_code == ExceptionCode::OutOfGas {
-                error.message.push_str(". Check account balance");
+                error.message_mut().push_str(". Check account balance");
                 if gas_used.is_none() && exit_arg.is_some() {
                     if let Some(exit_arg) = exit_arg {
-                        error.data["gas_used"] = exit_arg;
+                        error.data_mut()["gas_used"] = exit_arg;
                     }
                 }
             }
         } else if let Some(code) = StdContractError::from_usize(exit_code as usize) {
-            error.message.push_str(&format!(" ({})", code));
-            error.data["description"] = code.to_string().into();
+            error.message_mut().push_str(&format!(" ({})", code));
+            error.data_mut()["description"] = code.to_string().into();
             if let Some(tip) = code.tip() {
-                error.message.push_str(". ");
-                error.message.push_str(tip);
+                error.message_mut().push_str(". ");
+                error.message_mut().push_str(tip);
             }
         } else if let Some(ref exit_arg) = exit_arg {
             if let Some(error_message) = Self::read_error_message(exit_arg) {
-                error.message.push_str(&format!(", contract error: \"{}\"", error_message));
-                error.data["contract_error"] = error_message.into();
+                error.message_mut().push_str(&format!(", contract error: \"{}\"", error_message));
+                error.data_mut()["contract_error"] = error_message.into();
             }
         }
 
         if show_tips {
-            error.message = error.message.trim_end_matches('.').to_string();
-            error.message.push_str(
+            error.set_message(error.message().trim_end_matches('.').to_string());
+            error.message_mut().push_str(
                 ".\nTip: For more information about exit code check the contract source code \
                 or ask the contract developer",
             );
@@ -221,8 +221,8 @@ impl Error {
         balance: u64,
     ) -> ClientError {
         let mut error = Self::low_balance(address, balance);
-        error.data["phase"] = "storage".into();
-        error.data["reason"] = match reason {
+        error.data_mut()["phase"] = "storage".into();
+        error.data_mut()["reason"] = match reason {
             AccStatusChange::Frozen => "Account is frozen",
             AccStatusChange::Deleted => "Account is deleted",
             _ => "null",
@@ -240,7 +240,7 @@ impl Error {
     ) -> ClientError {
         let mut error = if no_funds {
             let mut error = Self::low_balance(address, balance);
-            error.data["description"] =
+            error.data_mut()["description"] =
                 "Contract tried to send value exceeding account balance".into();
             error
         } else {
@@ -249,13 +249,13 @@ impl Error {
                 "Transaction failed at action phase".to_owned(),
             );
             if !valid {
-                error.data["description"] =
+                error.data_mut()["description"] =
                     "Contract tried to send invalid outbound message".into();
             }
             error
         };
-        error.data["phase"] = "action".into();
-        error.data["result_code"] = result_code.into();
+        error.data_mut()["phase"] = "action".into();
+        error.data_mut()["result_code"] = result_code.into();
         error
     }
 
@@ -266,7 +266,7 @@ impl Error {
                 .to_owned(),
         );
 
-        error.data = serde_json::json!({
+        *error.data_mut() = serde_json::json!({
             "account_address": address.to_string(),
         });
         error
@@ -275,7 +275,7 @@ impl Error {
     pub fn account_is_suspended(address: &MsgAddressInt) -> ClientError {
         let mut error = error(ErrorCode::AccountIsSuspended, "Account is suspended.".to_owned());
 
-        error.data = serde_json::json!({
+        *error.data_mut() = serde_json::json!({
             "account_address": address.to_string(),
         });
         error
@@ -287,8 +287,8 @@ impl Error {
             "Account has insufficient balance for the requested operation. Send some value to account balance".to_owned(),
         );
 
-        error.data["account_address"] = address.to_string().into();
-        error.data["account_balance"] = balance.into();
+        error.data_mut()["account_address"] = address.to_string().into();
+        error.data_mut()["account_balance"] = balance.into();
 
         error
     }
@@ -299,7 +299,7 @@ impl Error {
             "Account is in a bad state. It is frozen or deleted".to_owned(),
         );
 
-        error.data["account_address"] = address.to_string().into();
+        error.data_mut()["account_address"] = address.to_string().into();
 
         error
     }
@@ -310,7 +310,7 @@ impl Error {
             "Account does not exist. You need to transfer funds to this account first to have a positive balance and then deploy its code".to_owned(),
         );
 
-        error.data["account_address"] = address.to_string().into();
+        error.data_mut()["account_address"] = address.to_string().into();
 
         error
     }

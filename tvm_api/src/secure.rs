@@ -15,7 +15,7 @@ use std::fmt::Formatter;
 use std::hash::Hash;
 use std::hash::Hasher;
 
-use ::secstr::*;
+use secstr::*;
 
 use crate::BareDeserialize;
 use crate::BareSerialize;

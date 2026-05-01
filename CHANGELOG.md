@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.20] - 2026-04-20
+
+### Changed
+- `tvm_api` and `tvm_block_json`: gated TON-specific code behind the `ton` feature
+- TON-related dependencies are now optional to allow lighter builds without TON support
+
+## [2.24.19] - 2026-04-17
+
+### Added
+- `tvm_client`: new `account.get_account` API returning account BOC, optional `dapp_id`, and state timestamp
+- `tvm_cli`: support for extended address parsing via `SdkAddress::from_str`, including `dapp_id` extraction from user-provided addresses
+
+### Changed
+- `tvm_client`: `ClientError` now exposes accessor methods (`code()`, `message()`, `data()`, etc.) instead of relying on direct public field access, and now carries optional `traceparent`
+- `tvm_client`: `ParamsOfSendMessage` now includes `thread_id` and `dst_dapp_id`
+- `tvm_client`: `ParamsOfProcessMessage` now includes `dst_dapp_id`
+- `tvm_client`: `ParamsOfWaitForTransaction` now accepts `tx_hash`; `shard_block_id` is deprecated and no longer used for transaction lookup
+- `tvm_client`: `ResultOfSendMessage` now returns message and transaction metadata (`message_hash`, `block_hash`, `tx_hash`, `return_value`, `aborted`, `exit_code`, `thread_id`, `producers`, `current_time`) instead of `shard_block_id` and `sending_endpoints`
+- `tvm_client`: `process_message` and `wait_for_transaction` now use the transaction hash returned by `send_message`
+- `tvm_cli`: `call`, `callx`, and proposal commands now derive destination `dapp_id` from extended addresses
+- `tvm_cli`: `deploy`, `deployx`, and `send` commands now accept explicit `--dst-dapp-id` where the destination `dapp_id` can not be derived from an address
+
+### Fixed
+- `tvm_cli`: fixed `dump accounts` address validation for the current `SdkAddress` API
+
 ## [2.24.18] - 2026-04-13
 
 ### Added
@@ -666,6 +691,7 @@ State init should be finalized and ready to be used in message as is.
 
 - functions with callbacks (e.g. `processing.process_messages`) can be called as sync.
 - `send_event` parameter is now optional with default value `false`.
+
 ### Deprecated
 - Debot module is [DEPRECATED](./docs/reference/types-and-methods/DEPRECATED.md)
 

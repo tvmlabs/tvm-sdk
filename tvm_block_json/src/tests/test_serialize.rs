@@ -16,7 +16,9 @@ use std::fs::read;
 use std::path::Path;
 
 use pretty_assertions::assert_eq;
+#[cfg(feature = "ton")]
 use tvm_api::IntoBoxed;
+#[cfg(feature = "ton")]
 use tvm_api::ton::ton_node::rempmessagestatus;
 use tvm_types::base64_decode;
 
@@ -1472,6 +1474,7 @@ fn test_block_order() {
     assert_eq!("17b00540960604", block_order(&block, 123).unwrap());
 }
 
+#[cfg(feature = "ton")]
 fn se_deserialise_remp_status(status: RempMessageStatus) {
     let rr = tvm_api::ton::ton_node::rempreceipt::RempReceipt {
         message_id: "18AFCDD25BE0989CE516504263EB351818A0FF8F6AB3689501C8E3B767EF413C"
@@ -1497,6 +1500,7 @@ fn se_deserialise_remp_status(status: RempMessageStatus) {
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_accepted() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempAccepted(
         rempmessagestatus::RempAccepted {
@@ -1518,6 +1522,7 @@ fn test_se_deserialise_remp_accepted() {
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_duplicate() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempDuplicate(
         rempmessagestatus::RempDuplicate {
@@ -1532,6 +1537,7 @@ fn test_se_deserialise_remp_duplicate() {
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_ignored() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempIgnored(
         rempmessagestatus::RempIgnored {
@@ -1547,11 +1553,13 @@ fn test_se_deserialise_remp_ignored() {
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_new() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempNew);
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_rejected() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempRejected(
         rempmessagestatus::RempRejected {
@@ -1568,6 +1576,7 @@ fn test_se_deserialise_remp_rejected() {
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_sent() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempSentToValidators(
         rempmessagestatus::RempSentToValidators { sent_to: 10, total_validators: 11 },
@@ -1575,6 +1584,7 @@ fn test_se_deserialise_remp_sent() {
 }
 
 #[test]
+#[cfg(feature = "ton")]
 fn test_se_deserialise_remp_timeout() {
     se_deserialise_remp_status(RempMessageStatus::TonNode_RempTimeout);
 }

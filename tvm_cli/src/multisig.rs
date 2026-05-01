@@ -9,6 +9,9 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 extern crate reqwest;
+
+use std::str::FromStr;
+
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -25,10 +28,10 @@ use crate::config::Config;
 use crate::convert;
 use crate::crypto::load_keypair;
 use crate::deploy::prepare_deploy_message_params;
+use crate::helpers::SdkAddress;
 use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_file_with_url;
-use crate::helpers::load_ton_address;
 use crate::helpers::now_ms;
 
 const SAFEMULTISIG_LINK: &str = "https://github.com/tonlabs/ton-labs-contracts/blob/master/solidity/safemultisig/SafeMultisigWallet.tvc?raw=true";
@@ -284,6 +287,7 @@ impl CallArgs {
 
 pub struct MultisigArgs {
     addr: String,
+    dapp_id: Option<String>,
     abi: Abi,
     call_args: CallArgs,
     keys: String,
@@ -304,7 +308,9 @@ impl MultisigArgs {
             .ok_or("sign key is not defined".to_string())?;
         let v2 = matches.is_present("V2");
 
-        let addr = load_ton_address(&address, config)?;
+        let sdk_addr = SdkAddress::from_str(&address).map_err(|e| e)?;
+        let addr = sdk_addr.account_id;
+        let dapp_id = sdk_addr.dapp_id;
         let mut abi = serde_json::from_str::<AbiContract>(MSIG_ABI).unwrap_or_default();
         if v2 {
             abi.version = Some("2.3".to_owned());
@@ -326,7 +332,7 @@ impl MultisigArgs {
             }
         }
 
-        Ok(Self { addr, call_args, abi: Abi::Contract(abi), keys })
+        Ok(Self { addr, dapp_id, call_args, abi: Abi::Contract(abi), keys })
     }
 
     pub fn address(&self) -> &str {
@@ -371,6 +377,7 @@ impl MultisigArgs {
             Some(self.keys.clone()),
             false,
             None,
+            self.dapp_id.as_ref().map(|x| x.as_str()),
         )
         .await
     }
@@ -527,11 +534,14 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
             None,
             false,
             None,
+            None,
         )
         .await?;
     }
 
-    let res = call::process_message(ton.clone(), msg, config).await.map_err(|e| format!("{:#}", e));
+    let res = call::process_message(ton.clone(), msg, config, args.dapp_id.as_deref())
+        .await
+        .map_err(|e| format!("{:#}", e));
 
     if res.is_err() {
         if res.clone().err().unwrap().contains("Account does not exist.") {
