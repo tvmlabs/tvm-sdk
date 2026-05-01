@@ -39,7 +39,7 @@
 				{"name":"outcomeId","type":"uint32"},
 				{"name":"stakeAmount","type":"uint128"},
 				{"name":"deposit_identifier_hash","type":"uint256"},
-				{"name":"isInc","type":"bool"}
+				{"name":"bet_type","type":"uint8"}
 			],
 			"outputs": [
 			]
@@ -48,6 +48,8 @@
 			"name": "cancelStake",
 			"inputs": [
 				{"name":"stakeAmount","type":"uint128[]"},
+				{"name":"debtAmount","type":"uint128[]"},
+				{"name":"couponsAmount","type":"uint128[]"},
 				{"name":"deposit_identifier_hash","type":"uint256"}
 			],
 			"outputs": [
@@ -57,7 +59,6 @@
 			"name": "acceptFullSetStake",
 			"inputs": [
 				{"name":"amount","type":"uint128[]"},
-				{"name":"isInc","type":"bool[]"},
 				{"name":"deposit_identifier_hash","type":"uint256"}
 			],
 			"outputs": [
@@ -67,7 +68,6 @@
 			"name": "withdrawFullSet",
 			"inputs": [
 				{"name":"amount","type":"uint128[]"},
-				{"name":"isDecr","type":"bool[]"},
 				{"name":"deposit_identifier_hash","type":"uint256"}
 			],
 			"outputs": [
@@ -77,6 +77,8 @@
 			"name": "claim",
 			"inputs": [
 				{"name":"stakeAmount","type":"uint128[]"},
+				{"name":"debtAmount","type":"uint128[]"},
+				{"name":"couponsAmount","type":"uint128[]"},
 				{"name":"deposit_identifier_hash","type":"uint256"}
 			],
 			"outputs": [
@@ -121,8 +123,7 @@
 				{"name":"isCancelled","type":"bool"},
 				{"name":"numberOfOracleEvents","type":"uint128"},
 				{"name":"approvedOracleEvents","type":"uint128"},
-				{"name":"outcomePoolAmounts","type":"map(uint32,uint128)"},
-				{"name":"outcomeStakeCounts","type":"map(uint32,uint128)"},
+				{"name":"typedOutcomePools","type":"map(uint32,map(uint8,uint128))"},
 				{"name":"outcomeNames","type":"map(uint32,string)"}
 			]
 		},
@@ -142,7 +143,8 @@
 			"inputs": [
 				{"name":"note","type":"address"},
 				{"name":"outcomeId","type":"uint32"},
-				{"name":"amount","type":"uint128"}
+				{"name":"amount","type":"uint128"},
+				{"name":"bet_type","type":"uint8"}
 			],
 			"outputs": [
 			]
@@ -209,6 +211,13 @@
 			]
 		},
 		{
+			"name": "PMPCancelled",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "ProposalCreated",
 			"inputs": [
 				{"name":"proposalId","type":"uint256"},
@@ -242,8 +251,14 @@
 		{"init":false,"name":"_deployer","type":"address"},
 		{"init":false,"name":"_PrivateNoteCode","type":"cell"},
 		{"init":false,"name":"_totalPool","type":"uint128"},
-		{"init":false,"name":"_outcomePools","type":"map(uint32,uint128)"},
-		{"init":false,"name":"_outcomeCounts","type":"map(uint32,uint128)"},
+		{"init":false,"name":"_typedOutcomePools","type":"map(uint32,map(uint8,uint128))"},
+		{"init":false,"name":"_typedOutcomeCounts","type":"map(uint32,map(uint8,uint128))"},
+		{"init":false,"name":"_totalCouponPool","type":"uint128"},
+		{"init":false,"name":"_totalCleanPool","type":"uint128"},
+		{"init":false,"name":"_totalDebtPool","type":"uint128"},
+		{"init":false,"name":"_couponWinCoef","type":"uint128"},
+		{"init":false,"name":"_deptWinCoef","type":"uint128"},
+		{"init":false,"name":"_totalWinPool","type":"uint128"},
 		{"init":false,"name":"_resolvedOutcome","type":"optional(uint32)"},
 		{"init":false,"name":"_approved","type":"bool"},
 		{"init":false,"name":"_numOutcomes","type":"uint32"},
