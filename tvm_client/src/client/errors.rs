@@ -58,16 +58,17 @@ lazy_static! {
 
 impl Error {
     pub fn is_network_error(error: &ClientError) -> bool {
-        error.code == ErrorCode::WebsocketConnectError as u32
-            || error.code == ErrorCode::WebsocketReceiveError as u32
-            || error.code == ErrorCode::WebsocketSendError as u32
-            || error.code == ErrorCode::HttpRequestSendError as u32
-            || error.code == crate::net::ErrorCode::GraphqlWebsocketInitError as u32
-            || error.code == crate::net::ErrorCode::WebsocketDisconnected as u32
-            || error.code == crate::net::ErrorCode::GraphqlConnectionError as u32
-            || (error.code == crate::net::ErrorCode::GraphqlError as u32
-                && error.data["server_code"].as_i64() >= Some(500)
-                && error.data["server_code"].as_i64() <= Some(599))
+        let code = error.code();
+        code == ErrorCode::WebsocketConnectError as u32
+            || code == ErrorCode::WebsocketReceiveError as u32
+            || code == ErrorCode::WebsocketSendError as u32
+            || code == ErrorCode::HttpRequestSendError as u32
+            || code == crate::net::ErrorCode::GraphqlWebsocketInitError as u32
+            || code == crate::net::ErrorCode::WebsocketDisconnected as u32
+            || code == crate::net::ErrorCode::GraphqlConnectionError as u32
+            || (code == crate::net::ErrorCode::GraphqlError as u32
+                && error.data()["server_code"].as_i64() >= Some(500)
+                && error.data()["server_code"].as_i64() <= Some(599))
     }
 
     pub fn internal_error<E: Display>(message: E) -> ClientError {

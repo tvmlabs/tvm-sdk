@@ -123,6 +123,7 @@ impl BuilderData {
         for r in self.references.iter() {
             children_level_mask |= r.level_mask();
         }
+
         let level_mask = match self.cell_type {
             CellType::Unknown => fail!("failed to finalize a cell of unknown type"),
             CellType::Ordinary => children_level_mask,

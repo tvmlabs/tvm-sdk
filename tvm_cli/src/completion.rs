@@ -104,6 +104,7 @@ fn main() {
             options_map.insert(word.as_str(), words[index + 1].as_str());
         }
     }
+
     let config_path = options_map
         .get(&"-c")
         .or(options_map.get(&"--config").or(Some(&CONFIG_BASE_NAME)))

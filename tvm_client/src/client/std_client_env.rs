@@ -225,6 +225,7 @@ impl ClientEnv {
         if let Some(headers) = headers {
             request = request.headers(Self::string_map_to_header_map(headers)?);
         }
+
         if let Some(body) = body {
             request = request.body(body);
         }

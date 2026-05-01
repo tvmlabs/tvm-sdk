@@ -33,7 +33,7 @@ use term_browser::run_debot_browser;
 use term_browser::terminal_input;
 
 use crate::config::Config;
-use crate::helpers::load_ton_address;
+use crate::helpers::SdkAddress;
 use crate::helpers::log_file_path;
 
 pub fn create_debot_command<'a, 'b>() -> Command<'a> {
@@ -132,7 +132,7 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     } else {
         PipeChain::new()
     };
-    let addr = load_ton_address(addr.unwrap(), &config)?;
+    let addr = SdkAddress::validate(addr.unwrap())?;
     let result = run_debot_browser(addr.as_str(), config, pipechain, signkey_path).await;
     match result {
         Ok(Some(arg)) => {
@@ -147,9 +147,9 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     }
 }
 
-fn invoke_command(m: &ArgMatches, config: Config) -> Result<(), String> {
+fn invoke_command(m: &ArgMatches, _config: Config) -> Result<(), String> {
     let addr = m.value_of("ADDRESS");
-    load_ton_address(addr.unwrap(), &config)?;
+    SdkAddress::validate(addr.unwrap())?;
     let _ = m.value_of("MESSAGE").unwrap().to_owned();
     Ok(())
 }

@@ -27,6 +27,7 @@ use crate::config::Config;
 use crate::convert;
 use crate::depool_abi::DEPOOL_ABI;
 use crate::depool_abi::PARTICIPANT_ABI;
+use crate::helpers::SdkAddress;
 use crate::helpers::TonClient;
 use crate::helpers::answer_filter;
 use crate::helpers::create_client;
@@ -34,7 +35,6 @@ use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::events_filter;
 use crate::helpers::load_abi;
-use crate::helpers::load_ton_address;
 use crate::helpers::now;
 use crate::helpers::print_message;
 use crate::multisig::CallArgs;
@@ -265,7 +265,7 @@ impl<'a> DepoolCmd<'a> {
             m.value_of("TPERIOD").ok_or("total period is not defined.".to_string())?;
         let beneficiary =
             m.value_of("BENEFICIARY").ok_or("beneficiary is not defined.".to_string())?;
-        let beneficiary = load_ton_address(beneficiary, config)?;
+        let beneficiary = SdkAddress::validate(beneficiary)?;
 
         let period_checker = |v| {
             if v > 0 && v <= 36500 {
@@ -320,7 +320,7 @@ impl<'a> DepoolCmd<'a> {
         depool: &'a str,
     ) -> Result<DepoolCmd<'a>, String> {
         let dest = m.value_of("DEST").ok_or("destination address is not defined.".to_owned())?;
-        let dest = load_ton_address(dest, config)?;
+        let dest = SdkAddress::validate(dest)?;
         let stake = parse_value(m)?;
         let body = encode_transfer_stake(&dest, stake).await?;
         let value = Self::depool_fee(config)?;
@@ -501,7 +501,7 @@ pub async fn depool_command(m: &ArgMatches, config: &mut Config) -> Result<(), S
             .to_string(),
     )?;
     let depool =
-        load_ton_address(&depool, config).map_err(|e| format!("invalid depool address: {}", e))?;
+        SdkAddress::validate(&depool).map_err(|e| format!("invalid depool address: {}", e))?;
 
     let mut set_wait_answer = |m: &ArgMatches| {
         if m.is_present("WAIT_ANSWER") {
@@ -583,7 +583,7 @@ async fn answer_command(m: &ArgMatches, config: &Config, depool: &str) -> Result
 
     let ton = create_client_verbose(config)?;
     let wallet =
-        load_ton_address(&wallet, config).map_err(|e| format!("invalid depool address: {}", e))?;
+        SdkAddress::validate(&wallet).map_err(|e| format!("invalid depool address: {}", e))?;
 
     let messages = tvm_client::net::query_collection(
         ton.clone(),
@@ -674,7 +674,7 @@ async fn print_event(ton: TonClient, event: &serde_json::Value) -> Result<(), St
 
 async fn get_events(config: &Config, depool: &str, since: u32) -> Result<(), String> {
     let ton = create_client_verbose(config)?;
-    let _addr = load_ton_address(depool, config)?;
+    let _addr = SdkAddress::validate(depool)?;
 
     let events = tvm_client::net::query_collection(
         ton.clone(),
@@ -701,7 +701,7 @@ async fn get_events(config: &Config, depool: &str, since: u32) -> Result<(), Str
 
 async fn wait_for_event(config: &Config, depool: &str) -> Result<(), String> {
     let ton = create_client_verbose(config)?;
-    let _addr = load_ton_address(depool, config)?;
+    let _addr = SdkAddress::validate(depool)?.to_string();
     println!("Waiting for a new event...");
     let event = tvm_client::net::wait_for_collection(
         ton.clone(),
