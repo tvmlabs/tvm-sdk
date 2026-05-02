@@ -54,7 +54,7 @@ pub enum AbiError {
     #[error("Invalid input data: {}", msg)]
     InvalidInputData { msg: String },
 
-    #[error("Invalid version: {}", 0)]
+    #[error("Invalid version: {0}")]
     InvalidVersion(String),
 
     #[error("Wrong function ID: {:x}", id)]
