@@ -27,9 +27,10 @@ Before users can start mining, you must complete the following steps:
 
 To connect your application to the Bee Engine system:
 
-You must obtain your application identifier in the system: `app_dapp_id`&#x20;
+You must obtain your application identifier in the system: **app\_dapp\_id**.
 
-* At this stage of development, please specify the value `0x0000000000000000000000000000000000000000000000000000000000000001`
+* At the current stage of development, to get it, [please contact us](https://t.me/EugeneDAO) \
+  and provide your app name and logo;
 * In the future, the developer will:
   * deploy their own application smart contract system in the **Acki Nacki blockchain**
   * retrieve `app_dapp_id`, which will equal the [DAPP ID](https://docs.ackinacki.com/glossary#dapp-id) of the first deployed contract
@@ -76,7 +77,7 @@ Folder: `miner-react` ([download this folder](https://github.com/gosh-sh/bee-eng
 
 It is strongly recommended to use this example as the baseline for your integration.
 
-### Step 4. User Authorization _**(in progress)**_&#x20;
+### Step 4. User Authorization _**(in progress)**_
 
 **To enable mining, users must authorize via** [**Acki Nacki Wallet**](https://ackinacki.com/wallet) **(AN Wallet)**.
 
@@ -118,8 +119,6 @@ Mining keys are cryptographic keys used to sign and submit mining results. These
 ```ts
 const resultOfGenKeys = await gen_mining_keys(APP_ID);
 ```
-
-
 
 The output of the key generation process has the following type:
 
@@ -205,7 +204,7 @@ If the Miner contract does not reject the message:
 * **A separate mining key pair for each application**
 * **Secure authorization without sharing the user’s private wallet keys with the application**
 
-#### Flow 2 — User Does NOT Have AN Wallet _**(in progress)**_&#x20;
+#### Flow 2 — User Does NOT Have AN Wallet _**(in progress)**_
 
 #### General Description
 
@@ -221,7 +220,7 @@ After the wallet is created, the developer must generate the user’s mining key
 * Exceeding this limit will cause new connections to be rejected
 
 {% hint style="warning" %}
-## Important — Mining Rewards Activation
+### Important — Mining Rewards Activation
 
 Mining will only generate rewards if the user has activated ecosystem participation.
 
@@ -304,7 +303,7 @@ Use this method if:
 * the application has just launched
 * you need to explicitly synchronize the user’s balance
 
-#### &#x20;`polling()`
+#### `polling()`
 
 A special function that:
 
@@ -320,4 +319,3 @@ After basic integration, you can:
 * bind `add_tap` to user actions
 * use miner events for UI / telemetry
 * integrate reputation and economics into your application
-
