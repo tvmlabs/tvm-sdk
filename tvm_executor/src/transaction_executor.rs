@@ -446,29 +446,36 @@ pub trait TransactionExecutor {
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
         let libs_disabled = !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
         let is_external = if let Some(ref msg) = msg {
-            if let Some(header) = msg.int_header() {
-                log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
-                if result_acc.is_none() {
-                    if let Some(new_acc) =
-                        account_from_message(msg, msg_balance, true, init_code_hash, libs_disabled)
-                    {
-                        result_acc = new_acc;
-                        result_acc.set_last_paid(if !is_special {
-                            smc_info.unix_time()
-                        } else {
-                            0
-                        });
+            match msg.header() {
+                CommonMsgInfo::IntMsgInfo(header) => {
+                    log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
+                    if result_acc.is_none() {
+                        if let Some(new_acc) =
+                            account_from_message(msg, msg_balance, true, init_code_hash, libs_disabled)
+                        {
+                            result_acc = new_acc;
+                            result_acc.set_last_paid(if !is_special {
+                                smc_info.unix_time()
+                            } else {
+                                0
+                            });
 
-                        // if there was a balance in message (not bounce), then account state at
-                        // least become uninit
-                        result_acc.uninit_account();
-                        *acc = result_acc.clone();
+                            // if there was a balance in message (not bounce), then account state at
+                            // least become uninit
+                            result_acc.uninit_account();
+                            *acc = result_acc.clone();
+                        }
                     }
+                    false
                 }
-                false
-            } else {
-                log::debug!(target: "executor", "msg external");
-                true
+                CommonMsgInfo::CrossDappMessageInfo(header) => {
+                    log::debug!(target: "executor", "msg cross-dapp, bounce: {}, bounced: {}", header.bounce, header.bounced);
+                    false
+                }
+                _ => {
+                    log::debug!(target: "executor", "msg external");
+                    true
+                }
             }
         } else {
             debug_assert!(!result_acc.is_none());
@@ -1157,34 +1164,61 @@ pub trait TransactionExecutor {
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
-        let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
-        if !header.bounce {
-            fail!("Bounce flag not set")
-        }
-        // create bounced message and swap src and dst addresses
-        let mut header = header.clone();
-        header.set_exchange(false);
-        let msg_src =
-            header.src_ref().ok_or_else(|| error!("Not found src in message header"))?.clone();
-        let msg_dst = std::mem::replace(&mut header.dst, msg_src);
-        header.set_src(msg_dst);
-        match check_rewrite_dest_addr(&header.dst, self.config(), my_addr) {
-            Ok(new_dst) => header.dst = new_dst,
-            Err(_) => {
-                log::warn!(target: "executor", "Incorrect destination address in a bounced message {}", header.dst);
-                fail!("Incorrect destination address in a bounced message {}", header.dst)
+        let mut bounce_msg = match msg.header() {
+            CommonMsgInfo::IntMsgInfo(header) => {
+                if !header.bounce {
+                    fail!("Bounce flag not set")
+                }
+                let mut header = header.clone();
+                header.set_exchange(false);
+                let msg_src = header
+                    .src_ref()
+                    .ok_or_else(|| error!("Not found src in message header"))?
+                    .clone();
+                let msg_dst = std::mem::replace(&mut header.dst, msg_src);
+                header.set_src(msg_dst);
+                match check_rewrite_dest_addr(&header.dst, self.config(), my_addr) {
+                    Ok(new_dst) => header.dst = new_dst,
+                    Err(_) => {
+                        log::warn!(target: "executor", "Incorrect destination address in a bounced message {}", header.dst);
+                        fail!("Incorrect destination address in a bounced message {}", header.dst)
+                    }
+                }
+                header.ihr_disabled = true;
+                header.bounce = false;
+                header.bounced = true;
+                header.ihr_fee = Grams::zero();
+                Message::with_int_header(header)
             }
-        }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                if !header.bounce {
+                    fail!("Bounce flag not set")
+                }
+                let mut header = header.clone();
+                let msg_src = header
+                    .src_ref()
+                    .ok_or_else(|| error!("Not found src in cross-dapp message header"))?
+                    .clone();
+                let msg_dst = std::mem::replace(&mut header.dst, msg_src);
+                header.set_src(msg_dst);
+                std::mem::swap(&mut header.src_dapp_id, &mut header.dst_dapp_id);
+                match check_rewrite_dest_addr(&header.dst, self.config(), my_addr) {
+                    Ok(new_dst) => header.dst = new_dst,
+                    Err(_) => {
+                        log::warn!(target: "executor", "Incorrect destination address in a bounced cross-dapp message {}", header.dst);
+                        fail!("Incorrect destination address in a bounced cross-dapp message {}", header.dst)
+                    }
+                }
+                header.ihr_disabled = true;
+                header.bounce = false;
+                header.bounced = true;
+                header.ihr_fee = Grams::zero();
+                Message::with_cross_dapp_header(header)
+            }
+            _ => fail!("Not found internal or cross-dapp message header"),
+        };
 
         let is_masterchain = msg.is_masterchain();
-
-        // create header for new bounced message and swap src and dst addresses
-        header.ihr_disabled = true;
-        header.bounce = false;
-        header.bounced = true;
-        header.ihr_fee = Grams::zero();
-
-        let mut bounce_msg = Message::with_int_header(header);
         if self.config().has_capability(GlobalCapabilities::CapBounceMsgBody) {
             let mut builder = (-1i32).write_to_new_cell()?;
             if let Some(body) = msg.body() {
@@ -1231,6 +1265,10 @@ pub trait TransactionExecutor {
         remaining_msg_balance.grams.sub(compute_phase_fees)?;
         match bounce_msg.header_mut() {
             CommonMsgInfo::IntMsgInfo(header) => {
+                header.value = remaining_msg_balance.clone();
+                header.fwd_fee = fwd_fees;
+            }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
                 header.value = remaining_msg_balance.clone();
                 header.fwd_fee = fwd_fees;
             }
