@@ -450,9 +450,13 @@ pub trait TransactionExecutor {
                 CommonMsgInfo::IntMsgInfo(header) => {
                     log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
                     if result_acc.is_none() {
-                        if let Some(new_acc) =
-                            account_from_message(msg, msg_balance, true, init_code_hash, libs_disabled)
-                        {
+                        if let Some(new_acc) = account_from_message(
+                            msg,
+                            msg_balance,
+                            true,
+                            init_code_hash,
+                            libs_disabled,
+                        ) {
                             result_acc = new_acc;
                             result_acc.set_last_paid(if !is_special {
                                 smc_info.unix_time()
@@ -1206,7 +1210,10 @@ pub trait TransactionExecutor {
                     Ok(new_dst) => header.dst = new_dst,
                     Err(_) => {
                         log::warn!(target: "executor", "Incorrect destination address in a bounced cross-dapp message {}", header.dst);
-                        fail!("Incorrect destination address in a bounced cross-dapp message {}", header.dst)
+                        fail!(
+                            "Incorrect destination address in a bounced cross-dapp message {}",
+                            header.dst
+                        )
                     }
                 }
                 header.ihr_disabled = true;

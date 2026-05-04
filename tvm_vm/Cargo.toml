@@ -95,7 +95,7 @@ pretty_assertions.workspace = true
 [features]
 default = ["gosh"]
 fift_check = []
-wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io", "dep:rand_chacha"]
+wasmtime = ["wasmtime/std", "wasmtime-wasi", "wasmtime-wasi-io"]
 gosh = [
   "tvm_block/gosh",
   "diffy",

@@ -1456,8 +1456,15 @@ fn test_run_wasm_fuel_error_from_hash() {
     println!("Wasm Return Status: {:?}", result);
 
     let res_error = result.expect_err("Test didn't error on fuel use");
-    println!("{:?}", res_error);
-    assert_eq!(format!("{}", res_error), "VM Exception: 0 1");
+    let TvmError::TvmExceptionFull(exception, description) =
+        res_error.downcast_ref::<TvmError>().expect("Should be TvmExceptionFull")
+    else {
+        panic!("Should be TvmExceptionFull");
+    };
+
+    assert_eq!(exception.exception_code(), Some(ExceptionCode::WasmExecFail));
+    assert!(description.contains("Failed to execute WASM function"));
+    assert!(description.contains("all fuel consumed by WebAssembly"));
 }
 
 #[test]
