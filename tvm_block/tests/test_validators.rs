@@ -17,7 +17,6 @@ use tvm_block::ShardIdent;
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 use tvm_block::*;
-use tvm_types::*;
 mod common;
 use common::write_read_and_assert;
 

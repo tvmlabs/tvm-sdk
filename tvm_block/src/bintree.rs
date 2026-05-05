@@ -503,3 +503,46 @@ impl<X: Default + Serializable + Deserializable, Y: Augmentable> Deserializable
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn key(bits: &[bool]) -> SliceData {
+        let mut builder = BuilderData::new();
+        for bit in bits {
+            if *bit {
+                builder.append_bit_one().unwrap();
+            } else {
+                builder.append_bit_zero().unwrap();
+            }
+        }
+        SliceData::load_bitstring(builder).unwrap()
+    }
+
+    #[test]
+    fn leaf_and_fork_queries_cover_exact_partial_and_missing_paths() {
+        let mut tree = BinTree::<u8>::with_item(&7).unwrap();
+
+        assert_eq!(tree.get(key(&[])).unwrap(), Some(7));
+        assert_eq!(tree.get(key(&[false])).unwrap(), None);
+        assert_eq!(tree.find(key(&[])).unwrap(), Some((key(&[]), 7)));
+
+        assert!(tree.split(key(&[]), |value| Ok((value, value + 1))).unwrap());
+        assert_eq!(tree.get(key(&[false])).unwrap(), Some(7));
+        assert_eq!(tree.get(key(&[true])).unwrap(), Some(8));
+        assert_eq!(tree.find(key(&[])).unwrap(), None);
+        assert_eq!(tree.find(key(&[true, false])).unwrap(), Some((key(&[true]), 8)));
+    }
+
+    #[test]
+    fn malformed_fork_without_two_references_returns_error() {
+        let mut builder = true.write_to_new_cell().unwrap();
+        builder.checked_append_reference(0u8.serialize().unwrap()).unwrap();
+        let tree =
+            BinTree::<u8> { data: SliceData::load_builder(builder).unwrap(), phantom: PhantomData };
+
+        assert!(tree.get(key(&[false])).is_err());
+        assert!(tree.find(key(&[true])).is_err());
+    }
+}
