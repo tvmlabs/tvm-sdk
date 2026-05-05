@@ -34,24 +34,38 @@ fn assert_json_eq_file(json: &str, name: &str) {
     assert_json_eq(json, &expected, name);
 }
 
-fn assert_json_eq_ignoring_fields(actual: String, expected: &str, ignored_fields: &[&str]) {
-    let mut actual = serde_json::from_str::<serde_json::Value>(&actual).unwrap();
+fn assert_json_eq_with_fields(
+    actual: String,
+    expected: &str,
+    fields: &[(&str, serde_json::Value)],
+) {
+    let actual = serde_json::from_str::<serde_json::Value>(&actual).unwrap();
     let mut expected = serde_json::from_str::<serde_json::Value>(expected).unwrap();
-    let actual = actual.as_object_mut().unwrap();
-    let expected = expected.as_object_mut().unwrap();
-    for field in ignored_fields {
-        actual.remove(*field);
-        expected.remove(*field);
+    {
+        let expected = expected.as_object_mut().unwrap();
+        for (field, value) in fields {
+            expected.insert((*field).to_string(), value.clone());
+        }
     }
     assert_eq!(actual, expected);
 }
 
-fn assert_json_string_field(
-    json: &serde_json::Map<String, serde_json::Value>,
-    field: &str,
-    expected: &str,
-) {
-    assert_eq!(json.get(field), Some(&serde_json::Value::String(expected.to_string())));
+fn transaction_in_msg_hash(transaction: &Transaction) -> String {
+    transaction.in_msg.as_ref().unwrap().hash().as_hex_string()
+}
+
+fn transaction_out_msg_hashes(transaction: &Transaction) -> Vec<String> {
+    let mut out_ids = Vec::new();
+    transaction
+        .out_msgs
+        .iterate_slices(|slice| {
+            if let Some(cell) = slice.reference_opt(0) {
+                out_ids.push(cell.repr_hash().as_hex_string());
+            }
+            Ok(true)
+        })
+        .unwrap();
+    out_ids
 }
 
 #[test]
@@ -781,10 +795,10 @@ fn test_transaction_wo_out_msgs_into_json() {
     let json = db_serialize_transaction("id", tr).unwrap();
     let expected_id = format!("{:x}", id);
     let expected_boc = tvm_types::base64_encode(&boc);
-    assert_json_string_field(&json, "id", &expected_id);
-    assert_json_string_field(&json, "boc", &expected_boc);
+    let expected_in_msg = transaction_in_msg_hash(&transaction);
+    let expected_out_msgs = transaction_out_msg_hashes(&transaction);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_json_eq_ignoring_fields(
+    assert_json_eq_with_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -819,7 +833,12 @@ fn test_transaction_wo_out_msgs_into_json() {
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
 }"#,
-        &["id", "boc", "in_msg"],
+        &[
+            ("id", serde_json::json!(expected_id)),
+            ("boc", serde_json::json!(expected_boc)),
+            ("in_msg", serde_json::json!(expected_in_msg)),
+            ("out_msgs", serde_json::json!(expected_out_msgs)),
+        ],
     );
 }
 
@@ -845,11 +864,8 @@ fn test_transaction_into_json_0() {
         proof: None,
     };
     let json = db_serialize_message("id", &msg).unwrap();
-    assert_json_string_field(&json, "id", &expected_message_id);
-    assert_json_string_field(&json, "transaction_id", &expected_transaction_id);
-    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_json_eq_ignoring_fields(
+    assert_json_eq_with_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -885,7 +901,11 @@ fn test_transaction_into_json_0() {
   "created_lt": "00",
   "created_at": 0
 }"#,
-        &["id", "transaction_id", "boc"],
+        &[
+            ("id", serde_json::json!(expected_message_id)),
+            ("transaction_id", serde_json::json!(expected_transaction_id)),
+            ("boc", serde_json::json!(expected_boc)),
+        ],
     );
 
     let cell = transaction.serialize().unwrap();
@@ -904,10 +924,10 @@ fn test_transaction_into_json_0() {
     };
 
     let json = db_serialize_transaction("id", &tr).unwrap();
-    assert_json_string_field(&json, "id", &expected_transaction_id);
-    assert_json_string_field(&json, "boc", &expected_boc);
+    let expected_in_msg = transaction_in_msg_hash(&tr.transaction);
+    let expected_out_msgs = transaction_out_msg_hashes(&tr.transaction);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_json_eq_ignoring_fields(
+    assert_json_eq_with_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -946,7 +966,12 @@ fn test_transaction_into_json_0() {
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
 }"#,
-        &["id", "boc", "in_msg", "out_msgs"],
+        &[
+            ("id", serde_json::json!(expected_transaction_id)),
+            ("boc", serde_json::json!(expected_boc)),
+            ("in_msg", serde_json::json!(expected_in_msg)),
+            ("out_msgs", serde_json::json!(expected_out_msgs)),
+        ],
     );
 }
 
@@ -975,11 +1000,8 @@ fn test_transaction_into_json_q() {
         proof: None,
     };
     let json = db_serialize_message_ex("id", &msg, SerializationMode::QServer).unwrap();
-    assert_json_string_field(&json, "id", &expected_message_id);
-    assert_json_string_field(&json, "transaction_id", &expected_transaction_id);
-    assert_json_string_field(&json, "boc", &expected_boc);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_json_eq_ignoring_fields(
+    assert_json_eq_with_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -1014,7 +1036,11 @@ fn test_transaction_into_json_q() {
   "created_lt": "0x0",
   "created_at": 0
 }"#,
-        &["id", "transaction_id", "boc"],
+        &[
+            ("id", serde_json::json!(expected_message_id)),
+            ("transaction_id", serde_json::json!(expected_transaction_id)),
+            ("boc", serde_json::json!(expected_boc)),
+        ],
     );
 
     let cell = transaction.serialize().unwrap();
@@ -1033,10 +1059,10 @@ fn test_transaction_into_json_q() {
     };
 
     let json = db_serialize_transaction_ex("id", &tr, SerializationMode::QServer).unwrap();
-    assert_json_string_field(&json, "id", &expected_transaction_id);
-    assert_json_string_field(&json, "boc", &expected_boc);
+    let expected_in_msg = transaction_in_msg_hash(&tr.transaction);
+    let expected_out_msgs = transaction_out_msg_hashes(&tr.transaction);
     println!("\n\n{:#}", serde_json::json!(json));
-    assert_json_eq_ignoring_fields(
+    assert_json_eq_with_fields(
         format!("{:#}", serde_json::json!(json)),
         r#"{
   "json_version": 8,
@@ -1077,7 +1103,12 @@ fn test_transaction_into_json_q() {
   "old_hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "new_hash": "0000000000000000000000000000000000000000000000000000000000000000"
 }"#,
-        &["id", "boc", "in_msg", "out_msgs"],
+        &[
+            ("id", serde_json::json!(expected_transaction_id)),
+            ("boc", serde_json::json!(expected_boc)),
+            ("in_msg", serde_json::json!(expected_in_msg)),
+            ("out_msgs", serde_json::json!(expected_out_msgs)),
+        ],
     );
 }
 

@@ -68,6 +68,9 @@ jobs:
             -p tvm_executor \
             --features tvm_vm/gosh,tvm_executor/signature_with_id
 
+          cargo test -r --tests --no-fail-fast \
+            -p tvm_block
+
   test-client:
     name: Test / tvm_client
     runs-on: ubuntu-latest
