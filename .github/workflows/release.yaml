@@ -9,6 +9,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc-auto.an'
+      - '*.an'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
