@@ -4,11 +4,11 @@ description: (Work in progress) PMP Contract Interface Documentation
 
 # PARI MUTUEL POOL (PMP)
 
+{% file src="../../.gitbook/assets/PMP.abi (1).json" %}
+
 ## Overview
 
-{% file src="../../.gitbook/assets/PMP.abi.json" %}
-
-**Pari Mutuel Pool** is a decentralized pari manuel contract that aggregates user stakes on discrete outcomes of an event.\
+**Pari Mutuel Pool** is a decentralized contract that aggregates user stakes on discrete outcomes of an event.\
 A PMP **does not charge protocol fees**, but **requires approval from one or more oracles** before becoming active.
 
 Each PMP is:
@@ -42,19 +42,41 @@ Each PMP is:
 
 ***
 
+### Outcomes
+
+* The event has `_numOutcomes` possible outcomes.
+* Outcome names are stored in `mapping(uint32 => string) _outcomeNames`.
+* Stakes are tracked per outcome and per bet type.
+
+### Bet Types
+
+`bet_type`:
+
+* `0` — clean bet
+* `1` — debt bet
+* `2` — coupon bet
+
+### **Staking window**
+
+Oracles set:
+
+* `_stakeStart` / `_stakeEnd` — stake acceptance window
+* `_resultStart` / `_resultEnd` — result/resolution window
+
 ## Events
 
 ### `StakeAccepted`
 
-Emitted when a stake is successfully accepted.
+Emitted when a stake is accepted and accounted into the pool.
 
 ```solidity
-event StakeAccepted(address note, uint32 outcomeId, uint128 amount);
+event StakeAccepted(address indexed note, uint32 outcomeId, uint128 amount, uint8 bet_type);
 ```
 
-* `note`: the user’s `PrivateNote` address
-* `outcomeId`: the chosen outcome identifier
-* `amount`: stake amount
+* `note` (`address`) — PrivateNote address (wallet) that placed the stake.
+* `outcomeId` (`uint32`) — Outcome identifier the stake is placed on.
+* `amount` (`uint128`) — Stake amount added to the pool.
+* `bet_type` (`uint8`) — 0 - clean bet, 1 - debt bet, 2 - coupon bet
 
 ***
 
@@ -87,23 +109,37 @@ event Resolved(uint32 outcomeId);
 
 Emitted when a claim is processed.
 
+If the event is not resolved or the user did not win, `payout` will be `0` and `win` will be `false`.
+
 ```solidity
 event ClaimProcessed(
     address note,
-    uint32 outcomeId,
     uint128 payout,
     bool win
 );
 ```
 
-* `note`: the user’s `PrivateNote` address
-* `outcomeId`: the outcome the user claimed for
-* `payout`: computed payout amount (0 if unresolved or losing)
-* `win`: `true` if the claim matches the resolved outcome
+* `note`  — `PrivateNote` address (wallet) that claimed.
+* `payout`  — Calculated payout amount (0 if no payout).
+* `win`  — True if the claim is winning and payout > 0.
 
 ***
 
-### TimingsSet
+### `NetworkFeeBurned`
+
+Emitted when network fee was burned.
+
+The shown code does not currently emit this event; it is reserved for future accounting.
+
+```solidity
+event NetworkFeeBurned(uint64 amount);
+```
+
+* `amount`  — Burned fee amount in native units.
+
+***
+
+### `TimingsSet`
 
 Emitted when staking and result windows are configured and the pool is marked approved.
 
@@ -116,13 +152,41 @@ event TimingsSet(uint64 stakeStart, uint64 stakeEnd, uint64 resultStart, uint64 
 * `resultStart`: result window start timestamp
 * `resultEnd`: result window end timestamp
 
-### EventCancelled
+***
 
-Emitted when the event is cancelled.
+### `NumOutcomesSet`
+
+Emitted when number of outcomes is set.
+
+The contract currently derives `_numOutcomes` from `outcomeNames` and may not emit this event.
+
+```solidity
+event NumOutcomesSet(uint32 numOutcomes);
+```
+
+* `numOutcomes` (`uint32`) — Number of available outcomes
+
+***
+
+### `EventCancelled`
+
+Emitted when the event is cancelled by oracle governance.
 
 ```solidity
 event EventCancelled();
 ```
+
+***
+
+### `PMPCancelled`
+
+Emitted when a PMP is cancelled by oracle.
+
+```solidity
+event EventCancelled();
+```
+
+***
 
 ### ProposalCreated
 
@@ -136,6 +200,8 @@ event ProposalCreated(uint256 proposalId, uint32 functionType, TvmCell data);
 * `functionType`: action type identifier
 * `data`: ABI-encoded payload (`TvmCell`)
 
+***
+
 ### ProposalExecuted
 
 Emitted when a proposal is executed.
@@ -146,7 +212,7 @@ event ProposalExecuted(uint256 proposalId, uint32 functionType, TvmCell data);
 
 * `proposalId`: executed proposal identifier
 * `functionType`: executed action type identifier
-* `data`: executed ABI payload (`TvmCell`)
+* `data`: ABI-encoded payload used for execution.
 
 ***
 
@@ -154,13 +220,14 @@ event ProposalExecuted(uint256 proposalId, uint32 functionType, TvmCell data);
 
 ### `approveEvent`
 
-Oracle confirms/approves the event.
+The function is called by an **OracleEventList** contract to confirm/approve the event initialization for this pool. It also optionally binds an internal sender address to the oracle pubkey for later governance actions.
 
 ```solidity
 function approveEvent(
     uint256 oracle_pubkey,
     mapping(uint32 => string) outcomeNames,
     string describe,
+    string name,
     optional(uint256) trustAddr
 ) public;
 ```
@@ -183,11 +250,16 @@ function approveEvent(
     * **1** — Benfica wins
     * **2** — Draw
 * `describe`: event description (used only on first approval)
+* `name`: pool name (used on every approval call)
 * `trustAddr`: optional internal address binding to `oracle_pubkey` for internal voting flows
 
 **Access Control:**
 
 * Callable only by approved `OracleEventList` contracts
+* The call is ignored (returns immediately) if:
+  * this oracle event list address was already processed (implementation currently checks \
+    or
+  * the number of approvals already reached.
 
 **Behavior:**
 
@@ -221,16 +293,16 @@ function acceptStake(
     uint32 outcomeId,
     uint128 stakeAmount,
     uint256 deposit_identifier_hash,
-    bool isInc
+    uint8 bet_type
 ) public;
 ```
 
 **Parameters:**
 
-* `outcomeId`: chosen outcome identifier
-* `stakeAmount`: stake amount
-* `deposit_identifier_hash`: hash used to compute the caller’s `PrivateNote` address
-* `isInc`: whether this stake should increase the active stake count for the outcome
+* `outcomeId`-chosen outcome identifier
+* `stakeAmount`- stake amount
+* `deposit_identifier_hash`- hash used to compute the caller’s `PrivateNote` address
+* `bet_type` — 0 - clean bet, 1 - debt bet, 2 - coupon bet
 
 **Requirements:**
 
@@ -245,31 +317,137 @@ function acceptStake(
 
 ***
 
+### `acceptFullSetStake`
+
+Accepts a **full-set stake** from a `PrivateNote` wallet during the dedicated full-set staking window.
+
+A full-set stake represents proportional participation across **all outcomes** of the event.
+
+`acceptFullSetStake` allows a user to stake across **all outcomes simultaneously**, preserving the proportional distribution of existing pools.
+
+This function:
+
+* Validates that the event is approved and not cancelled.
+* Ensures the event is not yet resolved.
+* Restricts execution to the **full-set time window**.
+* Verifies proportionality against current outcome pools.
+* Updates internal pool accounting.
+* Notifies the caller’s `PrivateNote` via `onFullSetStakeAccepted`.
+
+```solidity
+function acceptFullSetStake(
+        uint128[] amount,
+        uint256 deposit_identifier_hash
+    ) public
+```
+
+**Parameters**
+
+* **`amount`** - Array of stake amounts per outcome.
+  * Must have length equal to `_numOutcomes`.
+  * Must follow the required pool proportion rules (see below).
+* **`deposit_identifier_hash`** - Deposit identifier hash used to deterministically compute the caller’s `PrivateNote` address.
+
+**Effects**
+
+* Increases total pool liquidity.
+* Preserves pool balance proportions.
+* Does not affect coupon or debt pools.
+* Does not emit a specific event; confirmation occurs via callback.
+
+**Notes**
+
+* Full-set staking is only available during the final portion of the staking period.
+* Designed to allow liquidity providers to enter proportionally without skewing odds.
+* Cannot be executed after resolution or cancellation.
+
+***
+
 ### `cancelStake`
 
-Cancels a stake and triggers refund-side handling in `PrivateNote`.
+Cancels a user’s stakes **after the event is cancelled** and returns refund information to the caller’s `PrivateNote` wallet.
 
 ```solidity
 function cancelStake(
-    uint32 outcomeId,
-    uint128 stakeAmount,
-    uint256 deposit_identifier_hash
-) public;
+        uint128[] stakeAmount,
+        uint128[] debtAmount,
+        uint128[] couponsAmount,
+        uint256 deposit_identifier_hash
+    ) public;
 ```
 
-**Parameters:**
+#### Parameters
 
-* `outcomeId`: chosen outcome identifier
-* `stakeAmount`: stake amount
-* `deposit_identifier_hash`: hash used to compute the caller’s `PrivateNote` address
+* `stakeAmount`  — Array of **clean** stake amounts per outcome.
+* `debtAmount`  — Array of **debt** stake amounts per outcome.
+* `couponsAmount`  — Array of **coupon** stake amounts per outcome.
+* `deposit_identifier_hash`  — Deposit identifier hash used to deterministically compute the caller’s `PrivateNote` address.
 
-**Access:**
+#### **Access:**
 
 * only the computed `PrivateNote` address for `deposit_identifier_hash`.
 
-**Requirements:**
+#### Requirements
 
-* the event must be cancelled.
+* The event must be cancelled:
+  * If `block.timestamp > _resultEnd` and the event is not resolved and not cancelled, the contract triggers `cancelEvent()` internally.
+  * After that, the function requires `_isCancelled == true`.
+* Caller must be the expected `PrivateNote` wallet address derived from `deposit_identifier_hash`.
+
+#### External Calls
+
+* Calls `PrivateNote(wallet).onStakeCancelled(...)` to notify the wallet about:
+  * total refunded clean+debt stake (`totalStake`)
+  * total refunded coupon amount (`totalCouponRefund`)
+
+***
+
+### `withdrawFullSet`
+
+Cancels a previously placed **full-set stake** during the full-set window and updates pool accounting accordingly.
+
+This function is used to **withdraw (undo) a proportional full-set stake** before the staking period ends
+
+```solidity
+function withdrawFullSet(
+        uint128[] amount,
+        uint256 deposit_identifier_hash
+    ) public;
+```
+
+**Parameters**
+
+* **`amount`** - Array of withdrawal amounts per outcome.
+  * Must have length equal to `_numOutcomes`.
+  * Must preserve proportionality relative to current outcome pools.
+* **`deposit_identifier_hash`** - Deposit identifier hash used to deterministically compute the caller’s `PrivateNote` wallet address.
+
+`withdrawFullSet` removes a proportional full-set stake across **all outcomes**, provided the withdrawal keeps the same proportionality constraints used for full-set staking.
+
+The function:
+
+* Ensures the event is approved, not cancelled, and not resolved.
+* Restricts execution to the **full-set time window**.
+* Validates proportionality of the provided `amount`.
+* Decreases outcome clean pools and global totals.
+* Notifies the caller’s `PrivateNote` wallet via `onFullSetStakeCancelled`.
+
+**Proportionality Rule**
+
+The withdrawal amounts must preserve the same proportional structure enforced for full-set operations:
+
+* For outcomes with non-zero pools:
+  * `amount[i]` must match the proportional ratio relative to pool sizes.
+* For outcomes with zero pools:
+  * `amount[i]` must be zero.
+
+This is validated by `_checkFullSetProportion(amount)`.
+
+**Notes**
+
+* This function does not emit a dedicated event; confirmation is delivered via the callback to `PrivateNote`.
+* Withdrawals are only possible before `_stakeEnd`, and only after `fullSetStart`.
+* The proportionality rule prevents selective withdrawal that would skew the pool distribution.
 
 ***
 
@@ -277,44 +455,38 @@ function cancelStake(
 
 ### `claim`
 
-Processes a claim for a user.
+Claims winnings (or processes a zero-payout claim) for a `PrivateNote` wallet after event resolution.
 
 ```solidity
 function claim(
-    uint128 stakeAmount,
-    uint32 outcomeId,
-    uint256 deposit_identifier_hash
-) public
+        uint128[] stakeAmount,
+        uint128[] debtAmount,
+        uint128[] couponsAmount,
+        uint256 deposit_identifier_hash
+    ) public
 ```
 
-**Parameters:**
+`claim` allows a user to settle their position in the PMP after the event has been resolved.
 
-* `stakeAmount`: stake amount
-* `outcomeId`: chosen outcome identifier
-* `deposit_identifier_hash`: hash used to compute the caller’s `PrivateNote` address
+Depending on the outcome and the user’s position, the function:
 
-**Access:**
+* Processes a **winning payout**, or
+* Processes a **zero-payout claim** if:
+  * The event is not resolved yet, or
+  * The user has no stake on the winning outcome.
 
-* only the computed `PrivateNote` address for `deposit_identifier_hash`.
+After calculation, the contract notifies the caller’s `PrivateNote` wallet via `onClaimAccepted` and emits `ClaimProcessed`.
 
-**Requirements:**
+**Effects**
 
-* the pool must be approved;
-* `outcomeId < numOutcomes`.
+* Finalizes user settlement.
+* Distributes winnings according to pari-mutuel logic.
+* Automatically terminates the contract when all winning claims are completed.
 
-**Behavior:**
+**Notes**
 
-* if the outcome is not resolved yet, payout is `0` and `win = false` (claim is acknowledged);
-* if resolved and losing, payout is `0` and `win = false`;
-* if resolved and winning, payout is proportional:
-
-`payout = stakeAmount * totalPool / winningPool`
-
-**Additionally:**
-
-* emits `ClaimProcessed(...)`;
-* calls `PrivateNote.onClaimAccepted(...)`;
-* when the last active stake for the winning outcome is claimed, the contract self-destructs to `_deployer`.
+* Arrays are expected to correspond to `_numOutcomes`.
+* Claim can be called multiple times by different participants until `_totalWinPool` is fully distributed.
 
 ***
 
@@ -322,26 +494,53 @@ function claim(
 
 ### `createProposal`
 
-Creates a new oracle governance proposal.
+Creates a new oracle governance proposal for the PMP contract.
+
+This function allows authorized oracle participants to propose administrative actions such as:
+
+* Setting staking and result time windows
+* Resolving the event
+* Cancelling the event
 
 ```solidity
 function createProposal(uint32 function_type, TvmCell data) public;
 ```
 
-**Parameters:**
+Parameters
 
-* `function_type`: action type identifier (implementation-specific)
-* `data`: ABI-encoded payload (`TvmCell`) for the action
-
-**Access**:
-
-* only authorized oracles (either via trusted internal sender binding or external sender pubkey membership, depending on implementation rules).
+* **`function_type`** - Identifier of the proposed action.\
+  Must correspond to one of the supported `FUNCTION_TYPE_*` constants:
+  * `FUNCTION_TYPE_SET_STAKE_DEADLINE`
+  * `FUNCTION_TYPE_SET_RESOLVE`
+  * `FUNCTION_TYPE_CANCEL_EVENT`
+* **`data`** - ABI-encoded payload required for the specified function type.
 
 **Behavior**:
 
-* the creator’s vote is counted immediately;
-* if there is only one oracle, the proposal executes immediately;
-* otherwise emits `ProposalCreated(...)`.
+`createProposal` initializes a new governance proposal and automatically casts the creator’s vote.
+
+The proposal is identified deterministically by:
+
+```
+proposalId = hash(function_type, data)
+```
+
+If there is only **one oracle**, the proposal is executed immediately.
+
+Otherwise, the proposal remains active until:
+
+* It collects enough votes (based on threshold), or
+* Its deadline expires (7 days from creation).
+
+### Governance Flow
+
+1. Oracle creates proposal → creator vote is automatically counted.
+2. Other oracles call `vote(proposalId)`.
+3. Once vote threshold is reached:
+   * `executeProposal` is called.
+4. Proposal is deleted after execution.
+5. If deadline expires before threshold:
+   * Proposal is discarded.
 
 ***
 
@@ -375,79 +574,71 @@ function vote(uint256 proposalId) public;
 
 ### `getDetails`
 
-Returns the complete contract state in a single call.
+Returns the full current state of the PMP contract.
+
+This function provides a comprehensive snapshot of the pool configuration, lifecycle state, oracle status, and pool balances.
 
 ```solidity
 function getDetails() external view returns (
-    string name,
-    uint32 token_type,
-    uint256 event_id,
-    uint256 oracle_list_hash,
-    address deployer,
-    address root,
-    uint256 privateNoteCodeHash,
-    uint128 totalPool,
-    bool approved,
-    uint32 numOutcomes,
-    optional(uint32) resolvedOutcome,
-    uint64 stakeStart,
-    uint64 stakeEnd,
-    uint64 resultStart,
-    uint64 resultEnd,
-    bool isCancelled,
-    uint128 numberOfOracleEvents,
-    uint128 approvedOracleEvents,
-    mapping(uint32 => uint128) outcomePoolAmounts,
-    mapping(uint32 => uint128) outcomeStakeCounts,
-    mapping(uint32 => string) outcomeNames
-);
+        string name,
+        uint32 token_type,
+        uint256 event_id,
+        uint256 oracle_list_hash,
+        address deployer,
+        uint256 privateNoteCodeHash,
+        uint128 totalPool,
+        bool approved,
+        uint32 numOutcomes,
+        optional(uint32) resolvedOutcome,
+        uint64 stakeStart,
+        uint64 stakeEnd,
+        uint64 resultStart,
+        uint64 resultEnd,
+        bool isCancelled,
+        uint128 numberOfOracleEvents,
+        uint128 approvedOracleEvents,
+        mapping(uint32 => mapping(uint8 => uint128)) typedOutcomePools,
+        mapping(uint32 => string) outcomeNames
+    )
 ```
 
 **Returns** :
 
-* **`name`**\
-  Human-readable pool name. Acts as a static identifier of the Pari Mutuel Pool and is passed to `PrivateNote` callbacks.
-* **`token_type`**\
-  Identifier of the token type used by this pool. Fixed at deployment time.
-* **`event_id`**\
-  Unique identifier of the event associated with this Pari Mutuel Pool. Used in oracle interactions.
-* **`oracle_list_hash`**\
-  Hash of the oracle list configuration for this event, ensuring all oracle confirmations refer to the same oracle set.
-* **`deployer`**\
-  Address of the contract deployer. Receives remaining funds when the contract self-destructs after the final winning claim.
-* **`root`**\
-  Address of the **RootPN** contract. Used for deterministic `PrivateNote` address computation.
-* **`privateNoteCodeHash`**\
-  Hash of the `PrivateNote` contract code used by the pool. Allows off-chain verification of `PrivateNote` addresses.
-* **`totalPool`**\
-  Total amount staked across all outcomes. Used in payout calculation.
-* **`approved`**\
-  Indicates whether the pool has been fully approved by oracles and is ready to accept stakes.
-* **`numOutcomes`**\
-  Number of possible outcomes for the event. Set once during the first oracle approval.
-* **`resolvedOutcome`**\
-  Optional final outcome identifier.\
-  If empty, the event is not resolved yet; if set, contains the winning `outcomeId`.
-* **`stakeStart`**\
-  Unix timestamp when staking becomes available.
-* **`stakeEnd`**\
-  Unix timestamp when staking ends.
-* **`resultStart`**\
-  Unix timestamp when the result resolution window starts.
-* **`resultEnd`**\
-  Unix timestamp when the result resolution window ends.
-* **`isCancelled`**\
-  Indicates whether the event has been cancelled. When `true`, staking is disabled and stake cancellation is allowed.
-* **`numberOfOracleEvents`**\
-  Total number of oracle event list contracts configured at deployment.
-* **`approvedOracleEvents`**\
-  Number of oracle event lists that have already approved the event.
-* **`outcomePoolAmounts`**\
-  Mapping of `outcomeId` to the total amount staked on that outcome.
-* **`outcomeStakeCounts`**\
-  Mapping of `outcomeId` to the number of active stakes for that outcome.
-* **`outcomeNames`**\
-  Mapping of `outcomeId` to a name of the outcome.
+**General Information**
+
+* **`name`** - Human-readable pool name.
+* **`token_type`** - Static token type used for the pool.
+* **`event_id`** - Identifier of the associated event.
+* **`oracle_list_hash`** - Hash of the oracle list used during deployment.
+* **`deployer`** - Address of the `PrivateNote` wallet that deployed the contract.
+* **`privateNoteCodeHash`** - Hash of the `PrivateNote` contract code used for address derivation.
+
+**Pool State**
+
+* **`totalPool`**  - Total amount currently in the pool (after fees and redistributions).
+* **`approved`** - Indicates whether the event is approved and staking is enabled.
+* **`isCancelled`** - Indicates whether the event has been cancelled.
+* **`resolvedOutcome`** - Final outcome identifier, if resolved.
+
+**Outcomes**
+
+* **`numOutcomes`** - Total number of outcomes.
+* **`outcomeNames`** - Mapping of outcome identifiers to human-readable names.
+* **`typedOutcomePools`** - Pool balances separated by:
+  * Outcome ID
+  * Bet type (0 = clean, 1 = debt, 2 = coupon)
+
+**Time Windows**
+
+* **`stakeStart`** - Stake acceptance start timestamp.
+* **`stakeEnd`** - Stake acceptance end timestamp.
+* **`resultStart`** - Result acceptance start timestamp.
+* **`resultEnd`** - Result acceptance end timestamp.
+
+**Oracle Governance**
+
+* **`numberOfOracleEvents`** -Total number of required oracle confirmations.
+* **`approvedOracleEvents`** -Number of oracle confirmations received.
 
 ***
 
@@ -456,7 +647,7 @@ function getDetails() external view returns (
 Returns the implementation version and kind identifier.
 
 ```solidity
-function getVersion() external pure returns (string);
+function getVersion() external pure returns (string, string);
 ```
 
 **Returns**:
