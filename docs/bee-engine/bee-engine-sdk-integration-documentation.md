@@ -29,8 +29,12 @@ To connect your application to the Bee Engine system:
 
 You must obtain your application identifier in the system: **app\_dapp\_id**.
 
-* At the current stage of development, to get it, [please contact us](https://t.me/EugeneDAO) \
-  and provide your app name and logo;
+* At the current stage of development, to obtain it, [please contact us](https://t.me/EugeneDAO) \
+  and provide to get it:
+  * your App name;
+  * App link;
+  * link to your logo\
+    the image must be preliminarily [converted into webp format](https://squoosh.app/)
 * In the future, the developer will:
   * deploy their own application smart contract system in the **Acki Nacki blockchain**
   * retrieve `app_dapp_id`, which will equal the [DAPP ID](https://docs.ackinacki.com/glossary#dapp-id) of the first deployed contract
