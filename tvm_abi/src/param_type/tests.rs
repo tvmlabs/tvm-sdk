@@ -12,6 +12,10 @@
 mod param_type_tests {
     use crate::Param;
     use crate::ParamType;
+    use crate::contract::ABI_VERSION_1_0;
+    use crate::contract::ABI_VERSION_2_0;
+    use crate::contract::ABI_VERSION_2_1;
+    use crate::contract::ABI_VERSION_2_4;
 
     #[test]
     fn test_param_type_signature() {
@@ -79,11 +83,44 @@ mod param_type_tests {
             ParamType::Ref(Box::new(ParamType::Uint(123))).type_signature(),
             "ref(uint123)".to_owned()
         );
+        assert_eq!(format!("{}", ParamType::Expire), "expire");
+    }
+
+    #[test]
+    fn set_components_and_supported_versions_cover_error_paths() {
+        let tuple_components = vec![Param::new("value", ParamType::Uint(32))];
+        let mut tuple = ParamType::Tuple(vec![]);
+        tuple.set_components(tuple_components.clone()).unwrap();
+        assert_eq!(tuple, ParamType::Tuple(tuple_components));
+
+        let err = ParamType::Tuple(vec![]).set_components(vec![]).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("Tuple description should contain non empty `components` field")
+        );
+
+        let err = ParamType::Bool
+            .set_components(vec![Param::new("value", ParamType::Uint(8))])
+            .unwrap_err();
+        assert!(err.to_string().contains(
+            "Type description contains non empty `components` field but it is not a tuple"
+        ));
+
+        assert!(!ParamType::Time.is_supported(&ABI_VERSION_1_0));
+        assert!(ParamType::Time.is_supported(&ABI_VERSION_2_0));
+        assert!(!ParamType::String.is_supported(&ABI_VERSION_2_0));
+        assert!(ParamType::String.is_supported(&ABI_VERSION_2_1));
+        assert!(!ParamType::Ref(Box::new(ParamType::Bool)).is_supported(&ABI_VERSION_2_1));
+        assert!(ParamType::Ref(Box::new(ParamType::Bool)).is_supported(&ABI_VERSION_2_4));
     }
 }
 
 mod deserialize_tests {
+    use serde::Deserialize;
+    use serde::de::value::StringDeserializer;
+
     use crate::ParamType;
+    use crate::param_type::deserialize::read_type;
 
     #[test]
     fn param_type_deserialization() {
@@ -127,5 +164,29 @@ mod deserialize_tests {
                 ParamType::Ref(Box::new(ParamType::Bool)),
             ]
         );
+    }
+
+    #[test]
+    fn param_type_deserialization_covers_string_deserializer_and_errors() {
+        let parsed = ParamType::deserialize(StringDeserializer::<serde_json::Error>::new(
+            "bool[]".to_owned(),
+        ))
+        .unwrap();
+        assert_eq!(parsed, ParamType::Array(Box::new(ParamType::Bool)));
+
+        let err = read_type("bool[abc]").unwrap_err();
+        assert!(err.to_string().contains("Invalid name:"));
+
+        let err = read_type("map(bool,uint8)").unwrap_err();
+        assert!(err.to_string().contains("Only integer and std address values can be map keys"));
+
+        let err = read_type("map(uint8)").unwrap_err();
+        assert!(err.to_string().contains("Invalid name:"));
+
+        let err = read_type("wat").unwrap_err();
+        assert!(err.to_string().contains("Invalid name:"));
+
+        let err = serde_json::from_str::<ParamType>("123").unwrap_err();
+        assert!(err.to_string().contains("a correct name of abi-encodable parameter type"));
     }
 }

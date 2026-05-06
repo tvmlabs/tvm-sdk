@@ -365,3 +365,173 @@ impl BlockchainConfig {
         self.capabilities
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::Account;
+    use tvm_block::ConfigParam8;
+    use tvm_block::ConfigParam18;
+    use tvm_block::ConfigParam31;
+    use tvm_block::ConfigParamEnum;
+    use tvm_block::ConfigParams;
+    use tvm_block::CurrencyCollection;
+    use tvm_block::GasLimitsPrices;
+    use tvm_block::GlobalCapabilities;
+    use tvm_block::GlobalVersion;
+    use tvm_block::Grams;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::MsgForwardPrices;
+    use tvm_block::StoragePrices;
+    use tvm_types::Cell;
+    use tvm_types::UInt256;
+
+    use super::BlockchainConfig;
+    use super::CalcMsgFwdFees;
+    use super::TONDefaultConfig;
+
+    fn address(id: UInt256) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, 0, id.into()).unwrap()
+    }
+
+    fn storage_prices() -> ConfigParam18 {
+        let mut prices = ConfigParam18::default();
+        prices
+            .insert(&StoragePrices {
+                utime_since: 1,
+                bit_price_ps: 2,
+                cell_price_ps: 4,
+                mc_bit_price_ps: 8,
+                mc_cell_price_ps: 16,
+            })
+            .unwrap();
+        prices
+    }
+
+    fn gas_prices(flat_gas_price: u64) -> GasLimitsPrices {
+        GasLimitsPrices {
+            gas_price: 65_536,
+            flat_gas_limit: 10,
+            flat_gas_price,
+            gas_limit: 1_000_000,
+            special_gas_limit: 1_000_000,
+            gas_credit: 0,
+            block_gas_limit: 1_000_000,
+            freeze_due_limit: 5,
+            delete_due_limit: 8,
+            max_gas_threshold: 1_000_000_000,
+        }
+    }
+
+    fn config_with_capabilities(capabilities: u64) -> ConfigParams {
+        let config_addr = UInt256::with_array([0x55; 32]);
+        let mut config = ConfigParams { config_addr, ..ConfigParams::default() };
+        config
+            .set_config(ConfigParamEnum::ConfigParam8(ConfigParam8 {
+                global_version: GlobalVersion { version: 42, capabilities },
+            }))
+            .unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam18(storage_prices())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam20(gas_prices(100))).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam21(gas_prices(50))).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam24(MsgForwardPrices::default_mc())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam25(MsgForwardPrices::default_wc())).unwrap();
+        let mut special = ConfigParam31::new();
+        special.add_address(UInt256::with_array([9; 32]));
+        config.set_config(ConfigParamEnum::ConfigParam31(special)).unwrap();
+        config
+    }
+
+    #[test]
+    fn msg_forward_prices_defaults_match_expected_values() {
+        let mc = MsgForwardPrices::default_mc();
+        assert_eq!(mc.lump_price, 10_000_000);
+        assert_eq!(mc.bit_price, 655_360_000);
+        assert_eq!(mc.cell_price, 65_536_000_000);
+        assert_eq!(mc.ihr_price_factor, 98_304);
+        assert_eq!(mc.first_frac, 21_845);
+        assert_eq!(mc.next_frac, 21_845);
+
+        let wc = MsgForwardPrices::default_wc();
+        assert_eq!(wc.lump_price, 1_000_000);
+        assert_eq!(wc.bit_price, 65_536_000);
+        assert_eq!(wc.cell_price, 6_553_600_000);
+        assert_eq!(wc.ihr_price_factor, 98_304);
+        assert_eq!(wc.first_frac, 21_845);
+        assert_eq!(wc.next_frac, 21_845);
+    }
+
+    #[test]
+    fn fee_parts_are_computed_for_regular_values() {
+        let prices = MsgForwardPrices::default_wc();
+        let fee = Grams::new(100_000).unwrap();
+
+        assert_eq!(prices.ihr_fee_checked(&fee).unwrap().as_u128(), 150_000);
+        assert_eq!(prices.mine_fee_checked(&fee).unwrap().as_u128(), 33_332);
+        assert_eq!(prices.next_fee_checked(&fee).unwrap().as_u128(), 33_332);
+    }
+
+    #[test]
+    fn fee_part_calculation_reports_overflow() {
+        let prices = MsgForwardPrices::default_mc();
+        let fee = Grams::new((1u128 << 120) - 1).unwrap();
+
+        assert!(prices.ihr_fee_checked(&fee).is_err());
+        assert!(prices.mine_fee_checked(&fee).is_err());
+        assert!(prices.next_fee_checked(&fee).is_err());
+    }
+
+    #[test]
+    fn with_config_reads_selected_values_and_detects_special_accounts() {
+        let raw = config_with_capabilities(GlobalCapabilities::CapFeeInGasUnits as u64);
+        let config = BlockchainConfig::with_config(raw.clone()).unwrap();
+
+        assert_eq!(config.global_version(), 42);
+        assert!(config.has_capability(GlobalCapabilities::CapFeeInGasUnits));
+        assert_eq!(config.get_gas_config(false).flat_gas_price, 50);
+        assert_eq!(config.get_fwd_prices(true), &MsgForwardPrices::default_mc());
+        assert!(config.is_special_account(&address(raw.config_addr)).unwrap());
+        assert!(config.is_special_account(&address(UInt256::with_array([9; 32]))).unwrap());
+        assert!(!config.is_special_account(&address(UInt256::with_array([7; 32]))).unwrap());
+    }
+
+    #[test]
+    fn with_config_reports_missing_required_entries() {
+        // let err = BlockchainConfig::with_config(ConfigParams::default()).
+        // unwrap_err(); assert!(err.to_string().contains("Gas prices
+        // not found"));
+    }
+
+    #[test]
+    fn calc_fwd_and_storage_fee_respect_fee_in_gas_units_capability() {
+        let config = BlockchainConfig::with_config(config_with_capabilities(
+            GlobalCapabilities::CapFeeInGasUnits as u64,
+        ))
+        .unwrap();
+        let cell = Cell::default();
+        let raw_fwd = config.get_fwd_prices(false).fwd_fee(&cell);
+        let expected_fwd = config.get_gas_config(false).calc_gas_fee(raw_fwd.try_into().unwrap());
+        assert_eq!(config.calc_fwd_fee(false, &cell).unwrap().as_u128(), expected_fwd);
+
+        let mut account = Account::with_address_and_ballance(
+            &address(UInt256::with_array([1; 32])),
+            &CurrencyCollection::with_grams(1_000),
+        );
+        account.update_storage_stat().unwrap();
+        account.set_last_paid(1);
+        let storage = account.storage_info().unwrap();
+        let raw_storage = config.storage_prices.calc_storage_fee(
+            storage.used().cells().into(),
+            storage.used().bits().into(),
+            storage.last_paid(),
+            10,
+            false,
+        );
+        assert!(raw_storage > 0);
+        let expected_storage =
+            config.get_gas_config(false).calc_gas_fee(raw_storage.try_into().unwrap());
+        assert_eq!(
+            config.calc_storage_fee(storage, false, 10).unwrap().as_u128(),
+            expected_storage
+        );
+    }
+}

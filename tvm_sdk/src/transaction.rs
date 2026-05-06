@@ -255,3 +255,208 @@ impl Transaction {
         fees
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::AccStatusChange;
+    use tvm_block::AccountStatus;
+    use tvm_block::ComputeSkipReason;
+    use tvm_block::CurrencyCollection;
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::GetRepresentationHash;
+    use tvm_block::HashUpdate;
+    use tvm_block::InternalMessageHeader;
+    use tvm_block::Message as TvmMessage;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::TrActionPhase;
+    use tvm_block::TrComputePhase;
+    use tvm_block::TrComputePhaseVm;
+    use tvm_block::TrStoragePhase;
+    use tvm_block::TransactionDescr;
+    use tvm_block::TransactionDescrOrdinary;
+    use tvm_block::TransactionDescrTickTock;
+    use tvm_block::VarUInteger7;
+    use tvm_types::AccountId;
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::MessageType;
+
+    fn std_addr(byte: u8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, 0, AccountId::from([byte; 32])).unwrap()
+    }
+
+    fn ext_addr(byte: u8) -> MsgAddressExt {
+        MsgAddressExt::with_extern(SliceData::new(vec![byte])).unwrap()
+    }
+
+    fn internal_message(value: u64, body: &[u8]) -> TvmMessage {
+        let mut msg = TvmMessage::with_int_header(InternalMessageHeader::with_addresses(
+            std_addr(1),
+            std_addr(2),
+            CurrencyCollection::with_grams(value),
+        ));
+        if !body.is_empty() {
+            msg.set_body(SliceData::new(body.to_vec()));
+        }
+        msg
+    }
+
+    fn build_transaction(description: TransactionDescr) -> tvm_block::Transaction {
+        let mut tx = tvm_block::Transaction::with_address_and_status(
+            AccountId::from([9; 32]),
+            AccountStatus::AccStateActive,
+        );
+        tx.set_total_fees(CurrencyCollection::with_grams(60));
+        tx.write_in_msg(Some(&internal_message(1, &[0x11]))).unwrap();
+        tx.add_out_message(&internal_message(7, &[0x22])).unwrap();
+        tx.write_state_update(&HashUpdate::default()).unwrap();
+        tx.write_description(&description).unwrap();
+        tx
+    }
+
+    #[test]
+    fn try_from_rejects_non_ordinary_transactions() {
+        let tx = build_transaction(TransactionDescr::TickTock(TransactionDescrTickTock::default()));
+
+        let err = Transaction::try_from(&tx).unwrap_err();
+
+        assert_eq!(err.to_string(), "Invalid data: Invalid transaction type");
+    }
+
+    #[test]
+    fn try_from_maps_skipped_compute_and_missing_optional_phases() {
+        let tx = tvm_block::generate_tranzaction(AccountId::from([5; 32]));
+
+        let transaction = Transaction::try_from(&tx).unwrap();
+
+        assert_eq!(transaction.status(), TransactionProcessingStatus::Finalized);
+        assert_eq!(transaction.compute.skipped_reason, Some(ComputeSkipReason::NoState));
+        assert_eq!(transaction.compute.exit_code, None);
+        assert_eq!(transaction.compute.exit_arg, None);
+        assert_eq!(transaction.compute.success, None);
+        assert_eq!(transaction.compute.gas_fees, 0);
+        assert_eq!(transaction.compute.gas_used, 0);
+        assert!(transaction.storage.is_none());
+        assert!(transaction.action.is_none());
+        assert!(transaction.in_message_id().is_some());
+        assert_eq!(transaction.out_messages_id().len(), 3);
+        assert_eq!(transaction.out_messages.len(), 3);
+    }
+
+    #[test]
+    fn try_from_maps_vm_storage_action_and_message_ids() {
+        let mut ordinary = TransactionDescrOrdinary::default();
+        ordinary.aborted = true;
+        ordinary.storage_ph =
+            Some(TrStoragePhase::with_params(11u64.into(), None, AccStatusChange::Frozen));
+        ordinary.compute_ph = TrComputePhase::Vm(TrComputePhaseVm {
+            success: true,
+            gas_fees: 13u64.into(),
+            gas_used: VarUInteger7::from(21),
+            exit_code: 17,
+            exit_arg: Some(-3),
+            ..Default::default()
+        });
+        ordinary.action = Some(TrActionPhase {
+            success: true,
+            valid: false,
+            no_funds: true,
+            result_code: -9,
+            total_fwd_fees: Some(5u64.into()),
+            total_action_fees: Some(7u64.into()),
+            ..Default::default()
+        });
+
+        let mut tx = build_transaction(TransactionDescr::Ordinary(ordinary));
+        let out_ext = TvmMessage::with_ext_out_header(ExtOutMessageHeader::with_addresses(
+            std_addr(7),
+            ext_addr(0xee),
+        ));
+        tx.add_out_message(&out_ext).unwrap();
+
+        let transaction = Transaction::try_from(&tx).unwrap();
+
+        assert!(transaction.is_aborted());
+        assert_eq!(transaction.storage.as_ref().unwrap().status_change, AccStatusChange::Frozen);
+        assert_eq!(transaction.storage.as_ref().unwrap().storage_fees_collected, 11);
+        assert_eq!(transaction.compute.skipped_reason, None);
+        assert_eq!(transaction.compute.exit_code, Some(17));
+        assert_eq!(transaction.compute.exit_arg, Some(-3));
+        assert_eq!(transaction.compute.success, Some(true));
+        assert_eq!(transaction.compute.gas_fees, 13);
+        assert_eq!(transaction.compute.gas_used, 21);
+        assert_eq!(transaction.action.as_ref().unwrap().success, true);
+        assert_eq!(transaction.action.as_ref().unwrap().valid, false);
+        assert_eq!(transaction.action.as_ref().unwrap().no_funds, true);
+        assert_eq!(transaction.action.as_ref().unwrap().result_code, -9);
+        assert_eq!(transaction.action.as_ref().unwrap().total_fwd_fees, 5);
+        assert_eq!(transaction.action.as_ref().unwrap().total_action_fees, 7);
+        assert_eq!(transaction.out_messages.len(), 2);
+        assert_eq!(transaction.out_messages[0].value, 7);
+        assert_eq!(transaction.out_messages[1].msg_type(), MessageType::ExternalOutbound);
+        assert_eq!(
+            transaction.out_msgs[0].to_string(),
+            hex::encode(tx.get_out_msg(0).unwrap().unwrap().hash().unwrap().as_slice())
+        );
+    }
+
+    #[test]
+    fn calc_fees_handles_positive_and_clamped_values() {
+        let transaction = Transaction {
+            id: "aa".into(),
+            status: TransactionProcessingStatus::Finalized,
+            now: 0,
+            in_msg: Some("bb".into()),
+            out_msgs: vec!["cc".into()],
+            out_messages: vec![
+                Message {
+                    id: "01".into(),
+                    body: None,
+                    msg_type: MessageType::Internal,
+                    value: u64::MAX,
+                },
+                Message { id: "02".into(), body: None, msg_type: MessageType::Internal, value: 1 },
+            ],
+            aborted: false,
+            compute: ComputePhase { gas_fees: 20, ..Default::default() },
+            storage: Some(StoragePhase {
+                status_change: AccStatusChange::Unchanged,
+                storage_fees_collected: 10,
+            }),
+            action: Some(ActionPhase {
+                total_fwd_fees: 5,
+                total_action_fees: 100,
+                ..Default::default()
+            }),
+            total_fees: 60,
+        };
+
+        let fees = transaction.calc_fees();
+
+        assert_eq!(fees.gas_fee, 20);
+        assert_eq!(fees.storage_fee, 10);
+        assert_eq!(fees.out_msgs_fwd_fee, 5);
+        assert_eq!(fees.total_fwd_fees, 5);
+        assert_eq!(fees.total_account_fees, 0);
+        assert_eq!(fees.in_msg_fwd_fee, 0);
+        assert_eq!(fees.ext_in_msg_fee, 0);
+        assert_eq!(fees.account_fees, 0);
+        assert_eq!(fees.total_output, 0);
+    }
+
+    #[test]
+    fn message_helpers_support_external_input_fixture() {
+        let ext_in = TvmMessage::with_ext_in_header(ExternalInboundMessageHeader::new(
+            ext_addr(0xaa),
+            std_addr(8),
+        ));
+
+        let message = Message::with_msg(&ext_in).unwrap();
+
+        assert_eq!(message.msg_type(), MessageType::ExternalInbound);
+        assert_eq!(message.value, 0);
+    }
+}

@@ -2107,3 +2107,379 @@ fn action_type(action: &OutAction) -> String {
         _ => "Unknown".to_string(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::AccStatusChange;
+    use tvm_block::Account;
+    use tvm_block::AccountStatus;
+    use tvm_block::AnycastInfo;
+    use tvm_block::CurrencyCollection;
+    use tvm_block::Deserializable;
+    use tvm_block::GasLimitsPrices;
+    use tvm_block::HashUpdate;
+    use tvm_block::InternalMessageHeader;
+    use tvm_block::Message;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::OutAction;
+    use tvm_block::RESERVE_ALL_BUT;
+    use tvm_block::Serializable;
+    use tvm_block::StateInit;
+    use tvm_block::TrActionPhase;
+    use tvm_block::Transaction;
+    use tvm_types::BuilderData;
+    use tvm_types::Cell;
+    use tvm_types::Result;
+    use tvm_types::SliceData;
+    use tvm_types::UInt256;
+    use tvm_vm::stack::Stack;
+
+    use super::*;
+    use crate::BlockchainConfig;
+
+    struct DummyExecutor {
+        config: BlockchainConfig,
+    }
+
+    impl DummyExecutor {
+        fn new() -> Self {
+            Self { config: BlockchainConfig::default() }
+        }
+    }
+
+    impl TransactionExecutor for DummyExecutor {
+        fn execute_with_params(
+            &self,
+            _in_msg: Option<&Message>,
+            account: &mut Account,
+            _params: ExecuteParams,
+            minted_shell: &mut i128,
+        ) -> Result<Transaction> {
+            *minted_shell = 7;
+            let mut tx = Transaction::with_address_and_status(
+                account.get_id().unwrap(),
+                AccountStatus::AccStateUninit,
+            );
+            tx.set_now(11);
+            tx.write_state_update(&HashUpdate::default())?;
+            Ok(tx)
+        }
+
+        fn ordinary_transaction(&self) -> bool {
+            false
+        }
+
+        fn config(&self) -> &BlockchainConfig {
+            &self.config
+        }
+
+        fn build_stack(&self, _in_msg: Option<&Message>, _account: &Account) -> Stack {
+            Stack::new()
+        }
+    }
+
+    fn address(byte: u8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
+    }
+
+    fn byte_cell(byte: u8) -> Cell {
+        BuilderData::with_raw(vec![byte], 8).unwrap().into_cell().unwrap()
+    }
+
+    fn active_account(byte: u8) -> Account {
+        let mut state_init = StateInit::default();
+        state_init.set_code(byte_cell(byte));
+        state_init.set_data(byte_cell(byte.wrapping_add(1)));
+        Account::active_by_init_code_hash(
+            address(byte),
+            CurrencyCollection::with_grams(100),
+            0,
+            state_init,
+            false,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn action_phase_result_from_phase_starts_empty() {
+        let phase = TrActionPhase {
+            success: true,
+            valid: true,
+            no_funds: false,
+            status_change: AccStatusChange::Unchanged,
+            ..Default::default()
+        };
+
+        let result = ActionPhaseResult::from_phase(phase.clone());
+        assert_eq!(result.phase, phase);
+        assert!(result.messages.is_empty());
+        assert!(result.copyleft_reward.is_none());
+    }
+
+    #[test]
+    fn execute_with_libs_and_params_updates_account_root_and_resets_thread_locals() {
+        let executor = DummyExecutor::new();
+        let account = Account::with_address(address(1));
+        let mut account_root = account.serialize().unwrap();
+        let (tx, minted_shell) = executor
+            .execute_with_libs_and_params(None, &mut account_root, ExecuteParams::default())
+            .unwrap();
+
+        assert_eq!(minted_shell, 7);
+        assert_eq!(tx.now(), 11);
+        assert!(Account::construct_from_cell(account_root).unwrap().storage_info().is_some());
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| assert!(x.is_none()));
+        tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
+            .with_borrow(|x| assert!(x.is_none()));
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn build_contract_info_uses_account_balance_address_and_seed() {
+        let executor = DummyExecutor::new();
+        let balance = CurrencyCollection::with_grams(123);
+        let addr = address(9);
+
+        let info =
+            executor.build_contract_info(&balance, &addr, 10, 20, 30, UInt256::with_array([7; 32]));
+
+        assert_eq!(info.capabilities, executor.config.raw_config().capabilities());
+        assert_eq!(info.unix_time(), 10);
+        assert_eq!(info.block_lt, 20);
+        assert_eq!(info.trans_lt, 30);
+        assert_eq!(info.balance, balance);
+        assert_eq!(info.config_params, None);
+        assert_eq!(
+            info.myself,
+            SliceData::load_builder(addr.write_to_new_cell().unwrap()).unwrap()
+        );
+        assert_ne!(info.rand_seed, Default::default());
+    }
+
+    #[test]
+    fn storage_phase_rejects_transaction_time_older_than_last_paid() {
+        let executor = DummyExecutor::new();
+        let mut account =
+            Account::with_address_and_ballance(&address(3), &CurrencyCollection::with_grams(1));
+        account.set_last_paid(10);
+        let mut balance = CurrencyCollection::with_grams(1);
+        let mut tx = Transaction::with_address_and_status(address(3).address(), account.status());
+        tx.set_now(9);
+
+        let err = executor
+            .storage_phase(&mut account, &mut balance, &mut tx, false, false, false)
+            .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("transaction timestamp must be greater then account timestamp")
+        );
+    }
+
+    #[test]
+    fn storage_phase_special_account_skips_fee_collection() {
+        let executor = DummyExecutor::new();
+        let mut account =
+            Account::with_address_and_ballance(&address(4), &CurrencyCollection::with_grams(25));
+        let mut balance = CurrencyCollection::with_grams(25);
+        let mut tx = Transaction::with_address_and_status(address(4).address(), account.status());
+        tx.set_now(10);
+
+        let phase = executor
+            .storage_phase(&mut account, &mut balance, &mut tx, false, true, false)
+            .unwrap();
+
+        assert_eq!(phase.storage_fees_collected.as_u128(), 0);
+        assert_eq!(phase.status_change, AccStatusChange::Unchanged);
+        assert_eq!(balance.grams.as_u128(), 25);
+    }
+
+    #[test]
+    fn credit_phase_collects_due_payment_and_updates_balances() {
+        let executor = DummyExecutor::new();
+        let mut account = Account::with_address(address(5));
+        account.set_due_payment(Some(30u64.into()));
+        let mut tx = Transaction::with_address_and_status(address(5).address(), account.status());
+        let mut msg_balance = CurrencyCollection::with_grams(100);
+        let mut acc_balance = CurrencyCollection::with_grams(7);
+
+        let phase = executor
+            .credit_phase(&mut account, &mut tx, &mut msg_balance, &mut acc_balance)
+            .unwrap();
+
+        assert_eq!(phase.due_fees_collected.unwrap().as_u128(), 30);
+        assert_eq!(msg_balance.grams.as_u128(), 70);
+        assert_eq!(acc_balance.grams.as_u128(), 77);
+        assert!(account.due_payment().is_none());
+        assert_eq!(tx.total_fees().grams.as_u128(), 30);
+    }
+
+    #[test]
+    fn address_helpers_cover_replace_length_and_rewrite_cases() {
+        let acc = address(6);
+        assert_eq!(check_replace_src_addr(&None, &acc), Some(&acc));
+        assert_eq!(check_replace_src_addr(&Some(acc.clone()), &acc), Some(&acc));
+        assert!(check_replace_src_addr(&Some(address(7)), &acc).is_none());
+
+        let variant = MsgAddressInt::with_variant(None, 0, SliceData::new(vec![0x80])).unwrap();
+        assert!(check_replace_src_addr(&Some(variant), &acc).is_none());
+
+        assert!(is_valid_addr_len(256, 256, 256, 0));
+        assert!(is_valid_addr_len(32, 8, 40, 8));
+        assert!(!is_valid_addr_len(9, 8, 40, 8));
+
+        let config = BlockchainConfig::default();
+        let dst =
+            MsgAddressInt::with_variant(None, -1, UInt256::with_array([8; 32]).into()).unwrap();
+        let rewritten = check_rewrite_dest_addr(&dst, &config, &acc).unwrap();
+        assert!(matches!(rewritten, MsgAddressInt::AddrStd(_)));
+        assert_eq!(rewritten.workchain_id(), -1);
+
+        let anycast = AnycastInfo::with_rewrite_pfx(
+            SliceData::load_builder(BuilderData::with_raw(vec![0x80], 1).unwrap()).unwrap(),
+        )
+        .unwrap();
+        let anycast_dst =
+            MsgAddressInt::with_standart(Some(anycast), -1, UInt256::with_array([9; 32]).into())
+                .unwrap();
+        assert_eq!(
+            check_rewrite_dest_addr(&anycast_dst, &config, &acc).unwrap_err(),
+            IncorrectCheckRewrite::Anycast
+        );
+
+        let short_dst = MsgAddressInt::with_variant(None, -1, SliceData::new(vec![0x80])).unwrap();
+        assert_eq!(
+            check_rewrite_dest_addr(&short_dst, &config, &acc).unwrap_err(),
+            IncorrectCheckRewrite::Other
+        );
+    }
+
+    #[test]
+    fn reserve_action_handler_covers_success_and_error_modes() {
+        let mut reserve = CurrencyCollection::with_grams(10);
+        let mut balance = CurrencyCollection::with_grams(100);
+        let mut need_to_reserve = 5;
+        let reserved =
+            reserve_action_handler(0, &mut reserve, &mut balance, &mut need_to_reserve).unwrap();
+        assert_eq!(reserved.grams.as_u128(), 15);
+        assert_eq!(balance.grams.as_u128(), 85);
+        assert_eq!(need_to_reserve, 0);
+
+        let mut reserve_all_but = CurrencyCollection::with_grams(30);
+        let mut balance = CurrencyCollection::with_grams(90);
+        let mut need_to_reserve = 0;
+        let reserved = reserve_action_handler(
+            RESERVE_ALL_BUT,
+            &mut reserve_all_but,
+            &mut balance,
+            &mut need_to_reserve,
+        )
+        .unwrap();
+        assert_eq!(reserved.grams.as_u128(), 60);
+        assert_eq!(balance.grams.as_u128(), 30);
+
+        let mut reserve = CurrencyCollection::with_grams(1);
+        let mut balance = CurrencyCollection::with_grams(1);
+        let mut need_to_reserve = 0;
+        assert_eq!(
+            reserve_action_handler(
+                RESERVE_ALL_BUT + 1,
+                &mut reserve,
+                &mut balance,
+                &mut need_to_reserve
+            )
+            .unwrap_err(),
+            RESULT_CODE_UNKNOWN_OR_INVALID_ACTION
+        );
+
+        let mut reserve = CurrencyCollection::with_grams(10);
+        let mut balance = CurrencyCollection::with_grams(5);
+        assert_eq!(
+            reserve_action_handler(0, &mut reserve, &mut balance, &mut 0).unwrap_err(),
+            RESULT_CODE_NOT_ENOUGH_GRAMS
+        );
+    }
+
+    #[test]
+    fn code_and_library_handlers_cover_success_and_bad_state() {
+        let replacement = byte_cell(0x22);
+
+        let mut empty = Account::default();
+        assert_eq!(
+            setcode_action_handler(&mut empty, replacement.clone()),
+            Some(RESULT_CODE_BAD_ACCOUNT_STATE)
+        );
+        assert_eq!(
+            change_library_action_handler(&mut empty, 1, Some(replacement.clone()), None),
+            Some(RESULT_CODE_BAD_ACCOUNT_STATE)
+        );
+
+        let mut account = active_account(0x11);
+        assert_eq!(setcode_action_handler(&mut account, replacement.clone()), None);
+        assert_eq!(account.get_code().unwrap().repr_hash(), replacement.repr_hash());
+
+        let library = byte_cell(0x33);
+        assert_eq!(
+            change_library_action_handler(&mut account, 1, Some(library.clone()), None),
+            None
+        );
+        assert_eq!(
+            change_library_action_handler(&mut account, 0, None, Some(library.repr_hash())),
+            None
+        );
+        assert_eq!(
+            change_library_action_handler(&mut account, 1, None, None),
+            Some(RESULT_CODE_BAD_ACCOUNT_STATE)
+        );
+    }
+
+    #[test]
+    fn account_from_message_init_gas_and_formatting_helpers_cover_common_paths() {
+        let src = address(1);
+        let dst = address(2);
+        let grams = CurrencyCollection::with_grams(50);
+
+        let bounce_msg =
+            Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+                src.clone(),
+                dst.clone(),
+                grams.clone(),
+                true,
+            ));
+        assert!(account_from_message(&bounce_msg, &grams, true, false, false).is_none());
+
+        let create_msg =
+            Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+                src,
+                dst.clone(),
+                grams.clone(),
+                false,
+            ));
+        let created = account_from_message(&create_msg, &grams, true, false, false).unwrap();
+        assert_eq!(created.status(), AccountStatus::AccStateUninit);
+        assert_eq!(created.get_id().unwrap(), dst.address());
+
+        let gas_info = GasLimitsPrices {
+            gas_price: 1 << 16,
+            gas_limit: 100,
+            special_gas_limit: 77,
+            gas_credit: 25,
+            flat_gas_limit: 10,
+            flat_gas_price: 10,
+            max_gas_threshold: 1000,
+            ..GasLimitsPrices::default()
+        };
+        let external = init_gas(200, 50, true, false, true, &gas_info);
+        assert_eq!(external.get_gas_limit(), 50);
+        assert_eq!(external.get_gas_credit(), 25);
+        let special = init_gas(200, 50, false, true, true, &gas_info);
+        assert_eq!(special.get_gas_limit_max(), 77);
+        assert_eq!(special.get_gas_limit(), 50);
+
+        assert_eq!(
+            balance_to_string(&CurrencyCollection::with_grams(1_234_567_890)),
+            "1.234 567 890      (1234567890)"
+        );
+        assert_eq!(action_type(&OutAction::SetCode { new_code: Cell::default() }), "SetCode");
+        assert_eq!(action_type(&OutAction::None), "Unknown");
+    }
+}

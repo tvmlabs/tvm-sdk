@@ -745,3 +745,448 @@ impl Contract {
         Ok(Value::Null)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use serde_json::json;
+    use tvm_abi::PublicKeyData;
+    use tvm_abi::token::Token;
+    use tvm_abi::token::TokenValue;
+    use tvm_block::CurrencyCollection;
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::MsgAddressIntOrNone;
+    use tvm_block::Serializable;
+    use tvm_block::StateInit;
+    use tvm_types::BuilderData;
+    use tvm_types::Cell;
+    use tvm_types::SliceData;
+    use tvm_types::ed25519_generate_private_key;
+
+    use super::*;
+
+    const TEST_ABI: &str = r#"{
+        "ABI version": 2,
+        "header": ["time", "expire", "pubkey"],
+        "functions": [
+            {
+                "name": "touch",
+                "inputs": [{"name": "value", "type": "uint32"}],
+                "outputs": [{"name": "ok", "type": "bool"}]
+            },
+            {
+                "name": "constructor",
+                "inputs": [],
+                "outputs": []
+            }
+        ],
+        "events": [],
+        "data": []
+    }"#;
+
+    fn test_cell(byte: u8) -> Cell {
+        BuilderData::with_raw(vec![byte], 8).unwrap().into_cell().unwrap()
+    }
+
+    fn boc(cell: &Cell) -> Vec<u8> {
+        tvm_types::boc::write_boc(cell).unwrap()
+    }
+
+    fn test_std_address(byte: u8, workchain_id: i8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, workchain_id, [byte; 32].into()).unwrap()
+    }
+
+    fn touch_call_set() -> FunctionCallSet {
+        FunctionCallSet {
+            func: "touch".to_owned(),
+            header: Some(r#"{"time":1,"expire":123}"#.to_owned()),
+            input: r#"{"value":"7"}"#.to_owned(),
+            abi: TEST_ABI.to_owned(),
+        }
+    }
+
+    fn constructor_call_set() -> FunctionCallSet {
+        FunctionCallSet {
+            func: "constructor".to_owned(),
+            header: Some("{}".to_owned()),
+            input: "{}".to_owned(),
+            abi: TEST_ABI.to_owned(),
+        }
+    }
+
+    fn empty_state_init_boc() -> Vec<u8> {
+        tvm_types::boc::write_boc(&StateInit::default().serialize().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn contract_image_reports_missing_code_and_data_and_can_set_pubkey() {
+        let mut image = ContractImage::new().unwrap();
+
+        assert_eq!(image.get_public_key().unwrap(), None);
+        assert_eq!(
+            image.get_serialized_code().unwrap_err().to_string(),
+            "Invalid data: State init has no code"
+        );
+        assert_eq!(
+            image.get_serialized_data().unwrap_err().to_string(),
+            "Invalid data: State init has no data"
+        );
+
+        let key: PublicKeyData = [7; 32];
+        image.set_public_key(&key).unwrap();
+
+        assert_eq!(image.get_public_key().unwrap(), Some(key));
+        assert!(!image.get_serialized_data().unwrap().is_empty());
+    }
+
+    #[test]
+    fn contract_image_roundtrips_code_data_library_and_state_init_sources() {
+        let code = test_cell(0xaa);
+        let data = test_cell(0xbb);
+        let library = test_cell(0xcc);
+
+        let code_boc = boc(&code);
+        let data_boc = boc(&data);
+        let library_boc = boc(&library);
+
+        let mut code_cursor = Cursor::new(code_boc.clone());
+        let mut data_cursor = Cursor::new(data_boc.clone());
+        let mut library_cursor = Cursor::new(library_boc);
+        let image = ContractImage::from_code_data_and_library(
+            &mut code_cursor,
+            Some(&mut data_cursor),
+            Some(&mut library_cursor),
+        )
+        .unwrap();
+
+        assert_eq!(image.get_serialized_code().unwrap(), code_boc);
+        assert_eq!(image.get_serialized_data().unwrap(), data_boc);
+
+        let serialized = image.serialize().unwrap();
+        let roundtrip =
+            ContractImage::from_state_init(&mut Cursor::new(serialized.clone())).unwrap();
+        assert_eq!(roundtrip.serialize().unwrap(), serialized);
+
+        let from_cell =
+            ContractImage::from_cell(tvm_types::boc::read_single_root_boc(&serialized).unwrap())
+                .unwrap();
+        assert_eq!(from_cell.serialize().unwrap(), serialized);
+    }
+
+    #[test]
+    fn contract_image_from_state_init_and_key_and_msg_address_cover_branches() {
+        let key: PublicKeyData = [3; 32];
+        let mut state_init_cursor = Cursor::new(empty_state_init_boc());
+        let image = ContractImage::from_state_init_and_key(&mut state_init_cursor, &key).unwrap();
+
+        assert_eq!(image.get_public_key().unwrap(), Some(key));
+        assert!(matches!(image.msg_address(0), MsgAddressInt::AddrStd(_)));
+        assert!(matches!(image.msg_address(256), MsgAddressInt::AddrVar(_)));
+    }
+
+    #[test]
+    fn message_helpers_roundtrip_and_cover_destination_errors() {
+        let dst = test_std_address(0x11, 0);
+        let src_ext = MsgAddressExt::with_extern(SliceData::new(vec![0x55])).unwrap();
+        let msg = Contract::create_ext_in_message(
+            dst.clone(),
+            src_ext,
+            SliceData::load_cell(test_cell(0xaa)).unwrap(),
+        )
+        .unwrap();
+
+        let (serialized, id) = Contract::serialize_message(&msg).unwrap();
+        let roundtrip = Contract::deserialize_message(&serialized).unwrap();
+        assert_eq!(roundtrip, msg);
+        assert_eq!(roundtrip.dst_ref(), Some(&dst));
+        assert_eq!(Contract::get_dst_from_msg(&serialized).unwrap(), dst);
+        assert!(!id.to_string().is_empty());
+
+        let slice = Contract::deserialize_tree_to_slice(&serialized).unwrap();
+        assert_eq!(
+            slice.into_cell().repr_hash(),
+            msg.write_to_new_cell().unwrap().into_cell().unwrap().repr_hash()
+        );
+
+        let ext_out = TvmMessage::with_ext_out_header(ExtOutMessageHeader::with_addresses(
+            test_std_address(0x22, 0),
+            MsgAddressExt::AddrNone,
+        ));
+        let ext_out_bytes = Contract::serialize_message(&ext_out).unwrap().0;
+        assert_eq!(
+            Contract::get_dst_from_msg(&ext_out_bytes).unwrap_err().to_string(),
+            "Invalid data: Wrong message type (extOut)"
+        );
+        assert!(Contract::deserialize_tree_to_slice(b"not a boc").is_err());
+        assert!(Contract::deserialize_message(b"not a boc").is_err());
+    }
+
+    #[test]
+    fn decode_helpers_cover_call_and_response_paths() {
+        let sign_key = ed25519_generate_private_key().unwrap();
+        let address = test_std_address(0x33, 0);
+        let message = Contract::construct_call_ext_in_message_json(
+            address.clone(),
+            MsgAddressExt::AddrNone,
+            &touch_call_set(),
+            Some(&sign_key),
+        )
+        .unwrap();
+
+        let body = message.message.body().unwrap();
+        let decoded =
+            Contract::decode_unknown_function_call_json(TEST_ABI, body.clone(), false, false)
+                .unwrap();
+        assert_eq!(decoded.function_name, "touch");
+        assert_eq!(decoded.params, r#"{"value":"7"}"#);
+
+        let body_boc = boc(&body.clone().into_cell());
+        let decoded_from_bytes = Contract::decode_unknown_function_call_from_bytes_json(
+            TEST_ABI, &body_boc, false, false,
+        )
+        .unwrap();
+        assert_eq!(decoded_from_bytes.params, decoded.params);
+
+        let abi = AbiContract::load(TEST_ABI.as_bytes()).unwrap();
+        let function = abi.function("touch").unwrap();
+        let output = function
+            .encode_internal_output(
+                function.get_output_id(),
+                &[Token::new("ok", TokenValue::Bool(true))],
+            )
+            .unwrap();
+        let output_slice = SliceData::load_builder(output.clone()).unwrap();
+        assert_eq!(
+            Contract::decode_function_response_json(
+                TEST_ABI,
+                "touch",
+                output_slice.clone(),
+                false,
+                false
+            )
+            .unwrap(),
+            r#"{"ok":true}"#
+        );
+
+        let unknown =
+            Contract::decode_unknown_function_response_json(TEST_ABI, output_slice, false, false)
+                .unwrap();
+        assert_eq!(unknown.function_name, "touch");
+        assert_eq!(unknown.params, r#"{"ok":true}"#);
+
+        let output_boc = boc(&output.into_cell().unwrap());
+        assert_eq!(
+            Contract::decode_function_response_from_bytes_json(
+                TEST_ABI,
+                "touch",
+                &output_boc,
+                false,
+                false
+            )
+            .unwrap(),
+            r#"{"ok":true}"#
+        );
+        assert_eq!(
+            Contract::decode_unknown_function_response_from_bytes_json(
+                TEST_ABI,
+                &output_boc,
+                false,
+                false,
+            )
+            .unwrap()
+            .params,
+            r#"{"ok":true}"#
+        );
+    }
+
+    #[test]
+    fn call_and_deploy_builders_cover_signing_and_internal_paths() {
+        let sign_key = ed25519_generate_private_key().unwrap();
+        let public_key = sign_key.verifying_key();
+        let dst = test_std_address(0x44, 0);
+        let src = test_std_address(0x55, 0);
+        let value = CurrencyCollection::with_grams(77);
+
+        let ext = Contract::construct_call_ext_in_message_json(
+            dst.clone(),
+            MsgAddressExt::AddrNone,
+            &touch_call_set(),
+            Some(&sign_key),
+        )
+        .unwrap();
+        assert_eq!(ext.address, dst);
+        assert!(ext.message.ext_in_header().is_some());
+        assert!(ext.message.body().is_some());
+
+        let internal = Contract::construct_call_int_message_json(
+            dst.clone(),
+            Some(src.clone()),
+            true,
+            false,
+            value.clone(),
+            &touch_call_set(),
+        )
+        .unwrap();
+        let header = internal.message.int_header().unwrap();
+        assert_eq!(header.dst, dst);
+        assert_eq!(header.src, MsgAddressIntOrNone::Some(src.clone()));
+        assert_eq!(header.value, value);
+        assert!(header.ihr_disabled);
+        assert!(!header.bounce);
+        assert_eq!(
+            Contract::decode_unknown_function_call_json(
+                TEST_ABI,
+                internal.message.body().unwrap(),
+                true,
+                false,
+            )
+            .unwrap()
+            .params,
+            r#"{"value":"7"}"#
+        );
+
+        let unsigned = Contract::get_call_message_bytes_for_signing(
+            dst.clone(),
+            MsgAddressExt::AddrNone,
+            &touch_call_set(),
+        )
+        .unwrap();
+        let signature = sign_key.sign(&unsigned.data_to_sign);
+        let signed = Contract::add_sign_to_message(
+            TEST_ABI,
+            &signature,
+            Some(&public_key),
+            &unsigned.message,
+        )
+        .unwrap();
+        let attached = Contract::attach_signature(
+            &AbiContract::load(TEST_ABI.as_bytes()).unwrap(),
+            &signature,
+            Some(&public_key),
+            &unsigned.message,
+        )
+        .unwrap();
+        assert_eq!(signed.serialized_message, attached.serialized_message);
+        assert_eq!(signed.address, dst);
+
+        let image = ContractImage::new().unwrap();
+        let deploy = Contract::construct_deploy_message_json(
+            &constructor_call_set(),
+            image.clone(),
+            Some(&sign_key),
+            0,
+            MsgAddressExt::AddrNone,
+        )
+        .unwrap();
+        assert_eq!(deploy.address, image.msg_address(0));
+        assert!(deploy.message.state_init().is_some());
+
+        let unsigned_deploy = Contract::get_deploy_message_bytes_for_signing(
+            &constructor_call_set(),
+            image.clone(),
+            0,
+            MsgAddressExt::AddrNone,
+        )
+        .unwrap();
+        let deploy_signature = sign_key.sign(&unsigned_deploy.data_to_sign);
+        let signed_deploy = Contract::add_sign_to_message(
+            TEST_ABI,
+            &deploy_signature,
+            Some(&public_key),
+            &unsigned_deploy.message,
+        )
+        .unwrap();
+        assert_eq!(signed_deploy.address, image.msg_address(0));
+
+        let body_boc = boc(&test_cell(0xfe));
+        let deploy_with_body = Contract::construct_deploy_message_with_body(
+            image.clone(),
+            Some(&body_boc),
+            0,
+            MsgAddressExt::AddrNone,
+        )
+        .unwrap();
+        assert!(deploy_with_body.state_init().is_some());
+        assert!(deploy_with_body.body().is_some());
+
+        let deploy_no_ctor = Contract::construct_deploy_message_no_constructor(
+            image.clone(),
+            0,
+            MsgAddressExt::AddrNone,
+        )
+        .unwrap();
+        assert!(deploy_no_ctor.state_init().is_some());
+        assert!(deploy_no_ctor.body().is_none());
+
+        let int_deploy = Contract::construct_int_deploy_message_no_constructor(
+            Some(src.clone()),
+            image.clone(),
+            0,
+            false,
+            true,
+            CurrencyCollection::with_grams(10),
+        )
+        .unwrap();
+        let int_deploy_header = int_deploy.int_header().unwrap();
+        assert_eq!(int_deploy_header.src, MsgAddressIntOrNone::Some(src));
+        assert!(int_deploy_header.bounce);
+
+        let int_deploy_bytes = Contract::get_int_deploy_message_bytes(
+            None,
+            &constructor_call_set(),
+            image,
+            0,
+            true,
+            false,
+            CurrencyCollection::with_grams(1),
+        )
+        .unwrap();
+        let int_deploy_message = Contract::deserialize_message(&int_deploy_bytes).unwrap();
+        assert!(int_deploy_message.int_header().is_some());
+        assert!(int_deploy_message.state_init().is_some());
+    }
+
+    #[test]
+    fn signing_helpers_report_missing_body() {
+        let empty = TvmMessage::with_ext_in_header(tvm_block::ExternalInboundMessageHeader {
+            src: MsgAddressExt::AddrNone,
+            dst: test_std_address(0x66, 0),
+            ..Default::default()
+        });
+        let serialized = Contract::serialize_message(&empty).unwrap().0;
+        let abi = AbiContract::load(TEST_ABI.as_bytes()).unwrap();
+
+        let add_err =
+            Contract::add_sign_to_message(TEST_ABI, &[0u8; 64], None, &serialized).err().unwrap();
+        assert_eq!(add_err.to_string(), "Invalid data: No message body");
+
+        let attach_err =
+            Contract::attach_signature(&abi, &[0u8; 64], None, &serialized).err().unwrap();
+        assert_eq!(attach_err.to_string(), "Invalid data: No message body");
+    }
+
+    #[test]
+    fn shard_matching_helpers_cover_found_missing_and_invalid_cases() {
+        let address = test_std_address(0x77, 0);
+        let root = json!({ "workchain_id": 0, "shard": "8000000000000000" });
+        let other = json!({ "workchain_id": -1, "shard": "8000000000000000" });
+
+        assert!(Contract::check_shard_match(root.clone(), &address).unwrap());
+        assert!(!Contract::check_shard_match(other.clone(), &address).unwrap());
+
+        let shards = vec![other.clone(), root.clone()];
+        assert_eq!(Contract::find_matching_shard(&shards, &address).unwrap(), root);
+        assert_eq!(
+            Contract::find_matching_shard(&vec![other], &address).unwrap(),
+            serde_json::Value::Null
+        );
+
+        assert!(
+            Contract::check_shard_match(json!({ "workchain_id": 0, "shard": "oops" }), &address)
+                .is_err()
+        );
+    }
+}
