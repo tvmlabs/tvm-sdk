@@ -614,6 +614,9 @@ impl Contract {
 #[path = "tests/test_contract.rs"]
 mod tests_common;
 #[cfg(test)]
+#[path = "tests/test_contract_extra.rs"]
+mod tests_extra;
+#[cfg(test)]
 #[path = "tests/v1/test_contract.rs"]
 mod tests_v1;
 #[cfg(test)]
