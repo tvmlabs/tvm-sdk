@@ -2110,10 +2110,10 @@ fn action_type(action: &OutAction) -> String {
 
 #[cfg(test)]
 mod tests {
-    use tvm_block::AnycastInfo;
     use tvm_block::AccStatusChange;
     use tvm_block::Account;
     use tvm_block::AccountStatus;
+    use tvm_block::AnycastInfo;
     use tvm_block::CurrencyCollection;
     use tvm_block::Deserializable;
     use tvm_block::GasLimitsPrices;
@@ -2122,16 +2122,16 @@ mod tests {
     use tvm_block::Message;
     use tvm_block::MsgAddressInt;
     use tvm_block::OutAction;
+    use tvm_block::RESERVE_ALL_BUT;
     use tvm_block::Serializable;
     use tvm_block::StateInit;
     use tvm_block::TrActionPhase;
     use tvm_block::Transaction;
-    use tvm_block::RESERVE_ALL_BUT;
+    use tvm_types::BuilderData;
+    use tvm_types::Cell;
     use tvm_types::Result;
     use tvm_types::SliceData;
     use tvm_types::UInt256;
-    use tvm_types::BuilderData;
-    use tvm_types::Cell;
     use tvm_vm::stack::Stack;
 
     use super::*;
@@ -2284,8 +2284,9 @@ mod tests {
         let mut tx = Transaction::with_address_and_status(address(4).address(), account.status());
         tx.set_now(10);
 
-        let phase =
-            executor.storage_phase(&mut account, &mut balance, &mut tx, false, true, false).unwrap();
+        let phase = executor
+            .storage_phase(&mut account, &mut balance, &mut tx, false, true, false)
+            .unwrap();
 
         assert_eq!(phase.storage_fees_collected.as_u128(), 0);
         assert_eq!(phase.status_change, AccStatusChange::Unchanged);
@@ -2327,8 +2328,8 @@ mod tests {
         assert!(!is_valid_addr_len(9, 8, 40, 8));
 
         let config = BlockchainConfig::default();
-        let dst = MsgAddressInt::with_variant(None, -1, UInt256::with_array([8; 32]).into())
-            .unwrap();
+        let dst =
+            MsgAddressInt::with_variant(None, -1, UInt256::with_array([8; 32]).into()).unwrap();
         let rewritten = check_rewrite_dest_addr(&dst, &config, &acc).unwrap();
         assert!(matches!(rewritten, MsgAddressInt::AddrStd(_)));
         assert_eq!(rewritten.workchain_id(), -1);
@@ -2337,12 +2338,9 @@ mod tests {
             SliceData::load_builder(BuilderData::with_raw(vec![0x80], 1).unwrap()).unwrap(),
         )
         .unwrap();
-        let anycast_dst = MsgAddressInt::with_standart(
-            Some(anycast),
-            -1,
-            UInt256::with_array([9; 32]).into(),
-        )
-        .unwrap();
+        let anycast_dst =
+            MsgAddressInt::with_standart(Some(anycast), -1, UInt256::with_array([9; 32]).into())
+                .unwrap();
         assert_eq!(
             check_rewrite_dest_addr(&anycast_dst, &config, &acc).unwrap_err(),
             IncorrectCheckRewrite::Anycast
@@ -2383,8 +2381,13 @@ mod tests {
         let mut balance = CurrencyCollection::with_grams(1);
         let mut need_to_reserve = 0;
         assert_eq!(
-            reserve_action_handler(RESERVE_ALL_BUT + 1, &mut reserve, &mut balance, &mut need_to_reserve)
-                .unwrap_err(),
+            reserve_action_handler(
+                RESERVE_ALL_BUT + 1,
+                &mut reserve,
+                &mut balance,
+                &mut need_to_reserve
+            )
+            .unwrap_err(),
             RESULT_CODE_UNKNOWN_OR_INVALID_ACTION
         );
 
@@ -2435,20 +2438,22 @@ mod tests {
         let dst = address(2);
         let grams = CurrencyCollection::with_grams(50);
 
-        let bounce_msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
-            src.clone(),
-            dst.clone(),
-            grams.clone(),
-            true,
-        ));
+        let bounce_msg =
+            Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+                src.clone(),
+                dst.clone(),
+                grams.clone(),
+                true,
+            ));
         assert!(account_from_message(&bounce_msg, &grams, true, false, false).is_none());
 
-        let create_msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
-            src,
-            dst.clone(),
-            grams.clone(),
-            false,
-        ));
+        let create_msg =
+            Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+                src,
+                dst.clone(),
+                grams.clone(),
+                false,
+            ));
         let created = account_from_message(&create_msg, &grams, true, false, false).unwrap();
         assert_eq!(created.status(), AccountStatus::AccStateUninit);
         assert_eq!(created.get_id().unwrap(), dst.address());
