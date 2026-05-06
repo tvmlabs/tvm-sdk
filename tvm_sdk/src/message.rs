@@ -76,3 +76,97 @@ impl Message {
         self.msg_type.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::CurrencyCollection;
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::GetRepresentationHash;
+    use tvm_block::InternalMessageHeader;
+    use tvm_block::Message as TvmMessage;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::MsgAddressInt;
+    use tvm_types::AccountId;
+    use tvm_types::BuilderData;
+    use tvm_types::SliceData;
+
+    use super::*;
+
+    fn std_addr(byte: u8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, 0, AccountId::from([byte; 32])).unwrap()
+    }
+
+    fn ext_addr(byte: u8) -> MsgAddressExt {
+        MsgAddressExt::with_extern(SliceData::new(vec![byte])).unwrap()
+    }
+
+    #[test]
+    fn default_message_has_unknown_type_and_no_body() {
+        let message = Message::default();
+
+        assert_eq!(message.id().to_string(), "");
+        assert_eq!(message.msg_type(), MessageType::Unknown);
+        assert!(message.body().is_none());
+    }
+
+    #[test]
+    fn message_accessors_return_cloned_id_type_and_body_slice() {
+        let cell = BuilderData::with_raw(vec![0xab], 8).unwrap().into_cell().unwrap();
+        let message = Message {
+            id: "abcd".into(),
+            body: Some(cell),
+            msg_type: MessageType::ExternalInbound,
+            value: 7,
+        };
+
+        assert_eq!(message.id().to_string(), "abcd");
+        assert_eq!(message.msg_type(), MessageType::ExternalInbound);
+
+        let body = message.body().unwrap();
+        assert_eq!(body.remaining_bits(), 8);
+        assert_eq!(body.get_bytestring(0), vec![0xab]);
+    }
+
+    #[test]
+    fn with_msg_maps_internal_message_body_and_value() {
+        let mut tvm_message = TvmMessage::with_int_header(InternalMessageHeader::with_addresses(
+            std_addr(1),
+            std_addr(2),
+            CurrencyCollection::with_grams(55),
+        ));
+        tvm_message.set_body(
+            SliceData::load_builder(BuilderData::with_raw(vec![0xde, 0xad], 16).unwrap()).unwrap(),
+        );
+
+        let message = Message::with_msg(&tvm_message).unwrap();
+
+        assert_eq!(message.id().to_string(), hex::encode(tvm_message.hash().unwrap().as_slice()));
+        assert_eq!(message.msg_type(), MessageType::Internal);
+        assert_eq!(message.value, 55);
+        assert_eq!(message.body().unwrap().get_bytestring(0), vec![0xde, 0xad]);
+    }
+
+    #[test]
+    fn with_msg_maps_external_message_types_without_value() {
+        let ext_in = TvmMessage::with_ext_in_header(ExternalInboundMessageHeader::new(
+            ext_addr(0xaa),
+            std_addr(3),
+        ));
+        let ext_out = TvmMessage::with_ext_out_header(ExtOutMessageHeader::with_addresses(
+            std_addr(4),
+            ext_addr(0xbb),
+        ));
+
+        let inbound = Message::with_msg(&ext_in).unwrap();
+        let outbound = Message::with_msg(&ext_out).unwrap();
+
+        assert_eq!(inbound.msg_type(), MessageType::ExternalInbound);
+        assert_eq!(inbound.value, 0);
+        assert!(inbound.body().is_none());
+
+        assert_eq!(outbound.msg_type(), MessageType::ExternalOutbound);
+        assert_eq!(outbound.value, 0);
+        assert!(outbound.body().is_none());
+    }
+}
