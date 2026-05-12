@@ -72,6 +72,10 @@
 
 * [ABI Specification](abi/abi.md)
 
+## CRYPTOGRAPHY
+
+* [Mnemonics and Keys](cryptography/mnemonics-and-keys.md)
+
 ## JS(TS) guides
 
 * [Installation](js-ts-guides/installation/README.md)
