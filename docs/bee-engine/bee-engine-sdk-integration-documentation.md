@@ -152,6 +152,10 @@ If the user confirms:
 * The mining keys are written to their Miner contract.
 
 {% hint style="info" %}
+Mining keys are not secret. If someone else uses them, they will simply mine on behalf of the key owner.
+{% endhint %}
+
+{% hint style="info" %}
 After scanning the QR code, the AN Wallet does not return any response
 {% endhint %}
 
