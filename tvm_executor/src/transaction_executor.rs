@@ -2110,23 +2110,39 @@ fn action_type(action: &OutAction) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+    use std::sync::Mutex;
+    use std::sync::atomic::AtomicU64;
+    use std::sync::atomic::Ordering;
+    use std::time::Duration;
+    use std::time::Instant;
+
     use tvm_block::AccStatusChange;
     use tvm_block::Account;
     use tvm_block::AccountStatus;
     use tvm_block::AnycastInfo;
+    use tvm_block::ConfigParam8;
+    use tvm_block::ConfigParam18;
+    use tvm_block::ConfigParam31;
+    use tvm_block::ConfigParamEnum;
+    use tvm_block::ConfigParams;
     use tvm_block::CurrencyCollection;
     use tvm_block::Deserializable;
     use tvm_block::GasLimitsPrices;
+    use tvm_block::GlobalVersion;
     use tvm_block::HashUpdate;
     use tvm_block::InternalMessageHeader;
     use tvm_block::Message;
     use tvm_block::MsgAddressInt;
+    use tvm_block::MsgForwardPrices;
     use tvm_block::OutAction;
     use tvm_block::RESERVE_ALL_BUT;
     use tvm_block::Serializable;
     use tvm_block::StateInit;
+    use tvm_block::StoragePrices;
     use tvm_block::TrActionPhase;
     use tvm_block::Transaction;
+    use tvm_block::TransactionDescr;
     use tvm_types::BuilderData;
     use tvm_types::Cell;
     use tvm_types::Result;
@@ -2136,6 +2152,8 @@ mod tests {
 
     use super::*;
     use crate::BlockchainConfig;
+    use crate::OrdinaryTransactionExecutor;
+    use crate::blockchain_config::TONDefaultConfig;
 
     struct DummyExecutor {
         config: BlockchainConfig,
@@ -2182,8 +2200,60 @@ mod tests {
         MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
     }
 
+    fn masterchain_address(byte: u8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, -1, UInt256::with_array([byte; 32]).into()).unwrap()
+    }
+
     fn byte_cell(byte: u8) -> Cell {
         BuilderData::with_raw(vec![byte], 8).unwrap().into_cell().unwrap()
+    }
+
+    fn storage_prices() -> ConfigParam18 {
+        let mut prices = ConfigParam18::default();
+        prices
+            .insert(&StoragePrices {
+                utime_since: 1,
+                bit_price_ps: 2,
+                cell_price_ps: 4,
+                mc_bit_price_ps: 8,
+                mc_cell_price_ps: 16,
+            })
+            .unwrap();
+        prices
+    }
+
+    fn gas_prices() -> GasLimitsPrices {
+        GasLimitsPrices {
+            gas_price: 65_536,
+            gas_limit: 1_000_000,
+            special_gas_limit: 1_000_000,
+            gas_credit: 10_000,
+            block_gas_limit: 1_000_000,
+            freeze_due_limit: 5,
+            delete_due_limit: 8,
+            max_gas_threshold: 1_000_000_000,
+            flat_gas_limit: 10,
+            flat_gas_price: 10,
+        }
+    }
+
+    fn executor_config() -> BlockchainConfig {
+        let mut config = ConfigParams {
+            config_addr: UInt256::with_array([0x55; 32]),
+            ..ConfigParams::default()
+        };
+        config
+            .set_config(ConfigParamEnum::ConfigParam8(ConfigParam8 {
+                global_version: GlobalVersion { version: 42, capabilities: 0x572e },
+            }))
+            .unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam18(storage_prices())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam20(gas_prices())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam21(gas_prices())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam24(MsgForwardPrices::default_mc())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam25(MsgForwardPrices::default_wc())).unwrap();
+        config.set_config(ConfigParamEnum::ConfigParam31(ConfigParam31::new())).unwrap();
+        BlockchainConfig::with_config(config).unwrap()
     }
 
     fn active_account(byte: u8) -> Account {
@@ -2193,6 +2263,20 @@ mod tests {
         Account::active_by_init_code_hash(
             address(byte),
             CurrencyCollection::with_grams(100),
+            0,
+            state_init,
+            false,
+        )
+        .unwrap()
+    }
+
+    fn active_account_with_code(byte: u8, code: Cell) -> Account {
+        let mut state_init = StateInit::default();
+        state_init.set_code(code);
+        state_init.set_data(Cell::default());
+        Account::active_by_init_code_hash(
+            address(byte),
+            CurrencyCollection::with_grams(1_000_000_000),
             0,
             state_init,
             false,
@@ -2217,20 +2301,159 @@ mod tests {
     }
 
     #[test]
-    fn execute_with_libs_and_params_updates_account_root_and_resets_thread_locals() {
-        let executor = DummyExecutor::new();
-        let account = Account::with_address(address(1));
-        let mut account_root = account.serialize().unwrap();
-        let (tx, minted_shell) = executor
-            .execute_with_libs_and_params(None, &mut account_root, ExecuteParams::default())
-            .unwrap();
+    fn execute_with_libs_and_params_runs_ordinary_transaction_with_non_default_params() {
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let dapp_id = UInt256::with_array([0x44; 32]);
+        let vm_execution_is_block_related = Arc::new(Mutex::new(false));
+        let block_collation_was_finished = Arc::new(Mutex::new(false));
+        let last_tr_lt = Arc::new(AtomicU64::new(100));
+        let mut mvconfig = MVConfig::default();
+        mvconfig.set_config(vec![3, 5, 8]);
+        let params = ExecuteParams {
+            block_unixtime: 123,
+            block_lt: 456,
+            seq_no: 7,
+            last_tr_lt: last_tr_lt.clone(),
+            seed_block: UInt256::with_array([0x77; 32]),
+            debug: true,
+            dapp_id: Some(dapp_id.clone()),
+            available_credit: 13,
+            termination_deadline: Some(Instant::now() + Duration::from_secs(30)),
+            execution_timeout: Some(Duration::from_secs(30)),
+            vm_execution_is_block_related: vm_execution_is_block_related.clone(),
+            block_collation_was_finished: block_collation_was_finished.clone(),
+            mvconfig,
+            engine_version: semver::Version::new(1, 0, 3),
+            ..ExecuteParams::default()
+        };
+        #[cfg(feature = "wasmtime")]
+        let params = {
+            let mut params = params;
+            params.wasm_binary_root_path = "./tests/wasm".to_owned();
+            params.wasm_engine = Some(wasmtime::Engine::default());
+            params
+        };
 
-        assert_eq!(minted_shell, 7);
-        assert_eq!(tx.now(), 11);
-        assert!(Account::construct_from_cell(account_root).unwrap().storage_info().is_some());
+        let code = tvm_assembler::compile_code_to_cell(
+            "NOW\nPUSHINT 123\nEQUAL\nTHROWIFNOT 100\n\
+             BLOCKLT\nPUSHINT 456\nEQUAL\nTHROWIFNOT 101\n\
+             SEQNO\nPUSHINT 7\nEQUAL\nTHROWIFNOT 102\n",
+        )
+        .unwrap();
+        let account = active_account_with_code(7, code);
+        let mut account_root = account.serialize().unwrap();
+        let mut header = InternalMessageHeader::with_addresses(
+            address(1),
+            address(7),
+            CurrencyCollection::with_grams(1_000_000_000),
+        );
+        header.set_src_dapp_id(Some(dapp_id));
+        let msg = Message::with_int_header(header);
+
+        let (tx, minted_shell) =
+            executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params).unwrap();
+
+        assert_eq!(minted_shell, 0);
+        assert_eq!(tx.account_id(), &address(7).address());
+        assert_eq!(tx.now(), 123);
+        assert_eq!(tx.logical_time(), 100);
+        assert_eq!(last_tr_lt.load(Ordering::Relaxed), 101);
+        assert!(*vm_execution_is_block_related.lock().unwrap());
+        match tx.read_description().unwrap() {
+            TransactionDescr::Ordinary(description) => {
+                let action = description.action.expect("action phase");
+                assert!(action.success);
+                assert_eq!(action.tot_actions, 0);
+                assert_eq!(action.spec_actions, 0);
+            }
+            _ => panic!("unexpected transaction description"),
+        }
+        let updated = Account::construct_from_cell(account_root).unwrap();
+        assert!(updated.storage_info().is_some());
+        assert_eq!(updated.get_id().unwrap(), address(7).address());
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| assert!(x.is_none()));
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
             .with_borrow(|x| assert!(x.is_none()));
+    }
+
+    #[test]
+    fn action_phase_caps_shell_minting_and_applies_dapp_config_action() {
+        let executor = DummyExecutor::new();
+        let mut account = active_account(8);
+        let mut tx = Transaction::with_address_and_status(address(8).address(), account.status());
+        let original_balance = account.balance().cloned().unwrap();
+        let mut acc_balance = original_balance.clone();
+        let mut msg_balance = CurrencyCollection::default();
+        let mut actions = OutActions::default();
+        actions.push_back(OutAction::new_mint_shellq(20));
+        actions.push_back(OutAction::send_to_dapp_config(5));
+        let mut minted_shell = 0;
+
+        let result = executor
+            .action_phase_with_copyleft(
+                &mut tx,
+                &mut account,
+                &original_balance,
+                &mut acc_balance,
+                &mut msg_balance,
+                &Grams::zero(),
+                actions.serialize().unwrap(),
+                None,
+                &address(8),
+                false,
+                13,
+                &mut minted_shell,
+                Grams::zero(),
+                Some(UInt256::with_array([0x99; 32])),
+            )
+            .unwrap();
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.spec_actions, 2);
+        assert_eq!(minted_shell, 8);
+        assert_eq!(acc_balance.grams.as_u128(), original_balance.grams.as_u128() + 8);
+    }
+
+    #[test]
+    fn action_phase_sets_source_dapp_id_on_outbound_messages() {
+        let executor = DummyExecutor::new();
+        let mut account = active_account_with_code(8, byte_cell(0xaa));
+        let mut tx = Transaction::with_address_and_status(address(8).address(), account.status());
+        let original_balance = account.balance().cloned().unwrap();
+        let mut acc_balance = original_balance.clone();
+        let mut msg_balance = CurrencyCollection::default();
+        let dapp_id = UInt256::with_array([0x31; 32]);
+        let out_msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(9),
+            CurrencyCollection::with_grams(100_000_000),
+        ));
+        let mut actions = OutActions::default();
+        actions.push_back(OutAction::new_send(0, out_msg));
+        let mut minted_shell = 0;
+
+        let result = executor
+            .action_phase_with_copyleft(
+                &mut tx,
+                &mut account,
+                &original_balance,
+                &mut acc_balance,
+                &mut msg_balance,
+                &Grams::zero(),
+                actions.serialize().unwrap(),
+                None,
+                &address(8),
+                false,
+                0,
+                &mut minted_shell,
+                Grams::zero(),
+                Some(dapp_id.clone()),
+            )
+            .unwrap();
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        assert_eq!(result.messages[0].int_header().unwrap().src_dapp_id(), &Some(dapp_id));
     }
 
     #[test]

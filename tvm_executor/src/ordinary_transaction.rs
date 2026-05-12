@@ -607,6 +607,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
 #[cfg(test)]
 mod tests {
     use tvm_block::Account;
+    use tvm_block::AccountStatus;
+    use tvm_block::ComputeSkipReason;
     use tvm_block::CurrencyCollection;
     use tvm_block::ExtOutMessageHeader;
     use tvm_block::ExternalInboundMessageHeader;
@@ -614,6 +616,9 @@ mod tests {
     use tvm_block::Message;
     use tvm_block::MsgAddressExt;
     use tvm_block::MsgAddressInt;
+    use tvm_block::Serializable;
+    use tvm_block::TrComputePhase;
+    use tvm_block::TransactionDescr;
     use tvm_types::BuilderData;
     use tvm_types::SliceData;
     use tvm_types::UInt256;
@@ -707,26 +712,61 @@ mod tests {
     }
 
     #[test]
-    fn execute_uses_message_destination_when_account_does_not_exist() {
+    fn execute_uses_message_destination_when_account_id_is_missing() {
         let executor = OrdinaryTransactionExecutor::new(Default::default());
         let mut account = Account::default();
-        let msg = Message::with_ext_in_header(ExternalInboundMessageHeader::new(
-            MsgAddressExt::with_extern(SliceData::default()).unwrap(),
-            address(7),
+        let dst = address(7);
+        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            dst.clone(),
+            CurrencyCollection::with_grams(100),
+            false,
         ));
 
-        let err = executor
+        let tx = executor
             .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
-            .unwrap_err();
+            .unwrap();
 
-        assert!(
-            matches!(
-                err.downcast_ref::<LocalExecutorError>(),
-                Some(LocalExecutorError::NoFundsToImportMsg)
-                    | Some(LocalExecutorError::ExtMsgComputeSkipped(_))
-                    | Some(LocalExecutorError::NoAcceptError(_, _))
-            ),
-            "{err}"
-        );
+        assert_eq!(tx.account_id(), &dst.address());
+        assert_eq!(tx.in_msg_cell().unwrap().repr_hash(), msg.serialize().unwrap().repr_hash());
+    }
+
+    #[test]
+    fn execute_internal_message_to_nonexistent_account_without_state_init_records_aborted_result() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::default();
+        let dst = address(8);
+        let msg_value = CurrencyCollection::with_grams(1_000_000_000);
+        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            dst.clone(),
+            msg_value.clone(),
+            false,
+        ));
+
+        let tx = executor
+            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap();
+
+        assert_eq!(tx.account_id(), &dst.address());
+        assert_eq!(tx.orig_status, AccountStatus::AccStateNonexist);
+        assert_eq!(tx.end_status, AccountStatus::AccStateNonexist);
+        assert!(account.is_none());
+        assert_eq!(tx.total_fees().grams.as_u128(), 0);
+
+        let description = match tx.read_description().unwrap() {
+            TransactionDescr::Ordinary(description) => description,
+            _ => panic!("unexpected transaction description"),
+        };
+        assert!(description.credit_first);
+        assert_eq!(description.credit_ph.unwrap().credit, msg_value);
+        assert!(matches!(
+            description.compute_ph,
+            TrComputePhase::Skipped(skipped) if skipped.reason == ComputeSkipReason::NoState
+        ));
+        assert!(description.action.is_none());
+        assert!(description.aborted);
+        assert!(description.bounce.is_none());
+        assert!(!description.destroyed);
     }
 }

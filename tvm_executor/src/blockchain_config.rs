@@ -496,9 +496,12 @@ mod tests {
 
     #[test]
     fn with_config_reports_missing_required_entries() {
-        // let err = BlockchainConfig::with_config(ConfigParams::default()).
-        // unwrap_err(); assert!(err.to_string().contains("Gas prices
-        // not found"));
+        let err = match BlockchainConfig::with_config(ConfigParams::default()) {
+            Ok(_) => panic!("empty config should not be accepted"),
+            Err(err) => err,
+        };
+
+        assert!(err.to_string().contains("Gas prices not found"), "{err}");
     }
 
     #[test]
