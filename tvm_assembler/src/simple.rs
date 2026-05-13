@@ -860,6 +860,7 @@ impl Engine {
         CALCMBK                              => 0xC7, 0x46
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
+        VERGRTH16WITHVK                      => 0xC7, 0x49
         POSEIDON                             => 0xC7, 0x50
     }
 

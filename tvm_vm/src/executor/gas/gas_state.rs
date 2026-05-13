@@ -19,6 +19,7 @@ use tvm_types::types::ExceptionCode;
 use crate::error::TvmError;
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
+use crate::executor::zk::VERGRTH16_WITH_VK_GAS_PRICE;
 use crate::types::Exception;
 
 // Gas state
@@ -211,6 +212,15 @@ impl Gas {
 
     pub fn consume_vergrth16(&mut self) -> i64 {
         self.use_gas(VERGRTH16_GAS_PRICE)
+    }
+
+    /// Compute VERGRTH16WITHVK usage cost
+    pub const fn vergrth16_with_vk_price() -> i64 {
+        VERGRTH16_WITH_VK_GAS_PRICE
+    }
+
+    pub fn consume_vergrth16_with_vk(&mut self) -> i64 {
+        self.use_gas(VERGRTH16_WITH_VK_GAS_PRICE)
     }
 
     #[cfg(feature = "gosh")]

@@ -62,6 +62,10 @@ mod test_vergrth_bad_args;
 mod test_poseidon_bad_args;
 
 #[cfg(test)]
+#[path = "../tests/test_vergrth16_with_vk.rs"]
+mod test_vergrth16_with_vk;
+
+#[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
 
