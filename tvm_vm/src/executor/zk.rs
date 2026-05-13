@@ -54,13 +54,21 @@ pub const POSEIDON_ZK_LOGIN_GAS_PRICE: i64 = 356;
 pub const VERGRTH16_GAS_PRICE: i64 = 2380;
 /// Gas price for the `VERGRTH16WITHVK` opcode.
 ///
-/// Slightly higher than [`VERGRTH16_GAS_PRICE`] because the verifier
-/// additionally has to deserialize a verifying key (4 G1 + 3 G2 points + an
-/// `Fp12` element are implicitly computed when preparing the VK) on every call.
-/// The exact overhead depends on the number of public inputs because of the
-/// `gamma_abc_g1` MSM, but for the deposit circuit (7 public inputs) it is
-/// dominated by the pairing evaluation done while preparing the VK, ~6 ms on a
-/// modern x86 core.
+/// **Marginal cost over [`VERGRTH16_GAS_PRICE`]:** `+220` gas. `VERGRTH16`
+/// already computes `global_pvk()` on every call (the full VK preparation
+/// including the `e(α, β)` pairing, ~6 ms on a modern x86 core) — that cost is
+/// *already* included in `2380`. The extra `220` here pays for the strictly
+/// additional work that the with-VK variant does:
+///
+/// - one `ark_groth16::VerifyingKey::<Bn254>::deserialize_compressed` of the
+///   556-byte VK blob (a handful of decompressions and on-curve checks);
+/// - a `gamma_abc_g1` size check against the public-input vector length;
+/// - the public-input MSM scales linearly with `gamma_abc_g1.len()`, but the
+///   absolute increment over the zkLogin VK (2 IC points) is small even at the
+///   bridge's 8 IC points and well under the chosen margin.
+///
+/// Re-benchmark and tune if the with-VK opcode is exposed to circuits with
+/// substantially more public inputs.
 pub const VERGRTH16_WITH_VK_GAS_PRICE: i64 = 2600;
 
 pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
@@ -446,11 +454,22 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 /// **Pushes** `Boolean`:
 /// - `true`  — pairing check succeeded *and* every public input is a reduced
 ///   element of `Fr` *and* both VK and proof deserialize.
-/// - `false` — pairing check failed.
+/// - `false` is pushed (no exception) in any of the following cases:
+///     * the pairing check fails;
+///     * `public_inputs.len() + 1 != vk.gamma_abc_g1.len()` — the IC vector
+///       size in the supplied VK does not match the number of public inputs.
+///       The public-input count is part of the verifying key's protocol shape,
+///       so a mismatch is treated as a verification failure rather than a
+///       structural fault.
 ///
-/// **Throws** `FatalError` only on structural problems (malformed VK bytes,
-/// malformed proof bytes, non-32-byte-aligned public inputs); a *cryptographic*
-/// rejection is reported as `false` on the stack, never as an exception.
+/// **Throws** `FatalError` *only* on structural problems with the inputs:
+/// - malformed VK bytes (does not decode as a Groth16 verifying key);
+/// - malformed proof bytes (does not decode as a Groth16 proof);
+/// - public-inputs payload whose length is not a multiple of 32 bytes (cannot
+///   be sliced into `Fr` elements).
+///
+/// Cryptographic rejection — i.e. a well-formed but invalid proof — is never
+/// raised as an exception; it is always reported as `false` on the stack.
 ///
 /// Note: the byte format on the wire is arkworks' `CanonicalSerialize`
 /// compressed encoding. If a proof was produced by gnark or snarkjs it must be
