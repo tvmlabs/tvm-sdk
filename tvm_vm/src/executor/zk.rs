@@ -54,12 +54,13 @@ pub const POSEIDON_ZK_LOGIN_GAS_PRICE: i64 = 356;
 pub const VERGRTH16_GAS_PRICE: i64 = 2380;
 /// Gas price for the `VERGRTH16WITHVK` opcode.
 ///
-/// Slightly higher than [`VERGRTH16_GAS_PRICE`] because the verifier additionally
-/// has to deserialize a verifying key (4 G1 + 3 G2 points + an `Fp12` element are
-/// implicitly computed when preparing the VK) on every call. The exact overhead
-/// depends on the number of public inputs because of the `gamma_abc_g1` MSM, but
-/// for the deposit circuit (7 public inputs) it is dominated by the pairing
-/// evaluation done while preparing the VK, ~6 ms on a modern x86 core.
+/// Slightly higher than [`VERGRTH16_GAS_PRICE`] because the verifier
+/// additionally has to deserialize a verifying key (4 G1 + 3 G2 points + an
+/// `Fp12` element are implicitly computed when preparing the VK) on every call.
+/// The exact overhead depends on the number of public inputs because of the
+/// `gamma_abc_g1` MSM, but for the deposit circuit (7 public inputs) it is
+/// dominated by the pairing evaluation done while preparing the VK, ~6 ms on a
+/// modern x86 core.
 pub const VERGRTH16_WITH_VK_GAS_PRICE: i64 = 2600;
 
 pub type ZkCryptoResult<T> = Result<T, ZkCryptoError>;
@@ -426,9 +427,9 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 ///
 /// This is the generic counterpart of [`execute_vergrth16`]: instead of using
 /// a hard-coded VK (zkLogin), the caller pushes its own VK as a third operand.
-/// The opcode is curve-fixed to BN254 (so the same one Ethereum precompiles use)
-/// and intended primarily for the AN side of the cross-chain bridge, where it
-/// verifies wrapped Halo2 deposit-event proofs produced on Ethereum.
+/// The opcode is curve-fixed to BN254 (so the same one Ethereum precompiles
+/// use) and intended primarily for the AN side of the cross-chain bridge, where
+/// it verifies wrapped Halo2 deposit-event proofs produced on Ethereum.
 ///
 /// **Stack** (top → bottom):
 /// - `vk_cell` — `Cell` holding the canonical-compressed binary form of
@@ -437,15 +438,14 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 ///   storage once at deployment time.
 /// - `public_inputs_cell` — `Cell` containing the concatenation of
 ///   canonical-compressed `Fr` field elements (32 bytes each). For the bridge
-///   deposit circuit there are 7 of them in the order
-///   `[depositId, sender, amount, contractAddress, blockHashHigh,
-///   blockHashLow, promise_commit]`.
+///   deposit circuit there are 7 of them in the order `[depositId, sender,
+///   amount, contractAddress, blockHashHigh, blockHashLow, promise_commit]`.
 /// - `proof_cell` — `Cell` holding the canonical-compressed binary form of
 ///   `ark_groth16::Proof<Bn254>` (128 bytes for a standard A,B,C triple).
 ///
 /// **Pushes** `Boolean`:
 /// - `true`  — pairing check succeeded *and* every public input is a reduced
-///             element of `Fr` *and* both VK and proof deserialize.
+///   element of `Fr` *and* both VK and proof deserialize.
 /// - `false` — pairing check failed.
 ///
 /// **Throws** `FatalError` only on structural problems (malformed VK bytes,

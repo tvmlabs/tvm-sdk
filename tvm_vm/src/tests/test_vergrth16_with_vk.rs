@@ -22,8 +22,8 @@
 //!     into the VM).
 //!  3. VK, public inputs, and proof are canonical-compressed and pushed onto
 //!     the VM stack.
-//!  4. The 3-byte program `0xC7 0x49 0x80` executes the new opcode and we
-//!     check the boolean result on top of the stack.
+//!  4. The 3-byte program `0xC7 0x49 0x80` executes the new opcode and we check
+//!     the boolean result on top of the stack.
 //!
 //! Negative cases flip individual bits / fields and confirm that the opcode
 //! returns `false` rather than throwing.
