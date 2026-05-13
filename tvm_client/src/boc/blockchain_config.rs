@@ -136,7 +136,10 @@ mod tests {
         extra.write_custom(Some(&master)).unwrap();
 
         let actual = extract_config_from_block(&test_block(extra)).unwrap();
-        assert_eq!(actual.serialize().unwrap().repr_hash(), config.serialize().unwrap().repr_hash());
+        assert_eq!(
+            actual.serialize().unwrap().repr_hash(),
+            config.serialize().unwrap().repr_hash()
+        );
     }
 
     #[test]
