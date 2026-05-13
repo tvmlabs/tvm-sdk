@@ -1408,12 +1408,7 @@ mod tests {
 
     fn set_var(engine: &mut Engine, item: StackItem) {
         engine.cmd.vars.clear();
-        engine.cmd.vars.extend([
-            StackItem::None,
-            StackItem::None,
-            StackItem::None,
-            item,
-        ]);
+        engine.cmd.vars.extend([StackItem::None, StackItem::None, StackItem::None, item]);
     }
 
     #[test]
@@ -1447,12 +1442,9 @@ mod tests {
         assert_eq!(unsigned, StackItem::int(10));
 
         let mut engine = new_engine();
-        let signed = write_key(
-            &mut engine,
-            BuilderData::with_raw(vec![0b1111_0000], 4).unwrap(),
-            SIGN,
-        )
-        .unwrap();
+        let signed =
+            write_key(&mut engine, BuilderData::with_raw(vec![0b1111_0000], 4).unwrap(), SIGN)
+                .unwrap();
         assert_eq!(signed, StackItem::int(-1));
 
         let mut engine = new_engine();
@@ -1577,7 +1569,8 @@ mod tests {
         assert_eq!(write_key(&mut engine, min_key, 0).unwrap(), StackItem::int(2));
         assert_eq!(min_value, StackItem::Slice(byte_slice(0x20)));
 
-        let (iter_key, iter_value) = iter_reader(&mut engine, &dict, key(0x3), NEXT).unwrap().unwrap();
+        let (iter_key, iter_value) =
+            iter_reader(&mut engine, &dict, key(0x3), NEXT).unwrap().unwrap();
         assert_eq!(write_key(&mut engine, iter_key, 0).unwrap(), StackItem::int(10));
         assert_eq!(iter_value, StackItem::Slice(byte_slice(0xa0)));
 
