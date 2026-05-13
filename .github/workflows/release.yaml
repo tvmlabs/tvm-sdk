@@ -295,7 +295,7 @@ jobs:
               --arg pr "$pr_number" \
               --arg url "https://github.com/$REPO/pull/$pr_number" \
               --arg s "$pr_state" \
-              '{branch: "dev", variables: {
+              '{branch: "feature/update-tvm-sdk-pipeline", variables: {
                   test_branch: $tb,
                   tag: $t,
                   actor: $a,
