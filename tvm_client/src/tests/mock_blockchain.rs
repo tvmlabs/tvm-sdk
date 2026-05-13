@@ -1,26 +1,25 @@
-mod support;
-
 use std::sync::Arc;
 
 use serde_json::json;
-use support::mock_blockchain::MockBlockchain;
-use tvm_client::ClientConfig;
-use tvm_client::ClientContext;
-use tvm_client::account;
-use tvm_client::account::ParamsOfGetAccount;
-use tvm_client::client::ErrorCode as ClientErrorCode;
-use tvm_client::error::ClientError;
-use tvm_client::net;
-use tvm_client::net::AggregationFn;
-use tvm_client::net::ErrorCode;
-use tvm_client::net::FieldAggregation;
-use tvm_client::net::NetworkConfig;
-use tvm_client::net::NetworkQueriesProtocol;
-use tvm_client::net::ParamsOfAggregateCollection;
-use tvm_client::net::ParamsOfQuery;
-use tvm_client::net::ParamsOfQueryCollection;
-use tvm_client::net::ParamsOfQueryCounterparties;
-use tvm_client::net::ParamsOfWaitForCollection;
+
+use super::mock_blockchain_support::MockBlockchain;
+use crate::ClientConfig;
+use crate::ClientContext;
+use crate::account;
+use crate::account::ParamsOfGetAccount;
+use crate::client::ErrorCode as ClientErrorCode;
+use crate::error::ClientError;
+use crate::net;
+use crate::net::AggregationFn;
+use crate::net::ErrorCode;
+use crate::net::FieldAggregation;
+use crate::net::NetworkConfig;
+use crate::net::NetworkQueriesProtocol;
+use crate::net::ParamsOfAggregateCollection;
+use crate::net::ParamsOfQuery;
+use crate::net::ParamsOfQueryCollection;
+use crate::net::ParamsOfQueryCounterparties;
+use crate::net::ParamsOfWaitForCollection;
 
 fn client_for(endpoint: String) -> Arc<ClientContext> {
     client_for_with_token(endpoint, None)

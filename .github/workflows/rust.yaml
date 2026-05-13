@@ -96,7 +96,7 @@ jobs:
             ${{ runner.os }}-cargo-
       - name: Run tvm_client tests
         run: |
-          cargo test -r --lib --test mock_blockchain --no-fail-fast \
+          cargo test -r --lib --no-fail-fast \
             -p tvm_client \
             --no-default-features \
             --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
