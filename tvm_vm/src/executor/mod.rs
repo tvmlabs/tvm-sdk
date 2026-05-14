@@ -66,6 +66,10 @@ mod test_vergrth_bad_args;
 #[path = "../tests/test_poseidon_bad_args.rs"]
 mod test_poseidon_bad_args;
 
+#[cfg(all(test, feature = "gosh"))]
+#[path = "../tests/test_vergrth16_with_vk.rs"]
+mod test_vergrth16_with_vk;
+
 #[cfg(test)]
 #[path = "../tests/test_chk_hist_proof.rs"]
 mod test_chk_hist_proof;
