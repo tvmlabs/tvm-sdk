@@ -23,6 +23,7 @@ use crate::executor::chk_hist_proof::CHKHISTPROOF_GAS_PRICE;
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
+#[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_WITH_VK_GAS_PRICE;
 use crate::types::Exception;
 
@@ -243,7 +244,6 @@ impl Gas {
     #[cfg(feature = "gosh")]
     pub fn consume_chkhistproof(&mut self) -> i64 {
         self.use_gas(CHKHISTPROOF_GAS_PRICE)
-        full_dex_test_with_final_halo2_circuit
     }
 
     #[cfg(feature = "gosh")]
