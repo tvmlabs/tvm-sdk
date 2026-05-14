@@ -145,11 +145,13 @@ const R_P: usize = 57;
 /// constants once (expensive). Subsequent calls to
 /// [`PoseidonSponge::hash_bytes_axiom`] and [`PoseidonSponge::hash_bytes_flat`]
 /// clone the cached template (cheap).
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Clone, Debug)]
 pub struct PoseidonSponge {
     template: pse_poseidon<halo2_Fr, T, RATE>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl PoseidonSponge {
     pub fn new() -> Self {
         Self { template: pse_poseidon::new(R_F, R_P) }
@@ -193,6 +195,7 @@ impl PoseidonSponge {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Default for PoseidonSponge {
     fn default() -> Self {
         Self::new()
@@ -200,21 +203,38 @@ impl Default for PoseidonSponge {
 }
 
 /// Global cached sponge for free functions. Round constants are computed once.
+#[cfg(not(target_arch = "wasm32"))]
 static GLOBAL_SPONGE: std::sync::LazyLock<PoseidonSponge> =
     std::sync::LazyLock::new(PoseidonSponge::new);
 
 /// Convenience free function using cached round constants.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn poseidon_bytes_axiom(
     inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
     GLOBAL_SPONGE.hash_bytes_axiom(inputs)
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn poseidon_bytes_axiom(
+    _inputs: &Vec<Vec<u8>>,
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    Err(ZkCryptoError::UnsupportedPlatform)
+}
+
 /// Convenience free function using cached round constants.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn poseidon_bytes_flat(
     input_data: &[u8],
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
     GLOBAL_SPONGE.hash_bytes_flat(input_data)
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn poseidon_bytes_flat(
+    _input_data: &[u8],
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    Err(ZkCryptoError::UnsupportedPlatform)
 }
 
 /// Given a binary representation of a BN254 field element as an integer in

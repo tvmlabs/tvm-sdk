@@ -222,10 +222,12 @@ impl Gas {
     }
 
     /// Compute CHKHISTPROOF usage cost
+    #[cfg(feature = "gosh")]
     pub const fn chkhistproof_price() -> i64 {
         CHKHISTPROOF_GAS_PRICE
     }
 
+    #[cfg(feature = "gosh")]
     pub fn consume_chkhistproof(&mut self) -> i64 {
         self.use_gas(CHKHISTPROOF_GAS_PRICE)
     }
