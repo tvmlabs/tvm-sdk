@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.24.20] - 2026-04-20
+
+### Changed
+- `tvm_api` and `tvm_block_json`: gated TON-specific code behind the `ton` feature
+- TON-related dependencies are now optional to allow lighter builds without TON support
+
+## [2.24.19] - 2026-04-17
+
+### Added
+- `tvm_client`: new `account.get_account` API returning account BOC, optional `dapp_id`, and state timestamp
+- `tvm_cli`: support for extended address parsing via `SdkAddress::from_str`, including `dapp_id` extraction from user-provided addresses
+
+### Changed
+- `tvm_client`: `ClientError` now exposes accessor methods (`code()`, `message()`, `data()`, etc.) instead of relying on direct public field access, and now carries optional `traceparent`
+- `tvm_client`: `ParamsOfSendMessage` now includes `thread_id` and `dst_dapp_id`
+- `tvm_client`: `ParamsOfProcessMessage` now includes `dst_dapp_id`
+- `tvm_client`: `ParamsOfWaitForTransaction` now accepts `tx_hash`; `shard_block_id` is deprecated and no longer used for transaction lookup
+- `tvm_client`: `ResultOfSendMessage` now returns message and transaction metadata (`message_hash`, `block_hash`, `tx_hash`, `return_value`, `aborted`, `exit_code`, `thread_id`, `producers`, `current_time`) instead of `shard_block_id` and `sending_endpoints`
+- `tvm_client`: `process_message` and `wait_for_transaction` now use the transaction hash returned by `send_message`
+- `tvm_cli`: `call`, `callx`, and proposal commands now derive destination `dapp_id` from extended addresses
+- `tvm_cli`: `deploy`, `deployx`, and `send` commands now accept explicit `--dst-dapp-id` where the destination `dapp_id` can not be derived from an address
+
+### Fixed
+- `tvm_cli`: fixed `dump accounts` address validation for the current `SdkAddress` API
+
+## [2.24.18] - 2026-04-13
+
+### Added
+- `tvm_client`: retry with exponential backoff for `query_http`
+- `tvm_cli`: `--log-path` and `--log-filter` options to redirect and filter log output to a file, keeping stdout/stderr clean for automation
+
+### Changed
+- Removed `failure` crate dependency across all workspace crates in favor of `anyhow`
+- Replaced `anyhow::Error::msg` with `anyhow::anyhow!` macro for idiomatic error construction
+- `tvm_client`: removed non-standard REST API port 8600, use standard HTTP/HTTPS ports
+- `tvm_cli`: console log output is suppressed in `--json` mode; default log level lowered from Warn to Error
+
+## [2.24.17] - 2026-04-07
+
+### Fixed
+- Fixed WASM web build compatibility and ZK dependency handling
+- Fixed `current_traceparent` function in endpoint.rs
+- Optimized dependencies: ZK deps behind feature gate, dependency deduplication, workspace consolidation
+
+### Changed
+- Removed redundant `compliant` flag from HD key derivation
+
 ## [2.24.16] - 2026-03-23
 
 ### Fixes

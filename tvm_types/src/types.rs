@@ -16,7 +16,7 @@ use std::fmt::UpperHex;
 use std::str;
 use std::str::FromStr;
 
-pub type Error = failure::Error;
+pub type Error = anyhow::Error;
 pub type Result<T> = std::result::Result<T, Error>;
 use num::FromPrimitive;
 use smallvec::SmallVec;
@@ -32,30 +32,26 @@ pub type Status = Result<()>;
 #[macro_export]
 macro_rules! error {
     ($error:literal) => {
-        failure::err_msg(format!("{} {}:{}", $error, file!(), line!()))
+        $crate::anyhow::anyhow!("{} {}:{}", $error, file!(), line!())
     };
     ($error:expr) => {
-        failure::Error::from($error)
+        <$crate::anyhow::Error>::from($error)
     };
     ($fmt:expr, $($arg:tt)+) => {
-        failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
+        $crate::anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())
     };
 }
 
 #[macro_export]
 macro_rules! fail {
     ($error:literal) => {
-        return Err(failure::err_msg(format!("{} {}:{}", $error, file!(), line!())))
+        return Err($crate::anyhow::anyhow!("{} {}:{}", $error, file!(), line!()))
     };
-    // uncomment to explicit panic for any ExceptionCode
-    // (ExceptionCode::CellUnderflow) => {
-    //     panic!("{}", error!(ExceptionCode::CellUnderflow))
-    // };
     ($error:expr) => {
         return Err(error!($error))
     };
     ($fmt:expr, $($arg:tt)*) => {
-        return Err(failure::err_msg(format!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!())))
+        return Err($crate::anyhow::anyhow!("{} {}:{}", format!($fmt, $($arg)*), file!(), line!()))
     };
 }
 
@@ -520,6 +516,7 @@ pub type Bitmask = u8;
 
 #[cfg(test)]
 mod tests {
+    use super::AccountId;
     use super::*;
     use crate::base64_encode;
 
@@ -538,5 +535,72 @@ mod tests {
             let base64_str = base64_encode(&u256);
             assert_eq!(u256, UInt256::from_str(base64_str.as_str()).unwrap());
         }
+    }
+
+    #[test]
+    fn uint256_endian_constructors_and_hash_helpers_behave_consistently() {
+        let big = UInt256::from_be_bytes(&[0x12, 0x34, 0x56]);
+        assert_eq!(&big.as_slice()[29..], &[0x12, 0x34, 0x56]);
+        assert!(big.as_slice()[..29].iter().all(|byte| *byte == 0));
+
+        let little = UInt256::from_le_bytes(&[0x12, 0x34, 0x56]);
+        assert_eq!(&little.as_slice()[..3], &[0x12, 0x34, 0x56]);
+        assert!(little.as_slice()[3..].iter().all(|byte| *byte == 0));
+
+        let exact = UInt256::from_slice(&[7u8; 32]);
+        assert_eq!(exact, UInt256::from([7u8; 32]));
+
+        let long = UInt256::from_slice(&[9u8; 40]);
+        assert_eq!(long, UInt256::from([9u8; 32]));
+
+        let sha = UInt256::calc_sha256(b"abc");
+        assert_eq!(sha, UInt256::calc_file_hash(b"abc"));
+        assert_eq!(UInt256::from([1u8; 32]).first_u64(), 0x0101_0101_0101_0101);
+    }
+
+    #[test]
+    fn uint256_formatting_and_account_id_roundtrip_cover_string_paths() {
+        let value =
+            UInt256::from_str("0x00000000000000000000000000000000000000000000000000000000000000ff")
+                .unwrap();
+
+        assert_eq!(
+            format!("{value:x}"),
+            "00000000000000000000000000000000000000000000000000000000000000ff"
+        );
+        assert_eq!(
+            format!("{value:#X}"),
+            "0x00000000000000000000000000000000000000000000000000000000000000FF"
+        );
+
+        let account_from_hex = AccountId::from_str(&value.as_hex_string()).unwrap();
+        let account_from_value = AccountId::from(value.clone());
+        assert_eq!(account_from_hex, account_from_value);
+        assert!(UInt256::from_str("not-a-hash").is_err());
+    }
+
+    #[test]
+    fn uint256_helpers_cover_zero_raw_vec_and_slice_comparisons() {
+        let zero = UInt256::new();
+        assert!(zero.is_zero());
+        assert_eq!(UInt256::default(), UInt256::ZERO);
+        assert_eq!(UInt256::max(), UInt256::MAX);
+
+        let raw = UInt256::from_raw(vec![0xabu8; 32], 256);
+        assert_eq!(raw.clone().inner(), [0xab; 32]);
+        assert_eq!(raw.clone().into_vec(), vec![0xab; 32]);
+
+        let slice =
+            SliceData::load_builder(BuilderData::with_raw(vec![0xcd; 32], 256).unwrap()).unwrap();
+        let from_slice = UInt256::try_from(slice.clone()).unwrap();
+        assert_eq!(from_slice, UInt256::from([0xcd; 32]));
+        assert_eq!(from_slice, slice);
+        assert_eq!(
+            &from_slice,
+            &SliceData::load_builder(BuilderData::with_raw(vec![0xcd; 32], 256).unwrap()).unwrap()
+        );
+
+        let from_vec = UInt256::from(vec![0x11, 0x22, 0x33]);
+        assert_eq!(&from_vec.as_slice()[..3], &[0x11, 0x22, 0x33]);
     }
 }

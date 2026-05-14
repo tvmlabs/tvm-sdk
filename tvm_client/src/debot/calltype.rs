@@ -390,11 +390,10 @@ impl ContractCall {
                 ParamsOfWaitForTransaction {
                     abi: None,
                     message: fixed_msg,
-                    shard_block_id: "".to_string(), // result.shard_block_id
+                    shard_block_id: String::new(),
                     send_events: true,
-                    sending_endpoints: Some(
-                        vec!["".to_string()], // result.sending_endpoints
-                    ),
+                    sending_endpoints: Some(vec![]),
+                    tx_hash: None,
                 },
                 callback,
             )
@@ -466,12 +465,12 @@ impl ContractCall {
 fn build_onerror_body(onerror_id: u32, e: ClientError) -> ClientResult<SliceData> {
     let mut new_body = BuilderData::new();
     new_body.append_u32(onerror_id).map_err(msg_err)?;
-    new_body.append_u32(e.code).map_err(msg_err)?;
+    new_body.append_u32(e.code()).map_err(msg_err)?;
     let error_code = e
-        .data
+        .data()
         .pointer("/local_error/data/exit_code")
-        .or(e.data.pointer("/exit_code"))
-        .or(e.data.pointer("/compute/exit_code"))
+        .or(e.data().pointer("/exit_code"))
+        .or(e.data().pointer("/compute/exit_code"))
         .and_then(|val| val.as_i64())
         .unwrap_or(0);
     new_body.append_u32(error_code as u32).map_err(msg_err)?;
@@ -556,13 +555,7 @@ async fn emulate_transaction(
         result.transaction.pointer("/compute/exit_code").and_then(|val| val.as_i64()).unwrap_or(0);
 
     if exit_code != 0 {
-        let err = ClientError {
-            code: 0,
-            message: String::from(""),
-            data: result.transaction,
-            traceparent: None,
-        };
-        return Err(err);
+        return Err(ClientError::new(0, "", result.transaction));
     }
 
     let mut out = vec![];

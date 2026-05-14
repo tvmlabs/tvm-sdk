@@ -5,10 +5,13 @@ use ark_ff::BigInteger;
 use ark_ff::PrimeField;
 use byte_slice_cast::AsByteSlice;
 use ff::PrimeField as OtherPrimeField;
+#[cfg(not(target_arch = "wasm32"))]
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr as halo2_Fr;
+#[cfg(not(target_arch = "wasm32"))]
 use halo2_base::utils::ScalarField;
 use neptune::Poseidon;
 use neptune::poseidon::HashMode::OptimizedStatic;
+#[cfg(not(target_arch = "wasm32"))]
 use pse_poseidon::Poseidon as pse_poseidon;
 
 use crate::executor::zk_stuff::FrRepr;
@@ -293,6 +296,7 @@ fn test_poseidon_bytes_flat() {
     assert_eq!(digest, etalon_res);
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn test_fr() {
     let input = vec![0xFF; 31];

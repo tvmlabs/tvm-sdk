@@ -1,12 +1,11 @@
-# Accounts queries
+# Account queries
 
 ## Get account info
 
-To get account info **including BOC, data and code**, use the following GraphQL query:
+To get account info **including its state (BOC), data and code**, use the following GraphQL query:
 
-```graphql
-query {
-  blockchain{
+<pre class="language-graphql"><code class="lang-graphql"><strong>query {
+</strong>  blockchain{
    account(address:"0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"){
     info{
       address
@@ -25,7 +24,7 @@ query {
   }
   }
 }
-```
+</code></pre>
 
 Result:
 
@@ -34,19 +33,28 @@ Result:
   "data": {
     "blockchain": {
       "account": {
-        "info": {
-          "address": "0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd",
-          "acc_type": 1,
-          "balance": "0x223e8b8cef379b",
-          "last_paid": 1647425518,
-          "last_trans_lt": "0x2a9059e77c4",
-          "boc": "te6ccgECDwEAApkAAnXABlO5pkUsepgsbckrLanrqDKt4cRnaZ67O0Pcptd7eA3SHoR9QxGNv3AAAAqkFnnfEciPouM7zebTQAIBAJNniOOihCJZNr2ArCaziee6VYr6JdmUdNs82Mlm2VJbMQAAAX+SNgQJwAJMlgo4O1jZEmyBymkHd/cTX5Y2hWW2OCWru/YnrscYSAIm/wD0pCAiwAGS9KDhiu1TWDD0oQUDAQr0pCD0oQQAAAIBIAgGAez/fyHtRNAg10nCAY4R0//TP9MA+Gp/+GH4Zvhj+GKOPvQFjQhgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE+GpwAYBA9A7yvdcL//hicPhjcPhmf/hh4tMAAZ+BAgDXGCD5AVj4QvkQ8qje0z8BBwBajh74QyG5IJ8wIPgjgQPoqIIIG3dAoLnekvhj4IA08jTY0x8B8AH4R26S8jzeAgEgDgkCAnULCgDVtF1VjXwgt0cKdqJoaf/pn+mAfDU//DD8M3wx/DFvfSBo/AB8JRDjgscSwQwLpDt0ABC4ZGfCwGUAOeegZwD9AUA056BnwOfA5Ln9gBB8NW+YfCFkZf/8IeeFn/wjZ4WAfCUA52T2qj/8M8ABCbRar5/ADAH++EFujlztRNAg10nCAY4R0//TP9MA+Gp/+GH4Zvhj+GKOPvQFjQhgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE+GpwAYBA9A7yvdcL//hicPhjcPhmf/hh4t74RvJzcfhm0fgA+ELIy//4Q88LP/hGzwsA+EoBzg0ADMntVH/4ZwBq3nAi0NYCMdIAMNwhxwCQ4CHXDR+S8jzhUxGQ4cEEIoIQ/////byxkvI84AHwAfhHbpLyPN4=",
-          "data": "te6ccgEBAQEATAAAk2eI46KEIlk2vYCsJrOJ57pVivol2ZR02zzYyWbZUlsxAAABf5I2BAnAAkyWCjg7WNkSbIHKaQd39xNfljaFZbY4Jau79ieuxxhI",
-          "code": "te6ccgECDQEAAg4AAib/APSkICLAAZL0oOGK7VNYMPShAwEBCvSkIPShAgAAAgEgBgQB7P9/Ie1E0CDXScIBjhHT/9M/0wD4an/4Yfhm+GP4Yo4+9AWNCGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT4anABgED0DvK91wv/+GJw+GNw+GZ/+GHi0wABn4ECANcYIPkBWPhC+RDyqN7TPwEFAFqOHvhDIbkgnzAg+COBA+iogggbd0Cgud6S+GPggDTyNNjTHwHwAfhHbpLyPN4CASAMBwICdQkIANW0XVWNfCC3Rwp2omhp/+mf6YB8NT/8MPwzfDH8MW99IGj8AHwlEOOCxxLBDAukO3QAELhkZ8LAZQA556BnAP0BQDTnoGfA58Dkuf2AEHw1b5h8IWRl//wh54Wf/CNnhYB8JQDnZPaqP/wzwAEJtFqvn8AKAf74QW6OXO1E0CDXScIBjhHT/9M/0wD4an/4Yfhm+GP4Yo4+9AWNCGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAT4anABgED0DvK91wv/+GJw+GNw+GZ/+GHi3vhG8nNx+GbR+AD4QsjL//hDzws/+EbPCwD4SgHOCwAMye1Uf/hnAGrecCLQ1gIx0gAw3CHHAJDgIdcNH5LyPOFTEZDhwQQighD////9vLGS8jzgAfAB+EdukvI83g==",
-          "library": null,
-          "data_hash": "a34d868df79e09b2c3af67c1a9e210c1afef27f2376ee4ea5b00d20e7e55c058",
-          "code_hash": "59ba6d164798169031c8ca18fa10c7038e7ad73b8d64f4c990e029a5dcfa59c3",
-          "library_hash": null
+        "events": {
+          "edges": [
+            {
+              "node": {
+                "msg_id": "541be3a1be3224687158d9dcd39f313ffcb1d03d5428b2a7f51d702b177755d2",
+                "body": "te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==",
+                "created_at": 1775532241
+              },
+              "cursor": "769d478d100670000000000000000000000000000000000000000000000000000000000000000000062bc501a12102"
+            },
+            {
+              "node": {
+                "msg_id": "11ea69af1314ff8c77cb82d6bf020928a15b0bc2c1505a25b5f65b339b60e194",
+                "body": "te6ccgEBAQEAOAAAayoqI7SAFJMDNXNXk8vxpapdbJTHe2M1weAqWxceYB4zXilZqp1gAAAAAAAAAAAAAAAAADDUEA==",
+                "created_at": 1775547492
+              },
+              "cursor": "769d4b46400670000000000000000000000000000000000000000000000000000000000000000000062bcff350302"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
         }
       }
     }
@@ -269,22 +277,27 @@ Result. We see that the next page exists, we can continue pagination.
 
 ### Account events
 
-To get account events, we need to get Account's external outbound message. Their type is `ExtOut.` `Body` field contains ABI-encoded information with Event data. You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body).
+To get account events run this query.
 
 ```graphql
-query{
-  blockchain{
-    account(address:"0:454abb3c7db044603a9fb0802d3c6507b08d6b04855baa9a60802d9ecd34edad"){
-      messages(msg_type:[ExtOut],first:2){
-        edges{
-          node{
-            hash
+query {
+  blockchain {
+    account(
+      address: "0:1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a"
+    ) {
+      events(
+        dst: ":0000000000000000000000000000000000000000000000000000000000000267"
+        last: 2
+      ) {
+        edges {
+          node {
+            msg_id
             body
-            created_at_string
+            created_at
           }
           cursor
         }
-        pageInfo{
+        pageInfo {
           hasNextPage
         }
       }
@@ -300,33 +313,58 @@ Result
   "data": {
     "blockchain": {
       "account": {
-        "messages": {
+        "events": {
           "edges": [
             {
               "node": {
-                "hash": "315ca96ae9ded116b98692491d8accf1e01acd48e85b1db53b63615cd37f433b",
-                "body": "te6ccgEBAQEAeQAA7VuEb3wAAAAAAAAAyWDwxNxg8kTcAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABg78TcCAUAAT1bfCW7sAABPW5DHEo+AAAAAAAAAAAAAAAIs3ySDgAAAAEAAHA+pB7Z9IAAAAAAAAAAAAAAAAAAAABA",
-                "created_at_string": "2021-07-17 03:00:34.000"
+                "msg_id": "541be3a1be3224687158d9dcd39f313ffcb1d03d5428b2a7f51d702b177755d2",
+                "body": "te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==",
+                "created_at": 1775532241
               },
-              "cursor": "59838dc005df77c11120003"
+              "cursor": "769d478d100670000000000000000000000000000000000000000000000000000000000000000000062bc501a12102"
             },
             {
               "node": {
-                "hash": "b54d2053c965cf2e41e265fd67a0b71a896fd06df8c305d1cb95da6780947113",
-                "body": "te6ccgEBAQEALAAAU0UWNxJg8sTcn/M7F8rhuMCstb3zywTdpGh9GrmjYzToX9gcm8mXZJpVcA==",
-                "created_at_string": "2021-07-17 03:00:34.000"
+                "msg_id": "11ea69af1314ff8c77cb82d6bf020928a15b0bc2c1505a25b5f65b339b60e194",
+                "body": "te6ccgEBAQEAOAAAayoqI7SAFJMDNXNXk8vxpapdbJTHe2M1weAqWxceYB4zXilZqp1gAAAAAAAAAAAAAAAAADDUEA==",
+                "created_at": 1775547492
               },
-              "cursor": "59838dc005df77c11120d01"
+              "cursor": "769d4b46400670000000000000000000000000000000000000000000000000000000000000000000062bcff350302"
             }
           ],
           "pageInfo": {
-            "hasNextPage": true
+            "hasNextPage": false
           }
         }
       }
     }
   }
 }
+```
+
+Then, by decoding the \`body\` of that message you can obtain the data attached to the event.\
+You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body) or use tvm-cli comand:\
+For example:
+
+```
+tvm-cli decode body te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA== --abi ./contracts/0.79.3_compiled/exchange/Exchange.abi.json
+```
+
+As a result, you will get something approximately like this:
+
+```
+Input arguments:
+    body: te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==
+     abi: ./contracts/0.79.3_compiled/exchange/Exchange.abi.json
+
+
+UsdcMigrated: {
+  "from": "0:b30eeffcb856f13302481ed975e7e8bca9266bdd149dc577ab86c8c9aab1228a",
+  "value": "10000"
+}
+Signature: None
+Header: null
+FunctionId: 9981240F
 ```
 
 ### Account external calls
@@ -379,149 +417,6 @@ Result
         }
       }
     }
-  }
-}
-```
-
-### Transfers between 2 accounts
-
-In this example we retrieve last 30 messages between elector contract and some validator wallet with value more than some number:
-
-```graphql
-query{
-  blockchain{
-    account(address:"-1:3333333333333333333333333333333333333333333333333333333333333333"){
-      messages(last:30, counterparties:["-1:99392dea1c5035feddb1bb3db9e71138d82868f7460c6da3dca26f0520798ebd"],
-       min_value:"58579566000" ){
-        edges{
-          node{
-            src
-            dst
-            id
-            hash
-            value(format:DEC)
-            msg_type
-            created_at_string
-          }
-          cursor
-        }
-        pageInfo{
-          hasPreviousPage
-        }
-      }
-    }
-  }
-}
-```
-
-Result:
-
-```graphql
-{
-  "data": {
-    "blockchain": {
-      "account": {
-        "messages": {
-          "edges": [
-            {
-              "node": {
-                "src": "-1:3333333333333333333333333333333333333333333333333333333333333333",
-                "dst": "-1:99392dea1c5035feddb1bb3db9e71138d82868f7460c6da3dca26f0520798ebd",
-                "id": "message/958ee60bb2233e9e94d6c36465c0941632535d9dd1f9cb8e6b67616f1d33959e",
-                "hash": "958ee60bb2233e9e94d6c36465c0941632535d9dd1f9cb8e6b67616f1d33959e",
-                "value": "1625586165251876",
-                "msg_type": 0,
-                "created_at_string": "2022-03-15 18:12:16.000"
-              },
-              "cursor": "5edf8c1m0e01"
-            },
-          .....
-                    ],
-          "pageInfo": {
-            "hasPreviousPage": true
-          }
-        }
-      }
-    }
-  }
-}
-```
-
-We see that previous page exists and can continue pagination.
-
-## Subscribe for accounts state updates (soon)
-
-You can subscribe for accounts metadata updates: balances or/and last\_trans\_lt, for example Whenever account is updated, you will receive its data:
-
-```graphql
-subscription{
-  accounts(
-    filter:{
-      id:{
-        in:[
-        "-1:3333333333333333333333333333333333333333333333333333333333333333",
-        "0:557957cba74ab1dc544b4081be81f1208ad73997d74ab3b72d95864a41b779a4"
-        ]
-      }
-    }
-  ){
-    id
-    balance(format:DEC)
-    last_trans_lt
-    last_paid
-  }
-}
-```
-
-## Subscribe for accounts transactions (soon)
-
-You can subscribe for transactions of a list of accounts
-
-```graphql
-subscription{
-  transactions(
-    filter:{
-      account_addr:{
-        in:[
-          "-1:3333333333333333333333333333333333333333333333333333333333333333",
-          "0:557957cba74ab1dc544b4081be81f1208ad73997d74ab3b72d95864a41b779a4"
-        ]
-      }
-    }
-  ){
-    id
-    lt
-    balance_delta
-  }
-}
-```
-
-## Subscribe for accounts messages (soon)
-
-You can subscribe for messages of a list of accounts.
-
-You can even subscribe only for external outbound messages, like here:
-
-```graphql
-subscription{
-  messages(
-    filter:{
-      src:{
-        in:[
-          "-1:3333333333333333333333333333333333333333333333333333333333333333",
-          "0:557957cba74ab1dc544b4081be81f1208ad73997d74ab3b72d95864a41b779a4"
-        ]
-      }
-      msg_type: {
-        eq:2
-      }
-    }
-  ){
-    id
-    msg_type
-    src
-    dst
-    value
   }
 }
 ```

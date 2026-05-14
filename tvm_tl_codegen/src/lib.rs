@@ -131,7 +131,7 @@ pub mod parser {
         }
 
         pub fn namespaces(&self) -> &[String] {
-            self.names_vec().map(|v| &v[..(v.len() - 1).max(0)]).unwrap_or(&[])
+            self.names_vec().map(|v| &v[..v.len().saturating_sub(1)]).unwrap_or(&[])
         }
 
         pub fn name(&self) -> Option<&str> {
@@ -325,7 +325,7 @@ pub mod parser {
                 string += " = ";
                 string += &output;
 
-                Some(crc::crc32::checksum_ieee(string.as_bytes()))
+                Some(crc::Crc::<u32>::new(&crc::CRC_32_ISO_HDLC).checksum(string.as_bytes()))
             }
         }
     }

@@ -90,11 +90,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut binding = in_msg.cloned();
         let in_msg: Option<&mut Message> = binding.as_mut();
 
-        let is_previous_state_active = match account.state() {
-            Some(AccountState::AccountUninit {}) => false,
-            None => false,
-            _ => true,
-        };
+        let is_previous_state_active =
+            !matches!(account.state(), Some(AccountState::AccountUninit) | None);
 
         let revert_anycast =
             self.config.global_version() >= VERSION_BLOCK_REVERT_MESSAGES_WITH_ANYCAST_ADDRESSES;
@@ -389,7 +386,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     } else {
                         None
                     };
-                    let minted_shell_orig = minted_shell.clone();
+                    let minted_shell_orig = *minted_shell;
                     match self.action_phase_with_copyleft(
                         &mut tr,
                         account,
@@ -407,8 +404,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         message_src_dapp_id,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
-                            if phase.success == false {
-                                *minted_shell = minted_shell_orig.clone();
+                            if !phase.success {
+                                *minted_shell = minted_shell_orig;
                             }
                             out_msgs = messages;
                             if let Some(copyleft_reward) = &copyleft_reward {
@@ -418,7 +415,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             Some(phase)
                         }
                         Err(e) => {
-                            *minted_shell = minted_shell_orig.clone();
+                            *minted_shell = minted_shell_orig;
                             fail!(ExecutorError::TrExecutorError(format!(
                                 "cannot create action phase of a new transaction for smart contract for reason {}",
                                 e
@@ -604,5 +601,172 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             .push(StackItem::Slice(body_slice))
             .push(function_selector);
         stack
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::Account;
+    use tvm_block::AccountStatus;
+    use tvm_block::ComputeSkipReason;
+    use tvm_block::CurrencyCollection;
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::InternalMessageHeader;
+    use tvm_block::Message;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::MsgAddressInt;
+    use tvm_block::Serializable;
+    use tvm_block::TrComputePhase;
+    use tvm_block::TransactionDescr;
+    use tvm_types::BuilderData;
+    use tvm_types::SliceData;
+    use tvm_types::UInt256;
+    use tvm_vm::stack::integer::IntegerData;
+
+    use super::OrdinaryTransactionExecutor;
+    use crate::ExecuteParams;
+    use crate::TransactionExecutor;
+    use crate::error::ExecutorError as LocalExecutorError;
+
+    fn address(byte: u8) -> MsgAddressInt {
+        MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
+    }
+
+    fn body(byte: u8) -> SliceData {
+        SliceData::load_builder(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn reports_ordinary_transaction_and_empty_stack_without_message() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let account = Account::with_address(address(1));
+
+        assert!(executor.ordinary_transaction());
+        assert!(executor.build_stack(None, &account).is_empty());
+    }
+
+    #[test]
+    fn build_stack_for_external_inbound_message() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::with_address(address(1));
+        account.set_balance(CurrencyCollection::with_grams(123));
+        let mut msg = Message::with_ext_in_header(ExternalInboundMessageHeader::new(
+            MsgAddressExt::with_extern(SliceData::default()).unwrap(),
+            address(7),
+        ));
+        msg.set_body(body(0xab));
+
+        let stack = executor.build_stack(Some(&msg), &account);
+
+        assert_eq!(stack.depth(), 5);
+        assert!(stack.get(0).as_bool().unwrap());
+        assert_eq!(stack.get(1).as_slice().unwrap().remaining_bits(), 8);
+        assert_eq!(stack.get(4).as_integer().unwrap(), &<IntegerData as From<u64>>::from(123_u64));
+        assert!(stack.get(2).as_cell().is_ok());
+    }
+
+    #[test]
+    fn build_stack_for_internal_message_uses_message_value() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let account = Account::with_address(address(1));
+        let mut msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(2),
+            address(1),
+            CurrencyCollection::with_grams(77),
+        ));
+        msg.set_body(body(0xcd));
+
+        let stack = executor.build_stack(Some(&msg), &account);
+
+        assert_eq!(stack.depth(), 5);
+        assert!(!stack.get(0).as_bool().unwrap());
+        assert_eq!(stack.get(3).as_integer().unwrap(), &<IntegerData as From<u64>>::from(77_u64));
+        assert_eq!(stack.get(1).as_slice().unwrap().remaining_bits(), 8);
+    }
+
+    #[test]
+    fn execute_requires_input_message() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::with_address(address(1));
+        let err = executor
+            .execute_with_params(None, &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap_err();
+
+        assert!(err.to_string().contains("Ordinary transaction must have input message"));
+    }
+
+    #[test]
+    fn execute_rejects_external_outbound_messages() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::with_address(address(1));
+        let msg = Message::with_ext_out_header(ExtOutMessageHeader::default());
+        let err = executor
+            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap_err();
+
+        assert_eq!(
+            err.downcast::<LocalExecutorError>().unwrap(),
+            LocalExecutorError::InvalidExtMessage
+        );
+    }
+
+    #[test]
+    fn execute_uses_message_destination_when_account_id_is_missing() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::default();
+        let dst = address(7);
+        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            dst.clone(),
+            CurrencyCollection::with_grams(100),
+            false,
+        ));
+
+        let tx = executor
+            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap();
+
+        assert_eq!(tx.account_id(), &dst.address());
+        assert_eq!(tx.in_msg_cell().unwrap().repr_hash(), msg.serialize().unwrap().repr_hash());
+    }
+
+    #[test]
+    fn execute_internal_message_to_nonexistent_account_without_state_init_records_aborted_result() {
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        let mut account = Account::default();
+        let dst = address(8);
+        let msg_value = CurrencyCollection::with_grams(1_000_000_000);
+        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            dst.clone(),
+            msg_value.clone(),
+            false,
+        ));
+
+        let tx = executor
+            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .unwrap();
+
+        assert_eq!(tx.account_id(), &dst.address());
+        assert_eq!(tx.orig_status, AccountStatus::AccStateNonexist);
+        assert_eq!(tx.end_status, AccountStatus::AccStateNonexist);
+        assert!(account.is_none());
+        assert_eq!(tx.total_fees().grams.as_u128(), 0);
+
+        let description = match tx.read_description().unwrap() {
+            TransactionDescr::Ordinary(description) => description,
+            _ => panic!("unexpected transaction description"),
+        };
+        assert!(description.credit_first);
+        assert_eq!(description.credit_ph.unwrap().credit, msg_value);
+        assert!(matches!(
+            description.compute_ph,
+            TrComputePhase::Skipped(skipped) if skipped.reason == ComputeSkipReason::NoState
+        ));
+        assert!(description.action.is_none());
+        assert!(description.aborted);
+        assert!(description.bounce.is_none());
+        assert!(!description.destroyed);
     }
 }

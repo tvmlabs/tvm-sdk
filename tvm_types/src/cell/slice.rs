@@ -359,14 +359,13 @@ impl SliceData {
     pub fn into_cell(self) -> Cell {
         match &self.data {
             InternalData::None => return Cell::default(),
-            InternalData::Cell(cell) => {
+            InternalData::Cell(cell)
                 if self.data_window.start == 0
                     && self.data_window.end == cell.bit_length()
                     && self.references_window.start == 0
-                    && self.references_window.end == cell.references_count()
-                {
-                    return cell.clone();
-                }
+                    && self.references_window.end == cell.references_count() =>
+            {
+                return cell.clone();
             }
             _ => (),
         }

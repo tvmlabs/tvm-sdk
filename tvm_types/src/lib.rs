@@ -22,6 +22,9 @@ pub mod dictionary;
 pub use self::dictionary::*;
 
 pub mod boc;
+/// Re-export for macro use. Not part of the public API.
+#[doc(hidden)]
+pub use anyhow;
 pub use boc::*;
 use smallvec::SmallVec;
 

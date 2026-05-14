@@ -1,0 +1,85 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "generateVaucher",
+			"inputs": [
+				{"name":"sk_u_commit","type":"uint256"},
+				{"name":"isFee","type":"bool"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawTokens",
+			"inputs": [
+				{"name":"withdrawed_value","type":"uint128"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"flags","type":"uint8"},
+				{"name":"wallet_addr","type":"address"},
+				{"name":"initial_data_hash","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "updateCode",
+			"inputs": [
+				{"name":"newcode","type":"cell"},
+				{"name":"cell","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "getDetails",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"ownerPubkey","type":"uint256"},
+				{"name":"root","type":"address"},
+				{"name":"privateNoteCodeHash","type":"uint256"}
+			]
+		},
+		{
+			"name": "getVersion",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"string"},
+				{"name":"value1","type":"string"}
+			]
+		}
+	],
+	"events": [
+		{
+			"name": "vaucherGenerated",
+			"inputs": [
+				{"name":"sk_u_commit","type":"uint256"},
+				{"name":"vaucher_nominal","type":"uint256"},
+				{"name":"token_type","type":"uint32"}
+			],
+			"outputs": [
+			]
+		}
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"init":false,"name":"THRESHOLD","type":"uint32"},
+		{"init":false,"name":"_root","type":"address"},
+		{"init":false,"name":"_PrivateNoteCode","type":"cell"},
+		{"init":false,"name":"_ownerPubkey","type":"uint256"},
+		{"init":false,"name":"_withdrowValues","type":"map(uint32,uint128)"}
+	]
+}

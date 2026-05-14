@@ -4,7 +4,7 @@ description: (Work in progress) RootOracle Contract Interface Documentation
 
 # RootOracle
 
-{% file src="../../.gitbook/assets/RootOracle.abi.json" %}
+{% file src="../../.gitbook/assets/RootOracle.abi (1).json" %}
 
 ## Overview
 
@@ -31,18 +31,13 @@ event OracleDeployed(address oracle, uint256 pubkey, string name);
 
 ## Public & External Interface
 
-### Deploy Oracle
-
-#### **`deployOracle(uint256 oraclePubkey, string oracleName)`**
+### **`deployOracle`**
 
 Deploys a new Oracle contract.
 
 ```solidity
 function deployOracle(uint256 oraclePubkey, string oracleName) public view accept;
 ```
-
-**Access:** public\
-**Modifiers:** `accept`
 
 **Parameters:**
 
@@ -67,14 +62,31 @@ function deployOracle(uint256 oraclePubkey, string oracleName) public view accep
 
 ## View Functions
 
-### **`getVersion()`**
+### **`getOracleAddress`**
+
+Returns the deterministic address of an `Oracle` contract by its name.
+
+```solidity
+function getOracleAddress(string name) external view returns(address oracleAddress)
+```
+
+**Parameters:**
+
+* `name` — unique Oracle name used during deployment
+
+**Returns:**
+
+* `oracleAddress` — deterministic address of the Oracle contract associated with the given name
+
+### **`getVersion`**
 
 Returns the contract version identifier.
 
 ```solidity
-function getVersion() external pure returns (string);
+function getVersion() external pure returns (string, string)
 ```
 
 **Returns:**
 
+* semantic version string
 * Contract name: `"RootOracle"`

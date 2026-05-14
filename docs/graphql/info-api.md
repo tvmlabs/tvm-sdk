@@ -6,11 +6,6 @@ Info query is used to get API version, as well as health parameters of the API, 
 query{
   info{
     version # API version
-    time # server time
-    blocksLatency # temporarily not supported
-    messagesLatency # temporarily not supported
-    transactionsLatency # temporarily not supported
-    latency # temporarily not supported
   }
 }
 ```

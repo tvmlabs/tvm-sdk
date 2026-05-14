@@ -81,5 +81,5 @@ fn test_deferred_init() {
         .unwrap_err();
     // println!("{:#?}", result);
 
-    assert_eq!(result.code, crate::net::ErrorCode::QueryFailed as u32);
+    assert_eq!(result.code(), crate::net::ErrorCode::QueryFailed as u32);
 }

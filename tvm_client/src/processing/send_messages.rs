@@ -13,12 +13,12 @@
 use std::sync::Arc;
 
 use serde_json::Value;
-use tvm_client_processing::MessageMonitoringParams;
-use tvm_client_processing::MonitoredMessage;
 
 use crate::client::ClientContext;
 use crate::error::AddNetworkUrl;
 use crate::error::ClientResult;
+use crate::processing::MessageMonitoringParams;
+use crate::processing::MonitoredMessage;
 
 #[derive(Serialize, Deserialize, ApiType, Default, Debug, Clone)]
 pub struct MessageSendingParams {
@@ -79,7 +79,9 @@ pub async fn send_messages(
         })
         .collect::<Vec<_>>();
     if let Some(queue) = params.monitor_queue {
-        context.message_monitor.monitor_messages(&queue, messages.clone())?;
+        context
+            .message_monitor
+            .monitor_messages(&queue, messages.iter().cloned().map(Into::into).collect())?;
     }
     Ok(ResultOfSendMessages { messages })
 }

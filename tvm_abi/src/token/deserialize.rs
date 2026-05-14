@@ -139,7 +139,7 @@ impl TokenValue {
                         && cursor.used_refs + param_max_refs <= BuilderData::references_capacity()
                         || !last
                             && cursor.used_refs + param_max_refs
-                                <= BuilderData::references_capacity() - 1)
+                                < BuilderData::references_capacity())
                 {
                     fail!(AbiError::WrongDataLayout);
                 }
@@ -172,7 +172,7 @@ impl TokenValue {
                         <= BuilderData::references_capacity()
                     || (!last || abi_version == &ABI_VERSION_1_0)
                         && param_refs + orig_cell.references_count()
-                            <= BuilderData::references_capacity() - 1)
+                            < BuilderData::references_capacity())
             {
                 fail!(AbiError::WrongDataLayout);
             }

@@ -862,7 +862,10 @@ fn compile_code_dict_cell(
 
         // try setting value slice as is, otherwise set as a cell
         if dict.set(key_slice.clone(), &value_slice.clone()).is_ok() {
-            map.insert(key_slice.clone(), (value_dbg, value_slice.clone()));
+            map.insert(
+                key_slice.get_bytestring(0),
+                (key_slice.clone(), value_dbg, value_slice.clone()),
+            );
         } else {
             let value_cell = value_slice.clone().into_cell();
             info.append(&mut value_dbg);
@@ -872,7 +875,7 @@ fn compile_code_dict_cell(
     }
 
     // update debug info
-    for (key, (mut value_dbg, value_slice)) in map {
+    for (_, (key, mut value_dbg, value_slice)) in map {
         let value_slice_after = dict
             .get(key)
             .map_err(|_| OperationError::CodeDictConstruction)?
@@ -896,7 +899,7 @@ fn adjust_debug_map(map: &mut DbgInfo, before: SliceData, after: SliceData) -> S
     let hash_before = before.cell().repr_hash();
     let hash_after = after.cell().repr_hash();
     let entry_before =
-        map.remove(&hash_before).ok_or_else(|| failure::err_msg("Failed to remove old value."))?;
+        map.remove(&hash_before).ok_or_else(|| anyhow::anyhow!("Failed to remove old value."))?;
 
     let adjustment = after.pos();
     let mut entry_after = BTreeMap::new();

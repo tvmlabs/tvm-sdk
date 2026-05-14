@@ -11,13 +11,13 @@
 
 use core::ops::Range;
 
-use aes_ctr::cipher::stream::NewStreamCipher;
-use aes_ctr::cipher::stream::SyncStreamCipher;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use base64::engine::general_purpose::URL_SAFE;
 use crc::CRC_32_ISCSI;
 use crc::Crc;
+use ctr::cipher::KeyIvInit;
+use ctr::cipher::StreamCipher;
 pub use ed25519_dalek::PUBLIC_KEY_LENGTH as ED25519_PUBLIC_KEY_LENGTH;
 pub use ed25519_dalek::SECRET_KEY_LENGTH as ED25519_SECRET_KEY_LENGTH;
 pub use ed25519_dalek::SIGNATURE_LENGTH as ED25519_SIGNATURE_LENGTH;
@@ -35,17 +35,14 @@ use crate::fail;
 // AES-CTR --------------------------------------------------------------
 
 pub struct AesCtr {
-    inner: aes_ctr::Aes256Ctr,
+    inner: ctr::Ctr128BE<aes::Aes256>,
 }
 
 impl AesCtr {
     pub fn with_params(key: &[u8], ctr: &[u8]) -> Result<Self> {
-        let aes_ctr = aes_ctr::Aes256Ctr::new(
-            aes_ctr::cipher::generic_array::GenericArray::from_slice(key),
-            aes_ctr::cipher::generic_array::GenericArray::from_slice(ctr),
-        );
-        let ret = Self { inner: aes_ctr };
-        Ok(ret)
+        let inner = ctr::Ctr128BE::<aes::Aes256>::new_from_slices(key, ctr)
+            .map_err(|e| error!("AesCtr init error: {}", e))?;
+        Ok(Self { inner })
     }
 
     pub fn apply_keystream(&mut self, buf: &mut [u8], range: Range<usize>) -> Result<()> {
@@ -319,5 +316,36 @@ mod tests {
         let input = "SGVsbG8gV29ybGQh"; // Base64-encoded string "Hello World!"
         let mut output = [0u8; 10]; // Output buffer with a length mismatch
         base64_decode_to_exact_slice(input, &mut output).unwrap();
+    }
+
+    #[test]
+    fn test_base64_encode_url_safe_uses_url_alphabet() {
+        let encoded = base64_encode_url_safe([0xfb, 0xef, 0xff]);
+        assert!(encoded.contains('-'));
+        assert!(encoded.contains('_'));
+    }
+
+    #[test]
+    fn test_aes_ctr_encrypts_and_decrypts_selected_range() {
+        let key = [7u8; 32];
+        let ctr = [9u8; 16];
+        let mut cipher = AesCtr::with_params(&key, &ctr).unwrap();
+        let mut buf = *b"abcdef";
+        let original = buf;
+
+        cipher.apply_keystream(&mut buf, 1..5).unwrap();
+        assert_ne!(buf, original);
+        assert_eq!(buf[0], original[0]);
+        assert_eq!(buf[5], original[5]);
+
+        let mut decipher = AesCtr::with_params(&key, &ctr).unwrap();
+        decipher.apply_keystream(&mut buf, 1..5).unwrap();
+        assert_eq!(buf, original);
+    }
+
+    #[test]
+    fn test_aes_ctr_rejects_invalid_key_or_counter_length() {
+        assert!(AesCtr::with_params(&[1u8; 31], &[2u8; 16]).is_err());
+        assert!(AesCtr::with_params(&[1u8; 32], &[2u8; 15]).is_err());
     }
 }

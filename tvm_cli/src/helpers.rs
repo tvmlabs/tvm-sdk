@@ -13,9 +13,16 @@
 //
 
 use std::env;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::io::Write as _;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::OnceLock;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::time::Duration;
 use std::time::SystemTime;
 
@@ -108,6 +115,111 @@ pub fn global_config_path() -> String {
     }
 }
 
+struct LogFile {
+    path: String,
+    file: Mutex<std::fs::File>,
+}
+
+struct LogFilter {
+    include: Vec<String>,
+    exclude: Vec<String>,
+}
+
+impl LogFilter {
+    fn parse(spec: &str) -> Self {
+        let mut include = Vec::new();
+        let mut exclude = Vec::new();
+        for token in spec.split(',').map(str::trim).filter(|s| !s.is_empty()) {
+            if let Some(module) = token.strip_prefix('-') {
+                exclude.push(module.to_string());
+            } else {
+                include.push(token.to_string());
+            }
+        }
+        LogFilter { include, exclude }
+    }
+
+    fn allows(&self, target: &str) -> bool {
+        if self.exclude.iter().any(|e| target.starts_with(e.as_str())) {
+            return false;
+        }
+        if self.include.is_empty() {
+            return true;
+        }
+        self.include.iter().any(|i| target.starts_with(i.as_str()))
+    }
+}
+
+static LOG_FILE: OnceLock<LogFile> = OnceLock::new();
+static LOG_FILTER: OnceLock<LogFilter> = OnceLock::new();
+static JSON_MODE: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn set_json_mode(enabled: bool) {
+    JSON_MODE.store(enabled, Ordering::Relaxed);
+}
+
+pub(crate) fn is_json_mode() -> bool {
+    JSON_MODE.load(Ordering::Relaxed)
+}
+
+pub(crate) fn init_log_file(path: &str) -> Result<(), String> {
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|e| format!("failed to open log file '{}': {}", path, e))?;
+    LOG_FILE
+        .set(LogFile { path: path.to_string(), file: Mutex::new(file) })
+        .map_err(|_| "log file already initialized".to_string())
+}
+
+pub(crate) fn init_log_filter(spec: &str) {
+    let _ = LOG_FILTER.set(LogFilter::parse(spec));
+}
+
+pub(crate) fn has_log_file() -> bool {
+    LOG_FILE.get().is_some()
+}
+
+pub(crate) fn log_file_path() -> Option<&'static str> {
+    LOG_FILE.get().map(|lf| lf.path.as_str())
+}
+
+pub(crate) fn write_log_record(record: &log::Record) {
+    if let Some(filter) = LOG_FILTER.get() {
+        if !filter.allows(record.target()) {
+            return;
+        }
+    }
+    if let Some(lf) = LOG_FILE.get() {
+        if let Ok(mut file) = lf.file.lock() {
+            let _ = writeln!(
+                file,
+                "[{} {:5} {}] {}",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+                record.level(),
+                record.target(),
+                record.args()
+            );
+        }
+    }
+}
+
+pub(crate) fn log_startup_info() {
+    if let Some(lf) = LOG_FILE.get() {
+        if let Ok(mut file) = lf.file.lock() {
+            let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+            let args: Vec<String> = std::env::args().collect();
+            let cwd = std::env::current_dir()
+                .map(|p| p.display().to_string())
+                .unwrap_or_else(|_| "<unknown>".to_string());
+            let _ = writeln!(file, "[{now} INFO  tvm_cli] === tvm-cli session started ===");
+            let _ = writeln!(file, "[{now} INFO  tvm_cli]   args: {}", args.join(" "));
+            let _ = writeln!(file, "[{now} INFO  tvm_cli]   cwd: {cwd}");
+        }
+    }
+}
+
 struct SimpleLogger;
 
 impl log::Log for SimpleLogger {
@@ -116,6 +228,13 @@ impl log::Log for SimpleLogger {
     }
 
     fn log(&self, record: &log::Record) {
+        if has_log_file() {
+            write_log_record(record);
+            return;
+        }
+        if is_json_mode() {
+            return;
+        }
         match record.level() {
             log::Level::Error | log::Level::Warn => {
                 eprintln!("{}", record.args());
@@ -137,13 +256,122 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
     Ok(keys)
 }
 
-pub fn load_ton_address(addr: &str, config: &Config) -> Result<String, String> {
-    let addr =
-        if addr.find(':').is_none() { format!("{}:{}", config.wc, addr) } else { addr.to_owned() };
-    let _ = MsgAddressInt::from_str(&addr).map_err(|e| {
-        format!("Address is specified in the wrong format. Error description: {}", e)
-    })?;
-    Ok(addr)
+#[derive(Debug)]
+pub struct SdkAddress {
+    pub dapp_id: Option<String>,
+    pub account_id: String,
+}
+
+impl SdkAddress {
+    pub fn validate(s: &str) -> Result<String, String> {
+        Ok(Self::from_str(s)?.to_string())
+    }
+}
+// Format:
+// dapp_hex64::account_hex64
+// dapp_hex64:account_hex64
+// wc_int:account_hex64
+// account_hex64
+
+impl FromStr for SdkAddress {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (dapp_id, account_id) = if let Some((dapp, account)) = s.split_once("::") {
+            if dapp.len() != 64 || !dapp.chars().all(|c| c.is_ascii_hexdigit()) {
+                return Err("dapp_id must be exactly 64 hex characters".to_string());
+            }
+            (Some(dapp.to_owned()), account.to_owned())
+        } else if let Some((dapp_or_wc, account)) = s.split_once(":") {
+            if dapp_or_wc.len() == 64 && dapp_or_wc.chars().all(|c| c.is_ascii_hexdigit()) {
+                (Some(dapp_or_wc.to_owned()), account.to_owned())
+            } else {
+                (None, s.to_owned())
+            }
+        } else if s.len() == 128 && s.chars().all(|c| c.is_ascii_hexdigit()) {
+            let (dapp, account) = s.split_at(64);
+            (Some(dapp.to_owned()), account.to_owned())
+        } else {
+            (None, s.to_owned())
+        };
+        let _ = MsgAddressInt::from_str(&account_id).map_err(|e| {
+            format!("Address is specified in the wrong format. Error description: {}", e)
+        })?;
+        Ok(Self { dapp_id, account_id })
+    }
+}
+
+impl Display for SdkAddress {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(dapp_id) = &self.dapp_id {
+            f.write_str(&dapp_id)?;
+            f.write_str(":")?;
+        }
+        f.write_str(&self.account_id)?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use super::SdkAddress;
+
+    const DAPP_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const ACCOUNT_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const RAW_ADDRESS: &str = "0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+    #[test]
+    fn sdk_address_from_str_parses_raw_address() {
+        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
+
+        assert_eq!(address.dapp_id, None);
+        assert_eq!(address.account_id, RAW_ADDRESS);
+        assert_eq!(address.to_string(), RAW_ADDRESS);
+    }
+
+    #[test]
+    fn sdk_address_from_str_parses_dapp_id_with_double_colon() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.account_id, RAW_ADDRESS);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{RAW_ADDRESS}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_parses_dapp_id_with_single_colon() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}:{ACCOUNT_ID}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.account_id, ACCOUNT_ID);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_parses_concatenated_dapp_id_and_account_id() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}{ACCOUNT_ID}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.account_id, ACCOUNT_ID);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_keeps_workchain_address_without_dapp_id() {
+        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
+
+        assert_eq!(address.dapp_id, None);
+        assert_eq!(address.account_id, RAW_ADDRESS);
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_invalid_dapp_id_length_for_double_colon() {
+        let err = SdkAddress::from_str(&format!("deadbeef::{RAW_ADDRESS}")).unwrap_err();
+
+        assert_eq!(err, "dapp_id must be exactly 64 hex characters");
+    }
 }
 
 pub fn now() -> u32 {
@@ -186,10 +414,11 @@ pub fn get_server_endpoints(config: &Config) -> Vec<String> {
 
 pub fn create_client(config: &Config) -> Result<TonClient, String> {
     let modified_endpoints = get_server_endpoints(config);
-    if !config.is_json {
+    if !config.is_json && !has_log_file() {
         println!("Connecting to:\n\tUrl: {}", config.url);
         println!("\tEndpoints: {:?}\n", modified_endpoints);
     }
+    log::info!("Connecting to: url={}, endpoints={:?}", config.url, modified_endpoints);
     let endpoints_cnt = if resolve_net_name(&config.url).unwrap_or(config.url.clone()).eq(LOCALNET)
     {
         1_u8
@@ -226,7 +455,7 @@ pub fn create_client(config: &Config) -> Result<TonClient, String> {
 }
 
 pub fn create_client_verbose(config: &Config) -> Result<TonClient, String> {
-    let level = debug_level_from_env();
+    let level = if has_log_file() { log::LevelFilter::Trace } else { debug_level_from_env() };
     log::set_max_level(level);
     log::set_boxed_logger(Box::new(SimpleLogger))
         .map_err(|e| format!("failed to init logger: {}", e))?;
