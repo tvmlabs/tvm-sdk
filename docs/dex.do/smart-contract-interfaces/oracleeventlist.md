@@ -4,7 +4,7 @@ description: (Work in progress) OracleEventList Contract Interface Documentation
 
 # OracleEventList
 
-{% file src="../../.gitbook/assets/OracleEventList.abi.json" %}
+{% file src="../../.gitbook/assets/OracleEventList.abi (1).json" %}
 
 ## Overview
 
@@ -42,14 +42,14 @@ event EventAdded(
 
 ### EventConfirmed
 
-Emitted when an Oracle confirms participation in an event via a PMP contract.
+Emitted when an Oracle confirms participation in an event via a `PMP` contract.
 
 ```solidity
 event EventConfirmed(uint256 event_id, address pmpAddress);
 ```
 
 * `event_id` — identifier of the confirmed event
-* `pmpAddress` — address of the PMP contract that initiated confirmation
+* `pmpAddress` — address of the `PMP` contract that initiated confirmation
 
 ***
 
@@ -141,40 +141,7 @@ function confirmEvent(
 
 ***
 
-### **`cancelEvent`**
-
-Cancels Oracle participation in an event.
-
-```solidity
-function cancelEvent(
-    uint256 event_id,
-    uint256 oracle_list_hash,
-    uint32 token_type
-)
-    public
-    senderIs(
-        DexLib.computePMPAddress(
-            _PrivateNoteCode,
-            _pmpCode,
-            event_id,
-            oracle_list_hash,
-            token_type
-        )
-    )
-    accept;
-```
-
-**Access:** PMP contract only\
-**Modifiers:** `senderIs`, `accept`
-
-**Behavior:**
-
-* Ensures sufficient native balance
-* Decreases the confirmation counter for the event
-
-***
-
-### **`deleteEvent(uint256 event_id)`**
+### **`deleteEvent`**
 
 Deletes an event from the OracleEventList.
 

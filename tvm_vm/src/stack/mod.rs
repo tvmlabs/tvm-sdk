@@ -272,6 +272,7 @@ fn prepare_cont_serialize_vars<'a>(
     prepare_savelist_serialize_vars(&cont.savelist, items);
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub(crate) enum DeserializeItem {
     Items(usize, SliceData),

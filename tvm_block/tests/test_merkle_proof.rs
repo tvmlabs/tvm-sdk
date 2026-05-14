@@ -21,7 +21,6 @@ use tvm_block::*;
 use tvm_types::BocReader;
 use tvm_types::*;
 mod common;
-use common::write_read_and_assert;
 
 #[test]
 fn test_merkle_proof_invalid_arg() {
@@ -515,7 +514,6 @@ fn test_check_account_proof(
     check_account_proof(&proof, &account)
 }
 
-#[ignore]
 #[test]
 fn test_check_correct_account_proof() {
     let state_files =
@@ -526,11 +524,17 @@ fn test_check_correct_account_proof() {
 
         let (state, state_root) = get_real_tvm_state(state_file);
 
+        let mut checked = 0;
         state
             .read_accounts()
             .unwrap()
             .iterate_accounts(|_, account| {
+                if account.is_redirect() {
+                    return Ok(true);
+                }
+
                 let account = account.read_account().unwrap().as_struct().unwrap();
+                checked += 1;
 
                 println!("account: {}", account.get_id().unwrap());
 
@@ -544,10 +548,12 @@ fn test_check_correct_account_proof() {
                 Ok(true)
             })
             .unwrap();
+        if checked == 0 {
+            println!("No full accounts found in state file");
+        }
     }
 }
 
-#[ignore]
 #[test]
 fn test_check_wrong_account_proof() {
     let state_files =
@@ -558,11 +564,17 @@ fn test_check_wrong_account_proof() {
 
         let (state, state_root) = get_real_tvm_state(state_file);
 
+        let mut checked = 0;
         state
             .read_accounts()
             .unwrap()
             .iterate_accounts(|_, account| {
+                if account.is_redirect() {
+                    return Ok(true);
+                }
+
                 let account = account.read_account().unwrap().as_struct().unwrap();
+                checked += 1;
 
                 println!("account: {}", account.get_id().unwrap());
 
@@ -574,5 +586,8 @@ fn test_check_wrong_account_proof() {
                 Ok(true)
             })
             .unwrap();
+        if checked == 0 {
+            println!("No full accounts found in state file");
+        }
     }
 }

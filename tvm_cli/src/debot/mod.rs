@@ -33,7 +33,8 @@ use term_browser::run_debot_browser;
 use term_browser::terminal_input;
 
 use crate::config::Config;
-use crate::helpers::load_ton_address;
+use crate::helpers::SdkAddress;
+use crate::helpers::log_file_path;
 
 pub fn create_debot_command<'a, 'b>() -> Command<'a> {
     Command::new("debot")
@@ -92,7 +93,11 @@ pub async fn debot_command(m: &ArgMatches, config: Config) -> Result<(), String>
         loggers.push(WriteLogger::new(LevelFilter::Error, log_conf.clone(), file.unwrap()));
     }
 
-    if debug {
+    if let Some(path) = log_file_path() {
+        if let Ok(file) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+            loggers.push(WriteLogger::new(LevelFilter::Trace, log_conf.clone(), file));
+        }
+    } else if debug {
         loggers.push(TermLogger::new(
             LevelFilter::Debug,
             log_conf.clone(),
@@ -127,7 +132,7 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     } else {
         PipeChain::new()
     };
-    let addr = load_ton_address(addr.unwrap(), &config)?;
+    let addr = SdkAddress::validate(addr.unwrap())?;
     let result = run_debot_browser(addr.as_str(), config, pipechain, signkey_path).await;
     match result {
         Ok(Some(arg)) => {
@@ -142,9 +147,9 @@ async fn fetch_command(m: &ArgMatches, config: Config) -> Result<(), String> {
     }
 }
 
-fn invoke_command(m: &ArgMatches, config: Config) -> Result<(), String> {
+fn invoke_command(m: &ArgMatches, _config: Config) -> Result<(), String> {
     let addr = m.value_of("ADDRESS");
-    load_ton_address(addr.unwrap(), &config)?;
+    SdkAddress::validate(addr.unwrap())?;
     let _ = m.value_of("MESSAGE").unwrap().to_owned();
     Ok(())
 }

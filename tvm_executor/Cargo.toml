@@ -10,7 +10,6 @@ license.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-failure.workspace = true
 lazy_static.workspace = true
 log.workspace = true
 semver.workspace = true
@@ -21,6 +20,9 @@ tvm_types.workspace = true
 tvm_vm.workspace = true
 
 wasmtime = { workspace = true, optional = true }
+
+[dev-dependencies]
+tvm_assembler.workspace = true
 
 [features]
 default = ["wasmtime"]

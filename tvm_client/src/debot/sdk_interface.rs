@@ -648,7 +648,7 @@ impl SdkInterface {
             ParamsOfEncryptionBoxGetInfo { encryption_box },
         )
         .await
-        .map_err(|e| e.code)
+        .map_err(|e| e.code())
         .map(|x| x.info);
 
         let (result, info) = match result {
@@ -671,7 +671,7 @@ impl SdkInterface {
                 ParamsOfEncryptionBoxEncrypt { encryption_box, data },
             )
             .await
-            .map_err(|e| e.code)
+            .map_err(|e| e.code())
             .map(|x| x.data)
         } else {
             encryption_box_decrypt(
@@ -679,7 +679,7 @@ impl SdkInterface {
                 ParamsOfEncryptionBoxDecrypt { encryption_box, data },
             )
             .await
-            .map_err(|e| e.code)
+            .map_err(|e| e.code())
             .map(|x| x.data)
         };
 
@@ -747,7 +747,7 @@ impl SdkInterface {
 
         let (result, key) = match result {
             Ok(val) => (0, format!("0x{}", val.pubkey)),
-            Err(e) => (e.code, "0".to_string()),
+            Err(e) => (e.code(), "0".to_string()),
         };
         Ok((answer_id, json!({ "result": result, "key": key})))
     }

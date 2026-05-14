@@ -81,6 +81,7 @@ pub(super) fn execute_sha256u(engine: &mut Engine) -> Status {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 enum DataForSignature {
     Hash(BuilderData),
     Slice(Vec<u8>),

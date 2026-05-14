@@ -5,10 +5,13 @@ use ark_ff::BigInteger;
 use ark_ff::PrimeField;
 use byte_slice_cast::AsByteSlice;
 use ff::PrimeField as OtherPrimeField;
+#[cfg(not(target_arch = "wasm32"))]
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr as halo2_Fr;
+#[cfg(not(target_arch = "wasm32"))]
 use halo2_base::utils::ScalarField;
 use neptune::Poseidon;
 use neptune::poseidon::HashMode::OptimizedStatic;
+#[cfg(not(target_arch = "wasm32"))]
 use pse_poseidon::Poseidon as pse_poseidon;
 
 use crate::executor::zk_stuff::FrRepr;
@@ -136,39 +139,102 @@ const RATE: usize = 2;
 const R_F: usize = 8;
 const R_P: usize = 57;
 
+/// Poseidon sponge hasher with precomputed round constants.
+///
+/// Creating a `PoseidonSponge` via [`PoseidonSponge::new`] computes the round
+/// constants once (expensive). Subsequent calls to
+/// [`PoseidonSponge::hash_bytes_axiom`] and [`PoseidonSponge::hash_bytes_flat`]
+/// clone the cached template (cheap).
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Clone, Debug)]
+pub struct PoseidonSponge {
+    template: pse_poseidon<halo2_Fr, T, RATE>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl PoseidonSponge {
+    pub fn new() -> Self {
+        Self { template: pse_poseidon::new(R_F, R_P) }
+    }
+
+    pub fn hash_bytes_axiom(
+        &self,
+        inputs: &Vec<Vec<u8>>,
+    ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+        let mut field_elements = Vec::new();
+        for input in inputs {
+            let el = halo2_Fr::from_bytes_le(&input);
+            field_elements.push(el);
+        }
+
+        let mut native_sponge = self.template.clone();
+        native_sponge.update(&field_elements);
+        let output_as_field_element = native_sponge.squeeze();
+
+        let output: [u8; FIELD_ELEMENT_SIZE_IN_BYTES] =
+            output_as_field_element.to_bytes_le().try_into().unwrap();
+
+        Ok(output)
+    }
+
+    pub fn hash_bytes_flat(
+        &self,
+        input_data: &[u8],
+    ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+        let data = input_data
+            .chunks(FIELD_ELEMENT_SIZE_IN_BYTES - 1)
+            .map(|c| {
+                let mut v = c.to_vec();
+                if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
+                    v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
+                }
+                v
+            })
+            .collect();
+        self.hash_bytes_axiom(&data)
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+impl Default for PoseidonSponge {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Global cached sponge for free functions. Round constants are computed once.
+#[cfg(not(target_arch = "wasm32"))]
+static GLOBAL_SPONGE: std::sync::LazyLock<PoseidonSponge> =
+    std::sync::LazyLock::new(PoseidonSponge::new);
+
+/// Convenience free function using cached round constants.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn poseidon_bytes_axiom(
     inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    let mut field_elements = Vec::new();
-    for input in inputs {
-        let el = halo2_Fr::from_bytes_le(&input);
-        field_elements.push(el);
-    }
-
-    let mut native_sponge = pse_poseidon::<halo2_Fr, T, RATE>::new(R_F, R_P);
-    native_sponge.update(&field_elements);
-    let output_as_field_element = native_sponge.squeeze();
-
-    let output: [u8; FIELD_ELEMENT_SIZE_IN_BYTES] =
-        output_as_field_element.to_bytes_le().try_into().unwrap();
-
-    Ok(output)
+    GLOBAL_SPONGE.hash_bytes_axiom(inputs)
 }
 
+#[cfg(target_arch = "wasm32")]
+pub fn poseidon_bytes_axiom(
+    _inputs: &Vec<Vec<u8>>,
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    Err(ZkCryptoError::UnsupportedPlatform)
+}
+
+/// Convenience free function using cached round constants.
+#[cfg(not(target_arch = "wasm32"))]
 pub fn poseidon_bytes_flat(
     input_data: &[u8],
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    let data = input_data
-        .chunks(FIELD_ELEMENT_SIZE_IN_BYTES - 1)
-        .map(|c| {
-            let mut v = c.to_vec();
-            if v.len() < FIELD_ELEMENT_SIZE_IN_BYTES {
-                v.resize(FIELD_ELEMENT_SIZE_IN_BYTES, 0);
-            }
-            v
-        })
-        .collect();
-    poseidon_bytes_axiom(&data)
+    GLOBAL_SPONGE.hash_bytes_flat(input_data)
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn poseidon_bytes_flat(
+    _input_data: &[u8],
+) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
+    Err(ZkCryptoError::UnsupportedPlatform)
 }
 
 /// Given a binary representation of a BN254 field element as an integer in
@@ -250,6 +316,7 @@ fn test_poseidon_bytes_flat() {
     assert_eq!(digest, etalon_res);
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn test_fr() {
     let input = vec![0xFF; 31];

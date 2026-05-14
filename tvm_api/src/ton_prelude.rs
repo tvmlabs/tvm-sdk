@@ -10,10 +10,12 @@
 // limitations under the License.
 
 #![allow(non_camel_case_types)]
+#![cfg_attr(not(feature = "ton"), allow(dead_code, unused_imports))]
 
 use std::any::type_name;
 use std::fmt;
 use std::hash::Hash;
+#[cfg(feature = "ton")]
 use std::hash::Hasher;
 use std::io::Read;
 use std::io::Write;
@@ -22,12 +24,13 @@ use std::marker::PhantomData;
 use byteorder::LittleEndian;
 use byteorder::ReadBytesExt;
 use byteorder::WriteBytesExt;
-use extfmt::Hexlify;
+#[cfg(feature = "ton")]
 use ordered_float::OrderedFloat;
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use tvm_types::error;
 
+#[cfg(feature = "ton")]
 use crate::AnyBoxedSerialize;
 use crate::BareDeserialize;
 use crate::BareSerialize;
@@ -37,9 +40,17 @@ use crate::ConstructorNumber;
 use crate::Deserializer;
 use crate::Result;
 use crate::Serializer;
+#[cfg(feature = "ton")]
 use crate::ton::Bool;
 
 const MAX_BYTES_DEBUG_LEN: usize = 4;
+
+fn fmt_hex(f: &mut fmt::Formatter<'_>, data: &[u8]) -> fmt::Result {
+    for byte in data {
+        write!(f, "{byte:02x}")?;
+    }
+    Ok(())
+}
 
 macro_rules! impl_byteslike {
     (@common $ty:ident) => {
@@ -47,9 +58,13 @@ macro_rules! impl_byteslike {
         impl fmt::Debug for $ty {
             fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
                 if self.len() <= MAX_BYTES_DEBUG_LEN {
-                    write!(f, "<{}>", Hexlify(&self.0))
+                    write!(f, "<")?;
+                    fmt_hex(f, &self.0)?;
+                    write!(f, ">")
                 } else {
-                    write!(f, "<{}... {} bytes>", Hexlify(&self.0[..MAX_BYTES_DEBUG_LEN]), self.0.len())
+                    write!(f, "<")?;
+                    fmt_hex(f, &self.0[..MAX_BYTES_DEBUG_LEN])?;
+                    write!(f, "... {} bytes>", self.0.len())
                 }
             }
         }
@@ -176,8 +191,10 @@ impl_byteslike!(@arraylike int128);
 impl_byteslike!(@arraylike int512);
 
 /// Represents base TL-object type.
+#[cfg(feature = "ton")]
 pub struct TLObject(Box<dyn AnyBoxedSerialize>);
 
+#[cfg(feature = "ton")]
 impl TLObject {
     pub fn new<I: AnyBoxedSerialize>(inner: I) -> Self {
         TLObject(Box::new(inner))
@@ -196,30 +213,35 @@ impl TLObject {
     }
 }
 
+#[cfg(feature = "ton")]
 impl Clone for TLObject {
     fn clone(&self) -> Self {
         unimplemented!()
     }
 }
 
+#[cfg(feature = "ton")]
 impl Default for TLObject {
     fn default() -> Self {
         unimplemented!()
     }
 }
 
+#[cfg(feature = "ton")]
 impl PartialEq for TLObject {
     fn eq(&self, _other: &Self) -> bool {
         unimplemented!()
     }
 }
 
+#[cfg(feature = "ton")]
 impl Hash for TLObject {
     fn hash<H: Hasher>(&self, _state: &mut H) {
         unimplemented!()
     }
 }
 
+#[cfg(feature = "ton")]
 impl fmt::Debug for TLObject {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let (type_id, _) = self.0.serialize_boxed();
@@ -227,6 +249,7 @@ impl fmt::Debug for TLObject {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BoxedDeserialize for TLObject {
     fn possible_constructors() -> Vec<ConstructorNumber> {
         crate::ton::dynamic::BY_NUMBER.keys().cloned().collect()
@@ -240,6 +263,7 @@ impl BoxedDeserialize for TLObject {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BoxedSerialize for TLObject {
     fn serialize_boxed(&self) -> (ConstructorNumber, &dyn BareSerialize) {
         self.0.serialize_boxed()
@@ -294,12 +318,14 @@ impl BareSerialize for () {
     }
 }
 
+#[cfg(feature = "ton")]
 impl From<bool> for &'static Bool {
     fn from(b: bool) -> Self {
         if b { &Bool::BoolTrue } else { &Bool::BoolFalse }
     }
 }
 
+#[cfg(feature = "ton")]
 impl From<bool> for Bool {
     fn from(b: bool) -> Self {
         let b: &'static Bool = b.into();
@@ -307,6 +333,7 @@ impl From<bool> for Bool {
     }
 }
 
+#[cfg(feature = "ton")]
 impl From<Bool> for bool {
     fn from(val: Bool) -> Self {
         match val {
@@ -316,6 +343,7 @@ impl From<Bool> for bool {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BoxedDeserialize for bool {
     fn possible_constructors() -> Vec<ConstructorNumber> {
         Bool::possible_constructors()
@@ -326,6 +354,7 @@ impl BoxedDeserialize for bool {
     }
 }
 
+#[cfg(feature = "ton")]
 impl BoxedSerialize for bool {
     fn serialize_boxed(&self) -> (ConstructorNumber, &dyn BareSerialize) {
         let b: &'static Bool = (*self).into();
@@ -598,14 +627,17 @@ impl_tl_primitive! { uint, u32, read_u32, write_u32 }
 impl_tl_primitive! { long, i64, read_i64, write_i64 }
 impl_tl_primitive! { ulong, u64, read_u64, write_u64 }
 
+#[cfg(feature = "ton")]
 pub type double = OrderedFloat<f64>;
 
+#[cfg(feature = "ton")]
 impl BareDeserialize for double {
     fn deserialize_bare(de: &mut Deserializer) -> Result<Self> {
         Ok(de.read_f64::<LittleEndian>()?.into())
     }
 }
 
+#[cfg(feature = "ton")]
 impl BareSerialize for double {
     fn constructor(&self) -> crate::ConstructorNumber {
         unreachable!()
@@ -630,15 +662,19 @@ pub type int64 = Int64;
 
 /// Flags built-in type.
 pub type Flags = u32;
+#[cfg(feature = "ton")]
 pub type lengthPrefixedTypedObject = LengthPrefixed<TypedObject>;
 pub type True = bool;
 /// String built-in type.
 pub type string = String;
 /// Alias of TLObject built-in type.
+#[cfg(feature = "ton")]
 pub type TypedObject = TLObject;
 /// Alias of TLObject built-in type.
+#[cfg(feature = "ton")]
 pub type Object = TLObject;
 /// Function. Alias of TLObject built-in type.
+#[cfg(feature = "ton")]
 pub type Function = TLObject;
 /// Alias of SecureBytes built-in type.
 pub type secureBytes = crate::secure::SecureBytes;

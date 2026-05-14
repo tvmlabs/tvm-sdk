@@ -42,6 +42,7 @@ tvm-cli <subcommand> -h
     - [2.8. Debug on fail option](#28-debug-on-fail-option)
     - [2.9. Configure aliases map](#29-configure-aliases-map)
     - [2.10. Enabling verbose mode for SDK execution](#210-enabling-verbose-mode-for-sdk-execution)
+    - [2.11. Redirect log output to file](#211-redirect-log-output-to-file)
   - [3. Cryptographic commands](#3-cryptographic-commands)
     - [3.1. Create seed phrase](#31-create-seed-phrase)
     - [3.2. Generate public key](#32-generate-public-key)
@@ -777,6 +778,65 @@ fetch_block_timeout 83209
 }
 Succeeded.
 Result: {}
+```
+
+### 2.11. Redirect log output to file
+
+When TVM-CLI is used in automation scripts, log messages (debug, info, warnings) can interfere with parsing
+of the structured output. To redirect all log output to a file, use the `--log-path` flag:
+
+```bash
+tvm-cli --log-path /tmp/tvm.log <any_subcommand>
+```
+
+Alternatively, set the `TVM_CLI_LOG_PATH` environment variable:
+
+```bash
+export TVM_CLI_LOG_PATH=/tmp/tvm.log
+tvm-cli <any_subcommand>
+```
+
+The `--log-path` flag takes precedence over the environment variable.
+
+Log records are **appended** to the file (not overwritten), so logs from multiple runs accumulate. Each session
+starts with a header that includes the command-line arguments and working directory:
+
+```
+[2025-01-15 10:30:00.123 INFO  tvm_cli] === tvm-cli session started ===
+[2025-01-15 10:30:00.123 INFO  tvm_cli]   args: tvm-cli --log-path /tmp/tvm.log -j call 0:abc... method
+[2025-01-15 10:30:00.123 INFO  tvm_cli]   cwd: /home/user/project
+[2025-01-15 10:30:00.456 INFO  tvm_cli] Connecting to: url=https://..., endpoints=[...]
+[2025-01-15 10:30:01.789 DEBUG tvm_client::net] HTTP request to ...
+```
+
+When `--log-path` is active:
+
+- All log messages from TVM-CLI and the underlying SDK go to the file.
+- `stdout` and `stderr` remain clean for structured output parsing.
+- The log level is automatically set to `Trace` to capture the maximum detail.
+- This can be combined with `--json` (`-j`) for fully machine-parseable output on stdout.
+
+Use `--log-filter` to control which modules are logged. Entries are comma-separated; prefix
+with `-` to exclude a module:
+
+```bash
+# Only log messages from tvm_client
+tvm-cli --log-path /tmp/tvm.log --log-filter="tvm_client" call ...
+
+# Log everything except hyper and reqwest
+tvm-cli --log-path /tmp/tvm.log --log-filter="-hyper,-reqwest" call ...
+
+# Combine include and exclude: only tvm_client, but skip its net submodule
+tvm-cli --log-path /tmp/tvm.log --log-filter="tvm_client,-tvm_client::net" call ...
+```
+
+The filter matches by module prefix, so `tvm_client` includes `tvm_client::net`,
+`tvm_client::processing`, etc. Exclude rules (`-`) take precedence over include rules.
+
+The filter can also be set via the `TVM_CLI_LOG_FILTER` environment variable:
+
+```bash
+export TVM_CLI_LOG_FILTER="-hyper,-reqwest"
 ```
 
 ## 3. Cryptographic commands

@@ -829,11 +829,11 @@ fn test_tips() {
     ).expect_err("Error expected");
 
     assert!(
-        err.message.contains(
+        err.message().contains(
             "Tip: Please check that you have specified the message's BOC, not body, as a parameter."
         ),
         "{}",
-        err.message
+        err.message()
     );
 
     let err = client.request::<_, DecodedMessageBody>(
@@ -846,9 +846,10 @@ fn test_tips() {
     ).expect_err("Error expected");
 
     assert!(
-        err.message.contains("Tip: Please check that you specified message's body, not full BOC."),
+        err.message()
+            .contains("Tip: Please check that you specified message's body, not full BOC."),
         "{}",
-        err.message
+        err.message()
     );
 }
 
@@ -1449,7 +1450,7 @@ fn test_abi_v24_changes() {
             },
         )
         .unwrap_err();
-    assert_eq!(error.code, ErrorCode::InvalidAbi as u32);
+    assert_eq!(error.code(), ErrorCode::InvalidAbi as u32);
 
     let error = client
         .request::<_, ResultOfUpdateInitialData>(
@@ -1461,7 +1462,7 @@ fn test_abi_v24_changes() {
             },
         )
         .unwrap_err();
-    assert_eq!(error.code, ErrorCode::InvalidAbi as u32);
+    assert_eq!(error.code(), ErrorCode::InvalidAbi as u32);
 
     let pubkey = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
@@ -1475,7 +1476,7 @@ fn test_abi_v24_changes() {
             },
         )
         .unwrap_err();
-    assert_eq!(error.code, ErrorCode::PubKeyNotSupported as u32);
+    assert_eq!(error.code(), ErrorCode::PubKeyNotSupported as u32);
 
     let result: ResultOfEncodeInitialData = client
         .request(
@@ -1522,7 +1523,7 @@ fn test_abi_v24_changes() {
             },
         )
         .unwrap_err();
-    assert_eq!(error.code, ErrorCode::PubKeyNotSupported as u32);
+    assert_eq!(error.code(), ErrorCode::PubKeyNotSupported as u32);
 
     let error = client
         .request::<_, ResultOfEncodeInternalMessage>(
@@ -1539,5 +1540,5 @@ fn test_abi_v24_changes() {
             },
         )
         .unwrap_err();
-    assert_eq!(error.code, ErrorCode::PubKeyNotSupported as u32);
+    assert_eq!(error.code(), ErrorCode::PubKeyNotSupported as u32);
 }

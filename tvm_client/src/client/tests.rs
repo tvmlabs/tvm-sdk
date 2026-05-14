@@ -65,8 +65,13 @@ fn api_reference() {
             crate::client::get_api_reference_api().name
         ))
         .unwrap();
-    assert_ne!(api.api.modules.len(), 0);
-    assert_eq!(api.api.version, env!("CARGO_PKG_VERSION"));
+    if cfg!(feature = "api_info") {
+        assert_ne!(api.api.modules.len(), 0);
+        assert_eq!(api.api.version, env!("CARGO_PKG_VERSION"));
+    } else {
+        assert_eq!(api.api.modules.len(), 0);
+        assert_eq!(api.api.version, "");
+    }
 }
 
 #[test]
@@ -82,7 +87,7 @@ fn test_invalid_params_error_secret_stripped() {
         ),
         "error",
     );
-    assert!(!error.message.contains(secret));
+    assert!(!error.message().contains(secret));
 }
 
 #[ignore]

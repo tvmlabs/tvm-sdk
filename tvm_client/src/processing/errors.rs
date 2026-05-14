@@ -170,9 +170,9 @@ impl Error {
             Some(shard_block_id),
         );
 
-        error.data["waiting_expiration_time"] = format_time(expiration_time).into();
-        error.data["block_time"] = format_time(block_time).into();
-        error.data["account_address"] = address.to_string().into();
+        error.data_mut()["waiting_expiration_time"] = format_time(expiration_time).into();
+        error.data_mut()["block_time"] = format_time(block_time).into();
+        error.data_mut()["account_address"] = address.to_string().into();
 
         error
     }
@@ -192,10 +192,10 @@ impl Error {
             Some(shard_block_id),
         );
 
-        error.data["waiting_expiration_time"] = format_time(expiration_time).into();
-        error.data["timeout"] = timeout.into();
-        error.data["block_time"] = format_time(block_time).into();
-        error.data["account_address"] = address.to_string().into();
+        error.data_mut()["waiting_expiration_time"] = format_time(expiration_time).into();
+        error.data_mut()["timeout"] = timeout.into();
+        error.data_mut()["block_time"] = format_time(block_time).into();
+        error.data_mut()["account_address"] = address.to_string().into();
 
         error
     }

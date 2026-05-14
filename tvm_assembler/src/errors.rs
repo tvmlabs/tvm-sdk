@@ -53,8 +53,8 @@ pub enum OperationError {
     Internal(String),
 }
 
-impl From<failure::Error> for OperationError {
-    fn from(e: failure::Error) -> Self {
+impl From<tvm_types::Error> for OperationError {
+    fn from(e: tvm_types::Error) -> Self {
         Self::Internal(e.to_string())
     }
 }

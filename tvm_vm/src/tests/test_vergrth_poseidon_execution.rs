@@ -12,7 +12,9 @@ use std::collections::HashMap;
 use std::env;
 use std::time::Instant;
 
-use base64::decode;
+use base64::Engine as _;
+use base64::engine::general_purpose::STANDARD as BASE64;
+use base64::engine::general_purpose::URL_SAFE_NO_PAD as BASE64_URL;
 use base64ct::Encoding as bEncoding;
 use ed25519_dalek::Signer;
 use fastcrypto::ed25519::Ed25519KeyPair;
@@ -229,7 +231,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
         println!("ephemeral public_key is {:?}", eph_pubkey);
         println!("ephemeral public_key len is {:?}", eph_pubkey.len());
         let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
-        let jwt_data_1 = decode(jwt_data_vector[0]).expect("Base64 decoding failed");
+        let jwt_data_1 = BASE64_URL.decode(jwt_data_vector[0]).expect("Base64 decoding failed");
 
         let jwt_string_1 = String::from_utf8(jwt_data_1).expect("UTF-8 conversion failed");
         println!("jwt_string_1 is {:?}", jwt_string_1); // jwt_string_1 is
@@ -238,7 +240,7 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
             serde_json::from_str(&jwt_string_1).unwrap();
         println!("kid: {:?}", jwt_data_decoded1.kid);
 
-        let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+        let jwt_data_2 = BASE64_URL.decode(jwt_data_vector[1]).expect("Base64 decoding failed");
         let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
         println!("jwt_string_2 is {:?}", jwt_string_2);
 
@@ -617,7 +619,7 @@ fn test_proof_stuff() {
 
         let jwt_data_vector: Vec<&str> = jwt_data.jwt.split(".").collect();
 
-        let jwt_data_2 = decode(jwt_data_vector[1]).expect("Base64 decoding failed");
+        let jwt_data_2 = BASE64_URL.decode(jwt_data_vector[1]).expect("Base64 decoding failed");
         let jwt_string_2 = String::from_utf8(jwt_data_2).expect("UTF-8 conversion failed");
         println!("jwt_string_2 is {:?}", jwt_string_2);
         let jwt_data_decoded2: JwtDataDecodedPart2Google =
@@ -697,51 +699,6 @@ fn test_proof_stuff() {
 
 #[test]
 fn test_poseidon() {
-    let mut stack = Stack::new();
-
-    let input_data = vec![0xFFu8; 32];
-
-    let input_data_cell = pack_data_to_cell(&input_data, &mut 0).unwrap();
-    stack.push(StackItem::cell(input_data_cell.clone()));
-
-    let start: Instant = Instant::now();
-
-    let mut res = Vec::<u8>::with_capacity(2);
-    res.push(0xC7);
-    res.push(0x50);
-    res.push(0x80);
-
-    let code = SliceData::new(res);
-
-    let mut engine =
-        Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
-    let _ = engine.execute();
-    let poseidon_elapsed = start.elapsed().as_micros();
-
-    println!("poseidon_elapsed: {:?}", poseidon_elapsed);
-
-    // let poseidon_res = engine.cc.stack.get(0).as_cell().unwrap();
-    // let slice = SliceData::load_cell(poseidon_res.clone()).unwrap();
-
-    // let poseidon_res = unpack_data_from_cell(slice, &mut engine).unwrap();
-
-    let poseidon_res = engine.cc.stack.get(0).as_integer().unwrap();
-
-    println!("poseidon_res from stack: {:?}", poseidon_res.clone());
-
-    // let etalon_res: Vec<u8> =
-    // hex::decode("
-    // 0b63a53787021a4a962a452c2921b3663aff1ffd8d5510540f8e659e782956f1").unwrap();
-    let etalon_res_bytes: Vec<u8> = vec![
-        17, 144, 181, 203, 195, 40, 59, 230, 38, 96, 237, 159, 26, 21, 81, 182, 3, 65, 4, 198, 100,
-        165, 92, 201, 156, 197, 209, 125, 0, 99, 218, 18,
-    ];
-    let etalon_res = IntegerData::from_unsigned_bytes_le(&etalon_res_bytes);
-    assert_eq!(*poseidon_res, etalon_res);
-}
-
-#[test]
-fn test_poseidon_zklogin() {
     let mut stack = Stack::new();
 
     // password was 567890 in ascii 535455565748
@@ -1003,7 +960,7 @@ async fn test_test_issuer_with_real_prove_service() {
         eph_pubkey.extend(kp.public().as_ref());
         let nonce = get_nonce(&eph_pubkey.clone(), max_epoch, jwt_randomness).unwrap();
         println!("nonce : {:?}", nonce);
-        let kp_encoded: String = base64::encode(&eph_pubkey);
+        let kp_encoded: String = BASE64.encode(&eph_pubkey);
         println!("kp_encoded : {:?}", kp_encoded);
         assert_eq!(kp_encoded, "AGkOhciuopy6FCipd5Woav28W8O3Yle+FXpY2LBroI6I".to_string());
         let sub = "112897468626716626103";

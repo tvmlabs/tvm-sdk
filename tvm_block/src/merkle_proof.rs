@@ -392,3 +392,73 @@ pub fn check_account_proof(proof: &MerkleProof, acc: &Account) -> Result<BlockSe
         fail!(BlockError::WrongMerkleProof("No account in proof".to_string()))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_tree_root() -> Cell {
+        let mut child = BuilderData::new();
+        child.append_bit_one().unwrap();
+        let child = child.into_cell().unwrap();
+
+        let mut root = BuilderData::new();
+        root.append_bit_zero().unwrap();
+        root.checked_append_reference(child).unwrap();
+        root.into_cell().unwrap()
+    }
+
+    #[test]
+    fn merkle_proof_create_roundtrip_and_subtree_inclusion_work() {
+        let root = sample_tree_root();
+        let proof = MerkleProof::create(&root, |hash| *hash == root.repr_hash()).unwrap();
+        assert_eq!(proof.hash, root.repr_hash());
+        assert_eq!(proof.depth, root.repr_depth());
+        assert_eq!(MerkleProof::construct_from_cell(proof.serialize().unwrap()).unwrap(), proof);
+
+        let subtree =
+            MerkleProof::create_with_subtrees(&root, |_| false, |hash| *hash == root.repr_hash())
+                .unwrap();
+        assert_eq!(subtree.hash, root.repr_hash());
+        assert_eq!(subtree.depth, root.repr_depth());
+    }
+
+    #[test]
+    fn merkle_proof_rejects_missing_root_external_cells_and_wrong_metadata() {
+        let root = sample_tree_root();
+        assert!(MerkleProof::create(&root, |_| false).is_err());
+
+        let external = root.to_external().unwrap();
+        let mut done_cells = HashMap::new();
+        assert!(
+            MerkleProof::create_raw(
+                &external,
+                &|_| true,
+                &|_| false,
+                0,
+                &mut None,
+                &mut done_cells,
+            )
+            .is_err()
+        );
+
+        let mut wrong_hash = MerkleProof::create(&root, |_| true).unwrap();
+        wrong_hash.hash = UInt256::from([0xFF; 32]);
+        assert!(MerkleProof::construct_from_cell(wrong_hash.serialize().unwrap()).is_err());
+
+        let mut wrong_depth = MerkleProof::create(&root, |_| true).unwrap();
+        wrong_depth.depth = wrong_depth.depth.wrapping_add(1);
+        assert!(MerkleProof::construct_from_cell(wrong_depth.serialize().unwrap()).is_err());
+    }
+
+    #[test]
+    fn check_transaction_id_covers_none_some_and_mismatch_cases() {
+        let cell = Cell::default();
+        let hash = cell.repr_hash();
+
+        assert!(check_transaction_id(None, None).is_ok());
+        assert!(check_transaction_id(None, Some(cell.clone())).is_err());
+        assert!(check_transaction_id(Some(hash), None).is_err());
+        assert!(check_transaction_id(Some(UInt256::from([1; 32])), Some(cell)).is_err());
+    }
+}

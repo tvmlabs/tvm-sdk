@@ -14,7 +14,11 @@ use crate::call::send_message_and_wait;
 use crate::config::Config;
 use crate::helpers::create_client_verbose;
 
-pub async fn sendfile(config: &Config, msg_boc: &str) -> Result<(), String> {
+pub async fn sendfile(
+    config: &Config,
+    msg_boc: &str,
+    dst_dapp_id: Option<&str>,
+) -> Result<(), String> {
     let ton = create_client_verbose(config)?;
     let boc_vec = std::fs::read(msg_boc).map_err(|e| format!("failed to read boc file: {}", e))?;
     let tvm_msg = tvm_sdk::Contract::deserialize_message(&boc_vec[..])
@@ -24,7 +28,7 @@ pub async fn sendfile(config: &Config, msg_boc: &str) -> Result<(), String> {
     if !config.is_json {
         println!("Sending message to account {}", dst);
     }
-    send_message_and_wait(ton, None, base64_encode(&boc_vec), config).await?;
+    send_message_and_wait(ton, None, base64_encode(&boc_vec), config, dst_dapp_id).await?;
     if !config.is_json {
         println!("Succeded.");
     }

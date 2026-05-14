@@ -37,6 +37,7 @@ mod tuple;
 mod types;
 #[cfg(feature = "wasmtime")]
 pub mod wasm;
+#[cfg(feature = "gosh")]
 pub mod zk_stuff;
 
 pub use engine::*;
@@ -49,15 +50,19 @@ use tvm_types::Result;
 #[path = "../tests/test_multifactor_tls_wasm_execution.rs"]
 mod test_multifactor_tls_wasm_execution;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "gosh"))]
+#[path = "../tests/test_halo2.rs"]
+mod test_halo2;
+
+#[cfg(all(test, feature = "gosh"))]
 #[path = "../tests/test_vergrth_poseidon_execution.rs"]
 mod test_vergrth_poseidon_execution;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "gosh"))]
 #[path = "../tests/test_vergrth_bad_args.rs"]
 mod test_vergrth_bad_args;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "gosh"))]
 #[path = "../tests/test_poseidon_bad_args.rs"]
 mod test_poseidon_bad_args;
 
@@ -66,16 +71,31 @@ mod test_poseidon_bad_args;
 mod test_vergrth16_with_vk;
 
 #[cfg(test)]
+#[path = "../tests/test_chk_hist_proof.rs"]
+mod test_chk_hist_proof;
+
+#[cfg(test)]
 #[path = "../tests/test_executor.rs"]
 mod tests;
 
 #[path = "../tests/test_data.rs"]
 mod test_data;
 
+#[cfg(feature = "gosh")]
 #[path = "../tests/test_helper.rs"]
 mod test_helper;
 
+#[cfg(feature = "gosh")]
+pub mod chk_hist_proof;
+
+#[cfg(feature = "gosh")]
 pub mod zk;
+
+#[cfg(feature = "gosh")]
+pub mod zk_halo2;
+
+#[cfg(feature = "gosh")]
+pub mod zk_halo2_utils;
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;

@@ -131,8 +131,9 @@ impl<T: ParserTracer, R: JsonReducer> BlockParser<T, R> {
                                 account_existed = true;
                             }
 
-                            let ordering_key =
-                                (transaction.logical_time(), transaction.account_id().clone());
+                            let account_id =
+                                UInt256::from(transaction.account_id().get_bytestring(0));
+                            let ordering_key = (transaction.logical_time(), account_id);
                             block_transactions.insert(ordering_key, (cell, transaction));
                             tr_count += 1;
                             Ok(true)

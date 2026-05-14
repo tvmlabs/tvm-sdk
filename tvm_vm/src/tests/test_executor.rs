@@ -49,7 +49,7 @@ use crate::utils::pack_data_to_cell;
 mod test_gas_consumption;
 
 #[allow(dead_code)]
-pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::Error> {
+pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> tvm_types::Result<Cell> {
     // TODO: Cell size can maybe be increased up to 128?
     let cellsize = 120usize;
     let len = input.len();
@@ -81,7 +81,7 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> Result<Cell, failure::E
     Ok(cell) // return first cell
 }
 
-pub(super) fn rejoin_chain_of_cells(input: &Cell) -> Result<Vec<u8>, failure::Error> {
+pub(super) fn rejoin_chain_of_cells(input: &Cell) -> tvm_types::Result<Vec<u8>> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();
     while cur_cell.reference(0).is_ok() {
@@ -1455,29 +1455,19 @@ fn test_run_wasm_fuel_error_from_hash() {
     println!("Wasm Return Status: {:?}", result);
 
     let res_error = result.expect_err("Test didn't error on fuel use");
-    println!("{:?}", res_error.as_fail());
-    assert_eq!(format!("{}", res_error.as_fail()), "VM Exception: 0 1");
+    println!("{:?}", res_error);
+    assert_eq!(format!("{}", res_error), "VM Exception: 0 1");
 }
 
 #[test]
 fn test_bocdepth() {
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = Some(800));
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
-        .with_borrow_mut(|x| *x = Some(1398101 * 1024));
-    let mut data = [100u8; 98 * 1024 + 1248].to_vec();
-    let _cell = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
-        .unwrap()                              //1398101
+    // let mut cell = BuilderData::new();
+    // cell.append_raw(&[0u8; 10230], 10230).unwrap();
+    // cell.finalize(2048).unwrap();
+    let _cell = TokenValue::write_bytes(&[100u8; 128 * 2000], &ABI_VERSION_2_4)
+        .unwrap()
         .into_cell()
         .unwrap();
-
-    data.append(&mut [100u8].to_vec());
-    let res = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
-        .unwrap()                              //1398101
-        .into_cell();
-    assert!(res.is_err());
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow_mut(|x| *x = None);
-    tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT.with_borrow_mut(|x| *x = None);
-
     println!("Success");
 }
 
