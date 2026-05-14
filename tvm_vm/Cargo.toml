@@ -136,6 +136,7 @@ gosh = [
   "dep:itertools",
   "dep:typenum",
   "dep:halo2-base",
+  "dep:gosh-zk-snark-halo2-utils",
   "dep:pse-poseidon",
 ]
 log_file = []

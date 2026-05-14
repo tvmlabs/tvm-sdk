@@ -16,6 +16,8 @@ pub fn dark_dex_w8_config_params() -> BaseCircuitParams {
     }
 }
 
+//TODO: we need VK per each desired historical window, now for tests we need 4 and in future 128 will be required!
+
 /// Serialized VK bytes (842 bytes) for the Dark DEX circuit (W=8 historical window).
 pub const DARK_DEX_W8_VK_BYTES: [u8; 842] = [
     2, 19, 0, 0, 0, 0, 6, 0, 0, 0, 1, 81, 59, 105, 210, 179,
