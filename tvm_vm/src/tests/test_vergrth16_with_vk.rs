@@ -115,7 +115,7 @@ fn make_stack(vk: &[u8], pi: &[u8], proof: &[u8]) -> Stack {
 /// Build the 3-byte program `0xC7 0x49 0x80`, set up an engine, run it, and
 /// return the top stack item as a Rust `bool`.
 fn run_opcode(stack: Stack) -> bool {
-    let code = SliceData::new(vec![0xC7, 0x49, 0x80]);
+    let code = SliceData::new(vec![0xC7, 0x51, 0x80]);
     let mut engine =
         Engine::with_capabilities(0).setup_with_libraries(code, None, Some(stack), None, vec![]);
     engine.execute().expect("opcode threw");
