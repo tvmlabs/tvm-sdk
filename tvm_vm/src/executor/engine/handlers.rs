@@ -45,6 +45,8 @@ use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::*;
+#[cfg(feature = "gosh")]
+use crate::executor::zk_halo2_with_vk_stub::execute_zkhalo2_verify_with_vk_stub;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -408,6 +410,13 @@ impl Handlers {
                 .set(0x46, execute_calculate_mbk)
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
+                // ZKHALO2VERIFYWITHVK (skeleton, see
+                // tvm_vm/src/executor/zk_halo2_with_vk_stub.rs and
+                // docs/zkhalo2verifywithvk_design.md). Returns FatalError today;
+                // real Halo2 SHPLONK verification lands after the partner's
+                // ZKHALO2VERIFY PR (0xC7 0x49) is merged. Dispatch byte 0x4A
+                // chosen to be adjacent to that opcode.
+                .set(0x4A, execute_zkhalo2_verify_with_vk_stub)
                 .set(0x50, execute_poseidon);
             #[cfg(feature = "wasmtime")]
             {

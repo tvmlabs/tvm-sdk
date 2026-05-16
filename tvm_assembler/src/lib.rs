@@ -455,3 +455,26 @@ pub fn compile_code_debuggable(
         Err(_) => Err(CompileError::unknown(0, 0, "failure while convert BuilderData to cell")),
     }
 }
+
+#[cfg(all(test, feature = "gosh"))]
+mod zkhalo2verifywithvk_skeleton_tests {
+    use super::*;
+
+    /// Sanity check: the proposed `ZKHALO2VERIFYWITHVK` mnemonic compiles to
+    /// the dispatch bytes the handler is registered against
+    /// (`tvm_vm/src/executor/engine/handlers.rs` registers `0xC7 0x4A`).
+    ///
+    /// This test is the **single source of truth** that the assembler entry,
+    /// the handler dispatch byte, and the design doc agree. If you reshuffle
+    /// the dispatch byte (e.g. after merging Serhii's
+    /// `serhii/node-3406-vergrth16-with-vk` branch which uses `0x49` for
+    /// the no-VK variant), update **both** this constant and
+    /// `docs/zkhalo2verifywithvk_design.md` §3 in lock-step.
+    #[test]
+    fn zkhalo2verifywithvk_dispatch_bytes() {
+        let compiled = compile_code("ZKHALO2VERIFYWITHVK")
+            .expect("ZKHALO2VERIFYWITHVK should compile under feature 'gosh'");
+        let bytes = compiled.get_bytestring(0);
+        assert_eq!(&bytes[..2], &[0xC7u8, 0x4A], "ZKHALO2VERIFYWITHVK should compile to 0xC7 0x4A");
+    }
+}

@@ -38,6 +38,8 @@ mod types;
 #[cfg(feature = "wasmtime")]
 pub mod wasm;
 #[cfg(feature = "gosh")]
+pub mod zk_halo2_with_vk_stub;
+#[cfg(feature = "gosh")]
 pub mod zk_stuff;
 
 pub use engine::*;
