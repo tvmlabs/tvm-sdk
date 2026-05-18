@@ -8,7 +8,7 @@ description: (Work in progress) RootPrivateNote Contract Interface Documentation
 
 ## Overview
 
-**RootPN** is the system root contract responsible for deploying and managing `PrivateNote` contracts.\
+`RootPN` is the system root contract responsible for deploying and managing `PrivateNote` contracts.\
 It also stores and manages the canonical contract code for related system components, including Pari Mutuel Pool, Oracles, and Nullifiers.
 
 The contract acts as a trusted entry point for:
@@ -20,6 +20,18 @@ The contract acts as a trusted entry point for:
 ***
 
 ## Events
+
+### vaucherGenerated
+
+Emitted when a new voucher is generated.
+
+```solidity
+event vaucherGenerated(uint256 sk_u_commit, uint vaucher_nominal, uint32 token_type);
+```
+
+* `sk_u_commit` — Commitment of the user secret key
+* `vaucher_nominal` — Voucher nominal value
+* `token_type` — Token type associated with the voucher
 
 ### PrivateNoteDeployed
 
@@ -33,10 +45,9 @@ event PrivateNoteDeployed(
 );
 ```
 
-**Meaning:**
-
-* A `PrivateNote` was successfully deployed
-* The address is deterministically derived from the deposit identifier
+* `depositIdentifierHash` — Deposit identifier hash
+* `noteAddress` — Deployed `PrivateNote` address
+* `initialBalance` — Initial token balance
 
 ***
 
@@ -48,8 +59,11 @@ Emitted when a `Nullifier` contract is deployed.
 event NullifierDeployed(
     address nullifierAddress,
     uint64 value
-);
+)
 ```
+
+* `nullifierAddress` — Address associated with the deployment
+* `value` — Value linked to the nullifier
 
 **Meaning:**
 
@@ -62,7 +76,7 @@ event NullifierDeployed(
 
 ### **`sendEccShellToPrivateNote`**
 
-Sends ECC Shell tokens to a `PrivateNote` after zero-knowledge proof verification.
+Verifies a zero-knowledge proof and deploys a `Nullifier` contract associated with a deterministic `PrivateNote` address.
 
 ```solidity
 function sendEccShellToPrivateNote(
@@ -99,7 +113,7 @@ function deployPrivateNote(
     bytes zkproof,
     uint256 deposit_identifier_hash,
     uint256 ethemeral_pubkey,
-    uint128 value,
+    uint64 value,
     uint32 token_type
 ) public;
 ```
@@ -114,10 +128,15 @@ function deployPrivateNote(
 
 **Behavior:**
 
-* Verifies token type
-* Validates the deposit via zero-knowledge proof
-* Computes deterministic `PrivateNote` address
-* Deploys the `PrivateNote` contract
+* Ensures the root contract has sufficient native balance
+* Builds ZK public inputs from:
+  * fixed zero padding
+  * `value` (encoded into 8 bytes)
+  * more zero padding
+  * `token_type` (encoded into 8 bytes)
+  * `deposit_identifier_hash` (encoded into 32 bytes)
+* Verifies the proof using `gosh.zkhalo2verify(pub_inputs, zkproof)`
+* Deploys the `PrivateNote` contract deterministically from `deposit_identifier_hash`
 * Emits `PrivateNoteDeployed`
 
 ***
@@ -164,6 +183,58 @@ function getPrivateNoteCode()
 
 ***
 
+### **`getPrivateNoteAddress`**
+
+Returns the deterministic address of a `PrivateNote` contract for a given deposit identifier hash.
+
+```solidity
+function getPrivateNoteAddress(uint256 deposit_identifier_hash)
+external
+view
+returns(address privateNoteAddress);
+```
+
+**Parameters:**
+
+* `deposit_identifier_hash` — unique deposit identifier hash used to derive the PN address
+
+**Returns:**
+
+* `privateNoteAddress` — deterministic `PrivateNote` address for this deposit identifier
+
+**Notes:**
+
+* The address is computed deterministically and can be obtained even if the `PrivateNote` is not deployed yet.
+* Intended for off-chain tooling, indexers, and integrations.
+
+### `getPMPAddress`
+
+Returns the deterministic address of a `PMP` contract for the given event, token type, and oracle name set.
+
+```solidity
+function getPMPAddress(
+    uint256 event_id,
+    string[] names,
+    uint32 token_type
+) external view
+returns(address pmpAddress);
+```
+
+**Parameters:**
+
+* `event_id` — event identifier used by the PMP (e.g., hash of the pool name)
+* `names` — list of oracle names participating in the pool; used to build the oracle list hash
+* `token_type` — token type used by the PMP
+
+**Returns:**
+
+* `pmpAddress` — deterministic PMP address computed from the provided inputs
+
+**Notes:**
+
+* The oracle list hash is computed from the set of oracle name hashes.
+* The returned address matches the address used when deploying PMP from `PrivateNote`.
+
 ### **`getDetails`**
 
 Returns core RootPN state information.
@@ -191,7 +262,7 @@ function getDetails()
 
 ### **`getVersion()`**
 
-Returns version information for the RootPN contract.
+Returns version information for the `RootPN` contract.
 
 ```solidity
 function getVersion() external pure returns (string, string);

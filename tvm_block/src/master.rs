@@ -1956,3 +1956,544 @@ impl Serializable for LibDescr {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn shard_descr(seq_no: u32, byte: u8) -> ShardDescr {
+        ShardDescr {
+            seq_no,
+            reg_mc_seqno: seq_no + 100,
+            start_lt: seq_no as u64 * 10,
+            end_lt: seq_no as u64 * 10 + 9,
+            root_hash: UInt256::from([byte; 32]),
+            file_hash: UInt256::from([byte.wrapping_add(1); 32]),
+            next_catchain_seqno: seq_no + 7,
+            gen_utime: 1_700_000_000 + seq_no,
+            min_ref_mc_seqno: seq_no.saturating_sub(1),
+            fees_collected: CurrencyCollection::with_grams(seq_no as u64),
+            funds_created: CurrencyCollection::with_grams((seq_no + 1) as u64),
+            ..ShardDescr::default()
+        }
+    }
+
+    fn shard_hashes_with_full_workchain(workchain_id: i32, descr: ShardDescr) -> ShardHashes {
+        let mut hashes = ShardHashes::default();
+        let tree = BinTree::with_item(&descr).unwrap();
+        hashes.set(&workchain_id, &InRefValue(tree)).unwrap();
+        hashes
+    }
+
+    fn ext_blk_ref(seq_no: u32, byte: u8) -> ExtBlkRef {
+        ExtBlkRef {
+            end_lt: seq_no as u64 * 100,
+            seq_no,
+            root_hash: UInt256::from([byte; 32]),
+            file_hash: UInt256::from([byte.wrapping_add(1); 32]),
+        }
+    }
+
+    fn block_id(shard_id: ShardIdent, seq_no: u32, byte: u8) -> BlockIdExt {
+        BlockIdExt {
+            shard_id,
+            seq_no,
+            root_hash: UInt256::from([byte; 32]),
+            file_hash: UInt256::from([byte.wrapping_add(1); 32]),
+        }
+    }
+
+    #[test]
+    fn shard_ident_full_serialization_and_formatting() {
+        let key = ShardIdentFull::new(-1, SHARD_FULL);
+
+        assert_eq!(format!("{}", key), "-1:8000000000000000");
+        assert_eq!(format!("{:x}", key), "-1:8000000000000000");
+        assert_eq!(
+            ShardIdentFull::construct_from_cell(key.serialize().unwrap()).unwrap().prefix,
+            SHARD_FULL
+        );
+    }
+
+    #[test]
+    fn shard_hashes_workchain_iteration_lookup_and_neighbours() {
+        let full = ShardIdent::full(0);
+        let descr = shard_descr(1, 0x11);
+        let hashes = shard_hashes_with_full_workchain(0, descr.clone());
+
+        assert!(hashes.has_workchain(0).unwrap());
+        assert!(!hashes.has_workchain(1).unwrap());
+
+        let mut workchain_seen = Vec::new();
+        hashes
+            .iterate_shards_for_workchain(0, |shard, descr| {
+                workchain_seen.push((shard, descr.seq_no));
+                Ok(true)
+            })
+            .unwrap();
+        assert_eq!(workchain_seen, vec![(full.clone(), 1)]);
+
+        let mut all_seen = Vec::new();
+        assert!(
+            hashes
+                .iterate_shards(|shard, descr| {
+                    all_seen.push((shard, descr.seq_no));
+                    Ok(true)
+                })
+                .unwrap()
+        );
+        assert_eq!(all_seen, vec![(full.clone(), 1)]);
+
+        let mut sibling_seen = Vec::new();
+        assert!(
+            hashes
+                .iterate_shards_with_siblings(|shard, descr, sibling| {
+                    sibling_seen.push((shard, descr.seq_no, sibling.map(|s| s.seq_no)));
+                    Ok(true)
+                })
+                .unwrap()
+        );
+        assert_eq!(sibling_seen, vec![(full.clone(), 1, None)]);
+
+        let found = hashes.find_shard(&full).unwrap().unwrap();
+        assert_eq!(found.shard(), &full);
+        assert_eq!(found.descr.seq_no, 1);
+        assert_eq!(hashes.get_shard(&full).unwrap().unwrap().descr.seq_no, 1);
+
+        let prefix = AccountIdPrefixFull { workchain_id: 0, prefix: 0 };
+        assert_eq!(hashes.find_shard_by_prefix(&prefix).unwrap().unwrap().descr.seq_no, 1);
+        assert_eq!(hashes.get_neighbours(&ShardIdent::masterchain()).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn shard_hashes_split_update_merge_and_new_shards() {
+        let full = ShardIdent::full(0);
+        let mut hashes = shard_hashes_with_full_workchain(0, shard_descr(10, 0x22));
+        let (left, right) = full.split().unwrap();
+
+        hashes
+            .split_shard(&full, |mut old| {
+                let mut right_descr = old.clone();
+                old.seq_no = 11;
+                right_descr.seq_no = 12;
+                Ok((old, right_descr))
+            })
+            .unwrap();
+        assert_eq!(hashes.get_shard(&left).unwrap().unwrap().descr.seq_no, 11);
+        assert_eq!(hashes.get_shard(&right).unwrap().unwrap().descr.seq_no, 12);
+
+        hashes
+            .update_shard(&right, |mut descr| {
+                descr.seq_no = 13;
+                descr.before_split = true;
+                Ok(descr)
+            })
+            .unwrap();
+        assert_eq!(hashes.get_shard(&right).unwrap().unwrap().descr.seq_no, 13);
+
+        let new_shards = hashes.get_new_shards().unwrap();
+        let (right_left, right_right) = right.split().unwrap();
+        assert!(new_shards.contains_key(&left));
+        assert!(new_shards.contains_key(&right_left));
+        assert!(new_shards.contains_key(&right_right));
+
+        hashes
+            .merge_shards(&full, |left_descr, right_descr| {
+                assert_eq!(left_descr.seq_no, 11);
+                assert_eq!(right_descr.seq_no, 13);
+                Ok(shard_descr(20, 0x33))
+            })
+            .unwrap();
+        assert_eq!(hashes.get_shard(&full).unwrap().unwrap().descr.seq_no, 20);
+
+        assert!(hashes.split_shard(&left, |_| unreachable!()).is_err());
+        assert!(hashes.update_shard(&left, |_| unreachable!()).is_err());
+    }
+
+    #[test]
+    fn shard_hashes_add_workchain_and_cc_seqno_paths() {
+        let mut hashes = ShardHashes::default();
+        hashes.add_workchain(7, 55, UInt256::from([1; 32]), UInt256::from([2; 32]), None).unwrap();
+        assert!(hashes.has_workchain(7).unwrap());
+        assert!(hashes.add_workchain(7, 55, UInt256::ZERO, UInt256::ZERO, None).is_err());
+
+        let full = ShardIdent::full(7);
+        let (left, right) = full.split().unwrap();
+        assert_eq!(hashes.calc_shard_cc_seqno(&left).unwrap(), 0);
+
+        let mut split_hashes = shard_hashes_with_full_workchain(7, shard_descr(1, 0x44));
+        split_hashes
+            .split_shard(&full, |mut old| {
+                let mut right_descr = old.clone();
+                old.next_catchain_seqno = 3;
+                right_descr.next_catchain_seqno = 9;
+                Ok((old, right_descr))
+            })
+            .unwrap();
+        assert_eq!(split_hashes.calc_shard_cc_seqno(&full).unwrap(), 10);
+        assert_eq!(split_hashes.calc_shard_cc_seqno(&right.split().unwrap().0).unwrap(), 9);
+        assert!(split_hashes.calc_shard_cc_seqno(&ShardIdent::masterchain()).is_err());
+        assert!(
+            split_hashes.calc_shard_cc_seqno(&ShardIdent::full(99).split().unwrap().0).is_err()
+        );
+    }
+
+    #[test]
+    fn mc_shard_record_basic_info_and_fee_flags() {
+        let shard = ShardIdent::full(0);
+        let mut descr = shard_descr(3, 0x55);
+        let record = McShardRecord::from_shard_descr(shard.clone(), descr.clone());
+
+        assert_eq!(record.shard(), &shard);
+        assert_eq!(record.descr(), &descr);
+        assert_eq!(record.blk_id(), record.block_id());
+
+        let mut same = record.clone();
+        assert!(record.basic_info_equal(&same, true, true));
+
+        same.descr.reg_mc_seqno += 1;
+        assert!(record.basic_info_equal(&same, false, false));
+        assert!(!record.basic_info_equal(&same, false, true));
+
+        same = record.clone();
+        same.descr.fees_collected = CurrencyCollection::with_grams(999);
+        assert!(record.basic_info_equal(&same, false, true));
+        assert!(!record.basic_info_equal(&same, true, true));
+
+        descr.before_split = true;
+        let split_record = McShardRecord::from_shard_descr(shard, descr);
+        assert!(!record.basic_info_equal(&split_record, false, false));
+    }
+
+    #[test]
+    fn shard_fees_and_mc_block_extra_accessors() {
+        let shard = ShardIdent::full(0);
+        let mut extra = McBlockExtra::default();
+
+        assert!(!extra.is_key_block());
+        assert!(extra.config().is_none());
+        assert!(extra.read_recover_create_msg().unwrap().is_none());
+        assert!(extra.read_mint_msg().unwrap().is_none());
+        assert!(extra.read_copyleft_msgs().unwrap().is_empty());
+        assert!(extra.recover_create_msg_cell().is_none());
+        assert!(extra.mint_msg_cell().is_none());
+
+        extra
+            .fees_mut()
+            .store_shard_fees(
+                &shard,
+                CurrencyCollection::with_grams(10),
+                CurrencyCollection::with_grams(2),
+            )
+            .unwrap();
+        assert_eq!(extra.total_fee(), &CurrencyCollection::with_grams(10));
+        assert_eq!(extra.fees().root_extra().create, CurrencyCollection::with_grams(2));
+        assert_eq!(extra.fee(&shard).unwrap(), None);
+
+        let direct_fee = ShardFeeCreated {
+            fees: CurrencyCollection::with_grams(7),
+            create: CurrencyCollection::with_grams(1),
+        };
+        extra
+            .fees_mut()
+            .set(
+                &ShardIdentFull::new(shard.workchain_id(), shard.shard_prefix_without_tag()),
+                &direct_fee,
+                &direct_fee,
+            )
+            .unwrap();
+        assert_eq!(extra.fee(&shard).unwrap(), Some(CurrencyCollection::with_grams(7)));
+
+        extra
+            .hashes_mut()
+            .add_workchain(0, 1, UInt256::from([3; 32]), UInt256::from([4; 32]), None)
+            .unwrap();
+        assert!(extra.hashes().has_workchain(0).unwrap());
+        assert!(extra.shards().has_workchain(0).unwrap());
+        assert!(extra.shards_mut().has_workchain(0).unwrap());
+
+        extra.set_config(ConfigParams::default());
+        assert!(extra.is_key_block());
+        assert!(extra.config().is_some());
+        assert!(extra.config_mut().is_some());
+        assert!(extra.prev_blk_signatures().is_empty());
+        assert!(extra.prev_blk_signatures_mut().is_empty());
+    }
+
+    #[test]
+    fn old_mc_blocks_info_finds_key_blocks_and_validates_ids() {
+        let mut prev_blocks = OldMcBlocksInfo::default();
+        for (seq_no, key, byte) in [
+            (10, false, 0x10),
+            (20, true, 0x20),
+            (40, true, 0x40),
+            (80, false, 0x80),
+            (100, true, 0xa0),
+        ] {
+            let value = KeyExtBlkRef { key, blk_ref: ext_blk_ref(seq_no, byte) };
+            prev_blocks.set_augmentable(&seq_no, &value).unwrap();
+        }
+
+        assert!(prev_blocks.get_prev_key_block(19).unwrap().is_none());
+        assert_eq!(prev_blocks.get_prev_key_block(20).unwrap().unwrap().seq_no, 20);
+        assert_eq!(prev_blocks.get_prev_key_block(99).unwrap().unwrap().seq_no, 40);
+        assert_eq!(prev_blocks.get_prev_key_block(100).unwrap().unwrap().seq_no, 100);
+
+        assert_eq!(prev_blocks.get_next_key_block(1).unwrap().unwrap().seq_no, 20);
+        assert_eq!(prev_blocks.get_next_key_block(21).unwrap().unwrap().seq_no, 40);
+        assert_eq!(prev_blocks.get_next_key_block(101).unwrap(), None);
+
+        let good = block_id(ShardIdent::masterchain(), 20, 0x20);
+        assert!(prev_blocks.check_block(&good).is_ok());
+        assert!(prev_blocks.check_key_block(&good, Some(true)).is_ok());
+        assert!(prev_blocks.check_key_block(&good, Some(false)).is_err());
+
+        let mut wrong_root = good.clone();
+        wrong_root.root_hash = UInt256::from([0xee; 32]);
+        assert!(prev_blocks.check_block(&wrong_root).is_err());
+
+        let mut wrong_file = good.clone();
+        wrong_file.file_hash = UInt256::from([0xdd; 32]);
+        assert!(prev_blocks.check_block(&wrong_file).is_err());
+
+        let missing = block_id(ShardIdent::masterchain(), 30, 0x30);
+        assert!(prev_blocks.check_block(&missing).is_err());
+
+        let not_master = block_id(ShardIdent::full(0), 20, 0x20);
+        assert!(prev_blocks.check_block(&not_master).is_err());
+    }
+
+    #[test]
+    fn counters_creator_stats_and_block_create_stats_cover_validation_and_roundtrip() {
+        assert_eq!(umulnexps32(10_000, 0, false), 10_000);
+
+        let mut zero = Counters::default();
+        assert!(zero.is_valid());
+        assert!(zero.is_zero());
+        assert!(zero.almost_zero());
+        assert!(!zero.modified_since(1));
+
+        assert!(zero.increase_by(3, 100));
+        assert_eq!(zero.total(), 3);
+        assert_eq!(zero.last_updated(), 100);
+        assert!(zero.cnt2048() > 0);
+        assert!(zero.cnt65536() > 0);
+        assert!(zero.modified_since(100));
+
+        let before_decay = zero.clone();
+        assert!(zero.increase_by(2, 100 + 49 * 2048));
+        assert_eq!(zero.total(), 5);
+        assert!(zero.cnt2048() >= 2 << 32);
+        assert!(zero.cnt65536() < before_decay.cnt65536() + (2 << 32));
+        assert!(zero.almost_equals(&zero.clone()));
+        assert_eq!(Counters::construct_from_cell(zero.serialize().unwrap()).unwrap(), zero);
+
+        let invalid_count = Counters { last_updated: 0, total: 0, cnt2048: 1, cnt65536: 0 };
+        assert!(!invalid_count.is_valid());
+        let mut invalid_total = Counters { last_updated: 0, total: 1, cnt2048: 0, cnt65536: 0 };
+        assert!(!invalid_total.is_valid());
+        assert!(!invalid_total.increase_by(1, 1));
+
+        let mut overflow = Counters { last_updated: 1, total: u64::MAX, cnt2048: 0, cnt65536: 0 };
+        assert!(!overflow.increase_by(1, 2));
+
+        let stats = CreatorStats { mc_blocks: zero.clone(), shard_blocks: Counters::default() };
+        assert_eq!(CreatorStats::tag(), 0x4);
+        assert_eq!(CreatorStats::tag_len_bits(), 4);
+        assert_eq!(stats.mc_blocks(), &zero);
+        assert!(stats.shard_blocks().is_zero());
+        assert_eq!(CreatorStats::construct_from_cell(stats.serialize().unwrap()).unwrap(), stats);
+
+        let mut bad_creator = BuilderData::new();
+        bad_creator.append_bits(0, CreatorStats::tag_len_bits()).unwrap();
+        assert!(CreatorStats::construct_from_cell(bad_creator.into_cell().unwrap()).is_err());
+
+        let mut block_stats = BlockCreateStats::default();
+        block_stats.counters.set(&UInt256::from([0x44; 32]), &stats).unwrap();
+        assert_eq!(BlockCreateStats::tag(), 0x17);
+        assert_eq!(BlockCreateStats::tag_len_bits(), 8);
+        assert_eq!(
+            BlockCreateStats::construct_from_cell(block_stats.serialize().unwrap()).unwrap(),
+            block_stats
+        );
+
+        let mut bad_block_stats = BuilderData::new();
+        bad_block_stats.append_bits(0, BlockCreateStats::tag_len_bits()).unwrap();
+        assert!(
+            BlockCreateStats::construct_from_cell(bad_block_stats.into_cell().unwrap()).is_err()
+        );
+    }
+
+    #[test]
+    fn mc_state_extra_accessors_roundtrip_and_invalid_tag() {
+        let shard = ShardIdent::full(0);
+        let descr = shard_descr(77, 0x77);
+        let mut state = McStateExtra::default();
+
+        assert!(state.shard_seq_no(&shard).unwrap().is_none());
+        assert_eq!(state.add_workchain(0, &descr).unwrap(), shard);
+        assert_eq!(state.shard_seq_no(&shard).unwrap(), Some(77));
+        assert_eq!(state.shard_lt(&shard).unwrap(), Some(770));
+        assert_eq!(state.shard_hash(&shard).unwrap(), Some(UInt256::from([0x77; 32])));
+        assert!(state.shard_seq_no(&ShardIdent::full(1)).unwrap().is_none());
+        assert!(state.shards().has_workchain(0).unwrap());
+        assert_eq!(state.config(), &ConfigParams::default());
+
+        state.after_key_block = true;
+        state.last_key_block = Some(ext_blk_ref(90, 0x90));
+        state.block_create_stats = Some(BlockCreateStats::default());
+        state.global_balance = CurrencyCollection::with_grams(123);
+        let decoded = McStateExtra::construct_from_cell(state.serialize().unwrap()).unwrap();
+        assert_eq!(decoded.shard_seq_no(&shard).unwrap(), Some(77));
+        assert!(decoded.after_key_block);
+        assert_eq!(decoded.last_key_block, state.last_key_block);
+        assert_eq!(decoded.block_create_stats, state.block_create_stats);
+        assert_eq!(decoded.global_balance, state.global_balance);
+
+        let mut bad = BuilderData::new();
+        bad.append_u16(0).unwrap();
+        assert!(McStateExtra::construct_from_cell(bad.into_cell().unwrap()).is_err());
+    }
+
+    #[test]
+    fn ref_shard_blocks_builds_tree_iterates_and_finds_refs() {
+        let full = block_id(ShardIdent::full(0), 1, 0x01);
+        let (left, right) = ShardIdent::full(1).split().unwrap();
+        let left_id = block_id(left.clone(), 2, 0x02);
+        let right_id = block_id(right.clone(), 3, 0x03);
+        let ids = vec![(full.clone(), 10), (left_id.clone(), 20), (right_id.clone(), 30)];
+
+        let refs = RefShardBlocks::with_ids(ids.iter()).unwrap();
+        assert_eq!(refs.ref_shard_block(full.shard()).unwrap().unwrap().seq_no, 1);
+        assert_eq!(refs.ref_shard_block(&left).unwrap().unwrap().end_lt, 20);
+        assert_eq!(refs.ref_shard_block(&right).unwrap().unwrap().end_lt, 30);
+        assert!(refs.ref_shard_block(&ShardIdent::full(99)).unwrap().is_none());
+
+        let mut seen = Vec::new();
+        assert!(
+            refs.iterate_shard_block_refs(|block_id, end_lt| {
+                seen.push((block_id.seq_no, end_lt));
+                Ok(true)
+            })
+            .unwrap()
+        );
+        seen.sort_unstable();
+        assert_eq!(seen, vec![(1, 10), (2, 20), (3, 30)]);
+    }
+
+    #[test]
+    fn key_max_lt_new_calc_and_roundtrip() {
+        let mut value = KeyMaxLt::new();
+        let other = KeyMaxLt { key: true, max_end_lt: 99 };
+
+        assert_eq!(value, KeyMaxLt { key: false, max_end_lt: 0 });
+        value.calc(&other).unwrap();
+        assert_eq!(value, other);
+        assert_eq!(KeyMaxLt::construct_from_cell(other.serialize().unwrap()).unwrap(), other);
+    }
+
+    #[test]
+    fn key_ext_blk_ref_aug_and_master_block_id_use_end_lt() {
+        let value = KeyExtBlkRef {
+            key: true,
+            blk_ref: ExtBlkRef {
+                end_lt: 123,
+                seq_no: 7,
+                root_hash: UInt256::from([1; 32]),
+                file_hash: UInt256::from([2; 32]),
+            },
+        };
+
+        let aug = value.aug().unwrap();
+        assert_eq!(aug, KeyMaxLt { key: true, max_end_lt: 123 });
+
+        let (end_lt, block_id, key) = value.clone().master_block_id();
+        assert_eq!(end_lt, 123);
+        assert!(key);
+        assert_eq!(block_id.seq_no, 7);
+        assert_eq!(block_id.root_hash, UInt256::from([1; 32]));
+        assert_eq!(block_id.file_hash, UInt256::from([2; 32]));
+        assert_eq!(KeyExtBlkRef::construct_from_cell(value.serialize().unwrap()).unwrap(), value);
+    }
+
+    #[test]
+    fn future_split_merge_and_shard_descr_helpers_cover_all_variants() {
+        let none =
+            ShardDescr::with_params(1, 10, 20, UInt256::from([1; 32]), FutureSplitMerge::None);
+        let split = ShardDescr::with_params(
+            2,
+            20,
+            30,
+            UInt256::from([2; 32]),
+            FutureSplitMerge::Split { split_utime: 100, interval: 7 },
+        );
+        let merge = ShardDescr::with_params(
+            3,
+            30,
+            40,
+            UInt256::from([3; 32]),
+            FutureSplitMerge::Merge { merge_utime: 200, interval: 9 },
+        );
+
+        assert!(none.is_fsm_none());
+        assert!(!split.fsm_equal(&merge));
+        assert!(split.is_fsm_split());
+        assert!(merge.is_fsm_merge());
+        assert_eq!(split.fsm_utime(), 100);
+        assert_eq!(split.fsm_interval(), 7);
+        assert_eq!(split.fsm_utime_end(), 107);
+        assert_eq!(merge.fsm_utime(), 200);
+        assert_eq!(merge.fsm_utime_end(), 209);
+        assert_eq!(
+            FutureSplitMerge::construct_from_cell(split.split_merge_at.serialize().unwrap())
+                .unwrap(),
+            split.split_merge_at
+        );
+        assert_eq!(
+            FutureSplitMerge::construct_from_cell(merge.split_merge_at.serialize().unwrap())
+                .unwrap(),
+            merge.split_merge_at
+        );
+    }
+
+    #[test]
+    fn collators_and_shard_block_ref_roundtrip_and_display() {
+        let collators = ShardCollators {
+            prev: CollatorRange { collator: 1, start: 10, finish: 20 },
+            prev2: Some(CollatorRange { collator: 2, start: 21, finish: 30 }),
+            current: CollatorRange { collator: 3, start: 31, finish: 40 },
+            next: CollatorRange { collator: 4, start: 41, finish: 50 },
+            next2: Some(CollatorRange { collator: 5, start: 51, finish: 60 }),
+            updated_at: 777,
+        };
+        let text = format!("{}", collators);
+        assert!(text.contains("prev: 1 (10..20)"));
+        assert!(text.contains("next2: 5 (51..60)"));
+        assert_eq!(
+            ShardCollators::construct_from_cell(collators.serialize().unwrap()).unwrap(),
+            collators
+        );
+
+        let block_id = BlockIdExt {
+            shard_id: ShardIdent::full(0),
+            seq_no: 11,
+            root_hash: UInt256::from([4; 32]),
+            file_hash: UInt256::from([5; 32]),
+        };
+        let shard_ref = ShardBlockRef::with_params(&block_id, 12345);
+        let roundtrip = ShardBlockRef::construct_from_cell(shard_ref.serialize().unwrap()).unwrap();
+        assert_eq!(roundtrip, shard_ref);
+        assert_eq!(roundtrip.clone().into_block_id(ShardIdent::full(0)).unwrap(), block_id);
+    }
+
+    #[test]
+    fn lib_descr_requires_publishers_and_roundtrips_with_publisher() {
+        let empty = LibDescr::new(Cell::default());
+        assert!(empty.serialize().is_err());
+
+        let value = LibDescr::from_lib_data_by_publisher(Cell::default(), AccountId::from([8; 32]));
+        assert_eq!(value.lib(), &Cell::default());
+        assert!(!value.publishers().is_empty());
+        assert_eq!(LibDescr::construct_from_cell(value.serialize().unwrap()).unwrap(), value);
+    }
+}
