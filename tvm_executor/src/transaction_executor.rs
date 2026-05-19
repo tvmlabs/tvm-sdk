@@ -2383,10 +2383,7 @@ mod tests {
 
         assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
     }
-}
 
-#[cfg(test)]
-mod tests {
     use std::sync::Arc;
     use std::sync::Mutex;
     use std::sync::atomic::AtomicU64;
@@ -2408,7 +2405,6 @@ mod tests {
     use tvm_block::GasLimitsPrices;
     use tvm_block::GlobalVersion;
     use tvm_block::HashUpdate;
-    use tvm_block::InternalMessageHeader;
     use tvm_block::Message;
     use tvm_block::MsgAddressInt;
     use tvm_block::MsgForwardPrices;
@@ -2427,7 +2423,6 @@ mod tests {
     use tvm_types::UInt256;
     use tvm_vm::stack::Stack;
 
-    use super::*;
     use crate::BlockchainConfig;
     use crate::OrdinaryTransactionExecutor;
     use crate::blockchain_config::TONDefaultConfig;
