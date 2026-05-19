@@ -1473,13 +1473,13 @@ fn test_bocdepth() {
     tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
         .with_borrow_mut(|x| *x = Some(1398101 * 1024));
     let mut data = [100u8; 98 * 1024 + 1248].to_vec();
-    let _cell = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
+    let _cell = TokenValue::write_bytes(data.as_slice(), &ABI_VERSION_2_4)
         .unwrap()                              //1398101
         .into_cell()
         .unwrap();
 
     data.append(&mut [100u8].to_vec());
-    let res = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
+    let res = TokenValue::write_bytes(data.as_slice(), &ABI_VERSION_2_4)
         .unwrap()                              //1398101
         .into_cell();
     assert!(res.is_err());

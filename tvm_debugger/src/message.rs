@@ -167,9 +167,11 @@ pub(crate) fn generate_message_body(args: &RunArgs) -> anyhow::Result<SliceData>
 
 #[test]
 fn test_encode_body() -> anyhow::Result<()> {
-    let mut args = RunArgs::default();
-    args.abi_file = Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap());
-    args.function_name = Some("inc".to_string());
+    let mut args = RunArgs {
+        abi_file: Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap()),
+        function_name: Some("inc".to_string()),
+        ..Default::default()
+    };
     let _body = generate_message_body(&args)?;
     args.function_name = Some("iterate".to_string());
     args.call_parameters = Some(json!({"index":35165}));
@@ -183,9 +185,11 @@ fn test_encode_body() -> anyhow::Result<()> {
 
 #[test]
 fn test_generate_message() -> anyhow::Result<()> {
-    let mut args = RunArgs::default();
-    args.abi_file = Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap());
-    args.function_name = Some("inc".to_string());
+    let mut args = RunArgs {
+        abi_file: Some(PathBuf::from_str("./tests/contract/contract.abi.json").unwrap()),
+        function_name: Some("inc".to_string()),
+        ..Default::default()
+    };
     let _ext_message = generate_message(&args)?;
     args.function_name = Some("iterate".to_string());
     args.call_parameters = Some(json!({"index":35165}));

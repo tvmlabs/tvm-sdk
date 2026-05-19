@@ -55,7 +55,7 @@ fn test_simple_out_of_gas() {
     if engine.execute().is_ok() {
         eprintln!("Gas remaining {}", engine.gas_remaining());
         eprintln!("Gas used {}", engine.gas_used());
-        assert!(false, "Should be OutOfGas");
+        panic!("Should be OutOfGas");
     }
     assert!(engine.gas_remaining() < 0, "Expected out of gas");
 }

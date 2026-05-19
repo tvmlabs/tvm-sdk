@@ -69,7 +69,7 @@ const ACKI_NACKI_PROVER_PROD_SERVER_URL: &str = "https://prover.ackinacki.org/v1
 
 fn single_chcksgns(
     engine: &mut Engine,
-    eph_pubkey: &Vec<u8>,
+    eph_pubkey: &[u8],
     zk_login_inputs: &ZkLoginInputs,
     all_jwk: &HashMap<JwkId, JWK>,
     max_epoch: u64,
@@ -187,11 +187,11 @@ fn test_poseidon_and_vergrth16_and_chksigns_for_multiple_data() {
     let mut average_vergrth16: u128 = 0;
     let mut average_chcksigns: u128 = 0;
 
-    for i in 0..data.len() {
+    for (i, jwt_data_raw) in data.iter().enumerate() {
         println!();
         println!("====================== Iter@ is {i} =========================");
-        println!("jwt_data: {:?}", data[i]);
-        let jwt_data: JwtData = serde_json::from_str(data[i]).unwrap();
+        println!("jwt_data: {:?}", jwt_data_raw);
+        let jwt_data: JwtData = serde_json::from_str(jwt_data_raw).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
         let content: JWK = JWK {
@@ -435,11 +435,11 @@ fn test_poseidon_and_vergrth16_and_for_multiple_data_short() {
     let mut average_poseidon: u128 = 0;
     let mut average_vergrth16: u128 = 0;
 
-    for i in 0..data.len() {
+    for (i, jwt_data_raw) in data.iter().enumerate() {
         println!();
         println!("====================== Iter@ is {i} =========================");
-        println!("jwt_data: {:?}", data[i]);
-        let jwt_data: JwtDataShort = serde_json::from_str(data[i]).unwrap();
+        println!("jwt_data: {:?}", jwt_data_raw);
+        let jwt_data: JwtDataShort = serde_json::from_str(jwt_data_raw).unwrap();
         println!("jwt_data: {:?}", jwt_data);
 
         let content: JWK = JWK {
@@ -611,8 +611,8 @@ fn test_proof_stuff() {
         TEST_AUTH_DATA_21_GOOGLE,
     ];
 
-    for i in 0..data.len() {
-        let jwt_data: JwtData = serde_json::from_str(data[i]).unwrap();
+    for jwt_data_raw in &data {
+        let jwt_data: JwtData = serde_json::from_str(jwt_data_raw).unwrap();
 
         let user_pass_salt = jwt_data.user_pass_to_int_format.as_str();
         println!("user_pass_salt is {user_pass_salt}");
@@ -708,10 +708,7 @@ fn test_poseidon() {
 
     let start: Instant = Instant::now();
 
-    let mut res = Vec::<u8>::with_capacity(2);
-    res.push(0xC7);
-    res.push(0x50);
-    res.push(0x80);
+    let res = vec![0xC7, 0x50, 0x80];
 
     let code = SliceData::new(res);
 
@@ -850,10 +847,7 @@ fn test_poseidon_zklogin() {
 
     let start: Instant = Instant::now();
 
-    let mut res = Vec::<u8>::with_capacity(2);
-    res.push(0xC7);
-    res.push(0x32);
-    res.push(0x80);
+    let res = vec![0xC7, 0x32, 0x80];
 
     let code = SliceData::new(res);
 
@@ -969,10 +963,7 @@ fn test_vergrth16() {
 
     let start: Instant = Instant::now();
 
-    let mut res = Vec::<u8>::with_capacity(2);
-    res.push(0xC7);
-    res.push(0x31);
-    res.push(0x80);
+    let res = vec![0xC7, 0x31, 0x80];
 
     let code = SliceData::new(res);
 
@@ -1097,10 +1088,7 @@ async fn test_test_issuer_with_real_prove_service() {
 
         let start: Instant = Instant::now();
 
-        let mut res = Vec::<u8>::with_capacity(2);
-        res.push(0xC7);
-        res.push(0x31);
-        res.push(0x80);
+        let res = vec![0xC7, 0x31, 0x80];
 
         let code = SliceData::new(res);
 

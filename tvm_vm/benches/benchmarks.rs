@@ -422,15 +422,15 @@ fn bench_wasmadd(c: &mut Criterion) {
                 stack.push(StackItem::cell(cell.clone()));
                 // Push args, func name, instance name, then wasm.
                 let wasm_func = "add";
-                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = tvm_vm::utils::pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_func = "docs:adder/add-interface@0.1.0";
-                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = tvm_vm::utils::pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_dict = Vec::<u8>::new();
 
                 let cell = tvm_abi::TokenValue::write_bytes(
-                    &wasm_dict.as_slice(),
+                    wasm_dict.as_slice(),
                     &tvm_abi::contract::ABI_VERSION_2_4,
                 )
                 .unwrap()
@@ -440,10 +440,7 @@ fn bench_wasmadd(c: &mut Criterion) {
                 // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
 
-                let mut res = Vec::<u8>::with_capacity(3);
-                res.push(0xC7);
-                res.push(0x3A);
-                res.push(0x80);
+                let res = vec![0xC7, 0x3A, 0x80];
 
                 let code = SliceData::new(res);
 
@@ -519,15 +516,15 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
                 stack.push(StackItem::cell(cell.clone()));
                 // Push args, func name, instance name, then wasm.
                 let wasm_func = "add";
-                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = tvm_vm::utils::pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_func = "docs:adder/add-interface@0.1.0";
-                let cell = tvm_vm::utils::pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = tvm_vm::utils::pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_dict = Vec::<u8>::new();
 
                 let cell = tvm_abi::TokenValue::write_bytes(
-                    &wasm_dict.as_slice(),
+                    wasm_dict.as_slice(),
                     &tvm_abi::contract::ABI_VERSION_2_4,
                 )
                 .unwrap()
@@ -537,10 +534,7 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
                 // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
 
-                let mut res = Vec::<u8>::with_capacity(3);
-                res.push(0xC7);
-                res.push(0x3A);
-                res.push(0x80);
+                let res = vec![0xC7, 0x3A, 0x80];
 
                 let code = SliceData::new(res);
 
@@ -606,24 +600,21 @@ fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
                 stack.push(StackItem::cell(cell.clone()));
                 // Push args, func name, instance name, then wasm.
                 let wasm_func = "tlscheck";
-                let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_func = "docs:tlschecker/tls-check-interface@0.1.0";
-                let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_dict = Vec::<u8>::new();
 
-                let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+                let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
                     .unwrap()
                     .into_cell()
                     .unwrap();
 
                 stack.push(StackItem::cell(cell.clone()));
 
-                let mut res = Vec::<u8>::with_capacity(3);
-                res.push(0xC7);
-                res.push(0x3A);
-                res.push(0x80);
+                let res = vec![0xC7, 0x3A, 0x80];
 
                 let code = SliceData::new(res);
 
@@ -677,24 +668,21 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                 stack.push(StackItem::cell(cell.clone()));
                 // Push args, func name, instance name, then wasm.
                 let wasm_func = "tlscheck";
-                let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_func = "docs:tlschecker/tls-check-interface@0.1.0";
-                let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut 0).unwrap();
+                let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut 0).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
                 let wasm_dict = Vec::<u8>::new();
 
-                let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+                let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
                     .unwrap()
                     .into_cell()
                     .unwrap();
 
                 stack.push(StackItem::cell(cell.clone()));
 
-                let mut res = Vec::<u8>::with_capacity(3);
-                res.push(0xC7);
-                res.push(0x3A);
-                res.push(0x80);
+                let res = vec![0xC7, 0x3A, 0x80];
 
                 let code = SliceData::new(res);
 
@@ -706,7 +694,9 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                     vec![],
                 );
                 engine.wasm_engine_init_cached().unwrap();
-                engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
+                engine
+                    .add_wasm_hash_to_whitelist_by_str(WASM_TLS_CHECK_HASH_STR.to_owned())
+                    .unwrap();
                 let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
 
                 let start = std::time::Instant::now();
@@ -769,7 +759,8 @@ fn bench_poseidon(c: &mut Criterion) {
                 let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
                 let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
 
-                let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+                let zk_login_inputs =
+                    ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
                 let content: JWK = JWK {
                     kty: "RSA".to_string(),
                     e: "AQAB".to_string(),
@@ -811,17 +802,20 @@ fn bench_poseidon(c: &mut Criterion) {
                 let index_mod_4 = 1;
                 stack.push(StackItem::int(index_mod_4));
                 stack.push(StackItem::int(max_epoch));
-                stack.push(StackItem::integer(tvm_vm::stack::integer::IntegerData::from_unsigned_bytes_be(&eph_pubkey.clone())));
+                stack.push(StackItem::integer(
+                    tvm_vm::stack::integer::IntegerData::from_unsigned_bytes_be(eph_pubkey.clone()),
+                ));
 
                 let modulus_cell = tvm_vm::utils::pack_data_to_cell(&modulus.clone(), &mut 0).unwrap();
                 //println!("modulus_cell = {:?}", modulus_cell);
                 stack.push(StackItem::cell(modulus_cell.clone()));
 
-                let iss_base_64_cell = tvm_vm::utils::pack_string_to_cell(&iss_base_64, &mut 0).unwrap();
+                let iss_base_64_cell = tvm_vm::utils::pack_string_to_cell(iss_base_64, &mut 0).unwrap();
                 //println!("iss_base_64_cell = {:?}", iss_base_64_cell);
                 stack.push(StackItem::cell(iss_base_64_cell.clone()));
 
-                let header_base_64_cell = tvm_vm::utils::pack_string_to_cell(&header_base_64, &mut 0).unwrap();
+                let header_base_64_cell =
+                    tvm_vm::utils::pack_string_to_cell(header_base_64, &mut 0).unwrap();
                 //println!("header_base_64_cell = {:?}", header_base_64_cell);
                 stack.push(StackItem::cell(header_base_64_cell.clone()));
 
@@ -829,10 +823,7 @@ fn bench_poseidon(c: &mut Criterion) {
                 //println!("zk_seed_cell = {:?}", zk_seed_cell);
                 stack.push(StackItem::cell(zk_seed_cell.clone()));
 
-                let mut res = Vec::<u8>::with_capacity(3);
-                res.push(0xC7);
-                res.push(0x32);
-                res.push(0x80);
+                let res = vec![0xC7, 0x32, 0x80];
 
                 let code = SliceData::new(res);
 
@@ -899,7 +890,8 @@ fn bench_vergrth16(c: &mut Criterion) {
                 //let header_base_64 = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImEzYjc2MmY4NzFjZGIzYmFlMDA0NGM2NDk2MjJmYzEzOTZlZGEzZTMiLCJ0eXAiOiJKV1QifQ";
                 //let iss_base_64 = "yJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLC";
 
-                let zk_login_inputs = ZkLoginInputs::from_json(&*proof_and_jwt, &*zk_seed.to_string()).unwrap();
+                let zk_login_inputs =
+                    ZkLoginInputs::from_json(proof_and_jwt, &zk_seed.to_string()).unwrap();
                 let content: JWK = JWK {
                     kty: "RSA".to_string(),
                     e: "AQAB".to_string(),
@@ -946,10 +938,7 @@ fn bench_vergrth16(c: &mut Criterion) {
                 let public_inputs_cell = tvm_vm::utils::pack_data_to_cell(&public_inputs_as_bytes.clone(), &mut 0).unwrap();
                 stack.push(StackItem::cell(public_inputs_cell.clone()));
 
-                let mut res = Vec::<u8>::with_capacity(3);
-                res.push(0xC7);
-                res.push(0x31);
-                res.push(0x80);
+                let res = vec![0xC7, 0x31, 0x80];
 
                 let code = SliceData::new(res);
 

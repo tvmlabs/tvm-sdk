@@ -159,13 +159,13 @@ fn test_vrgrth16_short_public_input() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected vergrth16 to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -232,13 +232,13 @@ fn test_vrgrth16_long_public_input() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected vergrth16 to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -311,7 +311,7 @@ fn test_vrgrth16_bad_public_input() {
             assert!(*res == IntegerData::zero());
         }
         Err(_) => {
-            assert!(false);
+            panic!("expected vergrth16 to succeed");
         }
     };
 
@@ -328,7 +328,7 @@ fn test_vrgrth16_bad_public_input() {
             assert!(*res == IntegerData::zero());
         }
         Err(_) => {
-            assert!(false);
+            panic!("expected vergrth16 to succeed");
         }
     };
 
@@ -344,7 +344,7 @@ fn test_vrgrth16_bad_public_input() {
             assert!(*res == IntegerData::zero());
         }
         Err(_) => {
-            assert!(false);
+            panic!("expected vergrth16 to succeed");
         }
     };
 }
@@ -405,13 +405,13 @@ fn test_vrgrth16_short_proof() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected vergrth16 to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -479,7 +479,7 @@ fn test_vrgrth16_long_proof() {
             assert!(*res == IntegerData::minus_one());
         }
         Err(_) => {
-            assert!(false);
+            panic!("expected vergrth16 to succeed");
         }
     };
 }
@@ -535,13 +535,13 @@ fn test_vrgrth16_long_incorrect_proof() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected vergrth16 to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -598,13 +598,13 @@ fn test_vrgrth16_incorrect_proof() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected vergrth16 to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -670,13 +670,13 @@ fn test_vrgrth16_invalid_proof() {
     engine.cc.stack.push(StackItem::cell(public_inputs_cell.clone()));
 
     match execute_vergrth16(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected vergrth16 to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 print!("e.exception_code() = {:?}", e.exception_code().unwrap());
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -748,7 +748,7 @@ fn test_vrgrth16_invalid_proof_one_more_case() {
             assert!(*res == IntegerData::zero());
         }
         Err(_) => {
-            assert!(false);
+            panic!("expected vergrth16 to succeed");
         }
     };
 }

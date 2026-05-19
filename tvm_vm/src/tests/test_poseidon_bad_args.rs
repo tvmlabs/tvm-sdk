@@ -184,12 +184,12 @@ fn test_modulus_bad() {
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
     match execute_poseidon_zk_login(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected poseidon zk login to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -447,12 +447,12 @@ fn test_iss_64_bad() {
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
     match execute_poseidon_zk_login(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected poseidon zk login to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -664,12 +664,12 @@ fn test_header_base_64_bad() {
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
     match execute_poseidon_zk_login(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected poseidon zk login to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -812,12 +812,12 @@ fn test_zk_seed_bad() {
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
     match execute_poseidon_zk_login(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected poseidon zk login to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -891,12 +891,12 @@ fn test_zk_seed_bad() {
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
     match execute_poseidon_zk_login(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected poseidon zk login to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::FatalError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
@@ -1085,12 +1085,12 @@ fn test_other_args_bad() {
     engine.cc.stack.push(StackItem::cell(zk_seed_cell.clone()));
 
     match execute_poseidon_zk_login(&mut engine) {
-        Ok(_) => assert!(false),
+        Ok(_) => panic!("expected poseidon zk login to fail"),
         Err(ref err) => {
             if let Some(TvmError::TvmExceptionFull(e, _)) = err.downcast_ref() {
                 assert!(e.exception_code().unwrap() == tvm_types::ExceptionCode::RangeCheckError);
             } else {
-                assert!(false);
+                panic!("expected TvmExceptionFull error");
             }
         }
     }
