@@ -265,3 +265,12 @@ fn test_optional_tuple_param_deserialization() {
         }
     );
 }
+
+#[test]
+fn test_string_param_rejects_complex_type_shortcuts() {
+    for kind in ["tuple", "bool[]", "uint8[2]", "map(uint8,bool)"] {
+        let err = serde_json::from_str::<Param>(&format!(r#""{}""#, kind)).unwrap_err();
+        assert!(err.to_string().contains("Only simple types can be represented as strings"));
+        assert!(err.to_string().contains(kind));
+    }
+}

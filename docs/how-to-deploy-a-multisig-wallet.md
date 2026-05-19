@@ -141,10 +141,15 @@ In the examples below:
 The transaction **expiration time** is **1 hour**.
 {% endhint %}
 
+{% hint style="warning" %}
+`VMSHELL`s attached to the message will be credited to the recipient’s balance minus fees, provided the message is sent between contracts **with the same** DAPP ID. \
+If the DAPP IDs **are different**, the `VMSHELL`s will be burned
+{% endhint %}
+
 ### How to Send Tokens From Multisig Wallet
 
-**If the required number of confirmations for transactions is 1,** \
-tokens can be sent using the function `sendTransaction`:
+* **If the required number of confirmations for transactions is 1,** \
+  tokens can be sent using the function `sendTransaction`:
 
 ```solidity
 
@@ -160,7 +165,7 @@ sendTransaction(
 **Parameters**
 
 * `dest`  - the transfer target address;
-* `value`  - the amount of funds (VMSHELL) to transfer (should be `0`);
+* `value`  - the amount of funds (VMSHELL) used to pay fees (it must not be `0`);
 * `cc`  - a mapping of ECC token types to the token amounts to be transferred;
 * `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 * `flags`-  [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
@@ -172,22 +177,45 @@ In this case, the transaction is executed immediately, without creating a reques
 
 Example command:
 
-```bash
+```solidity
 tvm-cli call <MSIG_ADDR> sendTransaction '{
   "dest":"0:2672bb98816f2f9088d027f99681b65e05843b19367fe690cb4b5130d04eccf1",
-  "value":0,
+  "value":1000000000,
   "cc":{"2":5000000000},
   "bounce":false,
   "flags":1,
   "payload":""
-}'
+}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
 ```
 
-**If confirmation from multiple custodians is required**, \
-use the function `submitTransaction`:
+*   **If you need to fund an account that has not yet been deployed,** \
+    you should use the `sendTransaction` method with **flag 16**.
+
+    \
+    In this case, you transfer **SHELL** tokens, which are automatically converted into **VMSHELL** tokens and credited to the balance of the account you intend to deploy.\
+    \
+    **Example command:**
 
 ```solidity
+tvm-cli call <MSIG_ADDR> sendTransaction \
+'{
+  "dest":"0:ceb8.....8d32c",
+  "value":1000000000,
+  "cc":{"2":5000000000},
+  "bounce":false,
+  "flags":16,
+  "payload":""
+}' \
+--abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+```
 
+As a result, the account balance will be credited with **5 VMSHELL**\
+After the transaction is confirmed, you can safely run the deploy command again.<br>
+
+* **If confirmation from multiple custodians is required**, \
+  use the function `submitTransaction`:
+
+```solidity
 submitTransaction(
         address dest,
         uint128 value,
@@ -200,7 +228,7 @@ submitTransaction(
 **Parameters**
 
 * `dest` — the transfer target address;
-* `value` — the amount of funds (VMSHELL) to transfer (should be `0`);
+* `value` — the amount of funds (VMSHELL) used to pay fees (it must not be `0`);
 * `cc` — a mapping of ECC token types to the token amounts to be transferred;
 * `bounce` — [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 * `flags` — [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (usually `1`);
@@ -220,12 +248,12 @@ Example command:
 ```bash
 tvm-cli call <MSIG_ADDR> submitTransaction '{
   "dest":"0:2672bb98816f2f9088d027f99681b65e05843b19367fe690cb4b5130d04eccf1",
-  "value":0,
+  "value":1000000000,
   "cc":{"2":5000000000},   # 5 SHELL
   "bounce":false,
   "flags":1,
   "payload":""
-}'
+}' --abi UpdateCustodianMultisigWallet.abi.json --sign UpdateCustodianMultisigWallet.keys.json
 ```
 
 {% hint style="info" %}
@@ -252,7 +280,8 @@ If the transaction has already expired, it will be deleted.
 Example command:
 
 ```bash
-tvm-cli call <MSIG_ADDR> confirmTransaction '{"transactionId":123456789}'
+tvm-cli call <MSIG_ADDR> confirmTransaction '{"transactionId":123456789}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+​
 ```
 
 ### How to create a request to update Multisig data
@@ -291,7 +320,7 @@ tvm-cli call <MSIG_ADDR> submitDataUpdate '{
   ],
   "reqConfirms":2,
   "reqConfirmsData":2
-}'
+}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
 ```
 
 ### How to confirm a request to update the Multisig data
@@ -314,12 +343,6 @@ If the request is expired, it will be removed
 Example command:
 
 ```bash
-tvm-cli call <MSIG_ADDR> confirmDataUpdate '{"dataUpdateId":987654321}'
+tvm-cli call <MSIG_ADDR> confirmDataUpdate '{"dataUpdateId":987654321}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
 
 ```
-
-
-
-{% hint style="warning" %}
-In order for the recipient's contract to be deployed, its constructor must include a [function for exchange SHELL tokens for VMSHELL](https://github.com/tvmlabs/sdk-examples/blob/main/contracts/helloWorld/helloWorld.sol#L22)
-{% endhint %}

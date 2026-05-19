@@ -6453,6 +6453,7 @@ dependencies = [
  "log",
  "semver",
  "thiserror 2.0.18",
+ "tvm_assembler",
  "tvm_block",
  "tvm_types",
  "tvm_vm",

@@ -855,3 +855,61 @@ impl InMsgDescr {
         self.root_extra()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::envelope_message::MsgEnvelope;
+    use crate::transactions::Transaction;
+
+    fn sample_message() -> Message {
+        Message::default()
+    }
+
+    fn sample_envelope() -> MsgEnvelope {
+        MsgEnvelope::with_message_and_fee(&sample_message(), Grams::from(5)).unwrap()
+    }
+
+    #[test]
+    fn import_fees_constructors_and_roundtrip() {
+        let mut fees = ImportFees::new();
+        let other = ImportFees::with_grams(17);
+
+        assert_eq!(fees, ImportFees::default());
+        fees.calc(&other).unwrap();
+        assert_eq!(fees.fees_collected, Grams::from(17));
+        assert_eq!(ImportFees::construct_from_cell(other.serialize().unwrap()).unwrap(), other);
+    }
+
+    #[test]
+    fn inbound_message_constructors_cover_tags_cells_and_roundtrip() {
+        let message = sample_message();
+        let message_cell = message.serialize().unwrap();
+        let transaction = Transaction::default();
+        let transaction_cell = transaction.serialize().unwrap();
+        let envelope_cell = sample_envelope().serialize().unwrap();
+        let proof_cell = 9u8.serialize().unwrap();
+
+        let external = InMsg::external(message_cell.clone(), transaction_cell.clone());
+        assert!(external.is_valid());
+        assert_eq!(external.tag(), MSG_IMPORT_EXT);
+        assert_eq!(external.message_cell().unwrap(), message_cell.clone());
+        assert_eq!(external.transaction_cell(), Some(transaction_cell.clone()));
+        assert_eq!(external.read_message().unwrap(), message);
+        assert_eq!(InMsg::construct_from_cell(external.serialize().unwrap()).unwrap(), external);
+
+        let final_msg =
+            InMsg::final_msg(envelope_cell.clone(), transaction_cell.clone(), Grams::from(7));
+        assert_eq!(final_msg.tag(), MSG_IMPORT_FIN);
+        assert_eq!(final_msg.in_msg_envelope_cell(), Some(envelope_cell.clone()));
+        assert_eq!(final_msg.transaction_cell(), Some(transaction_cell));
+
+        let discarded =
+            InMsg::discarded_transit(envelope_cell.clone(), 11, Grams::from(13), proof_cell);
+        assert_eq!(discarded.tag(), MSG_DISCARD_TR);
+        assert_eq!(discarded.in_msg_envelope_cell(), Some(envelope_cell));
+        assert_eq!(discarded.transaction_cell(), None);
+        assert_eq!(discarded.message_cell().unwrap(), message_cell);
+        assert_eq!(InMsg::construct_from_cell(discarded.serialize().unwrap()).unwrap(), discarded);
+    }
+}

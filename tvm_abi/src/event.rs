@@ -99,3 +99,60 @@ impl Event {
         Ok(self.get_id() == decoded_id)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::BuilderData;
+    use tvm_types::IBitstring;
+    use tvm_types::SliceData;
+
+    use super::Event;
+    use crate::Param;
+    use crate::ParamType;
+    use crate::contract::ABI_VERSION_2_4;
+    use crate::contract::SerdeEvent;
+
+    fn slice_with_u32(value: u32) -> SliceData {
+        let mut builder = BuilderData::new();
+        builder.append_u32(value).unwrap();
+        SliceData::load_cell(builder.into_cell().unwrap()).unwrap()
+    }
+
+    #[test]
+    fn from_serde_populates_helpers_and_computed_id() {
+        let inputs = vec![Param::new("value", ParamType::Uint(32))];
+        let event = Event::from_serde(
+            ABI_VERSION_2_4,
+            SerdeEvent { name: "ValueChanged".into(), inputs: inputs.clone(), id: None },
+        );
+
+        assert!(event.has_input());
+        assert_eq!(event.input_params(), inputs);
+        assert_eq!(event.get_function_signature(), "ValueChanged(uint32)v2");
+        assert_eq!(event.get_id(), event.get_function_id() & 0x7FFFFFFF);
+    }
+
+    #[test]
+    fn decode_input_and_message_matching_cover_id_paths() {
+        let event = Event {
+            abi_version: ABI_VERSION_2_4,
+            name: "Ping".into(),
+            inputs: vec![],
+            id: 0x1020_3040,
+        };
+
+        let decoded = event.decode_input(slice_with_u32(event.id), false).unwrap();
+        assert!(decoded.is_empty());
+        assert_eq!(Event::decode_id(slice_with_u32(event.id)).unwrap(), event.id);
+        assert!(event.is_my_message(slice_with_u32(event.id), false).unwrap());
+        assert!(!event.is_my_message(slice_with_u32(event.id + 1), false).unwrap());
+    }
+
+    #[test]
+    fn decode_input_rejects_wrong_id() {
+        let event =
+            Event { abi_version: ABI_VERSION_2_4, name: "Ping".into(), inputs: vec![], id: 7 };
+        let err = event.decode_input(slice_with_u32(8), false).unwrap_err();
+        assert!(err.to_string().contains("Wrong function ID"));
+    }
+}

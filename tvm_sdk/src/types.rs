@@ -75,3 +75,55 @@ pub fn grams_to_u64(grams: &tvm_block::types::Grams) -> Result<u64> {
         SdkError::InvalidData { msg: format!("Cannot convert grams value {}", grams) }.into()
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use tvm_block::types::Grams;
+    use tvm_types::UInt256;
+    use tvm_types::base64_encode;
+
+    use super::*;
+
+    #[test]
+    fn string_id_converts_from_strings_and_bytes() {
+        assert_eq!(StringId::from("abcd").to_string(), "abcd");
+        assert_eq!(StringId::from("abcd".to_owned()).to_string(), "abcd");
+        assert_eq!(StringId::from(vec![0xab, 0xcd]).to_string(), "abcd");
+        assert_eq!(StringId::from(&[0xab, 0xcd][..]).to_string(), "abcd");
+    }
+
+    #[test]
+    fn string_id_decodes_hex_and_encodes_base64() {
+        let id = StringId::from("abcd");
+
+        assert_eq!(id.to_bytes().unwrap(), vec![0xab, 0xcd]);
+        assert_eq!(id.to_base64().unwrap(), base64_encode([0xab, 0xcd]));
+    }
+
+    #[test]
+    fn string_id_formats_uint256_as_hex() {
+        let id = StringId::from(UInt256::from([0x11; 32]));
+
+        assert_eq!(id.to_string(), "11".repeat(32));
+    }
+
+    #[test]
+    fn string_id_reports_invalid_hex() {
+        assert!(StringId::from("not-hex").to_bytes().is_err());
+        assert!(StringId::from("not-hex").to_base64().is_err());
+    }
+
+    #[test]
+    fn grams_to_u64_accepts_boundary_and_rejects_overflow() {
+        assert_eq!(grams_to_u64(&Grams::from(u64::MAX)).unwrap(), u64::MAX);
+
+        let overflow = Grams::from_str("18446744073709551616").unwrap();
+        let err = grams_to_u64(&overflow).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "Invalid data: Cannot convert grams value 18446744073709551616"
+        );
+    }
+}
