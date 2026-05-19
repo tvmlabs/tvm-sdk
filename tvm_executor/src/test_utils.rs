@@ -10,18 +10,39 @@ use std::time::Instant;
 
 use tvm_types::HashmapE;
 use tvm_types::UInt256;
+#[cfg(feature = "wasmtime")]
+use tvm_vm::executor::Engine;
 use tvm_vm::executor::MVConfig;
 
 use crate::ExecuteParams;
 
 // Mirrors ExecuteParams construction in acki-nacki/node's block builder
-// `build_actions.rs`.
+// `build_actions.rs` and its WasmNodeCache from `producer/wasm.rs`.
+#[cfg(feature = "wasmtime")]
+const NODE_WASM_BINARY_ROOT_PATH: &str = "./config/wasm";
+#[cfg(feature = "wasmtime")]
+const NODE_WASM_HASH_STRS: [&str; 12] = [
+    "c5b3fe1a4fa391e9660a13d55ca2200f9343d5b1d18473ebbee19d8219e3ddc1",
+    "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2",
+    "e88c99c9a1cbbde5bf47839db7685953c3bf266945f3270abb731ed84d58d163",
+    "e7adc782c05b67bcda5babaca1deabf80f30ca0e6cf668c89825286c3ce0e560",
+    "afbe8c5a02df7d6fa5decd4d48ff0f74ecbd4dae38bb5144328354db6bd95967",
+    "25dc3d80d7e4d8f27dfadc9c2faf9cf2d8dea0a9e08a692da2db7e34d74d66e1",
+    "d4a067079c3ff4e0b0b6f579ef2d1b9a1d8fc21a0076162503ff46a6e8fca2e5",
+    "f6b0cc30d023d266819b16dafa5a6a6ad25b97246bbbca80abac2df974939b87",
+    "7670910579bb17bf986de6e318c6f5a8bf7e148b3fb8e0cbf03479fb9eb8c948",
+    "b8891b913656ae35d9ffff371f0f03e4f1f869d0e17556a8c273750313884b0a",
+    "2d577ca2e693700282d6d778dce8cfcedbada644497e411ec6aed889f5a3d5f4",
+    "343268736f6dbb5a075a477fb1146b3c25c114d341b41c142e6609a7d1a90a2c",
+];
+
 pub(crate) enum BuildActionsTraceMode {
     Regular,
     TvmTracing { trace_callback: Arc<tvm_vm::executor::TraceCallback> },
 }
 
 #[cfg(feature = "wasmtime")]
+#[derive(Clone)]
 pub(crate) struct BuildActionsWasmCache {
     pub wasm_binary_root_path: String,
     pub wasm_hash_whitelist: HashSet<[u8; 32]>,
@@ -32,12 +53,42 @@ pub(crate) struct BuildActionsWasmCache {
 #[cfg(feature = "wasmtime")]
 impl Default for BuildActionsWasmCache {
     fn default() -> Self {
-        Self {
-            wasm_binary_root_path: "./config/wasm".to_owned(),
-            wasm_hash_whitelist: HashSet::new(),
-            wasm_engine: wasmtime::Engine::default(),
-            wasm_component_cache: HashMap::new(),
-        }
+        Self::with_binary_root_path(NODE_WASM_BINARY_ROOT_PATH)
+    }
+}
+
+#[cfg(feature = "wasmtime")]
+impl BuildActionsWasmCache {
+    pub(crate) fn with_binary_root_path(wasm_binary_root_path: impl Into<String>) -> Self {
+        let wasm_binary_root_path = wasm_binary_root_path.into();
+        let wasm_hash_whitelist = Self::node_wasm_hash_whitelist();
+        let wasm_engine = Self::node_wasm_engine();
+        let wasm_component_cache = Engine::extern_precompile_all_wasm_from_hash_list(
+            wasm_binary_root_path.clone(),
+            wasm_engine.clone(),
+            wasm_hash_whitelist.clone(),
+        );
+
+        Self { wasm_binary_root_path, wasm_hash_whitelist, wasm_engine, wasm_component_cache }
+    }
+
+    fn node_wasm_hash_whitelist() -> HashSet<[u8; 32]> {
+        NODE_WASM_HASH_STRS.into_iter().map(Self::parse_wasm_hash).collect()
+    }
+
+    fn parse_wasm_hash(hash_str: &str) -> [u8; 32] {
+        let hash = (0..hash_str.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hash_str[i..i + 2], 16).unwrap())
+            .collect::<Vec<u8>>();
+
+        hash.try_into().unwrap_or_else(|_| panic!("node wasm hash must be 32 bytes: {hash_str}"))
+    }
+
+    fn node_wasm_engine() -> wasmtime::Engine {
+        Engine::extern_wasm_engine_init().unwrap_or_else(|err| {
+            panic!("Could not initialise node-like Wasm engine: {err:?}");
+        })
     }
 }
 
@@ -181,11 +232,6 @@ mod tests {
         fixture.execution_timeout = execution_timeout;
         fixture.mvconfig = mvconfig.clone();
         fixture.engine_version = semver::Version::new(1, 0, 3);
-        #[cfg(feature = "wasmtime")]
-        {
-            fixture.wasm_cache.wasm_binary_root_path = "./tests/wasm".to_owned();
-            fixture.wasm_cache.wasm_hash_whitelist.insert([0xab; 32]);
-        }
 
         let params = fixture.build();
 
@@ -210,13 +256,55 @@ mod tests {
         assert_eq!(params.execution_timeout, execution_timeout);
         #[cfg(feature = "wasmtime")]
         {
-            assert_eq!(params.wasm_binary_root_path, "./tests/wasm");
-            assert!(params.wasm_hash_whitelist.contains(&[0xab; 32]));
+            assert_eq!(params.wasm_binary_root_path, NODE_WASM_BINARY_ROOT_PATH);
+            assert_eq!(
+                params.wasm_hash_whitelist,
+                BuildActionsWasmCache::node_wasm_hash_whitelist()
+            );
+            assert_eq!(params.wasm_hash_whitelist.len(), NODE_WASM_HASH_STRS.len());
             assert!(params.wasm_engine.is_some());
-            assert!(params.wasm_component_cache.is_empty());
+            assert!(
+                params
+                    .wasm_component_cache
+                    .keys()
+                    .all(|hash| params.wasm_hash_whitelist.contains(hash))
+            );
         }
         assert_eq!(params.mvconfig, mvconfig);
         assert_eq!(params.engine_version, semver::Version::new(1, 0, 3));
+    }
+
+    #[cfg(feature = "wasmtime")]
+    #[test]
+    fn build_actions_wasm_cache_precompiles_available_node_wasm_components() {
+        use std::fmt::Write;
+        use std::path::Path;
+
+        fn hash_to_hex(hash: &[u8; 32]) -> String {
+            let mut s = String::with_capacity(64);
+            for byte in hash {
+                write!(&mut s, "{byte:02x}").unwrap();
+            }
+            s
+        }
+
+        let wasm_binary_root_path = format!("{}/../tvm_vm/config/wasm", env!("CARGO_MANIFEST_DIR"));
+        let cache = BuildActionsWasmCache::with_binary_root_path(wasm_binary_root_path.clone());
+        let expected_precompiled = cache
+            .wasm_hash_whitelist
+            .iter()
+            .filter(|hash| {
+                let path = Path::new(&wasm_binary_root_path).join(hash_to_hex(hash));
+                path.is_file()
+            })
+            .count();
+
+        assert_eq!(cache.wasm_hash_whitelist, BuildActionsWasmCache::node_wasm_hash_whitelist());
+        assert!(expected_precompiled > 0);
+        assert_eq!(cache.wasm_component_cache.len(), expected_precompiled);
+        assert!(
+            cache.wasm_component_cache.keys().all(|hash| cache.wasm_hash_whitelist.contains(hash))
+        );
     }
 
     #[test]
