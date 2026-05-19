@@ -18,14 +18,10 @@ mkdir wallet
 cd wallet
 ```
 
-Download the  [UpdateCustodianMultisigWallet.abi.json](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.abi.json) and [UpdateCustodianMultisigWallet.tvc](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.tvc) files for your wallet from the `updatecustodianmultisigwallet` [repository](https://github.com/ackinacki/ackinacki/tree/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet) and place them in this folder.&#x20;
+Download the [UpdateCustodianMultisigWallet.abi.json](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.abi.json) and [UpdateCustodianMultisigWallet.tvc](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.tvc) files for your wallet from the `updatecustodianmultisigwallet` [repository](https://github.com/ackinacki/ackinacki/tree/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet) and place them in this folder.
 
 {% hint style="info" %}
 The contract code can be downloaded from [here](https://github.com/ackinacki/ackinacki/blob/main/contracts/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.sol)
-{% endhint %}
-
-{% hint style="warning" %}
-At the moment this wallet is undergoing formal verification. Wallet code may be updated during this process. However, the API of the wallet will remain the same.
 {% endhint %}
 
 ## Configure CLI tool
@@ -49,7 +45,7 @@ tvm-cli genaddr UpdateCustodianMultisigWallet.tvc --save --genkey UpdateCustodia
 ```
 
 {% hint style="danger" %}
-**Write down your `seed phrase` and store it in a secure location. Never share it with anyone. Avoid storing it in plain text, screenshots, or any other insecure method. If you lose it, you lose access to your assets. Anyone who obtains it will have full access to your assets.**&#x20;
+**Write down your `seed phrase` and store it in a secure location. Never share it with anyone. Avoid storing it in plain text, screenshots, or any other insecure method. If you lose it, you lose access to your assets. Anyone who obtains it will have full access to your assets.**
 
 **Additionally, ensure the file containing the `key pair` is saved in a safe place.**
 {% endhint %}
@@ -58,7 +54,7 @@ tvm-cli genaddr UpdateCustodianMultisigWallet.tvc --save --genkey UpdateCustodia
 After this step, the `.tvc` file will be overwritten with the specified keys.
 {% endhint %}
 
-The `Raw address` is the future Multisig wallet address. Keys are saved to `updateCustodianMultisigWallet.keys.`&#x20;
+The `Raw address` is the future Multisig wallet address. Keys are saved to `updateCustodianMultisigWallet.keys.`
 
 Be sure to copy your seed phrase if you need it.
 
@@ -84,7 +80,7 @@ tvm-cli account <YourAddress>
 ```
 
 {% hint style="success" %}
-The received **VMSHELL** tokens will be displayed in the `balance` field. \
+The received **VMSHELL** tokens will be displayed in the `balance` field.\
 VMSHELL tokens are transferred and stored in (_in_ [_nanotokens_](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#tvm-units)) units.\
 \
 The received **SHELL** tokens will be displayed in the `ecc` field under index **2**
@@ -105,7 +101,7 @@ The arguments for the constructor must be enclosed in curly brackets: `{<constru
 * **`owners_address`** — an array of custodian contract addresses.
 * **`reqConfirms`** — the number of signatures required to approve a transaction.
 * **`reqConfirmsData`** — the number of confirmations required to approve a change of custodians.
-* **`value`** — the amount (_in_ [_nanotokens_](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#tvm-units)) of **SHELL** tokens you want to exchange for **VMSHELL**. \
+* **`value`** — the amount (_in_ [_nanotokens_](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#tvm-units)) of **SHELL** tokens you want to exchange for **VMSHELL**.\
   If the exchange is not required, set the parameter `value` to **0**.
 
 In our example, the command will be as follows:
@@ -142,13 +138,13 @@ The transaction **expiration time** is **1 hour**.
 {% endhint %}
 
 {% hint style="warning" %}
-`VMSHELL`s attached to the message will be credited to the recipient’s balance minus fees, provided the message is sent between contracts **with the same** DAPP ID. \
+`VMSHELL`s attached to the message will be credited to the recipient’s balance minus fees, provided the message is sent between contracts **with the same** DAPP ID.\
 If the DAPP IDs **are different**, the `VMSHELL`s will be burned
 {% endhint %}
 
 ### How to Send Tokens From Multisig Wallet
 
-* **If the required number of confirmations for transactions is 1,** \
+* **If the required number of confirmations for transactions is 1,**\
   tokens can be sent using the function `sendTransaction`:
 
 ```solidity
@@ -164,12 +160,12 @@ sendTransaction(
 
 **Parameters**
 
-* `dest`  - the transfer target address;
-* `value`  - the amount of funds (VMSHELL) used to pay fees (it must not be `0`);
-* `cc`  - a mapping of ECC token types to the token amounts to be transferred;
-* `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
-* `flags`-  [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
-* `payload` - [tree of cells used as the body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).&#x20;
+* `dest` - the transfer target address;
+* `value` - the amount of funds (VMSHELL) used to pay fees (it must not be `0`);
+* `cc` - a mapping of ECC token types to the token amounts to be transferred;
+* `bounce` - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
+* `flags`- [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
+* `payload` - [tree of cells used as the body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).
 
 {% hint style="warning" %}
 In this case, the transaction is executed immediately, without creating a request or requiring additional confirmations.
@@ -188,7 +184,7 @@ tvm-cli call <MSIG_ADDR> sendTransaction '{
 }' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
 ```
 
-*   **If you need to fund an account that has not yet been deployed,** \
+*   **If you need to fund an account that has not yet been deployed,**\
     you should use the `sendTransaction` method with **flag 16**.
 
     \
@@ -212,7 +208,7 @@ tvm-cli call <MSIG_ADDR> sendTransaction \
 As a result, the account balance will be credited with **5 VMSHELL**\
 After the transaction is confirmed, you can safely run the deploy command again.<br>
 
-* **If confirmation from multiple custodians is required**, \
+* **If confirmation from multiple custodians is required**,\
   use the function `submitTransaction`:
 
 ```solidity
@@ -270,7 +266,7 @@ confirmTransaction(uint64 transactionId)
 
 **Parameters**
 
-* `transactionId` — identifier of the transaction to confirm. \
+* `transactionId` — identifier of the transaction to confirm.\
   You receive it as a result of calling [`submitTransaction`](how-to-deploy-a-multisig-wallet.md#how-to-send-tokens-from-multisig-wallet)
 
 {% hint style="info" %}
