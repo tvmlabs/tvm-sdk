@@ -130,18 +130,6 @@ pub fn deserialize_cell_from_boc(
     context.bocs.deserialize_cell(boc, name)
 }
 
-pub fn deserialize_message_from_boc(
-    context: &ClientContext,
-    boc: &str,
-    name: &str,
-) -> ClientResult<DeserializedObject<Message>> {
-    let (boc, cell) = deserialize_cell_from_boc(context, boc, name)?;
-
-    let object = deserialize_message_from_cell(cell.clone(), name)?;
-
-    Ok(DeserializedObject { boc, cell, object })
-}
-
 pub fn deserialize_object_from_boc<S: Deserializable>(
     context: &ClientContext,
     boc: &str,

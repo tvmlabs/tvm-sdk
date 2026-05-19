@@ -1199,6 +1199,7 @@ pub trait TransactionExecutor {
                     fail!("Bounce flag not set")
                 }
                 let mut header = header.clone();
+                header.set_exchange(false);
                 let msg_src = header
                     .src_ref()
                     .ok_or_else(|| error!("Not found src in cross-dapp message header"))?
@@ -1830,7 +1831,7 @@ fn outmsg_action_handler(
             );
             return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
         } else {
-            // reciever will pay the fees
+            // receiver will pay the fees
             int_header.value.grams -= total_fwd_fees;
         }
 
@@ -1882,6 +1883,9 @@ fn outmsg_action_handler(
 
         if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
             int_header.set_exchange(true);
+        } else {
+            int_header.set_exchange(false);
+            log::debug!(target: "executor", "Sanitizing is_exchange flag: forcing to false");
         }
 
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
@@ -1928,7 +1932,7 @@ fn outmsg_action_handler(
             );
             return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
         } else {
-            // reciever will pay the fees
+            // receiver will pay the fees
             int_header.value.grams -= total_fwd_fees;
         }
 

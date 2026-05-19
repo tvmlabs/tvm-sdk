@@ -1092,24 +1092,6 @@ pub enum CommonMsgInfo {
     CrossDappMessageInfo(CrossDappMessageHeader),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[allow(clippy::large_enum_variant)]
-pub enum CommonMsgInfoOld {
-    IntMsgInfo(InternalMessageHeader),
-    ExtInMsgInfo(ExternalInboundMessageHeader),
-    ExtOutMsgInfo(ExtOutMessageHeader),
-}
-
-impl From<CommonMsgInfoOld> for CommonMsgInfo {
-    fn from(value: CommonMsgInfoOld) -> Self {
-        match value {
-            CommonMsgInfoOld::IntMsgInfo(v) => CommonMsgInfo::IntMsgInfo(v),
-            CommonMsgInfoOld::ExtInMsgInfo(v) => CommonMsgInfo::ExtInMsgInfo(v),
-            CommonMsgInfoOld::ExtOutMsgInfo(v) => CommonMsgInfo::ExtOutMsgInfo(v),
-        }
-    }
-}
-
 impl CommonMsgInfo {
     /// Get destination account address
     pub fn dest_account_address(&self) -> Option<AccountId> {
@@ -1189,12 +1171,6 @@ impl CommonMsgInfo {
 impl Default for CommonMsgInfo {
     fn default() -> Self {
         CommonMsgInfo::IntMsgInfo(InternalMessageHeader::default())
-    }
-}
-
-impl Default for CommonMsgInfoOld {
-    fn default() -> Self {
-        CommonMsgInfoOld::IntMsgInfo(InternalMessageHeader::default())
     }
 }
 
