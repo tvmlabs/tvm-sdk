@@ -2143,12 +2143,14 @@ mod tests {
     use tvm_block::TrActionPhase;
     use tvm_block::Transaction;
     use tvm_block::TransactionDescr;
+    use tvm_block::TransactionDescrOrdinary;
     use tvm_types::BuilderData;
     use tvm_types::Cell;
     use tvm_types::Result;
     use tvm_types::SliceData;
     use tvm_types::UInt256;
     use tvm_vm::stack::Stack;
+    use tvm_vm::stack::StackItem;
 
     use super::*;
     use crate::BlockchainConfig;
@@ -2239,13 +2241,17 @@ mod tests {
     }
 
     fn executor_config() -> BlockchainConfig {
+        executor_config_with_capabilities(0x572e)
+    }
+
+    fn executor_config_with_capabilities(capabilities: u64) -> BlockchainConfig {
         let mut config = ConfigParams {
             config_addr: UInt256::with_array([0x55; 32]),
             ..ConfigParams::default()
         };
         config
             .set_config(ConfigParamEnum::ConfigParam8(ConfigParam8 {
-                global_version: GlobalVersion { version: 42, capabilities: 0x572e },
+                global_version: GlobalVersion { version: 42, capabilities },
             }))
             .unwrap();
         config.set_config(ConfigParamEnum::ConfigParam18(storage_prices())).unwrap();
@@ -2283,6 +2289,189 @@ mod tests {
             false,
         )
         .unwrap()
+    }
+
+    fn internal_message(src: u8, dst: u8) -> Message {
+        Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(src),
+            address(dst),
+            CurrencyCollection::with_grams(1_000_000_000),
+        ))
+    }
+
+    fn execute_node_contract(
+        code: &str,
+        params: ExecuteParams,
+    ) -> std::result::Result<(Transaction, i128), anyhow::Error> {
+        execute_node_contract_with_config(code, params, executor_config())
+    }
+
+    fn execute_node_contract_with_config(
+        code: &str,
+        params: ExecuteParams,
+        config: BlockchainConfig,
+    ) -> std::result::Result<(Transaction, i128), anyhow::Error> {
+        let executor = OrdinaryTransactionExecutor::new(config);
+        let code = tvm_assembler::compile_code_to_cell(code).unwrap();
+        let account = active_account_with_code(7, code);
+        let mut account_root = account.serialize().unwrap();
+        executor.execute_with_libs_and_params(
+            Some(&internal_message(1, 7)),
+            &mut account_root,
+            params,
+        )
+    }
+
+    fn ordinary_description(tx: &Transaction) -> TransactionDescrOrdinary {
+        match tx.read_description().unwrap() {
+            TransactionDescr::Ordinary(description) => description,
+            _ => panic!("unexpected transaction description"),
+        }
+    }
+
+    fn vm_phase(tx: &Transaction) -> TrComputePhaseVm {
+        match ordinary_description(tx).compute_ph {
+            TrComputePhase::Vm(phase) => phase,
+            _ => panic!("unexpected compute phase"),
+        }
+    }
+
+    fn run_mint_shellq_action(
+        available_credit: i128,
+        initial_minted_shell: i128,
+        requested: u64,
+    ) -> (ActionPhaseResult, i128, u128) {
+        let executor = DummyExecutor::new();
+        let mut account = active_account(8);
+        let mut tx = Transaction::with_address_and_status(address(8).address(), account.status());
+        let original_balance = account.balance().cloned().unwrap();
+        let mut acc_balance = original_balance.clone();
+        let mut msg_balance = CurrencyCollection::default();
+        let mut actions = OutActions::default();
+        actions.push_back(OutAction::new_mint_shellq(requested));
+        let mut minted_shell = initial_minted_shell;
+
+        let result = executor
+            .action_phase_with_copyleft(
+                &mut tx,
+                &mut account,
+                &original_balance,
+                &mut acc_balance,
+                &mut msg_balance,
+                &Grams::zero(),
+                actions.serialize().unwrap(),
+                None,
+                &address(8),
+                false,
+                available_credit,
+                &mut minted_shell,
+                Grams::zero(),
+                Some(UInt256::with_array([0x99; 32])),
+            )
+            .unwrap();
+
+        (result, minted_shell, acc_balance.grams.as_u128() - original_balance.grams.as_u128())
+    }
+
+    fn bytes_to_hex(bytes: &[u8]) -> String {
+        bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    #[cfg(feature = "wasmtime")]
+    fn bytes_from_hex(hex: &str) -> Vec<u8> {
+        (0..hex.len())
+            .step_by(2)
+            .map(|index| u8::from_str_radix(&hex[index..index + 2], 16).unwrap())
+            .collect()
+    }
+
+    #[cfg(feature = "wasmtime")]
+    fn run_wasm_hash_stack(wasm_hash: &[u8]) -> Stack {
+        use tvm_abi::TokenValue;
+        use tvm_abi::contract::ABI_VERSION_2_4;
+
+        let hash_cell =
+            TokenValue::write_bytes(wasm_hash, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+        let args_cell =
+            TokenValue::write_bytes(&[1u8, 2u8], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+        let function_cell = tvm_vm::utils::pack_data_to_cell(b"add", &mut 0).unwrap();
+        let instance_cell =
+            tvm_vm::utils::pack_data_to_cell(b"docs:adder/add-interface@0.1.0", &mut 0).unwrap();
+        let dict_cell =
+            TokenValue::write_bytes(&[], &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::cell(hash_cell));
+        stack.push(StackItem::cell(args_cell));
+        stack.push(StackItem::cell(function_cell));
+        stack.push(StackItem::cell(instance_cell));
+        stack.push(StackItem::cell(dict_cell));
+        stack
+    }
+
+    #[allow(deprecated)]
+    fn compute_node_contract(
+        code: &str,
+        argument_stack: Stack,
+        params: ExecuteParams,
+    ) -> TrComputePhaseVm {
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let code = tvm_assembler::compile_code_to_cell(code).unwrap();
+        let mut account = active_account_with_code(7, code);
+        let mut msg = internal_message(1, 7);
+        let mut acc_balance = account.balance().cloned().unwrap();
+        let mut msg_balance = CurrencyCollection::with_grams(1_000_000_000);
+        let smc_info =
+            executor.build_contract_info(&acc_balance, &address(7), 0, 0, 0, UInt256::default());
+        let mut stack = executor.build_stack(Some(&msg), &account);
+        for index in (0..argument_stack.depth()).rev() {
+            stack.push(argument_stack.get(index).clone());
+        }
+
+        let (phase, _, _) = executor
+            .compute_phase(
+                Some(&mut msg),
+                &mut account,
+                &mut acc_balance,
+                &mut msg_balance,
+                smc_info,
+                stack,
+                0,
+                false,
+                false,
+                &params,
+            )
+            .unwrap();
+        match phase {
+            TrComputePhase::Vm(phase) => phase,
+            _ => panic!("unexpected compute phase"),
+        }
+    }
+
+    fn uint64_array_cell(values: &[u64]) -> Cell {
+        use tvm_abi::TokenValue;
+        use tvm_abi::contract::ABI_VERSION_2_2;
+        use tvm_abi::param_type::ParamType;
+
+        let items = values
+            .iter()
+            .map(|value| TokenValue::Uint(tvm_abi::Uint::new(*value as u128, 64)))
+            .collect();
+        TokenValue::Array(ParamType::Uint(64), items)
+            .pack_into_chain(&ABI_VERSION_2_2)
+            .unwrap()
+            .into_cell()
+            .unwrap()
+    }
+
+    fn calc_mv_reward_stack() -> Stack {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0));
+        stack.push(StackItem::int(0));
+        stack.push(StackItem::cell(uint64_array_cell(&[1, 1])));
+        stack.push(StackItem::int(2));
+        stack.push(StackItem::int(1_000_000_000));
+        stack
     }
 
     #[test]
@@ -2377,6 +2566,246 @@ mod tests {
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| assert!(x.is_none()));
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
             .with_borrow(|x| assert!(x.is_none()));
+    }
+
+    #[test]
+    fn node_params_available_credit_reaches_get_available_balance() {
+        for (available_credit, expected_balance) in [(0, 0), (42, 42), (INFINITY_CREDIT, 0)] {
+            let mut fixture = BuildActionsExecuteParamsFixture::regular();
+            fixture.available_credit = available_credit;
+
+            let (tx, minted_shell) = execute_node_contract(
+                &format!(
+                    "GETAVAILABLEBALANCE\n\
+                     PUSHINT {}\n\
+                     EQUAL\n\
+                     THROWIFNOT 201\n",
+                    expected_balance
+                ),
+                fixture.build(),
+            )
+            .unwrap();
+
+            let phase = vm_phase(&tx);
+            assert!(phase.success, "{phase:?}");
+            assert_eq!(phase.exit_code, 0);
+            assert_eq!(minted_shell, 0);
+        }
+    }
+
+    #[test]
+    fn node_params_dapp_id_reaches_my_dapp_id() {
+        let dapp_id = UInt256::with_array([0x31; 32]);
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.dapp_id = Some(dapp_id);
+
+        let (tx, _) = execute_node_contract(
+            "MYDAPPID\n\
+             PUSHINT 0x3131313131313131313131313131313131313131313131313131313131313131\n\
+             EQUAL\n\
+             THROWIFNOT 202\n",
+            fixture.build(),
+        )
+        .unwrap();
+
+        let phase = vm_phase(&tx);
+        assert!(phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, 0);
+    }
+
+    #[test]
+    fn node_params_missing_dapp_id_is_observable_in_my_dapp_id() {
+        let fixture = BuildActionsExecuteParamsFixture::regular();
+
+        let (tx, _) = execute_node_contract("MYDAPPID\n", fixture.build()).unwrap();
+
+        let phase = vm_phase(&tx);
+        assert!(!phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, ExceptionCode::DAppIdNotSet as i32);
+    }
+
+    #[test]
+    fn node_params_reached_termination_deadline_aborts_execution() {
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.termination_deadline = Some(Instant::now() - Duration::from_secs(1));
+
+        let err = execute_node_contract("PUSHINT 1\n", fixture.build()).unwrap_err();
+
+        assert!(matches!(
+            err.downcast_ref::<ExecutorError>(),
+            Some(ExecutorError::TerminationDeadlineReached)
+        ));
+    }
+
+    #[test]
+    fn node_params_zero_execution_timeout_reaches_vm_compute_phase() {
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.execution_timeout = Some(Duration::ZERO);
+
+        let (tx, _) = execute_node_contract("PUSHINT 1\n", fixture.build()).unwrap();
+
+        let phase = vm_phase(&tx);
+        assert!(!phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, ExceptionCode::ExecutionTimeout as i32);
+    }
+
+    #[test]
+    fn node_params_minted_shellq_limits_cover_zero_limited_and_infinite_credit() {
+        let (result, minted_shell, credited) = run_mint_shellq_action(0, 0, 20);
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.spec_actions, 1);
+        assert_eq!(minted_shell, 0);
+        assert_eq!(credited, 0);
+
+        let (result, minted_shell, credited) = run_mint_shellq_action(13, 5, 20);
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.spec_actions, 1);
+        assert_eq!(minted_shell, 13);
+        assert_eq!(credited, 8);
+
+        let (result, minted_shell, credited) = run_mint_shellq_action(INFINITY_CREDIT, 0, 20);
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.spec_actions, 1);
+        assert_eq!(minted_shell, 20);
+        assert_eq!(credited, 20);
+    }
+
+    #[test]
+    fn node_params_engine_version_reaches_calc_min_stake() {
+        for (engine_version, expected_min_stake) in [
+            (semver::Version::new(1, 0, 1), 14_393_409_967_783u128),
+            (semver::Version::new(1, 0, 3), 10_000_000_000_000_000u128),
+        ] {
+            let mut fixture = BuildActionsExecuteParamsFixture::regular();
+            fixture.engine_version = engine_version;
+
+            let (tx, _) = execute_node_contract(
+                &format!(
+                    "PUSHINT 0\n\
+                     PUSHINT 0\n\
+                     PUSHINT 0\n\
+                     PUSHINT 1\n\
+                     CALCMINSTAKE\n\
+                     PUSHINT {}\n\
+                     EQUAL\n\
+                     THROWIFNOT 204\n",
+                    expected_min_stake
+                ),
+                fixture.build(),
+            )
+            .unwrap();
+
+            let phase = vm_phase(&tx);
+            assert!(phase.success, "{phase:?}");
+            assert_eq!(phase.exit_code, 0);
+        }
+    }
+
+    #[test]
+    fn node_params_mvconfig_reaches_calc_mv_reward() {
+        let fixture = BuildActionsExecuteParamsFixture::regular();
+        let phase = compute_node_contract(
+            "CALCMVREWARD\n\
+             PUSHINT 0\n\
+             EQUAL\n\
+             THROWIFNOT 205\n",
+            calc_mv_reward_stack(),
+            fixture.build(),
+        );
+        assert!(phase.success, "{phase:?}");
+
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.mvconfig.set_config(vec![1, 3]);
+        let phase = compute_node_contract(
+            "CALCMVREWARD\n\
+             PUSHINT 0\n\
+             GREATER\n\
+             THROWIFNOT 206\n",
+            calc_mv_reward_stack(),
+            fixture.build(),
+        );
+        assert!(phase.success, "{phase:?}");
+    }
+
+    #[cfg(feature = "signature_with_id")]
+    #[test]
+    fn node_params_signature_id_reaches_chksignu() {
+        let signature_id = 17i32;
+        let data_hash = [0x42; 32];
+        let key = tvm_types::Ed25519KeyOption::from_private_key(&[0x11; 32]).unwrap();
+        let mut signed_data = signature_id.to_be_bytes().to_vec();
+        signed_data.extend_from_slice(&data_hash);
+        let signature = key.sign(&signed_data).unwrap();
+        let code = format!(
+            "PUSHINT 0x{}\n\
+             PUSHSLICE x{}\n\
+             PUSHINT 0x{}\n\
+             CHKSIGNU\n\
+             THROWIFNOT 203\n",
+            bytes_to_hex(&data_hash),
+            bytes_to_hex(&signature),
+            bytes_to_hex(key.pub_key().unwrap())
+        );
+
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.signature_id = signature_id;
+        let config = executor_config_with_capabilities(
+            0x572e | GlobalCapabilities::CapSignatureWithId as u64,
+        );
+        let (tx, _) =
+            execute_node_contract_with_config(&code, fixture.build(), config.clone()).unwrap();
+        let phase = vm_phase(&tx);
+        assert!(phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, 0);
+
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.signature_id = signature_id + 1;
+        let (tx, _) = execute_node_contract_with_config(&code, fixture.build(), config).unwrap();
+        let phase = vm_phase(&tx);
+        assert!(!phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, 203);
+    }
+
+    #[cfg(feature = "wasmtime")]
+    #[test]
+    fn node_params_wasm_hash_whitelist_reaches_run_wasm() {
+        let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
+        let wasm_hash = bytes_from_hex(hash_str);
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.wasm_cache.wasm_binary_root_path = "../tvm_vm/config/wasm".to_owned();
+        fixture.wasm_cache.wasm_engine =
+            tvm_vm::executor::Engine::extern_wasm_engine_init().unwrap();
+
+        let phase =
+            compute_node_contract("RUNWASM\n", run_wasm_hash_stack(&wasm_hash), fixture.build());
+        assert!(!phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, ExceptionCode::WasmWhitelistForbiddenHash as i32);
+    }
+
+    #[cfg(feature = "wasmtime")]
+    #[test]
+    fn node_params_wasm_whitelist_and_cache_allow_run_wasm() {
+        let hash_str = "7b7f96a857a4ada292d7c6b1f47940dde33112a2c2bc15b577dff9790edaeef2";
+        let wasm_hash: [u8; 32] = bytes_from_hex(hash_str).try_into().unwrap();
+        let wasm_engine = tvm_vm::executor::Engine::extern_wasm_engine_init().unwrap();
+        let wasm_hash_whitelist: std::collections::HashSet<[u8; 32]> =
+            [wasm_hash].into_iter().collect();
+        let wasm_component_cache =
+            tvm_vm::executor::Engine::extern_precompile_all_wasm_from_hash_list(
+                "../tvm_vm/config/wasm".to_owned(),
+                wasm_engine.clone(),
+                wasm_hash_whitelist.clone(),
+            );
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.wasm_cache.wasm_binary_root_path = "../tvm_vm/config/wasm".to_owned();
+        fixture.wasm_cache.wasm_engine = wasm_engine;
+        fixture.wasm_cache.wasm_hash_whitelist = wasm_hash_whitelist;
+        fixture.wasm_cache.wasm_component_cache = wasm_component_cache;
+
+        let phase =
+            compute_node_contract("RUNWASM\n", run_wasm_hash_stack(&wasm_hash), fixture.build());
+        assert!(phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, 0);
     }
 
     #[test]
