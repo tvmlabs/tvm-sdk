@@ -4,7 +4,7 @@ description: (Work in progress) OracleEventList Contract Interface Documentation
 
 # OracleEventList
 
-{% file src="../../.gitbook/assets/OracleEventList.abi (1).json" %}
+{% file src="../../.gitbook/assets/OracleEventList.abi.json" %}
 
 ## Overview
 
@@ -176,4 +176,3 @@ function getVersion() external pure returns (string, string);
 
 * Semantic version string (e.g. `"1.0.0"`)
 * Contract identifier string: `"OracleEventList"`
-

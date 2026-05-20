@@ -1,14 +1,12 @@
 ---
 description: >-
-  This guide explains how to top up an address with test SHELL tokens in the
-  `Shellnet` network.
+  This guide explains how to top up an address with test tokens in the
+  `Shellnet` network
 ---
 
-# Get test SHELL from Giver in Shellnet
+# Get Test Tokens From Giver in Shellnet
 
-{% hint style="danger" %}
-Use this guide only for test `SHELL` tokens in Shellnet.
-{% endhint %}
+###
 
 ### Requirements
 
@@ -19,25 +17,22 @@ Before you start, make sure you have:
 * Recipient wallet or contract address
 
 {% hint style="info" %}
-Right now, in enabled `DEV mode`, you will see the address of your multifactor contract
+Right now, in enabled `DEV mode`, you will see the address of your Multifactor contract
 {% endhint %}
 
-`GiverV3` contract artifacts are available in the repository:
+`GiverV3` contract artifacts are available in the repository Acki Nacki
 
-{% embed url="https://github.com/ackinacki/ackinacki/tree/main/contracts/giver" %}
+{% embed url="https://github.com/ackinacki/ackinacki" %}
 
-### Token decimals
+### Test Tokens
 
 Token amounts in `ecc` are specified in the smallest units.
 
-<table><thead><tr><th width="131.86663818359375">Token</th><th width="112.199951171875">Decimals</th><th>Example</th></tr></thead><tbody><tr><td><code>NACKL</code></td><td><code>9</code></td><td><code>100 NACKL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>SHELL</code></td><td><code>9</code></td><td><code>100 SHELL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>USDC</code></td><td><code>6</code></td><td><code>100 USDC</code> = <code>100,000,000</code></td></tr></tbody></table>
+<table><thead><tr><th width="95.13330078125">Token</th><th width="123.699951171875">`ecc` key</th><th width="110.29998779296875">Decimals</th><th>Example</th></tr></thead><tbody><tr><td><code>NACKL</code></td><td>1</td><td><code>9</code></td><td><code>100 NACKL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>SHELL</code></td><td>2</td><td><code>9</code></td><td><code>100 SHELL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>USDC</code></td><td>3</td><td><code>6</code></td><td><code>100 USDC</code> = <code>100,000,000</code></td></tr></tbody></table>
 
 {% hint style="warning" %}
-Make sure the recipient address is correct before running the command.
-{% endhint %}
-
-{% hint style="warning" %}
-Keep the `value` parameter set to `1000000000`.
+* Make sure the recipient address is correct before running the command
+* Keep the `value` parameter set to `1000000000`
 {% endhint %}
 
 ### Get SHELL
@@ -58,14 +53,14 @@ tvm-cli -j -u shellnet.ackinacki.org callx \
 
 Replace `0:348c....66bf` with the recipient address.
 
-The command below sends `1000 NACKL`.
+The command below sends `100 NACKL`.
 
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
   --abi acki-nacki/contracts/giver/GiverV3.abi.json \
   --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
   -m sendCurrency \
-  '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":1000000000000}}'
+  '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":100000000000}}'
 ```
 
 ### Get USDC

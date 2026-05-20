@@ -2,7 +2,7 @@
 description: All primary flows in the Accumulator system.
 ---
 
-# Buy/Sell/Burn Flows
+# Sell/Buy/Burn Flows
 
 **Seller lifecycle: from order creation (SHELL deposit) to USDC payout:**
 
@@ -192,13 +192,13 @@ After a lot is matched (sold), the seller calls `claim()` on their lot contract 
 
 {% stepper %}
 {% step %}
-### SellOrderLot.claim()
+#### SellOrderLot.claim()
 
 Sets `_claimed = true`, then calls `Root.claimUSDC(denom, orderId, owner)`.
 {% endstep %}
 
 {% step %}
-### Root.claimUSDC()
+#### Root.claimUSDC()
 
 Verifies the caller's address matches the expected lot address (recomputed deterministically), checks `orderId <= soldPrefix[D]` (lot is sold), checks `owedCount[D] > 0`, and checks `_usdcBalance >= owedTotal`. If all pass:
 
@@ -208,19 +208,19 @@ Verifies the caller's address matches the expected lot address (recomputed deter
 {% endstep %}
 
 {% step %}
-### SellOrderLot.onReceiveUSDC()
+#### SellOrderLot.onReceiveUSDC()
 
 Verifies the amount, emits `OrderDestroyed`, self-destructs back to the Root.
 {% endstep %}
 
 {% step %}
-### If the lot is not yet sold
+#### If the lot is not yet sold
 
 `claimUSDC` reverts (require fails), the message bounces back, and the lot's `onBounce` handler resets `_claimed = false`. The seller can try again later.
 {% endstep %}
 
 {% step %}
-### Double-claim protection
+#### Double-claim protection
 
 Double-claim protection is multi-layered: the lot checks `!_claimed` before calling, the Root checks `owedCount > 0`, and the lot self-destructs after success — so the contract ceases to exist.
 {% endstep %}
@@ -264,37 +264,37 @@ Where `M(t) = T_KM × (1 - exp(-u_M × t))`, capped at `NACKL_T`. `t` is seconds
 
 {% stepper %}
 {% step %}
-### Burn the NACKL
+#### Burn the NACKL
 
 Burn the NACKL via `gosh.burnecc()`.
 {% endstep %}
 
 {% step %}
-### Compute currentSupply and check it
+#### Compute currentSupply and check it
 
 Compute `currentSupply` and check it's sufficient.
 {% endstep %}
 
 {% step %}
-### Compute redeemable and check it
+#### Compute redeemable and check it
 
 Compute `redeemable` (free reserve) and check it's positive.
 {% endstep %}
 
 {% step %}
-### Compute payout
+#### Compute payout
 
 Compute `payout = redeemable * burnAmount / currentSupply`.
 {% endstep %}
 
 {% step %}
-### Update balances
+#### Update balances
 
 Increment `_nacklBurned`, decrement `_usdcBalance`.
 {% endstep %}
 
 {% step %}
-### Send payout
+#### Send payout
 
 Send ECC USDC to the sender.
 {% endstep %}

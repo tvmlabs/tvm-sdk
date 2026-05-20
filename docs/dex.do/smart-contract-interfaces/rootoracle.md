@@ -4,7 +4,7 @@ description: (Work in progress) RootOracle Contract Interface Documentation
 
 # RootOracle
 
-{% file src="../../.gitbook/assets/RootOracle.abi (1).json" %}
+{% file src="../../.gitbook/assets/RootOracle.abi.json" %}
 
 ## Overview
 

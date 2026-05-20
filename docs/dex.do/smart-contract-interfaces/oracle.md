@@ -4,7 +4,7 @@ description: (Work in progress) Oracle Contract Interface Documentation
 
 # Oracle
 
-{% file src="../../.gitbook/assets/Oracle.abi (1).json" %}
+{% file src="../../.gitbook/assets/Oracle.abi.json" %}
 
 ## Overview
 

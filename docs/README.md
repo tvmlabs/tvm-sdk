@@ -3,7 +3,7 @@
 ## **What will you learn from this guide?** <a href="#prerequisites" id="prerequisites"></a>
 
 * How to create your [Dapp ID](https://docs.ackinacki.com/glossary#dapp-id)
-* How to interact with contracts inside a Dapp&#x20;
+* How to interact with contracts inside a Dapp
 * How to interact with contracts of other Dapps
 * How to use the centralized replenishment mechanism for the Dapp ID contracts
 
@@ -235,7 +235,7 @@ Address of your contract in the blockchain is located after `Raw address:`
 We will refer to it as **`<YourAddress>`** below.
 {% endhint %}
 
-To top up the balance (approx. 10 SHELL) of the `helloWorld` contract, [use your Multisig Wallet](how-to-deploy-a-multisig-wallet.md#how-to-use-a-sponsor-wallet)&#x20;
+To top up the balance (approx. 10 SHELL) of the `helloWorld` contract, [use your Multisig Wallet](how-to-deploy-a-multisig-wallet.md#how-to-use-a-sponsor-wallet)
 
 and apply the following method `sendTransaction`:
 
@@ -243,21 +243,21 @@ and apply the following method `sendTransaction`:
 sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bool bounce, uint8 flags, TvmCell payload)
 ```
 
-* `dest`  - the transfer target address;
-* `value`  - the amount of funds (nanoVMSHELL) used to pay fees (it must not be `0`);
-* `cc`  - the type of ECC token (SHELL has index 2) and amount (specified in nanotokens) to transfer;
-* `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
+* `dest` - the transfer target address;
+* `value` - the amount of funds (nanoVMSHELL) used to pay fees (it must not be `0`);
+* `cc` - the type of ECC token (SHELL has index 2) and amount (specified in nanotokens) to transfer;
+* `bounce` - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 * `flags-`[sendmsg flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
-* `payload` - [tree of cells used as body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).&#x20;
+* `payload` - [tree of cells used as body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).
 
 For example: you can use the command:
 
 <pre><code><strong>tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
-</strong><strong>
-</strong></code></pre>
+</strong>
+</code></pre>
 
 {% hint style="info" %}
-Within Dapp ID, you can transfer both ECC tokens (e.x.SHELL) and VMSHELL. \
+Within Dapp ID, you can transfer both ECC tokens (e.x.SHELL) and VMSHELL.\
 **For contracts of other Dapp IDs, only ECC tokens can be transferred.**
 {% endhint %}
 
@@ -273,10 +273,10 @@ You will see something similar to the following:
 
 ### Deploy
 
-When you deploy a contract with external message contract must  exchange some amount of [SHELL](https://docs.ackinacki.com/glossary#shell) into [VMSHELL](https://docs.ackinacki.com/glossary#vmshell) during the contract deployment. To do this, the contract’s constructor must call the VM command `gosh.cnvrtshellq(uint64 value).`&#x20;
+When you deploy a contract with external message contract must exchange some amount of [SHELL](https://docs.ackinacki.com/glossary#shell) into [VMSHELL](https://docs.ackinacki.com/glossary#vmshell) during the contract deployment. To do this, the contract’s constructor must call the VM command `gosh.cnvrtshellq(uint64 value).`
 
 {% hint style="warning" %}
-**CNVRTSHELLQ converts SHELL to VMSHELL  at a 1:1 ratio**
+**CNVRTSHELLQ converts SHELL to VMSHELL at a 1:1 ratio**
 
 Q in the end stands for ‘quiet’ which means that if there is not enough Shell, it will not throw an exception.
 
@@ -339,10 +339,10 @@ You will see something that looks similar following:
 
 {% hint style="info" %}
 **You can specify any other fields in the result section that are available in GraphQL Schema.**\
-Click the icon <img src=".gitbook/assets/image (2).png" alt="" data-size="line">  in the upper-left corner of the screen to view the API documentation.
+Click the icon <img src=".gitbook/assets/image (2).png" alt="" data-size="line"> in the upper-left corner of the screen to view the API documentation.
 {% endhint %}
 
-## **Run a getter**&#x20;
+## **Run a getter**
 
 The `helloWorld` contract features a get-method: `timestamp`. Let's call it and check the result:
 
@@ -362,7 +362,7 @@ The helloWorld contract has a `touch` method. Let’s run it on-chain using the 
 tvm-cli call <YourAddress> touch {} --abi helloWorld.abi.json --sign helloWorld.keys.json
 ```
 
-<figure><img src=".gitbook/assets/touch (1) (1).jpg" alt=""><figcaption></figcaption></figure>
+<figure><img src=".gitbook/assets/touch (1).jpg" alt=""><figcaption></figcaption></figure>
 
 Call the get-method `timestamp` again to verify that the timestamp has been updated:
 
@@ -384,9 +384,9 @@ function deployNewContract(
     )
 ```
 
-* `stateInit`  - the contract code plus data (tvc in base64);
-* `initialBalance`  - the amount of funds to transfer;
-* `payload`  - a tree of cells used as the body of the outbound internal message;
+* `stateInit` - the contract code plus data (tvc in base64);
+* `initialBalance` - the amount of funds to transfer;
+* `payload` - a tree of cells used as the body of the outbound internal message;
 
 Let’s add another contract to our Dapp ID. For this, we’ll use a copy of the `helloWorld` contract and name it `helloUniverse:`
 
@@ -405,7 +405,7 @@ And we get the same address as the `helloWorld` contract.
 
 <figure><img src=".gitbook/assets/universe_gen_addr_too.jpg" alt=""><figcaption></figcaption></figure>
 
-To avoid this, it’s essential to use a different key pair. \
+To avoid this, it’s essential to use a different key pair.\
 Let’s generate a new seed phrase with a fresh pair of keys:
 
 ```
@@ -426,7 +426,7 @@ To deploy a new contract, you need to prepare its `stateInit` and a deployment m
 
 To obtain the `stateInit`, execute the following command:
 
-Since the result can be quite large, let’s save this value in a variable: `HW_STATE_INIT`.&#x20;
+Since the result can be quite large, let’s save this value in a variable: `HW_STATE_INIT`.
 
 ```
 HW_STATE_INIT=$(base64 -w 0 helloUniverse.tvc)
@@ -442,7 +442,7 @@ tvm-cli body --abi helloUniverse.abi.json constructor '{"value": 10000000000}'
 
 We’ll need to place the `Message body` field value into the deployment payload.
 
-Now we can call  `deployNewContract` function.
+Now we can call `deployNewContract` function.
 
 In our case, the command will be as follows:
 
@@ -452,7 +452,7 @@ tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e 
 
 This way, the new contract within the DAPP ID will be deployed through an internal message.
 
-Check the contract state:&#x20;
+Check the contract state:
 
 <figure><img src=".gitbook/assets/universe_activ.jpg" alt=""><figcaption></figcaption></figure>
 
@@ -462,26 +462,24 @@ Note that the `helloUniverse` contract shares **the same DAPP ID** as the `hello
 
 ## Call a contract inside Dapp ID
 
-To transfer  SHELL, within the same DAPP ID, use the function `sendShell`
+To transfer SHELL, within the same DAPP ID, use the function `sendShell`
 
 ```
 function sendShell(address dest, uint128 value)
 ```
 
 * `dest` - the target address to receive the transfer;
-* &#x20;`value`  - the amount of SHELL tokens to transfer.
+* `value` - the amount of SHELL tokens to transfer.
 
-To transfer  VMSHELL, within the same DAPP ID, use the function `sendVMShell`
+To transfer VMSHELL, within the same DAPP ID, use the function `sendVMShell`
 
 ```
 function sendVMShell(address dest, uint128 amount, bool bounce)
 ```
 
 * `dest` - the target address to receive the transfer;
-* `amount`  - the amount of VMSHELL tokens to transfer.
-* `bounce`  - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
-
-
+* `amount` - the amount of VMSHELL tokens to transfer.
+* `bounce` - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 
 Let's call the `touch` function in `helloUniverse` through the `helloWorld` contract.\
 But first, let's check the value of the `timestamp` variable in the `helloUniverse` contract.
@@ -522,7 +520,7 @@ The fee distribution for message transfers within a single DAPP ID is described 
 
 ## Call a contract from another Dapp ID
 
-Let's deploy the `helloWorld2` contract  the same way as `helloWorld`.
+Let's deploy the `helloWorld2` contract the same way as `helloWorld`.
 
 The `helloWorld` and `helloWorld2` contracts are deployed with different Dapp IDs.
 
@@ -575,7 +573,7 @@ In the Acki Nacki network, developers can implement a mechanism that allows cont
 
 How it works:
 
-During the block assembly, the Block Keeper (BK) collects information about all calls to the TVM instruction `gosh.mintshell` in the transactions included in the block. For each instruction call, the Dapp ID of the contract is determined, and the presence of a `DappConfig` contract for that Dapp ID is verified. The total amount of tokens specified in the instruction calls is then debited from the balance of the `DappConfig` contract. Correspondingly, the appropriate amount of  `VMSHELL` tokens is credited to the balances of the contracts for which this instruction was invoked.
+During the block assembly, the Block Keeper (BK) collects information about all calls to the TVM instruction `gosh.mintshell` in the transactions included in the block. For each instruction call, the Dapp ID of the contract is determined, and the presence of a `DappConfig` contract for that Dapp ID is verified. The total amount of tokens specified in the instruction calls is then debited from the balance of the `DappConfig` contract. Correspondingly, the appropriate amount of `VMSHELL` tokens is credited to the balances of the contracts for which this instruction was invoked.
 
 To ensure the system functions correctly and resources are managed automatically, follow these steps:
 
@@ -713,7 +711,7 @@ Result: the balance is 0.465631997 VMSHELL tokens.
 
 <figure><img src=".gitbook/assets/avtR1 (1).jpg" alt=""><figcaption></figcaption></figure>
 
-Using the `getDetails()` method, you can view the available balance of the DappConfig contract.&#x20;
+Using the `getDetails()` method, you can view the available balance of the DappConfig contract.
 
 ```
 tvm-cli -j run 0:020473650f8bf0d3df871aadf28a40315ce6ae6d7fffe63e5e557198e0c68b5d getDetails {} --abi dappConfig/DappConfig.abi.json
