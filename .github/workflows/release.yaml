@@ -243,7 +243,7 @@ jobs:
           version="${TAG%%-*}"
           test_branch="${version}-rc.an-release-testing"
 
-          compare_status=$(gh api "repos/$REPO/compare/main...$SHA" -q .status 2>/dev/null || true)
+          compare_status=$(gh api "repos/$REPO/compare/main...$SHA" -q .status)
           if [[ "$compare_status" == "identical" || "$compare_status" == "behind" ]]; then
             pr_state=merged
             msg=$(gh api "repos/$REPO/commits/main" -q '.commit.message' | head -1)
@@ -252,16 +252,24 @@ jobs:
             [[ -n "$pr" ]] && pr_numbers+=("$pr")
           else
             pr_state=open
-            mapfile -t pr_numbers < <(gh api "repos/$REPO/commits/$SHA/pulls" \
-              -q '.[] | select(.base.ref == "main" and .state == "open") | .number')
+            mapfile -t head_branches < <(gh api "repos/$REPO/commits/$SHA/branches-where-head" -q '.[].name')
+            pr_numbers=()
+            repo_owner="${REPO%%/*}"
+            for head_branch in "${head_branches[@]}"; do
+              mapfile -t branch_pr_numbers < <(gh api --method GET "repos/$REPO/pulls" \
+                -f state=open \
+                -f base=main \
+                -f "head=${repo_owner}:${head_branch}" \
+                -q '.[].number')
+              pr_numbers+=("${branch_pr_numbers[@]}")
+            done
 
             if [[ ${#pr_numbers[@]} -gt 1 ]]; then
-              echo "ERROR: multiple open PRs to main contain commit $SHA: ${pr_numbers[*]}" >&2
+              echo "ERROR: multiple open PRs to main found for $SHA: ${pr_numbers[*]}" >&2
               exit 1
             fi
 
             if [[ ${#pr_numbers[@]} -eq 0 ]]; then
-              mapfile -t head_branches < <(gh api "repos/$REPO/commits/$SHA/branches-where-head" -q '.[].name')
               if [[ ${#head_branches[@]} -eq 0 ]]; then
                 echo "ERROR: no branch has $SHA as HEAD; cannot auto-create PR" >&2
                 exit 1
@@ -295,7 +303,7 @@ jobs:
               --arg pr "$pr_number" \
               --arg url "https://github.com/$REPO/pull/$pr_number" \
               --arg s "$pr_state" \
-              '{branch: "feature/update-tvm-sdk-pipeline", variables: {
+              '{branch: "dev", variables: {
                   test_branch: $tb,
                   tag: $t,
                   actor: $a,
