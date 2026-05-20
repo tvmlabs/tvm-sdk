@@ -26,6 +26,20 @@ Right now, in enabled `DEV mode`, you will see the address of your multifactor c
 
 {% embed url="https://github.com/ackinacki/ackinacki/tree/main/contracts/giver" %}
 
+### Token decimals
+
+Token amounts in `ecc` are specified in the smallest units.
+
+<table><thead><tr><th width="131.86663818359375">Token</th><th width="112.199951171875">Decimals</th><th>Example</th></tr></thead><tbody><tr><td><code>NACKL</code></td><td><code>9</code></td><td><code>100 NACKL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>SHELL</code></td><td><code>9</code></td><td><code>100 SHELL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>USDC</code></td><td><code>6</code></td><td><code>100 USDC</code> = <code>100,000,000</code></td></tr></tbody></table>
+
+{% hint style="warning" %}
+Make sure the recipient address is correct before running the command.
+{% endhint %}
+
+{% hint style="warning" %}
+Keep the `value` parameter set to `1000000000`.
+{% endhint %}
+
 ### Get SHELL
 
 Replace `0:348c....66bf` with the recipient address.
@@ -40,22 +54,44 @@ tvm-cli -j -u shellnet.ackinacki.org callx \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"2":1000000000000}}'
 ```
 
-{% hint style="warning" %}
-Make sure the recipient address is correct before running the command.
-{% endhint %}
+### Get NACKL
 
-### Change the SHELL amount
+Replace `0:348c....66bf` with the recipient address.
 
-In the `ecc` parameter, `SHELL` is identified by the `"2"` key.
+The command below sends `1000 NACKL`.
 
-Use one of the examples below, or set another amount using the same format:
+```bash
+tvm-cli -j -u shellnet.ackinacki.org callx \
+  --abi acki-nacki/contracts/giver/GiverV3.abi.json \
+  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  -m sendCurrency \
+  '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":1000000000000}}'
+```
 
-| Amount        | `ecc` value                  |
-| ------------- | ---------------------------- |
-| `100 SHELL`   | `"ecc":{"2":100000000000}`   |
-| `1000 SHELL`  | `"ecc":{"2":1000000000000}`  |
-| `50000 SHELL` | `"ecc":{"2":50000000000000}` |
+### Get USDC
 
-{% hint style="warning" %}
-Keep the `value` parameter set to `1000000000`.
-{% endhint %}
+Replace `0:348c....66bf` with the recipient address.
+
+The command below sends `5000 USDC`.
+
+```bash
+tvm-cli -j -u shellnet.ackinacki.org callx \
+  --abi acki-nacki/contracts/giver/GiverV3.abi.json \
+  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  -m sendCurrency \
+  '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"3":5000000000}}'
+```
+
+### Get multiple tokens
+
+You can request several test tokens in one command by adding multiple keys to `ecc`.
+
+The command below sends `1000 NACKL`, `50000 SHELL`, and `5000 USDC`.
+
+```bash
+tvm-cli -j -u shellnet.ackinacki.org callx \
+  --abi acki-nacki/contracts/giver/GiverV3.abi.json \
+  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  -m sendCurrency \
+  '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":1000000000000,"2":50000000000000,"3":5000000000}}'
+```
