@@ -2518,11 +2518,6 @@ mod tests {
         fixture.block_collation_was_finished = block_collation_was_finished.clone();
         fixture.mvconfig = mvconfig;
         fixture.engine_version = semver::Version::new(1, 0, 3);
-        #[cfg(feature = "wasmtime")]
-        {
-            fixture.wasm_cache.wasm_binary_root_path = "./tests/wasm".to_owned();
-            fixture.wasm_cache.wasm_engine = wasmtime::Engine::default();
-        }
         let params = fixture.build();
 
         let code = tvm_assembler::compile_code_to_cell(
