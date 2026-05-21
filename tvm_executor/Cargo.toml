@@ -22,6 +22,7 @@ tvm_vm.workspace = true
 wasmtime = { workspace = true, optional = true }
 
 [dev-dependencies]
+tvm_abi.workspace = true
 tvm_assembler.workspace = true
 
 [features]
