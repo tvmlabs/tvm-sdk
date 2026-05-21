@@ -81,3 +81,65 @@ pub fn encode_external_in_message(
     let boc = serialize_object_to_boc(&context, &msg, "message", params.boc_cache)?;
     Ok(ResultOfEncodeExternalInMessage { message: boc, message_id: hex::encode(hash) })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use tvm_block::Message;
+    use tvm_types::BuilderData;
+    use tvm_types::IBitstring;
+    use tvm_types::base64_encode;
+
+    use super::*;
+
+    fn context() -> Arc<ClientContext> {
+        Arc::new(ClientContext::new(crate::ClientConfig::default()).unwrap())
+    }
+
+    #[test]
+    fn rejects_invalid_source_address() {
+        let err = encode_external_in_message(
+            context(),
+            ParamsOfEncodeExternalInMessage {
+                src: Some("not-an-address".into()),
+                dst: "0:1111111111111111111111111111111111111111111111111111111111111111".into(),
+                ..Default::default()
+            },
+        )
+        .err()
+        .unwrap();
+
+        assert!(err.message().contains("Invalid address ["));
+    }
+
+    #[test]
+    fn encodes_message_with_optional_init_and_body() {
+        let context = context();
+        let state_init =
+            serialize_object_to_boc(&context, &StateInit::default(), "state init", None).unwrap();
+
+        let mut body = BuilderData::new();
+        body.append_u32(0xdead_beef).unwrap();
+        let body = base64_encode(tvm_types::boc::write_boc(&body.into_cell().unwrap()).unwrap());
+
+        let result = encode_external_in_message(
+            context.clone(),
+            ParamsOfEncodeExternalInMessage {
+                src: Some(":abcd".into()),
+                dst: "0:1111111111111111111111111111111111111111111111111111111111111111".into(),
+                init: Some(state_init),
+                body: Some(body),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        let message = deserialize_object_from_boc::<Message>(&context, &result.message, "message")
+            .unwrap()
+            .object;
+        assert!(message.state_init().is_some());
+        assert!(message.body().is_some());
+        assert_eq!(hex::encode(message.hash().unwrap()), result.message_id);
+    }
+}

@@ -11,7 +11,9 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+#[cfg(feature = "wasmtime")]
 use std::fmt::Write;
+#[cfg(feature = "wasmtime")]
 use std::io::BufRead;
 use std::ops::Range;
 use std::sync::Arc;
@@ -31,6 +33,7 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::error;
+#[cfg(feature = "wasmtime")]
 use tvm_types::sha256_digest;
 
 use crate::error::TvmError;

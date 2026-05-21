@@ -85,3 +85,35 @@ impl OperationBehavior for Quiet {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::ExceptionCode;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+
+    #[test]
+    fn signaling_behavior_reports_expected_codes() {
+        assert!(!Signaling::quiet());
+        assert_eq!(Signaling::name_prefix(), None);
+
+        let overflow = Signaling::on_integer_overflow(file!(), line!()).unwrap_err();
+        assert_eq!(tvm_exception_code(&overflow), Some(ExceptionCode::IntegerOverflow));
+
+        let nan = Signaling::on_nan_parameter(file!(), line!()).unwrap_err();
+        assert_eq!(tvm_exception_code(&nan), Some(ExceptionCode::IntegerOverflow));
+
+        let range = Signaling::on_range_check_error(file!(), line!()).unwrap_err();
+        assert_eq!(tvm_exception_code(&range), Some(ExceptionCode::RangeCheckError));
+    }
+
+    #[test]
+    fn quiet_behavior_is_non_signaling() {
+        assert!(Quiet::quiet());
+        assert_eq!(Quiet::name_prefix(), Some("Q"));
+        assert!(Quiet::on_integer_overflow(file!(), line!()).is_ok());
+        assert!(Quiet::on_nan_parameter(file!(), line!()).is_ok());
+        assert!(Quiet::on_range_check_error(file!(), line!()).is_ok());
+    }
+}
