@@ -11,7 +11,8 @@
 // opcode handler can run `verify_proof::<KZG, SHPLONK, Blake2bRead,
 // SingleStrategy>` against it.
 //
-// Frozen contract (2026-05-22, Q-WIRE-1..5 — see `docs/zkhalo2verifywithvk_design.md`):
+// Frozen contract (2026-05-22, Q-WIRE-1..5 — see
+// `docs/zkhalo2verifywithvk_design.md`):
 //
 // ```text
 //   off  size  field
@@ -153,12 +154,7 @@ impl Halo2TvmBundle {
             ),
         };
 
-        Ok(Self {
-            config,
-            vk_bytes,
-            instances_bytes,
-            proof_bytes,
-        })
+        Ok(Self { config, vk_bytes, instances_bytes, proof_bytes })
     }
 
     /// Number of public inputs encoded in the bundle.
@@ -243,10 +239,7 @@ mod tests {
         let mut bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         bytes[0] = b'X';
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("magic mismatch"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("magic mismatch"), "actual: {err}");
     }
 
     #[test]
@@ -255,10 +248,7 @@ mod tests {
         let mut bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         bytes[8] = 99;
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("version mismatch"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("version mismatch"), "actual: {err}");
     }
 
     #[test]
@@ -267,10 +257,7 @@ mod tests {
         let mut bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         bytes[9] = 7;
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("transcript_kind"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("transcript_kind"), "actual: {err}");
     }
 
     #[test]
@@ -278,10 +265,7 @@ mod tests {
         let cfg = dark_dex_config_json();
         let bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 31], b"proof");
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("multiple of 32"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("multiple of 32"), "actual: {err}");
     }
 
     #[test]
@@ -291,8 +275,7 @@ mod tests {
         // Bump the vk_len prefix past end-of-buffer.
         let cfg_len = cfg.len();
         let vk_len_offset = HEADER_LEN + LEN_PREFIX_BYTES + cfg_len;
-        bytes[vk_len_offset..vk_len_offset + 4]
-            .copy_from_slice(&(u32::MAX - 100).to_le_bytes());
+        bytes[vk_len_offset..vk_len_offset + 4].copy_from_slice(&(u32::MAX - 100).to_le_bytes());
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
         assert!(err.to_string().contains("overruns bundle"), "actual: {err}");
     }
@@ -312,9 +295,6 @@ mod tests {
         bytes[0..8].copy_from_slice(BUNDLE_MAGIC);
         bytes[8] = BUNDLE_VERSION;
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("MAX_BUNDLE_BYTES"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("MAX_BUNDLE_BYTES"), "actual: {err}");
     }
 }

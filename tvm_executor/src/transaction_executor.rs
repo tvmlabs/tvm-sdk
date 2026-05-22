@@ -149,8 +149,7 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
-    pub check_history_proof_hash:
-        Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
+    pub check_history_proof_hash: Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
 }
 
 pub struct ActionPhaseResult {
@@ -601,8 +600,7 @@ pub trait TransactionExecutor {
         };
 
         vm_setup = vm_setup.set_dapp_id(params.dapp_id.clone());
-        vm_setup =
-            vm_setup.set_check_history_proof_hash(params.check_history_proof_hash.clone());
+        vm_setup = vm_setup.set_check_history_proof_hash(params.check_history_proof_hash.clone());
 
         let mut vm = vm_setup.create();
 

@@ -8,10 +8,12 @@
 //!
 //! Covers:
 //!
-//! - **Positive path**: a real Halo2 SHPLONK proof for DarkDex W=8 L0 round-trips
-//!   through `Halo2TvmBundle` → `execute_zkhalo2_verify_with_vk` → `true`.
+//! - **Positive path**: a real Halo2 SHPLONK proof for DarkDex W=8 L0
+//!   round-trips through `Halo2TvmBundle` → `execute_zkhalo2_verify_with_vk` →
+//!   `true`.
 //! - **Negative paths**:
-//!   - Flip a byte in the proof — handler returns `false` (cryptographic reject).
+//!   - Flip a byte in the proof — handler returns `false` (cryptographic
+//!     reject).
 //!   - Tweak an instance Fr — handler returns `false`.
 //!   - Bad bundle magic — handler returns `FatalError`.
 //!

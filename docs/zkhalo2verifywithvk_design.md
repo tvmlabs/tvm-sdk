@@ -4,7 +4,7 @@
 **Authors**: bridge integration team @ Pruvendo.
 **Timeline**: design opened 2026-05-17, frozen 2026-05-22, real
 implementation landed 2026-05-22.
-**Parent branch**: [`serhii/node-3406-vergrth16-with-vk`](https://github.com/tvmlabs/tvm-sdk/tree/serhii/node-3406-vergrth16-with-vk) — Serhii's `ZKHALO2VERIFY` (hard-coded DarkDex W=8 VK) + `VERGRTH16WITHVK`.
+**Parent branch**: [`serhii/node-3406-vergrth16-with-vk`](https://github.com/tvmlabs/tvm-sdk/tree/serhii/node-3406-vergrth16-with-vk) — Serhii's `ZKHALO2VERIFY` (hard-coded DarkDex W=8 VK). `VERGRTH16WITHVK` was dropped on 2026-05-22 in favour of native Halo2 verification (see below).
 **Companion**: bridge-side memo `docs/zk_halo2_an_side_design.md` in [`Pruvendo/acki-nacki-bridge`](https://github.com/Pruvendo/acki-nacki-bridge).
 
 ## TL;DR
@@ -17,8 +17,7 @@ with a different K, different `BaseCircuitParams`, and different VK.
 Generalising in place would mean a per-circuit `match` in the VM, which
 doesn't scale across the bridge / NFT / app-circuit roadmap.
 
-We add the same pivot that `VERGRTH16WITHVK` made for the Groth16 side:
-a sibling opcode whose **single stack operand carries the verifying key
+We add a native Halo2 verification opcode whose **single stack operand carries the verifying key
 (and config, and instances, and proof) bundled together in a
 self-describing byte payload**. That payload is the `Halo2TvmBundle`
 format, locked in §4 below.
@@ -51,7 +50,7 @@ Decision Log entry in both repos.**
 | Q-WIRE-3 (pub inputs) | **Strict 32-byte little-endian `Fr::to_repr()`**. `Fr::from_repr` rejects ≥ modulus inputs structurally (`FatalError`). No u64 shortcut on this opcode (legacy `ZKHALO2VERIFY` keeps its shortcut for DarkDex backward compat). |
 | Q-WIRE-4 (VK envelope) | **Self-describing `Halo2TvmBundle`** (see §4 byte layout). Magic `b"HALO2TVM"` (8 bytes ASCII), `BUNDLE_VERSION = 0x01`, `transcript_kind = 0x00` (Blake2b), 6 reserved bytes, then LE-u32-length-prefixed `(config_json, vk_bytes, instances_bytes, proof_bytes)` in that order. |
 | Q-WIRE-5 (fork pinning) | **Inherits Serhii's branch pin** of `gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381` and `gosh-sh/gosh-zk-snark-halo2-utils`. Both deps are already in `tvm_vm/Cargo.toml` under `[dependencies]` with branch pins; promotion to commit-SHA + a format-stability CI gate is a follow-up. |
-| Q-NAME-1 (opcode name) | **`ZKHALO2VERIFYWITHVK` at `0xC7 0x4A`**. Adjacent to Serhii's `ZKHALO2VERIFY` (0xC7 0x49) and below `POSEIDON` (0x50) / `CHKHISTPROOF` (0x51) / `VERGRTH16WITHVK` (0x52). Compiler builtin name pending: `gosh.zkHalo2VerifyWithVK(bundle_cell)`. |
+| Q-NAME-1 (opcode name) | **`ZKHALO2VERIFYWITHVK` at `0xC7 0x4A`**. Adjacent to Serhii's `ZKHALO2VERIFY` (0xC7 0x49) and below `POSEIDON` (0x50) / `CHKHISTPROOF` (0x51). Compiler builtin name pending: `gosh.zkHalo2VerifyWithVK(bundle_cell)`. |
 
 Empirical sizes (real Circuit 1B fallback fixture, k=20, 10 signers):
 bundle ≈ 21.2 KB (VK 6.1 KB + proof 14.8 KB + 4 × 32 B instances +
@@ -148,7 +147,8 @@ the PR's commits.
 ## 7. Re-benchmark TODO before mainnet
 
 `ZKHALO2_VERIFY_WITH_VK_GAS_PRICE = 5_000` is a placeholder modelled on
-`VERGRTH16_WITH_VK_GAS_PRICE`. The numbers we want to nail down with a
+`VERGRTH16_GAS_PRICE`, scaled up for the bigger VK (kilobytes vs 192 B).
+The numbers we want to nail down with a
 proper benchmark:
 
 - **Warm-cache verify** — VK already in the LRU, just bundle parse + 

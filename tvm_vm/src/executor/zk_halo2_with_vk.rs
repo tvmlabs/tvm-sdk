@@ -14,16 +14,20 @@
 // layout, frozen 2026-05-22 (Q-WIRE-1..5 + Q-NAME-1; see
 // `docs/zkhalo2verifywithvk_design.md`). The format is also implemented on
 // the producer side in
-// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`,
-// where it is round-trip-tested against real Circuit 1B fallback proofs.
+// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.
+// rs`, where it is round-trip-tested against real Circuit 1B fallback proofs.
 
-use std::collections::{HashMap, VecDeque};
-use std::sync::{Mutex, OnceLock};
+use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::sync::Mutex;
+use std::sync::OnceLock;
 
 use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
-use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
@@ -44,7 +48,7 @@ use crate::utils::unpack_data_from_cell;
 /// bundle deserialisation + VK reconstruction + per-VK cache lookup.
 ///
 /// **Re-benchmark before mainnet**: this number is a structural guess
-/// modelled on `VERGRTH16_WITH_VK_GAS_PRICE`, scaled up for the bigger
+/// modelled on `VERGRTH16_GAS_PRICE`, scaled up for the bigger
 /// VK (kilobytes vs 192 B). Once we have a stable end-to-end node
 /// integration we'll measure wall-clock for warm and cold paths and tune
 /// this constant. The cold-cache path (~3 s `EvaluationDomain` build for
@@ -209,11 +213,10 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// **Stack** (top → bottom):
 /// - `bundle_cell` — `Cell` whose payload is a [`Halo2TvmBundle`] (single
 ///   self-describing byte stream carrying `BaseCircuitParams` +
-///   `VerifyingKey<G1Affine>` bytes + public-input bytes + SHPLONK proof
-///   bytes, in that order, behind length prefixes). See
+///   `VerifyingKey<G1Affine>` bytes + public-input bytes + SHPLONK proof bytes,
+///   in that order, behind length prefixes). See
 ///   `super::zk_halo2_with_vk_bundle` for the format and
-///   `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format
-///   contract.
+///   `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format contract.
 ///
 /// **Pushes** a boolean: `true` on a cryptographically valid proof,
 /// `false` on a well-formed-but-invalid proof.
@@ -222,17 +225,16 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// - Bundle bytes don't deserialise (bad magic / version / transcript /
 ///   chunk-length overrun / trailing garbage / malformed `BaseCircuitParams`).
 /// - `VerifyingKey<G1Affine>::read` rejects the VK bytes (curve membership
-///   failure with `SerdeFormat::RawBytes`, or shape doesn't match the
-///   inline `BaseCircuitParams`).
+///   failure with `SerdeFormat::RawBytes`, or shape doesn't match the inline
+///   `BaseCircuitParams`).
 /// - Any 32-byte chunk in `instances_bytes` is `>= modulus` (strict
 ///   `Fr::from_repr`).
 ///
 /// Cryptographic rejection (well-formed proof that just doesn't satisfy
 /// the relation) is a normal `false` return, not an exception, matching
-/// `VERGRTH16WITHVK`'s contract.
+/// `VERGRTH16`'s contract.
 pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
-    engine
-        .load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
+    engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
     engine.try_use_gas(Gas::zkhalo2_verify_with_vk_price())?;
     fetch_stack(engine, 1)?;
 
