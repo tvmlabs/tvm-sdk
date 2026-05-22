@@ -4,9 +4,15 @@ description: >-
   `Shellnet` network
 ---
 
-# Get Test Tokens From Giver in Shellnet
+# Get Test Tokens in Shellnet
 
-###
+{% hint style="danger" %}
+**for the `Shellnet` network only**
+{% endhint %}
+
+You can receive test tokens in two ways:\
+\* by using the giver \
+\* by requesting them from us through our [Telegram channel](https://t.me/tvmlabs)
 
 ### Requirements
 
@@ -90,3 +96,26 @@ tvm-cli -j -u shellnet.ackinacki.org callx \
   -m sendCurrency \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":1000000000000,"2":50000000000000,"3":5000000000}}'
 ```
+
+### Get VMSHELL to a Precomputed Address
+
+Use this option to send test SHELL tokens to an address where the contract has not yet been deployed.
+
+{% hint style="info" %}
+The SHELL tokens will be converted into VMSHELL at the destination address.
+{% endhint %}
+
+These tokens will be used to pay for the deployment of that contract.
+
+Replace `0:348c....66bf` with the recipient address.
+
+The command below sends `1000 SHELL`, which will be credited as `1000 VMSHELL`.
+
+```bash
+tvm-cli -j -u shellnet.ackinacki.org callx \
+  --abi acki-nacki/contracts/giver/GiverV3.abi.json \
+  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  -m sendCurrencyWithFlag \
+  '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"2":1000000000000},"flag":16}'
+```
+
