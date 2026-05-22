@@ -49,6 +49,8 @@ use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 use crate::executor::zk::*;
 #[cfg(feature = "gosh")]
 use crate::executor::zk_halo2::*;
+#[cfg(feature = "gosh")]
+use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -413,6 +415,12 @@ impl Handlers {
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
                 .set(0x49, execute_halo2_proof_verification)
+                // ZKHALO2VERIFYWITHVK — sibling of ZKHALO2VERIFY that takes
+                // the verifying key as a caller-supplied operand via a
+                // Halo2TvmBundle cell. Wire format frozen 2026-05-22; see
+                // tvm_vm/src/executor/zk_halo2_with_vk.rs and
+                // docs/zkhalo2verifywithvk_design.md.
+                .set(0x4A, execute_zkhalo2_verify_with_vk)
                 .set(0x50, execute_poseidon)
                 .set(0x51, execute_chk_hist_proof)
                 .set(0x52, execute_vergrth16_with_vk);

@@ -82,7 +82,7 @@ pub fn build_dark_dex_w8_vk() -> VerifyingKey<G1Affine> {
 }
 
 /// G1 generator point `g[0]` from the KZG SRS (K=19), 64 bytes (BN256 G1Affine uncompressed).
-const KZG_G0_BYTES: [u8; 64] = [
+pub(crate) const KZG_G0_BYTES: [u8; 64] = [
     157, 13, 143, 197, 141, 67, 93, 211, 61, 11, 199, 245, 40, 235, 120, 10,
     44, 70, 121, 120, 111, 163, 110, 102, 47, 223, 7, 154, 193, 119, 10, 14,
     58, 27, 30, 139, 27, 135, 186, 166, 123, 22, 142, 235, 81, 214, 241, 20,
@@ -90,7 +90,7 @@ const KZG_G0_BYTES: [u8; 64] = [
 ];
 
 /// G2 generator from the KZG SRS, 128 bytes (BN256 G2Affine uncompressed).
-const KZG_G2_BYTES: [u8; 128] = [
+pub(crate) const KZG_G2_BYTES: [u8; 128] = [
     38, 32, 188, 2, 209, 181, 131, 142, 114, 1, 123, 73, 53, 25, 235, 220,
     223, 26, 129, 151, 71, 38, 184, 251, 59, 80, 150, 175, 65, 56, 87, 25,
     64, 97, 76, 168, 125, 115, 180, 175, 196, 216, 2, 88, 90, 221, 67, 96,
@@ -102,7 +102,7 @@ const KZG_G2_BYTES: [u8; 128] = [
 ];
 
 /// `[s] * G2` from the KZG SRS (toxic-waste-scaled G2), 128 bytes.
-const KZG_S_G2_BYTES: [u8; 128] = [
+pub(crate) const KZG_S_G2_BYTES: [u8; 128] = [
     198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250,
     139, 224, 102, 28, 120, 209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4,
     247, 119, 82, 189, 13, 15, 148, 115, 180, 255, 211, 139, 77, 173, 84, 51,

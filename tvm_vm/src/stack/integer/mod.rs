@@ -161,6 +161,16 @@ impl IntegerData {
         }
     }
 
+    /// Construct from little-endian unsigned byte slice (parallel of
+    /// `from_unsigned_bytes_be`). Restored from `origin/main` — needed by
+    /// `execute_poseidon`, which `serhii/node-3406-vergrth16-with-vk`
+    /// references but had inadvertently dropped during a rebase.
+    pub fn from_unsigned_bytes_le(data: impl AsRef<[u8]>) -> Self {
+        Self {
+            value: IntegerValue::Value(Int::from_bytes_le(num::bigint::Sign::Plus, data.as_ref())),
+        }
+    }
+
     /// Compares value with another taking in account behavior of operation.
     #[inline]
     pub(crate) fn compare<T: OperationBehavior>(&self, other: &IntegerData) -> ResultOpt<Ordering> {
