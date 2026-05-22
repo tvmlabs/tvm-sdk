@@ -10,6 +10,7 @@ mod state;
 use std::path::PathBuf;
 
 use clap::ArgAction;
+use clap::ArgGroup;
 use clap::Parser;
 use serde_json::Value;
 use tvm_block::Deserializable;
@@ -126,6 +127,10 @@ struct AccountEncodeArgs {
 }
 
 #[derive(Parser, Debug, Default)]
+#[command(group(
+    ArgGroup::new("message_type")
+        .args(["internal", "cross_dapp"])
+))]
 struct RunArgs {
     /// TVC file with contract state init
     #[arg(short, long, required(true))]
@@ -156,31 +161,31 @@ struct RunArgs {
     sign: Option<PathBuf>,
 
     /// Emulate inbound internal message
-    #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
+    #[clap(long, action=ArgAction::SetTrue, default_value = "false", conflicts_with = "cross_dapp")]
     internal: bool,
 
     /// Emulate inbound cross dapp message
-    #[clap(long, action=ArgAction::SetTrue, default_value = "false")]
+    #[clap(long, action=ArgAction::SetTrue, default_value = "false", conflicts_with = "internal")]
     cross_dapp: bool,
 
     /// Internal message balance
-    #[arg(long, requires("internal"))]
+    #[arg(long, requires("message_type"))]
     message_value: Option<u128>,
 
     /// Internal message extra currency collection,
-    #[arg(long, requires("internal"))]
+    #[arg(long, requires("message_type"))]
     message_ecc: Option<String>,
 
     /// Internal message source address
-    #[clap(long, requires("internal"))]
+    #[clap(long, requires("message_type"))]
     message_source: Option<String>,
 
     /// Internal message source dapp id
-    #[clap(long, requires("cross_dapp"))]
+    #[clap(long, requires("message_type"))]
     message_source_dapp_id: Option<String>,
 
     /// Internal message dest dapp id
-    #[clap(long, requires("cross_dapp"))]
+    #[clap(long, requires("message_type"))]
     message_dst_dapp_id: Option<String>,
 
     /// Decode out messages
