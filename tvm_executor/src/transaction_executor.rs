@@ -2772,6 +2772,68 @@ mod tests {
     }
 
     #[test]
+    fn action_phase_overwrites_internal_out_message_forged_src_dapp_id() {
+        let effective_dapp_id = UInt256::with_array([0x31; 32]);
+        let forged_dapp_id = UInt256::with_array([0x99; 32]);
+        let mut header = InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        );
+        header.set_src_dapp_id(Some(forged_dapp_id));
+        let out_msg = Message::with_int_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        assert_eq!(
+            result.messages[0].int_header().unwrap().src_dapp_id(),
+            &Some(effective_dapp_id)
+        );
+    }
+
+    #[test]
+    fn action_phase_rejects_internal_out_message_to_forged_dst_dapp_id() {
+        let forged_dst_dapp_id = UInt256::with_array([0x99; 32]);
+        let mut header = InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        );
+        header.set_dst_dapp_id(Some(forged_dst_dapp_id));
+        let out_msg = Message::with_int_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(!result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.result_code, RESULT_CODE_INCORRECT_DST_ADDRESS);
+        assert!(result.messages.is_empty());
+    }
+
+    #[test]
+    fn action_phase_overwrites_cross_dapp_out_message_forged_src_dapp_id() {
+        let effective_dapp_id = UInt256::with_array([0x31; 32]);
+        let forged_src_dapp_id = UInt256::with_array([0x99; 32]);
+        let dst_dapp_id = UInt256::with_array([0x32; 32]);
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src(address(8));
+        header.set_dst(masterchain_address(2));
+        header.set_src_dapp_id(forged_src_dapp_id);
+        header.set_dst_dapp_id(dst_dapp_id.clone());
+        header.value = CurrencyCollection::with_grams(100_000_000);
+        let out_msg = Message::with_cross_dapp_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        let header = result.messages[0].cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), &effective_dapp_id);
+        assert_eq!(header.dst_dapp_id(), &dst_dapp_id);
+    }
+
+    #[test]
     fn action_phase_rejects_internal_out_message_with_forged_src_address() {
         let out_msg = Message::with_int_header(InternalMessageHeader::with_addresses(
             address(9),
