@@ -6206,10 +6206,6 @@ name = "tvm_assembler"
 version = "2.24.20"
 dependencies = [
  "anyhow",
- "ark-ff",
- "ark-std",
- "base64 0.13.1",
- "base64ct",
  "clap 4.6.0",
  "ed25519-dalek",
  "hex",
@@ -6541,7 +6537,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-snark",
- "ark-std 0.4.0",
+ "ark-std",
  "base64",
  "base64ct",
  "bls12_381",
