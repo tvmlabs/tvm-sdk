@@ -706,8 +706,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_decode_body_json() {
-        let body = "te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA==";
+        let body = "te6ccgEBAgEAlgAB4ddyAENPhARLqvYWfcfwyY4fDOfGj88sVFpJjVp9Rh4QN6iL06hBowkex5kc8haTCwWTnugx1OKTuxOumBzdGwLCSzzna0XhE6urkzQv0XbzKbLpZicIiuqBenAdx6nbCkAAAGCSbtgxWLjxbUl77IIgAQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGU=";
         let config = Config::default();
-        decode_body(body, "tests/samples/wallet.abi.json", true, &config).await.unwrap();
+        decode_body(body, "tests/decode_body.abi.json", true, &config).await.unwrap();
     }
 }

@@ -2287,7 +2287,10 @@ fn action_type(action: &OutAction) -> String {
 #[cfg(test)]
 mod tests {
     use tvm_block::CrossDappMessageHeader;
+    use tvm_block::ExtOutMessageHeader;
     use tvm_block::InternalMessageHeader;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::SENDMSG_ALL_BALANCE;
 
     use super::*;
 
@@ -2556,6 +2559,46 @@ mod tests {
         .unwrap()
     }
 
+    fn run_single_send_action(out_msg: Message, mode: u8) -> ActionPhaseResult {
+        let executor = DummyExecutor::new();
+        let mut account = active_account_with_code(8, byte_cell(0xaa));
+        let mut tx = Transaction::with_address_and_status(address(8).address(), account.status());
+        let original_balance = account.balance().cloned().unwrap();
+        let mut acc_balance = original_balance.clone();
+        let mut msg_balance = CurrencyCollection::default();
+        let mut actions = OutActions::default();
+        let mut minted_shell = 0;
+
+        actions.push_back(OutAction::new_send(mode, out_msg));
+
+        executor
+            .action_phase_with_copyleft(
+                &mut tx,
+                &mut account,
+                &original_balance,
+                &mut acc_balance,
+                &mut msg_balance,
+                &Grams::zero(),
+                actions.serialize().unwrap(),
+                None,
+                &address(8),
+                false,
+                0,
+                &mut minted_shell,
+                Grams::zero(),
+                Some(UInt256::with_array([0x31; 32])),
+            )
+            .unwrap()
+    }
+
+    fn assert_forged_src_rejected(out_msg: Message, mode: u8) {
+        let result = run_single_send_action(out_msg, mode);
+
+        assert!(!result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.result_code, RESULT_CODE_INCORRECT_SRC_ADDRESS);
+        assert!(result.messages.is_empty());
+    }
+
     #[test]
     fn action_phase_result_from_phase_starts_empty() {
         let phase = TrActionPhase {
@@ -2726,6 +2769,112 @@ mod tests {
         assert!(result.phase.success, "{:?}", result.phase);
         assert_eq!(result.messages.len(), 1);
         assert_eq!(result.messages[0].int_header().unwrap().src_dapp_id(), &Some(dapp_id));
+    }
+
+    #[test]
+    fn action_phase_overwrites_internal_out_message_forged_src_dapp_id() {
+        let effective_dapp_id = UInt256::with_array([0x31; 32]);
+        let forged_dapp_id = UInt256::with_array([0x99; 32]);
+        let mut header = InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        );
+        header.set_src_dapp_id(Some(forged_dapp_id));
+        let out_msg = Message::with_int_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        assert_eq!(
+            result.messages[0].int_header().unwrap().src_dapp_id(),
+            &Some(effective_dapp_id)
+        );
+    }
+
+    #[test]
+    fn action_phase_rejects_internal_out_message_to_forged_dst_dapp_id() {
+        let forged_dst_dapp_id = UInt256::with_array([0x99; 32]);
+        let mut header = InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        );
+        header.set_dst_dapp_id(Some(forged_dst_dapp_id));
+        let out_msg = Message::with_int_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(!result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.result_code, RESULT_CODE_INCORRECT_DST_ADDRESS);
+        assert!(result.messages.is_empty());
+    }
+
+    #[test]
+    fn action_phase_overwrites_cross_dapp_out_message_forged_src_dapp_id() {
+        let effective_dapp_id = UInt256::with_array([0x31; 32]);
+        let forged_src_dapp_id = UInt256::with_array([0x99; 32]);
+        let dst_dapp_id = UInt256::with_array([0x32; 32]);
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src(address(8));
+        header.set_dst(masterchain_address(2));
+        header.set_src_dapp_id(forged_src_dapp_id);
+        header.set_dst_dapp_id(dst_dapp_id.clone());
+        header.value = CurrencyCollection::with_grams(100_000_000);
+        let out_msg = Message::with_cross_dapp_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        let header = result.messages[0].cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), &effective_dapp_id);
+        assert_eq!(header.dst_dapp_id(), &dst_dapp_id);
+    }
+
+    #[test]
+    fn action_phase_rejects_internal_out_message_with_forged_src_address() {
+        let out_msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(9),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        ));
+
+        assert_forged_src_rejected(out_msg, 0);
+    }
+
+    #[test]
+    fn action_phase_rejects_cross_dapp_out_message_with_forged_src_address() {
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src(address(9));
+        header.set_dst(masterchain_address(2));
+        header.set_src_dapp_id(UInt256::with_array([0x31; 32]));
+        header.set_dst_dapp_id(UInt256::with_array([0x32; 32]));
+        header.value = CurrencyCollection::with_grams(100_000_000);
+        let out_msg = Message::with_cross_dapp_header(header);
+
+        assert_forged_src_rejected(out_msg, 0);
+    }
+
+    #[test]
+    fn action_phase_rejects_ext_out_message_with_forged_src_address() {
+        let ext_dst = MsgAddressExt::with_extern(SliceData::new(vec![0xaa])).unwrap();
+        let out_msg =
+            Message::with_ext_out_header(ExtOutMessageHeader::with_addresses(address(9), ext_dst));
+
+        assert_forged_src_rejected(out_msg, 0);
+    }
+
+    #[test]
+    fn action_phase_rejects_send_all_balance_message_with_forged_src_address() {
+        let out_msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(9),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        ));
+
+        assert_forged_src_rejected(out_msg, SENDMSG_ALL_BALANCE);
     }
 
     #[test]
