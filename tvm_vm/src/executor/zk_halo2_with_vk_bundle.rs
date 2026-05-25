@@ -125,10 +125,7 @@ impl VkBlob {
             );
         }
         if bytes[8] != VK_BLOB_VERSION {
-            fail!(
-                "VkBlob: version mismatch (expected {VK_BLOB_VERSION}, got {})",
-                bytes[8]
-            );
+            fail!("VkBlob: version mismatch (expected {VK_BLOB_VERSION}, got {})", bytes[8]);
         }
         if bytes[9] != TRANSCRIPT_KIND_BLAKE2B {
             fail!(
@@ -153,10 +150,9 @@ impl VkBlob {
 
         let config: BaseCircuitParams = match serde_json::from_slice(&config_bytes) {
             Ok(c) => c,
-            Err(e) => fail!(
-                "VkBlob: malformed config_json (cannot parse as BaseCircuitParams): {}",
-                e
-            ),
+            Err(e) => {
+                fail!("VkBlob: malformed config_json (cannot parse as BaseCircuitParams): {}", e)
+            }
         };
 
         Ok(Self { config, vk_bytes })
@@ -266,10 +262,7 @@ mod tests {
         let mut bytes = make_minimal_vk_blob(&cfg, b"vk");
         bytes[8] = 99;
         let err = VkBlob::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("version mismatch"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("version mismatch"), "actual: {err}");
     }
 
     #[test]
@@ -278,10 +271,7 @@ mod tests {
         let mut bytes = make_minimal_vk_blob(&cfg, b"vk");
         bytes[9] = 7;
         let err = VkBlob::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("transcript_kind"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("transcript_kind"), "actual: {err}");
     }
 
     #[test]
@@ -291,8 +281,7 @@ mod tests {
         // Bump the vk_len prefix past end-of-buffer.
         let cfg_len = cfg.len();
         let vk_len_offset = HEADER_LEN + LEN_PREFIX_BYTES + cfg_len;
-        bytes[vk_len_offset..vk_len_offset + 4]
-            .copy_from_slice(&(u32::MAX - 100).to_le_bytes());
+        bytes[vk_len_offset..vk_len_offset + 4].copy_from_slice(&(u32::MAX - 100).to_le_bytes());
         let err = VkBlob::parse(&bytes).unwrap_err();
         assert!(err.to_string().contains("overruns payload"), "actual: {err}");
     }
@@ -312,29 +301,20 @@ mod tests {
         bytes[0..8].copy_from_slice(VK_BLOB_MAGIC);
         bytes[8] = VK_BLOB_VERSION;
         let err = VkBlob::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("MAX_VK_BLOB_BYTES"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("MAX_VK_BLOB_BYTES"), "actual: {err}");
     }
 
     #[test]
     fn validate_oversized_public_inputs() {
         let bytes = vec![0u8; MAX_PUBLIC_INPUTS_BYTES + 1];
         let err = validate_public_inputs_size(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("MAX_PUBLIC_INPUTS_BYTES"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("MAX_PUBLIC_INPUTS_BYTES"), "actual: {err}");
     }
 
     #[test]
     fn validate_oversized_proof() {
         let bytes = vec![0u8; MAX_PROOF_BYTES + 1];
         let err = validate_proof_size(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("MAX_PROOF_BYTES"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("MAX_PROOF_BYTES"), "actual: {err}");
     }
 }

@@ -37,28 +37,36 @@
 // See `super::zk_halo2_with_vk_bundle` for the `VkBlob` wire format and
 // `docs/zkhalo2verifywithvk_design.md` for the frozen ABI memo.
 
-use std::collections::{HashMap, VecDeque};
-use std::sync::{Mutex, OnceLock};
+use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::sync::Mutex;
+use std::sync::OnceLock;
 
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
-use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
-use halo2_base::halo2_proofs::plonk::{VerifyingKey, verify_proof};
+use halo2_base::halo2_proofs::plonk::VerifyingKey;
+use halo2_base::halo2_proofs::plonk::verify_proof;
 use halo2_base::halo2_proofs::poly::commitment::ParamsProver;
-use halo2_base::halo2_proofs::poly::kzg::commitment::{KZGCommitmentScheme, ParamsKZG};
+use halo2_base::halo2_proofs::poly::kzg::commitment::KZGCommitmentScheme;
+use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
 use halo2_base::halo2_proofs::poly::kzg::multiopen::VerifierSHPLONK;
 use halo2_base::halo2_proofs::poly::kzg::strategy::SingleStrategy;
-use halo2_base::halo2_proofs::transcript::{Blake2bRead, Challenge255, TranscriptReadBuffer};
+use halo2_base::halo2_proofs::transcript::Blake2bRead;
+use halo2_base::halo2_proofs::transcript::Challenge255;
+use halo2_base::halo2_proofs::transcript::TranscriptReadBuffer;
 use tvm_types::SliceData;
 use tvm_types::fail;
 
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
-use crate::executor::zk_halo2_with_vk_bundle::{
-    VkBlob, validate_proof_size, validate_public_inputs_size,
-};
+use crate::executor::zk_halo2_with_vk_bundle::VkBlob;
+use crate::executor::zk_halo2_with_vk_bundle::validate_proof_size;
+use crate::executor::zk_halo2_with_vk_bundle::validate_public_inputs_size;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Status;
@@ -297,39 +305,35 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// `ZKHALO2VERIFYWITHVK` handler.
 ///
 /// **Stack** (top → bottom):
-/// 1. `proof_cell` — `Cell` whose payload is the raw SHPLONK proof byte
-///    stream produced by `Blake2bWrite::finalize()`. No header, no
-///    framing.
+/// 1. `proof_cell` — `Cell` whose payload is the raw SHPLONK proof byte stream
+///    produced by `Blake2bWrite::finalize()`. No header, no framing.
 /// 2. `public_inputs_cell` — `Cell` whose payload is `N × 32` flat
-///    little-endian `Fr::to_repr()` (strict). No header, length must
-///    be a multiple of 32.
-/// 3. `vk_cell` — `Cell` whose payload is a [`VkBlob`] (magic +
-///    version + transcript discriminator + `BaseCircuitParams` JSON +
-///    `VerifyingKey<G1Affine>` bytes). See
-///    `super::zk_halo2_with_vk_bundle` for the format and
-///    `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format
-///    contract.
+///    little-endian `Fr::to_repr()` (strict). No header, length must be a
+///    multiple of 32.
+/// 3. `vk_cell` — `Cell` whose payload is a [`VkBlob`] (magic + version +
+///    transcript discriminator + `BaseCircuitParams` JSON +
+///    `VerifyingKey<G1Affine>` bytes). See `super::zk_halo2_with_vk_bundle` for
+///    the format and `docs/zkhalo2verifywithvk_design.md` for the frozen
+///    wire-format contract.
 ///
 /// **Pushes** a boolean: `true` on a cryptographically valid proof,
 /// `false` on a well-formed-but-invalid proof.
 ///
 /// **Throws `FatalError`** on structural input errors only:
-/// - `vk_cell` doesn't parse as `VkBlob` (bad magic / version /
-///   transcript / chunk-length overrun / trailing garbage /
-///   malformed `BaseCircuitParams`).
+/// - `vk_cell` doesn't parse as `VkBlob` (bad magic / version / transcript /
+///   chunk-length overrun / trailing garbage / malformed `BaseCircuitParams`).
 /// - `public_inputs_cell` length is not a multiple of 32, exceeds
 ///   `MAX_PUBLIC_INPUTS_BYTES`, or any 32-byte chunk is `≥ Fr modulus`.
 /// - `proof_cell` exceeds `MAX_PROOF_BYTES`.
-/// - `VerifyingKey<G1Affine>::read` rejects the VK bytes (curve
-///   membership failure with `SerdeFormat::RawBytes`, or shape doesn't
-///   match the inline `BaseCircuitParams`).
+/// - `VerifyingKey<G1Affine>::read` rejects the VK bytes (curve membership
+///   failure with `SerdeFormat::RawBytes`, or shape doesn't match the inline
+///   `BaseCircuitParams`).
 ///
 /// Cryptographic rejection (well-formed proof that just doesn't
 /// satisfy the relation) is a normal `false` return, not an exception,
 /// matching `VERGRTH16`'s contract.
 pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
-    engine
-        .load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
+    engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
     engine.try_use_gas(Gas::zkhalo2_verify_with_vk_price())?;
     fetch_stack(engine, 3)?;
 
@@ -356,8 +360,7 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
 
     let verifier_params = cached.params.verifier_params();
     let strategy = SingleStrategy::new(&cached.params);
-    let mut transcript =
-        Blake2bRead::<_, _, Challenge255<_>>::init(proof_bytes.as_slice());
+    let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(proof_bytes.as_slice());
     let instance_refs: &[&[Fr]] = &[&instances];
     let res = verify_proof::<
         KZGCommitmentScheme<Bn256>,
@@ -365,13 +368,7 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
         Challenge255<G1Affine>,
         Blake2bRead<&[u8], G1Affine, Challenge255<G1Affine>>,
         SingleStrategy<'_, Bn256>,
-    >(
-        verifier_params,
-        &cached.vk,
-        strategy,
-        &[instance_refs],
-        &mut transcript,
-    )
+    >(verifier_params, &cached.vk, strategy, &[instance_refs], &mut transcript)
     .is_ok();
 
     engine.cc.stack.push(boolean!(res));
