@@ -455,3 +455,31 @@ pub fn compile_code_debuggable(
         Err(_) => Err(CompileError::unknown(0, 0, "failure while convert BuilderData to cell")),
     }
 }
+
+#[cfg(all(test, feature = "gosh"))]
+mod gosh_zk_opcode_tests {
+    use super::compile_code_to_builder;
+
+    /// Regression guard: keeps mnemonic ↔ byte mapping stable for the
+    /// gosh-feature ZK opcodes. If the dispatch byte of any entry below
+    /// drifts, this test fails before runtime users hit a wrong handler.
+    #[test]
+    fn zk_opcode_bytes_round_trip() {
+        let cases: &[(&str, &[u8])] = &[
+            ("VERGRTH16", &[0xC7, 0x31]),
+            ("POSEIDONZKLOGIN", &[0xC7, 0x32]),
+            ("POSEIDON", &[0xC7, 0x50]),
+            ("ZKHALO2VERIFYWITHVK", &[0xC7, 0x4A]),
+        ];
+        for (mnemonic, expected) in cases {
+            let builder = compile_code_to_builder(mnemonic)
+                .unwrap_or_else(|e| panic!("compile {mnemonic} failed: {e:?}"));
+            let actual = builder.data();
+            assert_eq!(
+                &actual[..expected.len()],
+                *expected,
+                "byte mapping drifted for {mnemonic}: got {actual:02x?}, want {expected:02x?}",
+            );
+        }
+    }
+}
