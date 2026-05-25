@@ -109,12 +109,19 @@ Note: There is: zkaddr = Poseidon(JWT.stable\_id, JWT.iss, User salt password), 
 
 ## ZKHALO2VERIFYWITHVK (С74A)
 
-Native Halo2 SHPLONK proof verification where the verifying key and circuit configuration are supplied by the caller as a single self-describing operand, rather than baked into the node binary. Designed for the Acki Nacki ↔ Ethereum bridge: each deployed bridge contract carries its own immutable VK, so one opcode covers every circuit anyone deploys to AN without growing per-circuit code in the node.
+Native Halo2 SHPLONK proof verification where the verifying key, public inputs, and proof are supplied as **three separate stack cells**. Designed for the Acki Nacki ↔ Ethereum bridge: each deployed bridge contract carries its own immutable VK, so one opcode covers every circuit anyone deploys to AN without growing per-circuit code in the node.
 
 ```
-Input:
-    bundle_cell — Cell whose payload is a Halo2TvmBundle:
-        magic            8 B   "HALO2TVM"
+Input (top → bottom):
+    proof_cell           — Cell whose payload is raw SHPLONK proof bytes
+                            (no header; produced by Blake2bWrite::finalize()).
+                            Hard cap: 1 MiB.
+    public_inputs_cell   — Cell whose payload is raw N × 32 little-endian Fr
+                            (no header; length must be a multiple of 32; values
+                            ≥ Fr modulus are rejected as FatalError).
+                            Hard cap: 256 KiB (= 8192 Fr).
+    vk_cell              — Cell whose payload is a VkBlob:
+        magic            8 B   "VKBLOB\x00\x00"
         version          1 B   0x01
         transcript_kind  1 B   0x00 = Blake2b SHPLONK (only flavour accepted today)
         reserved         6 B   zero (not validated; reserved for future flags)
@@ -123,11 +130,16 @@ Input:
         vk_len           4 B   u32 LE
         vk_bytes         vk_len B    VerifyingKey<G1Affine>, SerdeFormat::RawBytes
                                      (curve-membership check ON every G1 element)
-        inst_len         4 B   u32 LE
-        instances_bytes  inst_len B  strict 32-byte little-endian Fr × N
-                                     (no u64 shortcut; values ≥ Fr modulus rejected)
-        prf_len          4 B   u32 LE
-        proof_bytes      prf_len B   SHPLONK proof
+                                                       Hard cap: 1 MiB.
+```
+
+Assembly:
+
+```
+PUSHREF vk_cell
+PUSHREF public_inputs_cell
+PUSHREF proof_cell
+ZKHALO2VERIFYWITHVK
 ```
 
 ```
@@ -135,14 +147,38 @@ Output:
     boolean value indicating if the proof is valid or not.
 ```
 
+### How to assemble `public_inputs_cell`
+
+The payload is **headerless**: just `N` 32-byte little-endian `Fr` values concatenated. For each public input:
+
+1. Encode the field element as a 32-byte little-endian byte string (`Fr::to_bytes` in halo2-base; `to_le_bytes` zero-padded to 32 B for values that fit in a u64).
+2. Concatenate the 32-byte chunks in the order the circuit's instance vector expects them.
+3. Wrap the resulting `N × 32`-byte buffer as the payload of a single TVM `Cell` (use `BUILDER` / `STZEROES` / `STIR` patterns or a host-side helper that emits a fresh cell).
+
+Out-of-range bytes (i.e. a 32-byte chunk that ≥ BN254 scalar modulus) are always a structural `FatalError` — this catches caller bugs early instead of letting them masquerade as cryptographic rejects.
+
+### How to assemble `proof_cell`
+
+Pass the proof bytes through unchanged. The producer side (`acki-nacki-bridge/crates/bridge-prover-orchestrator`) emits exactly the byte stream that `Blake2bWrite::<_, _, Challenge255<_>>::finalize()` produces. Just wrap it as the payload of a single TVM `Cell`.
+
+### How to assemble / deploy `vk_cell`
+
+The `VkBlob` is **long-lived** — a `TokenBridge` contract typically stores it in `c4` / persistent storage at deploy time and re-uses it on every `verify` call. The producer side at `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs` builds it via:
+
+```rust
+let blob = bridge_prover_orchestrator::VkBlob::from_native(&config, &vk)?;
+let vk_blob_bytes = blob.to_bytes()?; // ready to drop into a Cell
+```
+
+A real bridge Circuit 1B (fallback BLS attestation verifier) `VkBlob` fixture is checked in at `tvm-sdk/tvm_vm/halo2_test_data/fallback_vk_blob.bin` (6308 B) together with sample public inputs (`fallback_public_inputs.bin`, 4 × 32 B) and a sample proof (`fallback_proof.bin`, 14784 B).
+
 Notes:
 
 - The opcode invokes `halo2_proofs::plonk::verify_proof::<KZGCommitmentScheme<Bn256>, VerifierSHPLONK, Challenge255, Blake2bRead, SingleStrategy>` directly. No `gosh-zk-snark-halo2-utils` runtime dependency.
 - KZG SRS: only three points (`g[0]`, `g2`, `s_g2`) are embedded as constants in `zk_halo2_utils.rs`; `ParamsKZG<Bn256>` is reconstructed at runtime for any `k` via `from_parts`. No on-disk SRS blob is required for verification.
 - Per-VK cache: bounded FIFO (8 entries) keyed by `vk_bytes`. `config.k` is cross-checked against `vk.get_domain().k()` on both the cold path (after VK::read) and the hot path (cache hit) as defence-in-depth against a malicious header that lies about `k`.
-- DoS hardening: `VerifyingKey::read::<_, BaseCircuitBuilder<Fr>>` can panic deep inside `halo2-base` on adversarial `BaseCircuitParams` (e.g. `lookup_bits >= k`). The handler wraps the read in `std::panic::catch_unwind` and converts the unwind into a structural `FatalError`, so a single malicious bundle cannot abort the executor.
-- Bundle parser rejects: bad magic, wrong version, wrong transcript-kind, length-prefix overrun, trailing garbage, instances length not a multiple of 32, and bundles over 16 MiB.
-- Bytes-for-bytes the same wire format is emitted by the bridge producer at `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`.
+- DoS hardening: `VerifyingKey::read::<_, BaseCircuitBuilder<Fr>>` can panic deep inside `halo2-base` on adversarial `BaseCircuitParams` (e.g. `lookup_bits >= k`). The handler wraps the read in `std::panic::catch_unwind` and converts the unwind into a structural `FatalError`, so a single malicious blob cannot abort the executor.
+- `VkBlob` parser rejects: bad magic, wrong version, wrong transcript-kind, length-prefix overrun, trailing garbage, and blobs over 1 MiB.
 
 Producer reference: `acki-nacki-bridge/docs/zkhalo2verifywithvk_reference.md`.
 Design memo: [`docs/zkhalo2verifywithvk_design.md`](../zkhalo2verifywithvk_design.md).
