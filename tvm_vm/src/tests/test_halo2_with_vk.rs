@@ -1,42 +1,56 @@
 //! Real round-trip test for `ZKHALO2VERIFYWITHVK` (opcode `0xC7 0x4A`).
 //!
 //! Builds the three stack operands of the opcode from the checked-in
-//! DarkDex W=8 L0 fixture
-//! (`tvm_vm/halo2_test_data/dark_dex_w8_L0_{proof,instances}.bin` and the
-//! embedded `DARK_DEX_W8_VK_BYTES` constant), pushes them as three
-//! separate cells onto the VM stack, runs the handler, and asserts the
-//! boolean result.
+//! Acki Nacki ↔ Ethereum bridge **Circuit 1B** (Fallback BLS attestation
+//! verifier) fixture
+//! (`tvm_vm/halo2_test_data/fallback_{public_inputs,proof,vk,config_params}`),
+//! pushes them as three separate cells onto the VM stack, runs the
+//! handler, and asserts the boolean result.
+//!
+//! The fixture is a **real K=20 SHPLONK proof** produced by
+//! `bridge-prover-orchestrator::halo2_tvm_bundle` against the
+//! production-grade Hermez Perpetual Powers of Tau KZG SRS, so the
+//! pairing equation in the verifier is exercised against ceremony-real
+//! commitments end-to-end.
 //!
 //! **ABI** (frozen 2026-05-25 — Variant A):
 //!
 //! ```text
 //!   PUSHREF vk_cell             ← VkBlob (magic "VKBLOB\0\0" + cfg + vk_bytes)
-//!   PUSHREF public_inputs_cell  ← raw N × 32 LE Fr
+//!   PUSHREF public_inputs_cell  ← raw N × 32 LE Fr  (N=4 for Circuit 1B)
 //!   PUSHREF proof_cell          ← raw SHPLONK proof bytes
 //!   ZKHALO2VERIFYWITHVK
 //! ```
 //!
 //! Covers:
-//! - **Positive path**: a real Halo2 SHPLONK proof for DarkDex W=8 L0
-//!   round-trips through the three-cell ABI → `true`.
-//! - **Negative paths**: byte-flipped proof, tweaked instance, bad VkBlob
-//!   magic, corrupted VK, instance ≥ modulus, instance-count mismatch, empty
-//!   proof, malformed config_json, config.k mismatch, cache reuse smoke-test.
+//! - **Positive path**: a real Halo2 SHPLONK proof for the bridge
+//!   Circuit 1B (Fallback) round-trips through the three-cell ABI →
+//!   `true`.
+//! - **Negative paths**: byte-flipped proof, tweaked instance, bad
+//!   VkBlob magic, corrupted VK, instance ≥ modulus, instance-count
+//!   mismatch, empty proof, malformed config_json, config.k mismatch,
+//!   cache reuse smoke-test.
 
 use tvm_types::SliceData;
 
 use crate::executor::Engine;
 use crate::executor::test_helper::*;
-use crate::executor::zk_halo2_utils::DARK_DEX_W8_VK_BYTES;
 use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::savelist::SaveList;
 use crate::utils::pack_data_to_cell;
 
-const DARK_DEX_W8_L0_INSTANCES: &str = "halo2_test_data/dark_dex_w8_L0_instances.bin";
-const DARK_DEX_W8_L0_PROOF: &str = "halo2_test_data/dark_dex_w8_L0_proof.bin";
-const DARK_DEX_W8_CONFIG_JSON: &str = "halo2_test_data/dark_dex_w8_config_params.json";
+const FALLBACK_INSTANCES: &str = "halo2_test_data/fallback_public_inputs.bin";
+const FALLBACK_PROOF: &str = "halo2_test_data/fallback_proof.bin";
+const FALLBACK_CONFIG_JSON: &str = "halo2_test_data/fallback_config_params.json";
+const FALLBACK_VK: &str = "halo2_test_data/fallback_vk.bin";
+
+/// Helper: load the bridge Circuit 1B VK bytes from disk. Returned as
+/// owned `Vec<u8>` since the negative tests need to clone & mutate it.
+fn load_fallback_vk() -> Vec<u8> {
+    std::fs::read(FALLBACK_VK).expect("bridge Circuit 1B VK fixture must exist")
+}
 
 const VK_BLOB_MAGIC: &[u8; 8] = b"VKBLOB\x00\x00";
 const VK_BLOB_VERSION: u8 = 1;
@@ -113,21 +127,28 @@ fn run_with_operands(vk_blob: &[u8], public_inputs: &[u8], proof: &[u8]) -> tvm_
 }
 
 #[test]
-fn round_trip_dark_dex_w8_l0_valid_proof_returns_true() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).expect("config_params.json must exist");
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).expect("instances file must exist");
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).expect("proof file must exist");
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+fn round_trip_fallback_circuit_valid_proof_returns_true() {
+    // Reconstructs the `vk_cell` payload from the raw VK + config JSON
+    // fixture (rather than reading the pre-packed `fallback_vk_blob.bin`)
+    // to exercise the `build_vk_blob` path and prove that the inline
+    // assembly of the `VkBlob` header matches the producer's layout.
+    // The dedicated `bridge_circuit_1b_fallback_real_proof_verifies`
+    // test below covers the pre-packed path.
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).expect("config_params.json must exist");
+    let instances = std::fs::read(FALLBACK_INSTANCES).expect("instances file must exist");
+    let proof = std::fs::read(FALLBACK_PROOF).expect("proof file must exist");
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
 
     run_with_operands(&vk_blob, &instances, &proof)
-        .expect("valid DarkDex W=8 L0 operands must verify");
+        .expect("valid bridge Circuit 1B fallback operands must verify");
 }
 
 #[test]
 fn flipped_proof_byte_rejected_as_false() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let mut proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let mut proof = std::fs::read(FALLBACK_PROOF).unwrap();
 
     // Flip a byte in the middle of the proof. The handler collapses
     // every `halo2_proofs::plonk::verify_proof` `Result::Err` (whether
@@ -139,7 +160,8 @@ fn flipped_proof_byte_rejected_as_false() {
     let mid = proof.len() / 2;
     proof[mid] ^= 0xFF;
 
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
 
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &instances, &proof);
@@ -152,16 +174,17 @@ fn flipped_proof_byte_rejected_as_false() {
 
 #[test]
 fn tweaked_instance_fr_rejected_as_false() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let mut instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let mut instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
 
     // Flip the LOW byte of the first instance (it's a real Fr —
     // flipping the low byte stays inside the modulus and stays a valid
     // Fr, but no longer equals what the proof was computed against).
     instances[0] ^= 0x01;
 
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
 
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &instances, &proof);
@@ -173,10 +196,11 @@ fn tweaked_instance_fr_rejected_as_false() {
 
 #[test]
 fn bad_vk_blob_magic_returns_fatal_error() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-    let mut vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
+    let vk = load_fallback_vk();
+    let mut vk_blob = build_vk_blob(&cfg, &vk);
 
     // Corrupt the first byte of the magic.
     vk_blob[0] = b'X';
@@ -208,11 +232,11 @@ fn corrupt_vk_byte_never_verifies_as_true() {
     // commitments, permutation commitments, transcript repr) and a
     // single byte flip hits different layers depending on offset / VK
     // layout.
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
 
-    let mut vk = DARK_DEX_W8_VK_BYTES;
+    let mut vk = load_fallback_vk();
     vk[64] ^= 0xFF;
 
     let vk_blob = build_vk_blob(&cfg, &vk);
@@ -230,9 +254,9 @@ fn corrupt_vk_byte_never_verifies_as_true() {
 
 #[test]
 fn instance_ge_modulus_returns_fatal_error() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-    let valid_instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
+    let valid_instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
     assert!(valid_instances.len() >= 32, "fixture must have ≥ 1 instance");
 
     // Overwrite the first instance chunk with all-`0xFF`, which is ≫
@@ -244,13 +268,17 @@ fn instance_ge_modulus_returns_fatal_error() {
         *b = 0xFF;
     }
 
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &instances, &proof);
 
     let err = execute_zkhalo2_verify_with_vk(&mut engine)
         .expect_err("out-of-range Fr must trigger FatalError, not false");
-    assert!(err.to_string().contains("modulus"), "expected `>= modulus` error, got: {err}");
+    assert!(
+        err.to_string().contains("modulus"),
+        "expected `>= modulus` error, got: {err}"
+    );
 }
 
 #[test]
@@ -261,13 +289,14 @@ fn instance_count_mismatch_rejected_as_false() {
     // of 32) but one whose instance vector disagrees with what the
     // proof was generated against. This is a cryptographic reject
     // (`Ok(false)`), not a structural error.
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let valid_instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let valid_instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
     assert!(valid_instances.len() >= 64, "fixture must have ≥ 2 instances");
 
     let short_instances = valid_instances[..valid_instances.len() - 32].to_vec();
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
 
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &short_instances, &proof);
@@ -282,9 +311,10 @@ fn instance_count_mismatch_rejected_as_false() {
 
 #[test]
 fn empty_proof_rejected_as_false() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
 
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &instances, &[]);
@@ -300,11 +330,12 @@ fn malformed_config_json_returns_fatal_error() {
     // Replace the JSON config with non-JSON garbage. The VkBlob parser
     // attempts `serde_json::from_slice::<BaseCircuitParams>` and must
     // surface the deserialisation failure as `FatalError`.
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
     let bad_cfg = b"this is not json";
 
-    let vk_blob = build_vk_blob(bad_cfg, &DARK_DEX_W8_VK_BYTES);
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(bad_cfg, &vk);
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &instances, &proof);
 
@@ -319,15 +350,17 @@ fn config_k_mismatch_returns_fatal_error() {
     // reject loudly (FatalError) when it doesn't — even though VK
     // deserialisation under the wrong `BaseCircuitParams` may still
     // succeed.
-    let cfg_text = std::fs::read_to_string(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    // Real fixture has `"k":19` (compact, no spaces) — swap it for
-    // `"k":18`.
-    let mutated = cfg_text.replacen("\"k\":19", "\"k\":18", 1);
-    assert_ne!(mutated, cfg_text, "config fixture must contain `\"k\":19` to mutate");
+    let cfg_text = std::fs::read_to_string(FALLBACK_CONFIG_JSON).unwrap();
+    // Bridge Circuit 1B fixture has `"k": 20` (pretty-printed with
+    // spaces — see `serde_json::to_string_pretty`). Swap it for
+    // `"k": 18`.
+    let mutated = cfg_text.replacen("\"k\": 20", "\"k\": 18", 1);
+    assert_ne!(mutated, cfg_text, "config fixture must contain `\"k\": 20` to mutate");
 
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-    let vk_blob = build_vk_blob(mutated.as_bytes(), &DARK_DEX_W8_VK_BYTES);
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(mutated.as_bytes(), &vk);
 
     let mut engine = setup_engine();
     push_three_operands(&mut engine, &vk_blob, &instances, &proof);
@@ -389,10 +422,11 @@ fn fifo_cache_reused_across_two_invocations() {
     // per-VK cache. We can't directly observe cache state, but we can
     // sanity-check that two sequential proves with the same VK both
     // verify and complete quickly.
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-    let vk_blob = build_vk_blob(&cfg, &DARK_DEX_W8_VK_BYTES);
+    let cfg = std::fs::read(FALLBACK_CONFIG_JSON).unwrap();
+    let instances = std::fs::read(FALLBACK_INSTANCES).unwrap();
+    let proof = std::fs::read(FALLBACK_PROOF).unwrap();
+    let vk = load_fallback_vk();
+    let vk_blob = build_vk_blob(&cfg, &vk);
 
     for _ in 0..2 {
         run_with_operands(&vk_blob, &instances, &proof)
