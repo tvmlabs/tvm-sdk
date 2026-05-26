@@ -2429,6 +2429,7 @@ mod tests {
     use crate::BlockchainConfig;
     use crate::OrdinaryTransactionExecutor;
     use crate::blockchain_config::TONDefaultConfig;
+    use crate::test_utils::BuildActionsExecuteParamsFixture;
 
     struct DummyExecutor {
         config: BlockchainConfig,
@@ -2622,32 +2623,28 @@ mod tests {
         let vm_execution_is_block_related = Arc::new(Mutex::new(false));
         let block_collation_was_finished = Arc::new(Mutex::new(false));
         let last_tr_lt = Arc::new(AtomicU64::new(100));
+        let trace_steps = Arc::new(AtomicU64::new(0));
         let mut mvconfig = MVConfig::default();
         mvconfig.set_config(vec![3, 5, 8]);
-        let params = ExecuteParams {
-            block_unixtime: 123,
-            block_lt: 456,
-            seq_no: 7,
-            last_tr_lt: last_tr_lt.clone(),
-            seed_block: UInt256::with_array([0x77; 32]),
-            debug: true,
-            dapp_id: Some(dapp_id.clone()),
-            available_credit: 13,
-            termination_deadline: Some(Instant::now() + Duration::from_secs(30)),
-            execution_timeout: Some(Duration::from_secs(30)),
-            vm_execution_is_block_related: vm_execution_is_block_related.clone(),
-            block_collation_was_finished: block_collation_was_finished.clone(),
-            mvconfig,
-            engine_version: semver::Version::new(1, 0, 3),
-            ..ExecuteParams::default()
-        };
-        #[cfg(feature = "wasmtime")]
-        let params = {
-            let mut params = params;
-            params.wasm_binary_root_path = "./tests/wasm".to_owned();
-            params.wasm_engine = Some(wasmtime::Engine::default());
-            params
-        };
+        let trace_steps_callback = trace_steps.clone();
+        let trace_callback: Arc<tvm_vm::executor::TraceCallback> = Arc::new(move |_, _| {
+            trace_steps_callback.fetch_add(1, Ordering::Relaxed);
+        });
+        let mut fixture = BuildActionsExecuteParamsFixture::tvm_tracing(trace_callback);
+        fixture.block_unixtime = 123;
+        fixture.block_lt = 456;
+        fixture.seq_no = 7;
+        fixture.last_tr_lt = last_tr_lt.clone();
+        fixture.seed_block = UInt256::with_array([0x77; 32]);
+        fixture.dapp_id = Some(dapp_id.clone());
+        fixture.available_credit = 13;
+        fixture.termination_deadline = Some(Instant::now() + Duration::from_secs(30));
+        fixture.execution_timeout = Some(Duration::from_secs(30));
+        fixture.vm_execution_is_block_related = vm_execution_is_block_related.clone();
+        fixture.block_collation_was_finished = block_collation_was_finished.clone();
+        fixture.mvconfig = mvconfig;
+        fixture.engine_version = semver::Version::new(1, 0, 3);
+        let params = fixture.build();
 
         let code = tvm_assembler::compile_code_to_cell(
             "NOW\nPUSHINT 123\nEQUAL\nTHROWIFNOT 100\n\
@@ -2673,6 +2670,7 @@ mod tests {
         assert_eq!(tx.now(), 123);
         assert_eq!(tx.logical_time(), 100);
         assert_eq!(last_tr_lt.load(Ordering::Relaxed), 101);
+        assert!(trace_steps.load(Ordering::Relaxed) > 0);
         assert!(*vm_execution_is_block_related.lock().unwrap());
         match tx.read_description().unwrap() {
             TransactionDescr::Ordinary(description) => {

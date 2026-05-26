@@ -203,6 +203,10 @@ struct RunArgs {
     /// Update code in tvc without executing anything
     #[arg(long)]
     replace_code: Option<String>,
+
+    /// Execution block seq no
+    #[arg(long)]
+    block_seq_no: Option<u32>,
 }
 
 fn parse_json_object(s: &str) -> Result<Value, String> {

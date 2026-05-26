@@ -631,9 +631,9 @@ mod tests {
     use tvm_vm::stack::integer::IntegerData;
 
     use super::OrdinaryTransactionExecutor;
-    use crate::ExecuteParams;
     use crate::TransactionExecutor;
     use crate::error::ExecutorError as LocalExecutorError;
+    use crate::test_utils::build_actions_execute_params;
 
     fn address(byte: u8) -> MsgAddressInt {
         MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
@@ -696,7 +696,7 @@ mod tests {
         let executor = OrdinaryTransactionExecutor::new(Default::default());
         let mut account = Account::with_address(address(1));
         let err = executor
-            .execute_with_params(None, &mut account, ExecuteParams::default(), &mut 0)
+            .execute_with_params(None, &mut account, build_actions_execute_params(), &mut 0)
             .unwrap_err();
 
         assert!(err.to_string().contains("Ordinary transaction must have input message"));
@@ -708,7 +708,7 @@ mod tests {
         let mut account = Account::with_address(address(1));
         let msg = Message::with_ext_out_header(ExtOutMessageHeader::default());
         let err = executor
-            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .execute_with_params(Some(&msg), &mut account, build_actions_execute_params(), &mut 0)
             .unwrap_err();
 
         assert_eq!(
@@ -730,7 +730,7 @@ mod tests {
         ));
 
         let tx = executor
-            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .execute_with_params(Some(&msg), &mut account, build_actions_execute_params(), &mut 0)
             .unwrap();
 
         assert_eq!(tx.account_id(), &dst.address());
@@ -751,7 +751,7 @@ mod tests {
         ));
 
         let tx = executor
-            .execute_with_params(Some(&msg), &mut account, ExecuteParams::default(), &mut 0)
+            .execute_with_params(Some(&msg), &mut account, build_actions_execute_params(), &mut 0)
             .unwrap();
 
         assert_eq!(tx.account_id(), &dst.address());
