@@ -27,6 +27,9 @@ pub use vmsetup::*;
 pub mod blockchain_config;
 pub use blockchain_config::*;
 
+#[cfg(test)]
+pub(crate) mod test_utils;
+
 pub fn build_commit() -> Option<&'static str> {
     std::option_env!("BUILD_GIT_COMMIT")
 }
