@@ -471,7 +471,10 @@ mod gosh_zk_opcode_tests {
         for (mnemonic, expected) in [
             ("VERGRTH16", [0xC7u8, 0x31u8]),
             ("POSEIDON", [0xC7, 0x32]),
-            ("VERGRTH16WITHVK", [0xC7, 0x49]),
+            ("ZKHALO2VERIFY", [0xC7, 0x49]),
+            ("CHKHISTPROOF", [0xC7, 0x50]),
+            ("VERGRTH16WITHVK", [0xC7, 0x51]),
+            ("GETALLLAYERHASHES", [0xC7, 0x52]),
         ] {
             let compiled =
                 compile_code(mnemonic).expect("mnemonic should compile under feature 'gosh'");

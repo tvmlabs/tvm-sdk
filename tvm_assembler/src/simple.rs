@@ -863,6 +863,7 @@ impl Engine {
         ZKHALO2VERIFY                        => 0xC7, 0x49
         CHKHISTPROOF                         => 0xC7, 0x50
         VERGRTH16WITHVK                      => 0xC7, 0x51
+        GETALLLAYERHASHES                    => 0xC7, 0x52
     }
 
     fn add_commands<'a>(
