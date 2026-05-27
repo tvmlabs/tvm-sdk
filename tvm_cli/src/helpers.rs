@@ -55,6 +55,7 @@ use tvm_client::crypto::MnemonicDictionary;
 use tvm_client::error::ClientError;
 use tvm_client::net::NetworkConfig;
 use tvm_client::net::OrderBy;
+use tvm_client::net::ParamsOfQuery;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
@@ -316,7 +317,10 @@ impl Display for SdkAddress {
 mod tests {
     use std::str::FromStr;
 
+    use serde_json::json;
+
     use super::SdkAddress;
+    use super::extract_message_boc;
 
     const DAPP_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     const ACCOUNT_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -371,6 +375,36 @@ mod tests {
         let err = SdkAddress::from_str(&format!("deadbeef::{RAW_ADDRESS}")).unwrap_err();
 
         assert_eq!(err, "dapp_id must be exactly 64 hex characters");
+    }
+
+    #[test]
+    fn extract_message_boc_reads_blockchain_message_response() {
+        let boc = extract_message_boc(json!({
+            "data": {
+                "blockchain": {
+                    "message": {
+                        "boc": "te6ccgEBAQEA"
+                    }
+                }
+            }
+        }))
+        .unwrap();
+
+        assert_eq!(boc, "te6ccgEBAQEA");
+    }
+
+    #[test]
+    fn extract_message_boc_reports_missing_message() {
+        let err = extract_message_boc(json!({
+            "data": {
+                "blockchain": {
+                    "message": null
+                }
+            }
+        }))
+        .unwrap_err();
+
+        assert_eq!(err, "message with specified id was not found.");
     }
 }
 
@@ -527,24 +561,34 @@ pub async fn query_with_limit(
 }
 
 pub async fn query_message(ton: TonClient, message_id: &str) -> Result<String, String> {
-    let messages = query_with_limit(
-        ton.clone(),
-        "messages",
-        json!({ "id": { "eq": message_id } }),
-        "boc",
-        None,
-        Some(1),
+    let result = tvm_client::net::query(
+        ton,
+        ParamsOfQuery {
+            query: "query message($hash:String!){blockchain{message(hash:$hash){boc}}}".into(),
+            variables: Some(json!({
+                "hash": message_id,
+            })),
+        },
     )
     .await
-    .map_err(|e| format!("failed to query account data: {}", e))?;
-    if messages.is_empty() {
-        Err("message with specified id was not found.".to_string())
-    } else {
-        Ok(messages[0]["boc"]
-            .as_str()
-            .ok_or("Failed to obtain message boc.".to_string())?
-            .to_string())
+    .map_err(|e| format!("failed to query message: {}", e))?;
+
+    extract_message_boc(result.result)
+}
+
+fn extract_message_boc(mut response: Value) -> Result<String, String> {
+    let message = response
+        .pointer_mut("/data/blockchain/message")
+        .ok_or("Failed to obtain message from response.".to_string())?;
+
+    if message.is_null() {
+        return Err("message with specified id was not found.".to_string());
     }
+
+    message["boc"]
+        .as_str()
+        .ok_or("Failed to obtain message boc.".to_string())
+        .map(ToString::to_string)
 }
 
 pub async fn query_account_field(
