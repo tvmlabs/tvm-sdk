@@ -474,6 +474,24 @@ pub trait TransactionExecutor {
                 }
                 CommonMsgInfo::CrossDappMessageInfo(header) => {
                     log::debug!(target: "executor", "msg cross-dapp, bounce: {}, bounced: {}", header.bounce, header.bounced);
+                    if result_acc.is_none() {
+                        if let Some(new_acc) = account_from_cross_dapp_message(
+                            msg,
+                            msg_balance,
+                        ) {
+                            result_acc = new_acc;
+                            result_acc.set_last_paid(if !is_special {
+                                smc_info.unix_time()
+                            } else {
+                                0
+                            });
+
+                            // if there was a balance in message (not bounce), then account state at
+                            // least become uninit
+                            result_acc.uninit_account();
+                            *acc = result_acc.clone();
+                        }
+                    }
                     false
                 }
                 _ => {
@@ -2257,6 +2275,31 @@ fn account_from_message(
         Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
     }
 }
+
+
+/// Calculate new account according to inbound message.
+/// If message has no value, account will not created.
+fn account_from_cross_dapp_message(
+    msg: &Message,
+    msg_remaining_balance: &CurrencyCollection,
+) -> Option<Account> {
+    let hdr = msg.cross_dapp_header()?;
+    if msg.state_init().is_some() {
+        log::error!("Cross-dapp message should not be able to deploy account");
+        return None;
+    }
+    if hdr.bounce {
+        log::trace!(
+            target: "executor",
+            "Account will not be created. Value of {:x} message will be returned",
+            msg.hash().unwrap_or_default()
+        );
+        None
+    } else {
+        Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
+    }
+}
+
 
 fn balance_to_string(balance: &CurrencyCollection) -> String {
     let value = balance.grams.as_u128();
