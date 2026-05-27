@@ -55,6 +55,10 @@ mod test_multifactor_tls_wasm_execution;
 mod test_halo2;
 
 #[cfg(all(test, feature = "gosh"))]
+#[path = "../tests/test_halo2_layer_anonymized.rs"]
+mod test_halo2_layer_anonymized;
+
+#[cfg(all(test, feature = "gosh"))]
 #[path = "../tests/test_vergrth_poseidon_execution.rs"]
 mod test_vergrth_poseidon_execution;
 
@@ -87,6 +91,9 @@ mod test_helper;
 
 #[cfg(feature = "gosh")]
 pub mod chk_hist_proof;
+
+#[cfg(feature = "gosh")]
+pub mod get_all_layer_hashes;
 
 #[cfg(feature = "gosh")]
 pub mod zk;

@@ -57,6 +57,8 @@ pub struct VMSetup {
     execution_timeout: Option<Duration>,
     check_history_proof_hash:
         Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
+    get_all_layer_hashes:
+        Option<Arc<dyn Send + Sync + Fn() -> (u8, Vec<u8>)>>,
 }
 
 impl VMSetup {
@@ -86,6 +88,7 @@ impl VMSetup {
             termination_deadline: None,
             execution_timeout: None,
             check_history_proof_hash: None,
+            get_all_layer_hashes: None,
         }
     }
 
@@ -211,6 +214,17 @@ impl VMSetup {
         self
     }
 
+    /// Sets get_all_layer_hashes callback. Host returns
+    /// `(num_layers, blob)` where `blob.len() == num_layers * 128 * 32`.
+    /// Consumed by the `GETALLLAYERHASHES` opcode in `gosh`-feature builds.
+    pub fn set_get_all_layer_hashes(
+        mut self,
+        callback: Option<Arc<dyn Send + Sync + Fn() -> (u8, Vec<u8>)>>,
+    ) -> VMSetup {
+        self.get_all_layer_hashes = callback;
+        self
+    }
+
     /// Sets account dapp_id
     pub fn set_dapp_id(mut self, dapp_id: Option<UInt256>) -> VMSetup {
         self.vm.set_dapp_id(dapp_id);
@@ -281,6 +295,9 @@ impl VMSetup {
         vm.set_execution_timeout(self.execution_timeout);
         if let Some(callback) = self.check_history_proof_hash {
             vm.set_check_history_proof_hash(callback);
+        }
+        if let Some(callback) = self.get_all_layer_hashes {
+            vm.set_get_all_layer_hashes(callback);
         }
         vm
     }

@@ -156,6 +156,9 @@ pub struct Engine {
 
     pub(in crate::executor) check_history_proof_hash:
         Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
+
+    pub(in crate::executor) get_all_layer_hashes:
+        Option<Arc<dyn Send + Sync + Fn() -> (u8, Vec<u8>)>>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -331,6 +334,7 @@ impl Engine {
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
             check_history_proof_hash: None,
+            get_all_layer_hashes: None,
         }
     }
 
@@ -513,6 +517,13 @@ impl Engine {
         callback: Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>,
     ) {
         self.check_history_proof_hash = Some(callback);
+    }
+
+    pub fn set_get_all_layer_hashes(
+        &mut self,
+        callback: Arc<dyn Send + Sync + Fn() -> (u8, Vec<u8>)>,
+    ) {
+        self.get_all_layer_hashes = Some(callback);
     }
 
     #[cfg(feature = "wasmtime")]

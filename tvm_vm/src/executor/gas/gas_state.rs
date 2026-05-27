@@ -20,6 +20,8 @@ use crate::error::TvmError;
 #[cfg(feature = "gosh")]
 use crate::executor::chk_hist_proof::CHKHISTPROOF_GAS_PRICE;
 #[cfg(feature = "gosh")]
+use crate::executor::get_all_layer_hashes::GETALLLAYERHASHES_GAS_PRICE;
+#[cfg(feature = "gosh")]
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
@@ -244,6 +246,17 @@ impl Gas {
     #[cfg(feature = "gosh")]
     pub fn consume_chkhistproof(&mut self) -> i64 {
         self.use_gas(CHKHISTPROOF_GAS_PRICE)
+    }
+
+    /// Compute GETALLLAYERHASHES usage cost
+    #[cfg(feature = "gosh")]
+    pub const fn getalllayerhashes_price() -> i64 {
+        GETALLLAYERHASHES_GAS_PRICE
+    }
+
+    #[cfg(feature = "gosh")]
+    pub fn consume_getalllayerhashes(&mut self) -> i64 {
+        self.use_gas(GETALLLAYERHASHES_GAS_PRICE)
     }
 
     #[cfg(feature = "gosh")]

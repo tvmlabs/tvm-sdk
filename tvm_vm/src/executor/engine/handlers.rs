@@ -46,6 +46,8 @@ use crate::executor::types::InstructionOptions;
 #[cfg(feature = "gosh")]
 use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 #[cfg(feature = "gosh")]
+use crate::executor::get_all_layer_hashes::execute_get_all_layer_hashes;
+#[cfg(feature = "gosh")]
 use crate::executor::zk::*;
 #[cfg(feature = "gosh")]
 use crate::executor::zk_halo2::*;
@@ -414,7 +416,8 @@ impl Handlers {
                 .set(0x48, execute_calculate_miner_reward)
                 .set(0x49, execute_halo2_proof_verification)
                 .set(0x50, execute_chk_hist_proof)
-                .set(0x51, execute_vergrth16_with_vk);
+                .set(0x51, execute_vergrth16_with_vk)
+                .set(0x52, execute_get_all_layer_hashes);
             // Pre-build VK + KZG params in background so the first
             // ZKHALO2VERIFY call doesn't block for seconds.
             crate::executor::zk_halo2::warmup_halo2();

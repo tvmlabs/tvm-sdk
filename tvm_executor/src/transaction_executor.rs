@@ -151,6 +151,8 @@ pub struct ExecuteParams {
     pub engine_version: semver::Version,
     pub check_history_proof_hash:
         Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
+    pub get_all_layer_hashes:
+        Option<Arc<dyn Send + Sync + Fn() -> (u8, Vec<u8>)>>,
 }
 
 pub struct ActionPhaseResult {
@@ -205,6 +207,7 @@ impl Default for ExecuteParams {
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
             check_history_proof_hash: None,
+            get_all_layer_hashes: None,
         }
     }
 }
@@ -603,6 +606,8 @@ pub trait TransactionExecutor {
         vm_setup = vm_setup.set_dapp_id(params.dapp_id.clone());
         vm_setup =
             vm_setup.set_check_history_proof_hash(params.check_history_proof_hash.clone());
+        vm_setup =
+            vm_setup.set_get_all_layer_hashes(params.get_all_layer_hashes.clone());
 
         let mut vm = vm_setup.create();
 
