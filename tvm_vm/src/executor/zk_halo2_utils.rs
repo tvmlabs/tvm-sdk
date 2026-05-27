@@ -154,7 +154,9 @@ pub const DARK_DEX_W128_VK_BYTES: [u8; 842] = [
 
 /// Deserialize VK from the embedded bytes. Called on each verification — the 842-byte
 /// deserialization cost is negligible compared to actual proof verification.
-pub fn build_dark_dex_w128_vk() -> VerifyingKey<G1Affine> {
+pub fn build_dark_dex_w128_vk() -> halo2_base::halo2_proofs::plonk::VerifyingKey<
+    halo2_base::halo2_proofs::halo2curves::bn256::G1Affine,
+> {
     read_vk(&DARK_DEX_W128_VK_BYTES, &dark_dex_w128_config_params())
 }
 
