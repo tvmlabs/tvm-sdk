@@ -379,6 +379,7 @@ fn test_termination_deadline() {
     let from_start = Instant::now();
     // usually this execution requires 250-300 ms
     engine.set_termination_deadline(Some(Instant::now() + Duration::from_millis(50)));
+
     let err = engine.execute().expect_err("Should be failed with termination deadline reached");
     assert!(from_start.elapsed() < Duration::from_millis(55));
     assert!(matches!(
@@ -561,7 +562,7 @@ fn test_run_wasm_fail_on_external() {
     engine.wasm_engine_init_cached().unwrap();
     let mut engine = engine.precompile_all_wasm_by_hash().unwrap(); // Should not error on empty hash list!
 
-    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -571,10 +572,10 @@ fn test_run_wasm_fail_on_external() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let filename = "./src/tests/add.wasm";
     let wasm_dict = std::fs::read(filename).unwrap();
@@ -648,10 +649,10 @@ fn test_run_wasm_io_plug_hashmap() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let wasm_dict = []; //std::fs::read(filename).unwrap();
@@ -661,8 +662,8 @@ fn test_run_wasm_io_plug_hashmap() {
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-    let status = execute_run_wasm(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", ());
 
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
@@ -727,14 +728,14 @@ fn test_run_wasm_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -742,8 +743,8 @@ fn test_run_wasm_from_hash() {
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-    let status = execute_run_wasm(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", ());
     println!(
         "res: {:?}",
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
@@ -816,14 +817,14 @@ fn test_run_wasm_concat_multiarg_for_add_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -831,8 +832,8 @@ fn test_run_wasm_concat_multiarg_for_add_from_hash() {
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-    let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    execute_run_wasm_concat_multiarg(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", ());
 
     assert!(
         rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap().pop().unwrap()
@@ -897,14 +898,14 @@ fn test_wasm_from_nonexistent_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -975,14 +976,14 @@ fn test_wasm_from_wrong_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -1050,14 +1051,14 @@ fn test_wasm_from_non_whitelist_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -1202,15 +1203,15 @@ fn test_run_wasm_deterministic_random_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "test";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_interface = "gosh:determinism/test-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_interface.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_interface.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // let filename = "";
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -1218,8 +1219,8 @@ fn test_run_wasm_deterministic_random_from_hash() {
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-    let status = execute_run_wasm(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", ());
 
     let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
     // println!("Res: {:?}", res);
@@ -1239,13 +1240,13 @@ fn test_run_wasm_deterministic_random_from_hash() {
         let cell = TokenValue::write_bytes(&its, &ABI_VERSION_2_4).unwrap().into_cell().unwrap();
         engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-        let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+        let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
         engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-        let cell = pack_data_to_cell(&wasm_interface.as_bytes(), &mut engine).unwrap();
+        let cell = pack_data_to_cell(wasm_interface.as_bytes(), &mut engine).unwrap();
         engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-        let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+        let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
             .unwrap()
             .into_cell()
             .unwrap();
@@ -1253,7 +1254,7 @@ fn test_run_wasm_deterministic_random_from_hash() {
         // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
         engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-        let _status = execute_run_wasm(&mut engine).unwrap();
+        execute_run_wasm(&mut engine).unwrap();
         // println!("Wasm Return Status: {:?}", status);
 
         let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
@@ -1340,13 +1341,13 @@ fn test_run_wasm_clock_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "test";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "gosh:determinism/test-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-    let cell = TokenValue::write_bytes(&Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(Vec::<u8>::new().as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -1354,8 +1355,8 @@ fn test_run_wasm_clock_from_hash() {
     // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
-    let status = execute_run_wasm(&mut engine).unwrap();
-    println!("Wasm Return Status: {:?}", status);
+    execute_run_wasm(&mut engine).unwrap();
+    println!("Wasm Return Status: {:?}", ());
 
     let res = rejoin_chain_of_cells(engine.cc.stack.get(0).as_cell().unwrap()).unwrap();
     println!("Res: {:?}", res);
@@ -1436,14 +1437,14 @@ fn test_run_wasm_fuel_error_from_hash() {
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     // Push args, func name, instance name, then wasm.
     let wasm_func = "add";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:adder/add@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -1455,8 +1456,15 @@ fn test_run_wasm_fuel_error_from_hash() {
     println!("Wasm Return Status: {:?}", result);
 
     let res_error = result.expect_err("Test didn't error on fuel use");
-    println!("{:?}", res_error);
-    assert_eq!(format!("{}", res_error), "VM Exception: 0 1");
+    let TvmError::TvmExceptionFull(exception, description) =
+        res_error.downcast_ref::<TvmError>().expect("Should be TvmExceptionFull")
+    else {
+        panic!("Should be TvmExceptionFull");
+    };
+
+    assert_eq!(exception.exception_code(), Some(ExceptionCode::WasmExecFail));
+    assert!(description.contains("Failed to execute WASM function"));
+    assert!(description.contains("all fuel consumed by WebAssembly"));
 }
 
 #[test]
@@ -1465,13 +1473,13 @@ fn test_bocdepth() {
     tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
         .with_borrow_mut(|x| *x = Some(1398101 * 1024));
     let mut data = [100u8; 98 * 1024 + 1248].to_vec();
-    let _cell = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
+    let _cell = TokenValue::write_bytes(data.as_slice(), &ABI_VERSION_2_4)
         .unwrap()                              //1398101
         .into_cell()
         .unwrap();
 
     data.append(&mut [100u8].to_vec());
-    let res = TokenValue::write_bytes(&data.as_slice(), &ABI_VERSION_2_4)
+    let res = TokenValue::write_bytes(data.as_slice(), &ABI_VERSION_2_4)
         .unwrap()                              //1398101
         .into_cell();
     assert!(res.is_err());
@@ -1547,7 +1555,7 @@ fn test_divmodc() {
         let res = engine.execute();
         let elapsed = start.elapsed().as_nanos();
 
-        average_ = average_ + elapsed;
+        average_ += elapsed;
 
         println!("elapsed in nanoseconds: {:?}", elapsed);
 
@@ -1635,11 +1643,11 @@ fn test_schkrefs() {
         engine.cc.stack.push(StackItem::int(0));
 
         let start: Instant = Instant::now();
-        let status = execute_schkrefs(&mut engine).unwrap();
-        println!("status : {:?}", status);
+        execute_schkrefs(&mut engine).unwrap();
+        println!("status : {:?}", ());
         let elapsed = start.elapsed().as_nanos();
 
-        average_ = average_ + elapsed;
+        average_ += elapsed;
 
         println!("elapsed in nanoseconds: {:?}", elapsed);
     }
@@ -1705,7 +1713,7 @@ fn test_xor() {
         let res = engine.cc.stack.get(0).as_integer().unwrap();
         println!("res: {:?}", res);
 
-        average_ = average_ + elapsed;
+        average_ += elapsed;
     }
 
     let average_ = average_ / num_iter;

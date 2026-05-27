@@ -18,15 +18,15 @@ use tvm_vm::stack::StackItem;
 pub enum ExecutorError {
     #[error("Invalid external message")]
     InvalidExtMessage,
-    #[error("Transaction executor internal error: {}", 0)]
+    #[error("Transaction executor internal error: {0}")]
     TrExecutorError(String),
-    #[error("VM Exception, code: {}", 0)]
+    #[error("VM Exception, code: {0}")]
     TvmExceptionCode(ExceptionCode),
-    #[error("Contract did not accept message, exit code: {}", 0)]
+    #[error("Contract did not accept message, exit code: {0}")]
     NoAcceptError(i32, Option<StackItem>),
     #[error("Cannot pay for importing this external message")]
     NoFundsToImportMsg,
-    #[error("Compute phase skipped while processing external inbound message with reason {:?}", 0)]
+    #[error("Compute phase skipped while processing external inbound message with reason {0:?}")]
     ExtMsgComputeSkipped(ComputeSkipReason),
     #[error(
         "Compute phase terminated due to deadline reached (transaction execution takes too long time)"

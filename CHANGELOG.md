@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.25.0] - 2026-XX-XX
+## New
+- Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapp id.
+
+
 ## [2.24.21] - 2026-04-29
 
 ### Added

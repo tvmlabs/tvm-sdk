@@ -53,7 +53,7 @@ fn exec_tls_wasm_kernel(
     tls_data: Vec<u8>,
     root_cert: Vec<u8>,
     lv_kid: Vec<u8>,
-    mut lv_provider: &mut Vec<u8>,
+    lv_provider: &mut Vec<u8>,
     current_timestamp: u32,
 ) -> String {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -122,7 +122,7 @@ fn exec_tls_wasm_kernel(
     append_uint32(&mut timestamp_lv_provider, current_timestamp);
 
     //
-    timestamp_lv_provider.append(&mut lv_provider);
+    timestamp_lv_provider.append(lv_provider);
 
     let cell = TokenValue::write_bytes(&timestamp_lv_provider, &ABI_VERSION_2_4)
         .unwrap()
@@ -132,14 +132,14 @@ fn exec_tls_wasm_kernel(
 
     // Push args, func name, instance name, then wasm.
     let wasm_func = "tlscheck";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_func = "docs:tlschecker/tls-check-interface@0.1.0";
-    let cell = pack_data_to_cell(&wasm_func.as_bytes(), &mut engine).unwrap();
+    let cell = pack_data_to_cell(wasm_func.as_bytes(), &mut engine).unwrap();
     engine.cc.stack.push(StackItem::cell(cell.clone()));
     let wasm_dict = Vec::<u8>::new();
 
-    let cell = TokenValue::write_bytes(&wasm_dict.as_slice(), &ABI_VERSION_2_4)
+    let cell = TokenValue::write_bytes(wasm_dict.as_slice(), &ABI_VERSION_2_4)
         .unwrap()
         .into_cell()
         .unwrap();
@@ -147,16 +147,16 @@ fn exec_tls_wasm_kernel(
     engine.cc.stack.push(StackItem::cell(cell.clone()));
 
     let start = std::time::Instant::now();
-    let status = execute_run_wasm_concat_multiarg(&mut engine).unwrap();
+    execute_run_wasm_concat_multiarg(&mut engine).unwrap();
     let t = start.elapsed().as_micros();
-    println!("Wasm Return Status: {:?}", status);
+    println!("Wasm Return Status: {:?}", ());
     println!("Time: {:?}", t);
 
     let res = engine.cc.stack.get(0).as_cell().unwrap(); //engine.cc.stack.get(0).as_slice().unwrap().clone();
     let slice = SliceData::load_cell(res.clone()).unwrap();
     let ress = unpack_data_from_cell(slice, &mut engine).unwrap();
 
-    return hex::encode(ress.clone());
+    hex::encode(ress.clone())
 }
 
 #[test]

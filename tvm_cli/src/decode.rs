@@ -547,6 +547,7 @@ pub mod msg_printer {
         json!(
             match header {
                 CommonMsgInfo::IntMsgInfo(_) => "internal",
+                CommonMsgInfo::CrossDappMessageInfo(_) => "cross dapp",
                 CommonMsgInfo::ExtInMsgInfo(_) => "external inbound",
                 CommonMsgInfo::ExtOutMsgInfo(_) => "external outbound",
             }
@@ -586,6 +587,21 @@ pub mod msg_printer {
                     "bounced" : &header.bounced.to_string(),
                     "source" : &header.src.to_string(),
                     "destination" : &header.dst.to_string(),
+                    "value" : &serialize_currency_collection(&header.value),
+                    "ihr_fee" : &serialize_grams(&header.ihr_fee),
+                    "fwd_fee" : &serialize_grams(&header.fwd_fee),
+                    "created_lt" : &header.created_lt.to_string(),
+                    "created_at" : &header.created_at.to_string(),
+                })
+            }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                json!({
+                    "bounce" : &header.bounce.to_string(),
+                    "bounced" : &header.bounced.to_string(),
+                    "source" : &header.src.to_string(),
+                    "src_dapp" : &header.src_dapp_id.to_hex_string(),
+                    "destination" : &header.dst.to_string(),
+                    "dest_dapp" : &header.dst_dapp_id.to_hex_string(),
                     "value" : &serialize_currency_collection(&header.value),
                     "ihr_fee" : &serialize_grams(&header.ihr_fee),
                     "fwd_fee" : &serialize_grams(&header.fwd_fee),
@@ -690,8 +706,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_decode_body_json() {
-        let body = "te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA==";
+        let body = "te6ccgEBAgEAlgAB4ddyAENPhARLqvYWfcfwyY4fDOfGj88sVFpJjVp9Rh4QN6iL06hBowkex5kc8haTCwWTnugx1OKTuxOumBzdGwLCSzzna0XhE6urkzQv0XbzKbLpZicIiuqBenAdx6nbCkAAAGCSbtgxWLjxbUl77IIgAQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGU=";
         let config = Config::default();
-        decode_body(body, "tests/samples/wallet.abi.json", true, &config).await.unwrap();
+        decode_body(body, "tests/decode_body.abi.json", true, &config).await.unwrap();
     }
 }

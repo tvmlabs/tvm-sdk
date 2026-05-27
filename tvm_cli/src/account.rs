@@ -83,6 +83,16 @@ async fn query_accounts(
     Ok(res)
 }
 
+/// Extracts the `account_id` portion of an address in any supported input form
+/// (`hex64`, `wc:hex64`, `dapp_hex64:hex64`, `dapp_hex64::hex64`). The unique
+/// account key is everything after the last `:`; a leading `:` left over from
+/// the `::` form is stripped defensively. This deliberately avoids re-parsing
+/// via `SdkAddress` so `MsgAddressInt` validation stays out of this comparison.
+fn account_id_of(address: &str) -> &str {
+    let id = address.rsplit_once(':').map_or(address, |(_, id)| id);
+    id.strip_prefix(':').unwrap_or(id)
+}
+
 pub async fn get_account(
     config: &Config,
     addresses: Vec<String>,
@@ -133,10 +143,10 @@ pub async fn get_account(
     let mut found_addresses = vec![];
 
     if !accounts.is_empty() {
-        let mut json_res = json!({});
+        let mut json_results: Vec<Value> = Vec::new();
         for (acc, dapp_id, state_timestamp) in accounts.iter() {
             let address = acc.get_id().unwrap().as_hex_string();
-            found_addresses.push(format!("0:{address}"));
+            found_addresses.push(address.clone());
 
             let acc_type = match acc.status() {
                 AccountStatus::AccStateUninit => "Uninit".to_owned(),
@@ -196,33 +206,6 @@ pub async fn get_account(
                     None => "null".to_owned(),
                 };
 
-                if config.is_json {
-                    json_res = json_account(
-                        Some(acc_type),
-                        Some(address.clone()),
-                        Some(balance),
-                        Some(last_paid),
-                        Some(trans_lt),
-                        Some(data_boc),
-                        Some(code_hash),
-                        None,
-                        *state_timestamp,
-                    );
-                } else {
-                    print_account(
-                        config,
-                        Some(acc_type),
-                        Some(address.clone()),
-                        Some(balance),
-                        Some(last_paid),
-                        Some(trans_lt),
-                        Some(data_boc),
-                        Some(code_hash),
-                        None,
-                        *state_timestamp,
-                    );
-                }
-
                 let dapp_id = dapp_id.as_deref().unwrap_or("None");
 
                 let ecc_balance = acc
@@ -239,15 +222,40 @@ pub async fn get_account(
                         json!(mapping)
                     })
                     .unwrap_or(serde_json::Value::Null);
+
                 if config.is_json {
-                    json_res["dapp_id"] = json!(dapp_id);
-                    json_res["ecc_balance"] = ecc_balance;
+                    let mut acc_json = json_account(
+                        Some(acc_type),
+                        Some(address.clone()),
+                        Some(balance),
+                        Some(last_paid),
+                        Some(trans_lt),
+                        Some(data_boc),
+                        Some(code_hash),
+                        None,
+                        *state_timestamp,
+                    );
+                    acc_json["dapp_id"] = json!(dapp_id);
+                    acc_json["ecc_balance"] = ecc_balance;
+                    json_results.push(acc_json);
                 } else {
+                    print_account(
+                        config,
+                        Some(acc_type),
+                        Some(address.clone()),
+                        Some(balance),
+                        Some(last_paid),
+                        Some(trans_lt),
+                        Some(data_boc),
+                        Some(code_hash),
+                        None,
+                        *state_timestamp,
+                    );
                     println!("dapp_id:         {}", dapp_id);
                     println!("ecc:             {}", serde_json::to_string(&ecc_balance).unwrap());
                 }
             } else if config.is_json {
-                json_res = json_account(
+                json_results.push(json_account(
                     Some(acc_type),
                     Some(address.clone()),
                     None,
@@ -257,7 +265,7 @@ pub async fn get_account(
                     None,
                     None,
                     *state_timestamp,
-                );
+                ));
             } else {
                 print_account(
                     config,
@@ -277,12 +285,12 @@ pub async fn get_account(
             }
         }
         for address in addresses.iter() {
-            if !found_addresses.contains(address) {
+            if !found_addresses.iter().any(|id| id.as_str() == account_id_of(address)) {
                 if config.is_json {
-                    json_res = json!({
+                    json_results.push(json!({
                        "address": address.clone(),
                        "acc_type": "NonExist"
-                    });
+                    }));
                 } else {
                     println!("{} not found", address);
                     println!();
@@ -290,7 +298,11 @@ pub async fn get_account(
             }
         }
         if config.is_json {
-            println!("{:#}", json_res);
+            if json_results.len() == 1 {
+                println!("{:#}", json_results[0]);
+            } else {
+                println!("{:#}", Value::Array(json_results));
+            }
         }
     } else if config.is_json {
         println!("{{\n}}");

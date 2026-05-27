@@ -253,7 +253,7 @@ fn test_crypto_signature_read_from_invalid_tag() {
 
     // Create data with wrong tag (not 0x5)
     let mut builder = BuilderData::new();
-    builder.append_bits(0x7 as usize, 4).unwrap(); // wrong tag
+    builder.append_bits(0x7_usize, 4).unwrap(); // wrong tag
     builder.append_raw(&[1; 64], 64 * 8).unwrap();
     let cell = builder.into_cell().unwrap();
     let mut slice = SliceData::load_cell(cell).unwrap();
@@ -892,7 +892,7 @@ fn test_crypto_signature_to_bytes() {
 fn test_crypto_signature_signature_method() {
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
     let sig_ref = cs.signature();
-    assert!(sig_ref.to_bytes().len() > 0);
+    assert!(!sig_ref.to_bytes().is_empty());
 }
 
 #[test]
@@ -939,7 +939,7 @@ fn test_block_signatures_pure_signatures_method() {
     bsp.add_sigpair(csp);
 
     let sigs = bsp.signatures();
-    assert!(sigs.is_empty() == false || bsp.count() > 0);
+    assert!(!sigs.is_empty() || bsp.count() > 0);
 }
 
 #[test]
@@ -1165,8 +1165,7 @@ fn test_sig_pub_key_verify_signature_error_branch() {
     // Test with all zeros key - might trigger error in try_from
     let invalid_key = SigPubKey::from_bytes(&[0; 32]).unwrap();
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
-    let result = invalid_key.verify_signature(b"test", &cs);
-    assert!(result == true || result == false);
+    let _result = invalid_key.verify_signature(b"test", &cs);
 }
 
 #[test]

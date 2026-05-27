@@ -304,7 +304,7 @@ impl FromStr for SdkAddress {
 impl Display for SdkAddress {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(dapp_id) = &self.dapp_id {
-            f.write_str(&dapp_id)?;
+            f.write_str(dapp_id)?;
             f.write_str(":")?;
         }
         f.write_str(&self.account_id)?;

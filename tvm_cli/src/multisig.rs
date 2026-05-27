@@ -308,7 +308,7 @@ impl MultisigArgs {
             .ok_or("sign key is not defined".to_string())?;
         let v2 = matches.is_present("V2");
 
-        let sdk_addr = SdkAddress::from_str(&address).map_err(|e| e)?;
+        let sdk_addr = SdkAddress::from_str(&address)?;
         let addr = sdk_addr.account_id;
         let dapp_id = sdk_addr.dapp_id;
         let mut abi = serde_json::from_str::<AbiContract>(MSIG_ABI).unwrap_or_default();
@@ -377,7 +377,7 @@ impl MultisigArgs {
             Some(self.keys.clone()),
             false,
             None,
-            self.dapp_id.as_ref().map(|x| x.as_str()),
+            self.dapp_id.as_deref(),
         )
         .await
     }
