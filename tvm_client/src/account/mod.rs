@@ -16,6 +16,9 @@ pub struct ResultOfGetAccount {
     pub state_timestamp: Option<u64>,
 }
 
+mod validate;
+pub use validate::validate_hex_id;
+
 #[cfg(test)]
 mod tests;
 
