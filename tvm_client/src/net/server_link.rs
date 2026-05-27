@@ -1187,6 +1187,22 @@ impl ServerLink {
     pub async fn invalidate_querying_endpoint(&self) {
         self.state.invalidate_querying_endpoint().await
     }
+
+    /// Version of the currently selected GraphQL query endpoint, packed as
+    /// major*1_000_000 + minor*1_000 + patch. Returns 0 when no endpoint
+    /// has been resolved yet (treated as pre-1.0.0).
+    pub async fn server_version(&self) -> u32 {
+        match self.state.query_endpoint().await {
+            Some(ep) => ep.server_version.load(Ordering::Relaxed),
+            None => 0,
+        }
+    }
+
+    /// Returns true when the connected server speaks the v3 dapp_id REST
+    /// format (`info.version >= "1.0.0"`).
+    pub async fn supports_dapp_id(&self) -> bool {
+        self.server_version().await >= 1_000_000
+    }
 }
 
 fn ensure_address(err_data: &mut Value, dst: Value) {
@@ -1235,3 +1251,29 @@ fn test_construct_rest_endpoint() {
 // #[cfg(test)]
 // #[path = "tests/test_server_link.rs"]
 // mod tests;
+
+#[cfg(test)]
+mod server_version_tests {
+    use crate::ClientConfig;
+    use crate::ClientContext;
+    use crate::net::NetworkConfig;
+
+    fn make_client_context() -> ClientContext {
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:0".to_string()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        ClientContext::new(config).unwrap()
+    }
+
+    #[tokio::test]
+    async fn server_version_returns_zero_when_no_endpoint_resolved() {
+        let ctx = make_client_context();
+        let sl = ctx.get_server_link().unwrap();
+        assert_eq!(sl.server_version().await, 0);
+        assert!(!sl.supports_dapp_id().await);
+    }
+}
