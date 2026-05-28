@@ -1000,9 +1000,12 @@ impl ServerLink {
             }
         }
 
-        // Sample version once for the whole send attempt (including retries).
-        // All retries here go to nodes in the same cluster, so a mid-attempt
-        // version flip is not expected; we deliberately don't re-probe.
+        // Force GraphQL endpoint resolution so server_version is populated
+        // before we choose v2 vs v3 wire format. Sample version once for
+        // the whole send attempt (including retries). All retries here go
+        // to nodes in the same cluster, so a mid-attempt version flip is
+        // not expected; we deliberately don't re-probe.
+        self.state.get_query_endpoint().await?;
         let is_v3 = self.supports_dapp_id().await;
         let network_state = self.state();
 
@@ -1047,6 +1050,11 @@ impl ServerLink {
             }
         }
 
+        // NOTE: account_id_hex assumes a 256-bit MsgAddressInt::AddrStd
+        // destination. For MsgAddressInt::AddrVar with non-aligned bit
+        // lengths the v3 wire format may fail server-side validation.
+        // Mainnet currently uses AddrStd; revisit if AddrVar becomes
+        // common on v>=1.0.0 nodes (NODE-3500 follow-up).
         let account_id_hex = dst.address().as_hex_string();
         let mut message = if is_v3 {
             WireMsg::V3(ExtMessageV3 {

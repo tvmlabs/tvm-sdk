@@ -17,6 +17,19 @@ use std::sync::Arc;
 
 use serde::Deserialize;
 use serde_json::Value;
+
+/// Deserializes both a missing key (via `#[serde(default)]`) and an explicit
+/// JSON `null` as the type's `Default` value.  Without this, a server that
+/// returns `"account_id": null` would cause deserialization failure even
+/// though `#[serde(default)]` only handles the absent-key case.
+fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Default + Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+{
+    let opt = Option::<T>::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 
@@ -114,12 +127,12 @@ pub struct ResultOfSendMessage {
     /// Destination account_id (64-hex, no workchain). Always populated:
     /// taken from the server response on v>=1.0.0, derived locally
     /// from the message destination on v<1.0.0.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub account_id: String,
 
     /// Destination dapp_id (64-hex). Always populated: taken from the
     /// server response on v>=1.0.0, mirrored from the request on v<1.0.0.
-    #[serde(default)]
+    #[serde(default, deserialize_with = "deserialize_null_default")]
     pub dapp_id: String,
 }
 
@@ -325,39 +338,43 @@ mod test {
 
     async fn mock_server(socket_addr: SocketAddr) -> JoinHandle<()> {
         let socket_addr_clone = socket_addr.to_string();
-        let app = Router::new().route(
-            "/v2/messages",
-            post(|_body: Body| async move {
-                if socket_addr_clone == "127.0.0.1:9000" {
-                    let resp_json =  json!({
-                        "result": null,
-                        "error": {
-                            "code": "WRONG_PRODUCER",
-                            "message": "Resend message to the active Block Producer",
-                            "data": {
-                                "producers": vec![format!("{}:18600", get_ext_ip().unwrap().to_string())],
-                                "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
-                                "exit_code": null,
-                                "current_time": "1748084498461",
-                                "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
+        let app = Router::new()
+            // Serve a /graphql info endpoint so endpoint resolution succeeds
+            // and the server is identified as pre-1.0.0 (v2 wire format).
+            .route("/graphql", graphql_info_handler("0.54.0"))
+            .route(
+                "/v2/messages",
+                post(|_body: Body| async move {
+                    if socket_addr_clone == "127.0.0.1:9000" {
+                        let resp_json = json!({
+                            "result": null,
+                            "error": {
+                                "code": "WRONG_PRODUCER",
+                                "message": "Resend message to the active Block Producer",
+                                "data": {
+                                    "producers": vec![format!("{}:18600", get_ext_ip().unwrap().to_string())],
+                                    "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
+                                    "exit_code": null,
+                                    "current_time": "1748084498461",
+                                    "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
+                                }
+                            },
+                            "block_manager": {
+                                "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
+                                "token": {
+                                    "unsigned": "1748084798476",
+                                    "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
+                                    "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
+                                }
                             }
-                        },
-                        "block_manager": {
-                            "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
-                            "token": {
-                                "unsigned": "1748084798476",
-                                "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
-                                "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
-                            }
-                        }
-                    });
+                        });
 
-                    Json(resp_json).into_response()
-                } else {
-                    Json(json!({"my_addr": socket_addr_clone})).into_response()
-                }
-            }),
-        );
+                        Json(resp_json).into_response()
+                    } else {
+                        Json(json!({"my_addr": socket_addr_clone})).into_response()
+                    }
+                }),
+            );
 
         let listener = tokio::net::TcpListener::bind(socket_addr).await.unwrap();
         let handle = tokio::spawn(async move {
@@ -402,10 +419,12 @@ mod test {
         }
 
         // 2. external_ip:18600.
+        // Use explicit http:// so endpoint resolution doesn't try HTTPS on the
+        // plain HTTP mock server.
         {
             let config = ClientConfig {
                 network: NetworkConfig {
-                    endpoints: Some(vec![format!("{external_ip}:18600")]),
+                    endpoints: Some(vec![format!("http://{external_ip}:18600")]),
                     api_token: Some("secret".to_string()),
                     ..Default::default()
                 },
@@ -423,11 +442,13 @@ mod test {
         }
 
         // 3. Localhost ip, specific port.
-        // This server must redirect the client to external_ip:18600
+        // This server must redirect the client to external_ip:18600.
+        // Use explicit http:// for both the initial endpoint and the redirect
+        // target so endpoint resolution doesn't try HTTPS.
         {
             let config = ClientConfig {
                 network: NetworkConfig {
-                    endpoints: Some(vec!["127.0.0.1:9000".to_string()]),
+                    endpoints: Some(vec!["http://127.0.0.1:9000".to_string()]),
                     api_token: Some("secret".to_string()),
                     ..Default::default()
                 },

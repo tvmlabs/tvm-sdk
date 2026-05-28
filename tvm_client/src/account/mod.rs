@@ -51,6 +51,9 @@ pub async fn get_account(
     validate_hex_id("account_id", &params.account_id)?;
 
     let server_link = context.get_server_link()?;
+    // Force GraphQL endpoint resolution so server_version is populated
+    // before we choose v2 vs v3 wire format.
+    server_link.state().get_query_endpoint().await?;
     let is_v3 = server_link.supports_dapp_id().await;
 
     // dapp_id is only required (and sent) in v3 mode.
