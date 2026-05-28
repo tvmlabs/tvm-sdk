@@ -313,6 +313,16 @@ impl Display for SdkAddress {
     }
 }
 
+/// Strips a leading workchain prefix (`<int>:`) from an account string.
+/// Returns the input unchanged if no `:` is present. No validation of
+/// workchain value or hex digits — full validation is added in Task 8.
+pub fn strip_workchain_lenient(s: &str) -> String {
+    match s.split_once(':') {
+        Some((_, rest)) => rest.to_string(),
+        None => s.to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
@@ -596,7 +606,11 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
-    let params = account::ParamsOfGetAccount { address: address.to_owned() };
+    let sdk_address =
+        SdkAddress::from_str(address).map_err(|e| format!("invalid address `{address}`: {e}"))?;
+    let account_id = strip_workchain_lenient(&sdk_address.account_id);
+    let dapp_id = sdk_address.dapp_id.unwrap_or_default();
+    let params = account::ParamsOfGetAccount { account_id, dapp_id };
     let result_of_get_acc = account::get_account(ton, params)
         .await
         .map_err(|e| format!("failed to get account: {e}"))?;
@@ -952,9 +966,13 @@ pub async fn load_account(
                 None => create_client(config)?,
             };
 
+            let sdk_address = SdkAddress::from_str(source)
+                .map_err(|e| format!("invalid address `{source}`: {e}"))?;
+            let account_id = strip_workchain_lenient(&sdk_address.account_id);
+            let dapp_id = sdk_address.dapp_id.unwrap_or_default();
             let ResultOfGetAccount { boc, state_timestamp, .. } = account::get_account(
                 ton_client,
-                account::ParamsOfGetAccount { address: source.to_string() },
+                account::ParamsOfGetAccount { account_id, dapp_id },
             )
             .await
             .map_err(|e| format!("Failed to get account: {e}"))?;

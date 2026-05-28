@@ -110,7 +110,11 @@ pub async fn get_account(
     let mut accounts = vec![];
     let client = crate::helpers::create_client(config)?;
     for address in addresses.iter() {
-        let params = account::ParamsOfGetAccount { address: address.to_string() };
+        // Temporary: full version-conditional logic lives in Task 8.
+        let sdk_address: crate::helpers::SdkAddress = address.parse().map_err(|e: String| e)?;
+        let account_id = crate::helpers::strip_workchain_lenient(&sdk_address.account_id);
+        let dapp_id = sdk_address.dapp_id.unwrap_or_default();
+        let params = account::ParamsOfGetAccount { account_id, dapp_id };
 
         let result_of_get_account = account::get_account(client.clone(), params)
             .await
@@ -223,7 +227,7 @@ pub async fn get_account(
                     );
                 }
 
-                let dapp_id = dapp_id.as_deref().unwrap_or("None");
+                let dapp_id = if dapp_id.is_empty() { "None" } else { dapp_id.as_str() };
 
                 let ecc_balance = acc
                     .balance()
