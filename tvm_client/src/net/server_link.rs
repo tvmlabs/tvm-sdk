@@ -35,6 +35,7 @@ use url::Url;
 
 use super::ErrorCode;
 use super::tvm_gql::ExtMessageV2;
+use super::tvm_gql::ExtMessageV3;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
 use crate::error::AddNetworkUrl;
@@ -987,7 +988,7 @@ impl ServerLink {
         msg_body: &[u8],
         thread_id: ThreadIdentifier,
         dst: MsgAddressInt,
-        dst_dapp_id: Option<String>,
+        dapp_id: String,
     ) -> ClientResult<Value> {
         // This helper function adds "resource" part to the URL
         fn ensure_resource(url: &Url) -> Url {
@@ -998,21 +999,80 @@ impl ServerLink {
                 url.join(ENDPOINT_MESSAGES).unwrap_or(url.clone())
             }
         }
-        let mut attempts = 0;
 
+        // Sample version once for the whole send attempt (including retries).
+        // All retries here go to nodes in the same cluster, so a mid-attempt
+        // version flip is not expected; we deliberately don't re-probe.
+        let is_v3 = self.supports_dapp_id().await;
         let network_state = self.state();
-        let mut message = ExtMessageV2 {
-            id: msg_id.to_string(),
-            body: base64_encode(msg_body),
-            expire_at: None,
-            thread_id: Some(thread_id.to_string()),
-            ext_message_token: network_state.get_bm_token().await,
-            dst_dapp_id,
+
+        if is_v3 && dapp_id.is_empty() {
+            return Err(crate::processing::Error::dapp_id_required());
+        }
+        if !dapp_id.is_empty() {
+            crate::account::validate_hex_id("dapp_id", &dapp_id)?;
+        }
+
+        // Wire-version-aware wrapper so the retry loop can mutate the
+        // mutable fields (`thread_id`, `ext_message_token`) and re-serialize
+        // without caring which wire format the connected server speaks.
+        enum WireMsg {
+            V2(ExtMessageV2),
+            V3(ExtMessageV3),
+        }
+        impl WireMsg {
+            fn set_thread_id(&mut self, t: Option<String>) {
+                match self {
+                    WireMsg::V2(m) => m.set_thread_id(t),
+                    WireMsg::V3(m) => m.set_thread_id(t),
+                }
+            }
+
+            fn set_ext_message_token(&mut self, token: Option<Value>) {
+                match self {
+                    WireMsg::V2(m) => m.ext_message_token = token,
+                    WireMsg::V3(m) => m.ext_message_token = token,
+                }
+            }
+
+            fn serialize_array(&self) -> ClientResult<String> {
+                match self {
+                    WireMsg::V2(m) => {
+                        serde_json::to_string(&[m]).map_err(crate::processing::Error::invalid_data)
+                    }
+                    WireMsg::V3(m) => {
+                        serde_json::to_string(&[m]).map_err(crate::processing::Error::invalid_data)
+                    }
+                }
+            }
+        }
+
+        let account_id_hex = dst.address().as_hex_string();
+        let mut message = if is_v3 {
+            WireMsg::V3(ExtMessageV3 {
+                id: msg_id.to_string(),
+                body: base64_encode(msg_body),
+                expire_at: None,
+                thread_id: Some(thread_id.to_string()),
+                ext_message_token: network_state.get_bm_token().await,
+                dapp_id: dapp_id.clone(),
+                account_id: account_id_hex,
+            })
+        } else {
+            WireMsg::V2(ExtMessageV2 {
+                id: msg_id.to_string(),
+                body: base64_encode(msg_body),
+                expire_at: None,
+                thread_id: Some(thread_id.to_string()),
+                ext_message_token: network_state.get_bm_token().await,
+                dst_dapp_id: (!dapp_id.is_empty()).then(|| dapp_id.clone()),
+            })
         };
 
+        let mut attempts = 0;
         let mut endpoint = network_state.select_send_message_endpoint().await;
 
-        let query = json!([message]).to_string();
+        let mut query = message.serialize_array()?;
         log::debug!(
             "send_message: id={}, dst={}, endpoint={}, body={}",
             msg_id,
@@ -1042,7 +1102,7 @@ impl ServerLink {
 
             if let Some(Value::Object(_)) = err.data().get("ext_message_token") {
                 network_state.update_bm_data(&err.data()["ext_message_token"]).await;
-                message.ext_message_token = network_state.get_bm_token().await;
+                message.set_ext_message_token(network_state.get_bm_token().await);
             }
 
             let Some(ext) = err.data().get("node_error").and_then(|e| e.get("extensions")) else {
@@ -1086,7 +1146,7 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
                 endpoint = network_state.select_send_message_endpoint().await;
             }
-            let query = json!([message]).to_string();
+            query = message.serialize_array()?;
             log::debug!(
                 "send_message retry: id={}, attempt={}, endpoint={}, body={}",
                 msg_id,

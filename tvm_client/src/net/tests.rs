@@ -568,7 +568,7 @@ async fn subscribe_for_transactions_with_addresses() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params,
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -603,7 +603,7 @@ async fn subscribe_for_transactions_with_addresses() {
                     ..Default::default()
                 },
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
