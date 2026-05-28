@@ -34,7 +34,7 @@ use tvm_types::base64_encode;
 use url::Url;
 
 use super::ErrorCode;
-use super::tvm_gql::ExtMessage;
+use super::tvm_gql::ExtMessageV2;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
 use crate::error::AddNetworkUrl;
@@ -1001,7 +1001,7 @@ impl ServerLink {
         let mut attempts = 0;
 
         let network_state = self.state();
-        let mut message = ExtMessage {
+        let mut message = ExtMessageV2 {
             id: msg_id.to_string(),
             body: base64_encode(msg_body),
             expire_at: None,
