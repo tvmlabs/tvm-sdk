@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed (breaking)
+- `tvm_client`: `ParamsOfGetAccount.address` renamed to `account_id`; now strict 64-character hex (no `0x`, no workchain). Added required `dapp_id` field.
+- `tvm_client`: `ResultOfGetAccount.dapp_id` is now `String` (not `Option`); added `account_id` field.
+- `tvm_client`: `ParamsOfSendMessage.dst_dapp_id: Option<String>` renamed to `dapp_id: String` (empty allowed only for pre-1.0.0 servers).
+- `tvm_client`: `ResultOfSendMessage` now exposes `account_id` and `dapp_id` (always populated; derived from the request when the server doesn't return them).
+- `tvm_client`: `ParamsOfProcessMessage.dst_dapp_id` renamed to `dapp_id: String`.
+
+### Added
+- `tvm_client`: SDK version-gates `/v2/account` and `/v2/messages` wire formats based on GraphQL `info.version`. v>=1.0.0 sends new `dapp_id`/`account_id` fields; v<1.0.0 keeps legacy `address`/`dst_dapp_id`.
+- `tvm_client`: new `ServerLink::server_version()` and `ServerLink::supports_dapp_id()` helpers.
+- `tvm_cli`: `account` command requires `dapp_id` (via `dapp_id::account_id` address form) when connected to v>=1.0.0 servers; legacy single-address form remains accepted for older nodes.
+
 ## [2.24.21] - 2026-04-29
 
 ### Added
