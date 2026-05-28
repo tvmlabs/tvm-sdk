@@ -313,14 +313,27 @@ impl Display for SdkAddress {
     }
 }
 
-/// Strips a leading workchain prefix (`<int>:`) from an account string.
-/// Returns the input unchanged if no `:` is present. No validation of
-/// workchain value or hex digits — full validation is added in Task 8.
-pub fn strip_workchain_lenient(s: &str) -> String {
-    match s.split_once(':') {
-        Some((_, rest)) => rest.to_string(),
-        None => s.to_string(),
+/// Strips a leading `0:` workchain prefix from an account string and
+/// validates that the remainder is a 64-character hex string.
+/// Returns the account_id (no workchain, no 0x).
+pub fn strip_workchain(s: &str) -> Result<String, String> {
+    let account = match s.split_once(':') {
+        Some(("0", rest)) => rest,
+        Some((wc, _)) => return Err(format!("non-zero workchain not supported: {wc}")),
+        None => s,
+    };
+    if account.len() != 64 || !account.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(format!("account_id must be a 64-character hex string, got: {account}"));
     }
+    Ok(account.to_string())
+}
+
+/// Resolves the GraphQL endpoint (forcing a connection if needed) and
+/// returns whether the server speaks the v3 dapp_id REST format.
+pub async fn server_supports_dapp_id(
+    client: &Arc<ClientContext>,
+) -> tvm_client::error::ClientResult<bool> {
+    client.supports_dapp_id().await
 }
 
 #[cfg(test)]
@@ -415,6 +428,41 @@ mod tests {
         .unwrap_err();
 
         assert_eq!(err, "message with specified id was not found.");
+    }
+
+    use super::strip_workchain;
+
+    #[test]
+    fn strip_workchain_removes_zero_workchain() {
+        assert_eq!(
+            strip_workchain("0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+                .unwrap(),
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        );
+    }
+
+    #[test]
+    fn strip_workchain_accepts_bare_hex() {
+        let bare = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert_eq!(strip_workchain(bare).unwrap(), bare);
+    }
+
+    #[test]
+    fn strip_workchain_rejects_non_zero_workchain() {
+        let s = "1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(strip_workchain(s).is_err());
+    }
+
+    #[test]
+    fn strip_workchain_rejects_bad_length() {
+        let s = "0:abc";
+        assert!(strip_workchain(s).is_err());
+    }
+
+    #[test]
+    fn strip_workchain_rejects_non_hex_account() {
+        let s = "0:zzzz456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(strip_workchain(s).is_err());
     }
 }
 
@@ -608,7 +656,7 @@ pub async fn query_account_field(
 ) -> Result<String, String> {
     let sdk_address =
         SdkAddress::from_str(address).map_err(|e| format!("invalid address `{address}`: {e}"))?;
-    let account_id = strip_workchain_lenient(&sdk_address.account_id);
+    let account_id = strip_workchain(&sdk_address.account_id)?;
     let dapp_id = sdk_address.dapp_id.unwrap_or_default();
     let params = account::ParamsOfGetAccount { account_id, dapp_id };
     let result_of_get_acc = account::get_account(ton, params)
@@ -968,7 +1016,7 @@ pub async fn load_account(
 
             let sdk_address = SdkAddress::from_str(source)
                 .map_err(|e| format!("invalid address `{source}`: {e}"))?;
-            let account_id = strip_workchain_lenient(&sdk_address.account_id);
+            let account_id = strip_workchain(&sdk_address.account_id)?;
             let dapp_id = sdk_address.dapp_id.unwrap_or_default();
             let ResultOfGetAccount { boc, state_timestamp, .. } = account::get_account(
                 ton_client,

@@ -9,6 +9,7 @@ use std::collections::BTreeMap;
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+use std::str::FromStr;
 use std::sync::Arc;
 
 use serde_json::Value;
@@ -111,8 +112,8 @@ pub async fn get_account(
     let client = crate::helpers::create_client(config)?;
     for address in addresses.iter() {
         // Temporary: full version-conditional logic lives in Task 8.
-        let sdk_address: crate::helpers::SdkAddress = address.parse().map_err(|e: String| e)?;
-        let account_id = crate::helpers::strip_workchain_lenient(&sdk_address.account_id);
+        let sdk_address = crate::helpers::SdkAddress::from_str(address)?;
+        let account_id = crate::helpers::strip_workchain(&sdk_address.account_id)?;
         let dapp_id = sdk_address.dapp_id.unwrap_or_default();
         let params = account::ParamsOfGetAccount { account_id, dapp_id };
 
