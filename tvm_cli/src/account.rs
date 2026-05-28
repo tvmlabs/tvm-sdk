@@ -110,11 +110,24 @@ pub async fn get_account(
 
     let mut accounts = vec![];
     let client = crate::helpers::create_client(config)?;
+    let supports_v3 = crate::helpers::server_supports_dapp_id(&client)
+        .await
+        .map_err(|e| format!("failed to probe server version: {e}"))?;
+
     for address in addresses.iter() {
-        // Temporary: full version-conditional logic lives in Task 8.
-        let sdk_address = crate::helpers::SdkAddress::from_str(address)?;
+        let sdk_address = crate::helpers::SdkAddress::from_str(address)
+            .map_err(|e| format!("invalid address `{address}`: {e}"))?;
         let account_id = crate::helpers::strip_workchain(&sdk_address.account_id)?;
-        let dapp_id = sdk_address.dapp_id.unwrap_or_default();
+        let dapp_id = match sdk_address.dapp_id {
+            Some(d) => d,
+            None if !supports_v3 => String::new(),
+            None => {
+                return Err(format!(
+                    "address `{address}` is missing dapp_id; v>=1.0.0 servers \
+                     require the form `dapp_id::account_id` or `dapp_id:account_id`"
+                ));
+            }
+        };
         let params = account::ParamsOfGetAccount { account_id, dapp_id };
 
         let result_of_get_account = account::get_account(client.clone(), params)
@@ -122,13 +135,14 @@ pub async fn get_account(
             .map_err(|e| format!("failed to get account: {e}"))?;
 
         let boc_base64 = result_of_get_account.boc;
-        let dapp_id = result_of_get_account.dapp_id;
+        let dapp_id = result_of_get_account.dapp_id; // String, always populated
+        let account_id = result_of_get_account.account_id; // String, always populated
         let state_timestamp = result_of_get_account.state_timestamp;
 
         let account = Account::construct_from_base64(&boc_base64)
             .map_err(|e| format!("failed to construct account from boc: {e}"))?;
 
-        accounts.push((account, dapp_id, state_timestamp));
+        accounts.push((account, account_id, dapp_id, state_timestamp));
     }
 
     if !config.is_json {
@@ -139,9 +153,10 @@ pub async fn get_account(
 
     if !accounts.is_empty() {
         let mut json_res = json!({});
-        for (acc, dapp_id, state_timestamp) in accounts.iter() {
+        for (acc, account_id, dapp_id, state_timestamp) in accounts.iter() {
             let address = acc.get_id().unwrap().as_hex_string();
-            found_addresses.push(format!("0:{address}"));
+            // Store the bare 64-hex form so we can compare against normalised inputs below.
+            found_addresses.push(account_id.clone());
 
             let acc_type = match acc.status() {
                 AccountStatus::AccStateUninit => "Uninit".to_owned(),
@@ -228,8 +243,6 @@ pub async fn get_account(
                     );
                 }
 
-                let dapp_id = if dapp_id.is_empty() { "None" } else { dapp_id.as_str() };
-
                 let ecc_balance = acc
                     .balance()
                     .map(|balance| {
@@ -245,10 +258,15 @@ pub async fn get_account(
                     })
                     .unwrap_or(serde_json::Value::Null);
                 if config.is_json {
-                    json_res["dapp_id"] = json!(dapp_id);
+                    json_res["account_id"] = json!(account_id);
+                    json_res["dapp_id"] =
+                        if dapp_id.is_empty() { serde_json::Value::Null } else { json!(dapp_id) };
                     json_res["ecc_balance"] = ecc_balance;
                 } else {
-                    println!("dapp_id:         {}", dapp_id);
+                    let dapp_id_display =
+                        if dapp_id.is_empty() { "None" } else { dapp_id.as_str() };
+                    println!("account_id:      {}", account_id);
+                    println!("dapp_id:         {}", dapp_id_display);
                     println!("ecc:             {}", serde_json::to_string(&ecc_balance).unwrap());
                 }
             } else if config.is_json {
@@ -282,7 +300,14 @@ pub async fn get_account(
             }
         }
         for address in addresses.iter() {
-            if !found_addresses.contains(address) {
+            // Normalise the input to bare 64-hex so we can compare against
+            // the normalised values stored in `found_addresses`.
+            let normalized = crate::helpers::SdkAddress::from_str(address)
+                .ok()
+                .and_then(|sa| crate::helpers::strip_workchain(&sa.account_id).ok());
+            let is_found =
+                normalized.as_deref().map_or(false, |n| found_addresses.iter().any(|f| f == n));
+            if !is_found {
                 if config.is_json {
                     json_res = json!({
                        "address": address.clone(),
@@ -493,4 +518,31 @@ pub async fn wait_for_change(
         println!("{{}}");
     }
     res
+}
+
+#[cfg(test)]
+mod cli_tests {
+    use std::str::FromStr;
+
+    use crate::helpers::SdkAddress;
+    use crate::helpers::strip_workchain;
+
+    const VALID_ACC: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const VALID_DAPP: &str = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
+
+    #[test]
+    fn cli_parses_dapp_id_double_colon_form() {
+        let s = format!("{VALID_DAPP}::0:{VALID_ACC}");
+        let a = SdkAddress::from_str(&s).unwrap();
+        assert_eq!(a.dapp_id.as_deref(), Some(VALID_DAPP));
+        let acc = strip_workchain(&a.account_id).unwrap();
+        assert_eq!(acc, VALID_ACC);
+    }
+
+    #[test]
+    fn cli_strips_workchain_from_bare_address() {
+        let s = format!("0:{VALID_ACC}");
+        let acc = strip_workchain(&s).unwrap();
+        assert_eq!(acc, VALID_ACC);
+    }
 }
