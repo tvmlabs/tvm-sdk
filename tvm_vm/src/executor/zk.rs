@@ -567,4 +567,3 @@ pub(crate) fn execute_poseidon_zk_login(engine: &mut Engine) -> Status {
 
     Ok(())
 }
-

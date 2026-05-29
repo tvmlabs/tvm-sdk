@@ -55,12 +55,12 @@ fn setup_engine() -> Engine {
     )
 }
 
-/// Run halo2 proof verification through the TVM engine and return (result, elapsed_ms).
+/// Run halo2 proof verification through the TVM engine and return (result,
+/// elapsed_ms).
 fn verify_proof(proof_path: &str, instances_path: &str) -> (bool, u128) {
     let mut engine = setup_engine();
 
-    let pub_inputs_bytes =
-        std::fs::read(instances_path).expect("Failed to read instances file");
+    let pub_inputs_bytes = std::fs::read(instances_path).expect("Failed to read instances file");
     let pub_inputs_cell = pack_data_to_cell(&pub_inputs_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(pub_inputs_cell));
 
@@ -160,4 +160,88 @@ fn test_verify_w128_mismatched_proof_and_instances() {
     let (res, elapsed) = verify_proof(W128_L0_PROOF_PATH, W128_L1_INSTANCES_PATH);
     println!("W128 mismatched (L0 proof + L1 instances): result={}, elapsed={}ms", res, elapsed);
     assert!(!res);
+}
+
+// ---------------------------------------------------------------------------
+// Security: malformed public-input bytes must NOT panic the executor.
+//
+// `Fr::from_bytes_le` is the default `ScalarField` impl, which calls
+// `Fr::from_repr(repr).unwrap()`. For any 32-byte LE value >= the BN254
+// scalar field modulus p (~2^254), `from_repr` returns `CtOption::None`
+// and `.unwrap()` panics. `pub_input_bytes` originates from attacker-
+// controllable cell data, so this is a DoS vector unless the executor
+// rejects non-canonical encodings explicitly (matching the existing
+// `% 32 != 0` length check).
+// ---------------------------------------------------------------------------
+
+/// BN254 Fr modulus p in little-endian (Fr::to_repr() encoding).
+/// p = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
+const BN254_FR_MODULUS_LE: [u8; 32] = [
+    0x01, 0x00, 0x00, 0xf0, 0x93, 0xf5, 0xe1, 0x43, 0x91, 0x70, 0xb9, 0x79, 0x48, 0xe8, 0x33, 0x28,
+    0x5d, 0x58, 0x81, 0x81, 0xb6, 0x45, 0x50, 0xb8, 0x29, 0xa0, 0x31, 0xe1, 0x72, 0x4e, 0x64, 0x30,
+];
+
+/// Run verification with custom pub_input bytes and return the executor's
+/// `Status`. Used for negative tests that must NOT panic.
+fn run_with_custom_pub_inputs(
+    pub_inputs_bytes: &[u8],
+    proof_path: &str,
+) -> tvm_types::Result<bool> {
+    let mut engine = setup_engine();
+    let pub_inputs_cell = pack_data_to_cell(pub_inputs_bytes, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(pub_inputs_cell));
+
+    let proof_bytes = std::fs::read(proof_path).expect("Failed to read proof file");
+    let proof_cell = pack_data_to_cell(&proof_bytes, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(proof_cell));
+
+    execute_halo2_proof_verification(&mut engine)?;
+    Ok(engine.cc.stack.get(0).as_bool().unwrap())
+}
+
+#[test]
+fn test_verify_w128_pub_input_above_modulus_fails_cleanly() {
+    // pub_input = 0xFF...FF (= 2^256 - 1) is far above p. Without the
+    // canonicity check, this would panic the executor thread.
+    let mut pub_inputs_bytes =
+        std::fs::read(W128_L0_INSTANCES_PATH).expect("Failed to read instances file");
+    pub_inputs_bytes[0..32].fill(0xFF);
+
+    let result = run_with_custom_pub_inputs(&pub_inputs_bytes, W128_L0_PROOF_PATH);
+    assert!(
+        result.is_err(),
+        "Expected FatalError for non-canonical Fr input (0xFF…FF > p), got {:?}",
+        result
+    );
+    println!("W128 pub_input > p (0xFF…FF): rejected with err (as expected)");
+}
+
+#[test]
+fn test_verify_w128_pub_input_equals_modulus_fails_cleanly() {
+    // pub_input == p exactly: canonical Fr range is [0, p), so p must be
+    // rejected (CtOption::None from from_repr).
+    let mut pub_inputs_bytes =
+        std::fs::read(W128_L0_INSTANCES_PATH).expect("Failed to read instances file");
+    pub_inputs_bytes[0..32].copy_from_slice(&BN254_FR_MODULUS_LE);
+
+    let result = run_with_custom_pub_inputs(&pub_inputs_bytes, W128_L0_PROOF_PATH);
+    assert!(result.is_err(), "Expected FatalError for pub_input == p (modulus), got {:?}", result);
+    println!("W128 pub_input == p: rejected with err (as expected)");
+}
+
+#[test]
+fn test_verify_w128_pub_input_just_below_modulus_parses() {
+    // pub_input == p - 1 is the largest canonical Fr — must parse OK.
+    // Verification then fails (instances no longer match the proof), so
+    // the executor must return Ok(false), not Err.
+    let mut pub_inputs_bytes =
+        std::fs::read(W128_L0_INSTANCES_PATH).expect("Failed to read instances file");
+    let mut p_minus_one = BN254_FR_MODULUS_LE;
+    p_minus_one[0] -= 1; // LSB: 0x01 -> 0x00
+    pub_inputs_bytes[0..32].copy_from_slice(&p_minus_one);
+
+    let result = run_with_custom_pub_inputs(&pub_inputs_bytes, W128_L0_PROOF_PATH);
+    let res = result.expect("p-1 (largest canonical Fr) must parse without error");
+    assert!(!res, "Verification must fail for mutated instances");
+    println!("W128 pub_input == p-1: parsed OK, verify=false (as expected)");
 }

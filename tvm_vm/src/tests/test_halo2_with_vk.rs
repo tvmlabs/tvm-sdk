@@ -23,13 +23,11 @@
 //! ```
 //!
 //! Covers:
-//! - **Positive path**: a real Halo2 SHPLONK proof for the bridge
-//!   Circuit 1B (Fallback) round-trips through the three-cell ABI →
-//!   `true`.
-//! - **Negative paths**: byte-flipped proof, tweaked instance, bad
-//!   VkBlob magic, corrupted VK, instance ≥ modulus, instance-count
-//!   mismatch, empty proof, malformed config_json, config.k mismatch,
-//!   cache reuse smoke-test.
+//! - **Positive path**: a real Halo2 SHPLONK proof for the bridge Circuit 1B
+//!   (Fallback) round-trips through the three-cell ABI → `true`.
+//! - **Negative paths**: byte-flipped proof, tweaked instance, bad VkBlob
+//!   magic, corrupted VK, instance ≥ modulus, instance-count mismatch, empty
+//!   proof, malformed config_json, config.k mismatch, cache reuse smoke-test.
 
 use tvm_types::SliceData;
 
@@ -275,10 +273,7 @@ fn instance_ge_modulus_returns_fatal_error() {
 
     let err = execute_zkhalo2_verify_with_vk(&mut engine)
         .expect_err("out-of-range Fr must trigger FatalError, not false");
-    assert!(
-        err.to_string().contains("modulus"),
-        "expected `>= modulus` error, got: {err}"
-    );
+    assert!(err.to_string().contains("modulus"), "expected `>= modulus` error, got: {err}");
 }
 
 #[test]
