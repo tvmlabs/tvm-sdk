@@ -112,7 +112,7 @@ pub async fn deploy_contract(
         print_json_result(serde_json::Value::Object(map), config)?;
     }
     if let Some(alias) = alias {
-        full_config.add_alias(alias, Some(addr), Some(abi.to_string()), keys_file)?;
+        full_config.add_alias(alias, Some(deployed_at), Some(abi.to_string()), keys_file)?;
     }
     Ok(())
 }
