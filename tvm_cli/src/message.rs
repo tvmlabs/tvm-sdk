@@ -80,9 +80,17 @@ pub fn prepare_message_params(
     let call_set =
         Some(CallSet { function_name: method.into(), input: Some(params), header: header.clone() });
 
+    // Accept the extended dapp_id::account_id form used by tvm-cli and
+    // collapse it to the standard <workchain>:<hex> address expected by
+    // the SDK's message encoder. The dapp_id is consumed only by the
+    // SDK call layer; the on-chain destination address never carries it.
+    let sdk = SdkAddress::from_str(addr).map_err(|e| format!("invalid address `{addr}`: {e}"))?;
+    let dst =
+        if sdk.account_id.contains(':') { sdk.account_id } else { format!("0:{}", sdk.account_id) };
+
     Ok(ParamsOfEncodeMessage {
         abi,
-        address: Some(addr.to_owned()),
+        address: Some(dst),
         call_set,
         signer: if let Some(keys) = keys { Signer::Keys { keys } } else { Signer::None },
         ..Default::default()
