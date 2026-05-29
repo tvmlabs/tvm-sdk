@@ -1,0 +1,12 @@
+# The `gosh` feature's RLC deposit-verification path (ZKHALO2VERIFYWITHVK reading
+# axiom-eth EthCircuitImpl VKs) pulls `axiom-eth` -> `snark-verifier-sdk`, which
+# uses the unstable `trait_alias` feature and therefore only builds on nightly.
+# The stable BaseCircuitBuilder opcode path does not need this; the pin is here so
+# `cargo build` / CI selects a working toolchain without an explicit `+nightly`.
+#
+# `nightly` is a floating channel: for fully reproducible CI, pin a specific date
+# once the team agrees one (e.g. `channel = "nightly-2026-05-28"`, the rustc
+# 1.98.0-nightly (57d06900f 2026-05-27) build this stack was verified against).
+[toolchain]
+channel = "nightly"
+components = ["rustfmt", "clippy"]
