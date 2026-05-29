@@ -77,7 +77,7 @@ async fn mock_v2_server(port: u16) -> JoinHandle<()> {
 async fn mock_v3_server(port: u16) -> JoinHandle<()> {
     #[derive(Deserialize)]
     struct Params {
-        address: String,
+        account_id: String,
         dapp_id: String,
     }
     let app = Router::new()
@@ -87,8 +87,8 @@ async fn mock_v3_server(port: u16) -> JoinHandle<()> {
             "/v2/account",
             get(|headers: HeaderMap, Query(p): Query<Params>| async move {
                 let auth = headers.get("Authorization").map(|v| v.to_str().unwrap_or(""));
-                // New server: expects no workchain in address; requires dapp_id.
-                match (p.address.as_str(), p.dapp_id.as_str(), auth) {
+                // New server: expects account_id (no workchain) and dapp_id.
+                match (p.account_id.as_str(), p.dapp_id.as_str(), auth) {
                     (a, d, Some("Bearer secret")) if a == ACC_HEX && d == DAPP_HEX =>
                         Json(json!({
                             "boc": "te6ccAAS",

@@ -64,7 +64,10 @@ pub async fn get_account(
     let mut url = server_link.state().get_rest_api_endpoint().await;
     url.set_path(&format!("{API_VERSION}/account"));
     if is_v3 {
-        url.set_query(Some(&format!("address={}&dapp_id={}", params.account_id, params.dapp_id,)));
+        url.set_query(Some(&format!(
+            "account_id={}&dapp_id={}",
+            params.account_id, params.dapp_id,
+        )));
     } else {
         url.set_query(Some(&format!("address=0:{}", params.account_id)));
     }
