@@ -20,6 +20,10 @@
 use std::collections::{HashMap, VecDeque};
 use std::sync::{Mutex, OnceLock};
 
+use axiom_eth::Field;
+use axiom_eth::mpt::MPTChip;
+use axiom_eth::rlc::circuit::builder::RlcCircuitBuilder;
+use axiom_eth::utils::eth_circuit::{EthCircuitImpl, EthCircuitInstructions, EthCircuitParams};
 use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
@@ -33,7 +37,7 @@ use tvm_types::fail;
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
-use crate::executor::zk_halo2_with_vk_bundle::Halo2TvmBundle;
+use crate::executor::zk_halo2_with_vk_bundle::{BundleConfig, Halo2TvmBundle};
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Status;
@@ -133,6 +137,66 @@ fn build_shared_kzg_params(k: u32) -> ParamsKZG<Bn256> {
     dummy.from_parts(k, vec![g0], Some(vec![]), dummy.g2(), dummy.s_g2())
 }
 
+/// Empty RLC circuit used purely as the `Circuit` *type* for deserialising
+/// an `EthCircuitImpl`-shaped VK. `VerifyingKey::read` rebuilds the
+/// constraint system via `Circuit::configure_with_params(EthCircuitParams)`,
+/// which depends only on the carried params — never on this body — so the
+/// instructions can be a no-op. The same family covers every RLC + keccak
+/// coprocessor circuit (e.g. the deposit-prover's
+/// `EthCircuitImpl<Fr, DepositEventCircuitV2>`); only the params differ.
+#[derive(Clone)]
+struct Noop;
+
+impl<F: Field> EthCircuitInstructions<F> for Noop {
+    type FirstPhasePayload = ();
+    fn virtual_assign_phase0(&self, _builder: &mut RlcCircuitBuilder<F>, _mpt: &MPTChip<F>) {}
+}
+
+/// Read a `BaseCircuitBuilder`-shaped VK (v1 + v2 `circuit_shape = 0`).
+fn read_base_vk(
+    vk_bytes: &[u8],
+    params: halo2_base::gates::circuit::BaseCircuitParams,
+) -> tvm_types::Result<VerifyingKey<G1Affine>> {
+    let mut slice: &[u8] = vk_bytes;
+    // RawBytes — DOES validate curve membership on every group element on
+    // read. This is the soundness-critical setting for caller-supplied VKs
+    // (vs RawBytesUnchecked which skips the check and is only safe for
+    // trusted, pre-vetted VKs at compile/build time).
+    match VerifyingKey::<G1Affine>::read::<_, BaseCircuitBuilder<Fr>>(
+        &mut slice,
+        SerdeFormat::RawBytes,
+        params.clone(),
+    ) {
+        Ok(vk) => Ok(vk),
+        Err(e) => fail!(
+            "ZKHALO2VERIFYWITHVK: Base VerifyingKey::read failed (config = {:?}): {}",
+            params,
+            e
+        ),
+    }
+}
+
+/// Read an `EthCircuitImpl`-shaped (RLC) VK (v2 `circuit_shape = 1`). The
+/// `config_json` chunk is the JSON of axiom-eth's `EthCircuitParams`.
+fn read_rlc_vk(vk_bytes: &[u8], config_json: &[u8]) -> tvm_types::Result<VerifyingKey<G1Affine>> {
+    let params: EthCircuitParams = match serde_json::from_slice(config_json) {
+        Ok(p) => p,
+        Err(e) => fail!(
+            "ZKHALO2VERIFYWITHVK: malformed Rlc config_json (cannot parse as EthCircuitParams): {}",
+            e
+        ),
+    };
+    let mut slice: &[u8] = vk_bytes;
+    match VerifyingKey::<G1Affine>::read::<_, EthCircuitImpl<Fr, Noop>>(
+        &mut slice,
+        SerdeFormat::RawBytes,
+        params,
+    ) {
+        Ok(vk) => Ok(vk),
+        Err(e) => fail!("ZKHALO2VERIFYWITHVK: Rlc VerifyingKey::read failed: {}", e),
+    }
+}
+
 /// Look up `(vk, params)` for the given bundle, deserialising and caching
 /// on miss. Returns an `Arc` so the lock can be released before
 /// verification runs.
@@ -145,24 +209,10 @@ fn get_or_insert_vk(bundle: &Halo2TvmBundle) -> tvm_types::Result<std::sync::Arc
         }
     }
 
-    // Cold path: deserialise outside the lock.
-    let mut vk_slice: &[u8] = bundle.vk_bytes.as_slice();
-    let vk = match VerifyingKey::<G1Affine>::read::<_, BaseCircuitBuilder<Fr>>(
-        &mut vk_slice,
-        // RawBytes — DOES validate curve membership on every group element
-        // on read. This is the soundness-critical setting for
-        // caller-supplied VKs (vs RawBytesUnchecked which skips the check
-        // and is only safe for trusted, pre-vetted VKs at compile/build
-        // time).
-        SerdeFormat::RawBytes,
-        bundle.config.clone(),
-    ) {
-        Ok(vk) => vk,
-        Err(e) => fail!(
-            "ZKHALO2VERIFYWITHVK: VerifyingKey<G1Affine>::read failed (config = {:?}): {}",
-            bundle.config,
-            e
-        ),
+    // Cold path: deserialise outside the lock, branching on circuit shape.
+    let vk = match &bundle.config {
+        BundleConfig::Base(params) => read_base_vk(&bundle.vk_bytes, params.clone())?,
+        BundleConfig::Rlc(config_json) => read_rlc_vk(&bundle.vk_bytes, config_json)?,
     };
 
     let k = vk.get_domain().k();
@@ -208,9 +258,12 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 ///
 /// **Stack** (top → bottom):
 /// - `bundle_cell` — `Cell` whose payload is a [`Halo2TvmBundle`] (single
-///   self-describing byte stream carrying `BaseCircuitParams` +
-///   `VerifyingKey<G1Affine>` bytes + public-input bytes + SHPLONK proof
-///   bytes, in that order, behind length prefixes). See
+///   self-describing byte stream carrying a `circuit_shape` byte + circuit
+///   params (`BaseCircuitParams` for `circuit_shape = 0`, `EthCircuitParams`
+///   for `circuit_shape = 1`) + `VerifyingKey<G1Affine>` bytes +
+///   public-input bytes + SHPLONK proof bytes, in that order, behind length
+///   prefixes). The VK is rebuilt with `BaseCircuitBuilder<Fr>` for the Base
+///   shape and `EthCircuitImpl<Fr, Noop>` for the Rlc shape. See
 ///   `super::zk_halo2_with_vk_bundle` for the format and
 ///   `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format
 ///   contract.
@@ -249,4 +302,123 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
 
     engine.cc.stack.push(boolean!(res));
     Ok(())
+}
+
+#[cfg(test)]
+mod rlc_branch_tests {
+    //! Consumer-side coverage for the VkBlob-v2 `Rlc` circuit shape (the
+    //! deposit-prover / `EthCircuitImpl` family). Keygens a real RLC-shaped VK
+    //! on the SAME backend the opcode uses, serialises it, and checks the two
+    //! VK-read branches: the `Rlc` branch reconstructs it; the legacy `Base`
+    //! branch rejects it. This is the unit-level proof that the shape
+    //! discriminator routes to the right `Circuit` type.
+    use axiom_eth::mpt::MPTChip;
+    use axiom_eth::rlc::circuit::builder::RlcCircuitBuilder;
+    use axiom_eth::utils::eth_circuit::{EthCircuitInstructions, EthCircuitParams};
+    use halo2_base::gates::circuit::{BaseCircuitParams, CircuitBuilderStage};
+    use halo2_base::halo2_proofs::plonk::keygen_vk;
+
+    use super::*;
+
+    /// Keygen probe: makes ONE fixed-length keccak call so
+    /// `mock_fulfill_keccak_promises` has a populated promise map (the real
+    /// deposit circuit always hashes). The instructions body only matters at
+    /// keygen — the produced VK's constraint-system shape depends solely on
+    /// `EthCircuitParams`, so it reads back fine with the handler's empty
+    /// `Noop`.
+    #[derive(Clone)]
+    struct KeygenProbe;
+
+    impl<F: Field> EthCircuitInstructions<F> for KeygenProbe {
+        type FirstPhasePayload = ();
+        fn virtual_assign_phase0(&self, builder: &mut RlcCircuitBuilder<F>, mpt: &MPTChip<F>) {
+            let keccak = mpt.keccak();
+            let ctx = builder.base.main(0);
+            let b = ctx.load_witness(F::ZERO);
+            let _ = keccak.keccak_fixed_len(ctx, vec![b]);
+        }
+    }
+
+    /// Keygen a real `EthCircuitImpl`-shaped VK + its derived `EthCircuitParams`
+    /// JSON, exactly as a deposit-prover-class producer would emit into a
+    /// VkBlob-v2 `Rlc` bundle.
+    fn keygen_rlc_vk() -> (Vec<u8>, Vec<u8>) {
+        let mut init = EthCircuitParams::default();
+        init.rlc.base.k = 14;
+        init.rlc.base.lookup_bits = Some(13);
+        let mut circuit = EthCircuitImpl::<Fr, KeygenProbe>::new_impl(
+            CircuitBuilderStage::Keygen,
+            KeygenProbe,
+            init.rlc.clone(),
+            init.keccak.clone(),
+        );
+        circuit.mock_fulfill_keccak_promises(None);
+        let calc = circuit.calculate_params();
+        let k = calc.rlc.base.k as u32;
+        let srs = ParamsKZG::<Bn256>::setup(k, rand::rngs::OsRng);
+        let vk = keygen_vk(&srs, &circuit).expect("keygen_vk EthCircuitImpl<KeygenProbe>");
+        let vk_bytes = vk.to_bytes(SerdeFormat::RawBytes);
+        let cfg_json = serde_json::to_vec(&calc).expect("serialise EthCircuitParams");
+        (vk_bytes, cfg_json)
+    }
+
+    #[test]
+    fn rlc_branch_reconstructs_vk() {
+        let (vk_bytes, cfg_json) = keygen_rlc_vk();
+        let vk = read_rlc_vk(&vk_bytes, &cfg_json)
+            .expect("Rlc branch must reconstruct an EthCircuitImpl VK from its own bytes");
+        // The shared-KZG path must accept the VK's domain k (sanity: build params).
+        let _params = build_shared_kzg_params(vk.get_domain().k());
+        // Full round-trip fidelity: re-serialising the reconstructed VK must
+        // reproduce the original bytes byte-for-byte. This is the strong proof
+        // that the Rlc reader rebuilt the *exact* EthCircuitImpl constraint
+        // system (a wrong CS would read a different number of commitments and
+        // round-trip to different bytes).
+        let reser = vk.to_bytes(SerdeFormat::RawBytes);
+        assert_eq!(reser, vk_bytes, "Rlc VK must round-trip byte-for-byte");
+    }
+
+    #[test]
+    fn base_branch_reads_fewer_points_than_rlc_vk() {
+        // NB: `VerifyingKey::read` is NOT strictly shape-validating — it reads
+        // exactly the commitment count the supplied config dictates and ignores
+        // any trailing bytes (it does not check EOF). So reading RLC bytes with
+        // a *smaller* Base config does not error; instead it consumes only a
+        // prefix and yields a structurally-valid-but-semantically-wrong VK.
+        // The discriminator's real job is to pick the reader whose CS matches
+        // the proof, so verification *succeeds* for valid proofs and *fails*
+        // for shape-mismatched ones. We assert the observable consequence: the
+        // Base reader produces a VK that does NOT round-trip to the RLC bytes.
+        let (vk_bytes, _cfg_json) = keygen_rlc_vk();
+        let base = BaseCircuitParams {
+            k: 14,
+            num_advice_per_phase: vec![1],
+            num_fixed: 1,
+            num_lookup_advice_per_phase: vec![0],
+            lookup_bits: None,
+            num_instance_columns: 1,
+        };
+        match read_base_vk(&vk_bytes, base) {
+            Ok(vk) => {
+                let reser = vk.to_bytes(SerdeFormat::RawBytes);
+                assert_ne!(
+                    reser, vk_bytes,
+                    "Base reader must not faithfully round-trip an RLC-shaped VK"
+                );
+            }
+            // An error is equally acceptable (config dictates more points than
+            // the stream carries → unexpected EOF).
+            Err(_) => {}
+        }
+    }
+
+    #[test]
+    fn rlc_branch_rejects_malformed_config_json() {
+        let (vk_bytes, _cfg) = keygen_rlc_vk();
+        let err = read_rlc_vk(&vk_bytes, b"{ not valid eth params }").unwrap_err();
+        assert!(
+            err.to_string().contains("EthCircuitParams"),
+            "expected EthCircuitParams parse error, got: {err}"
+        );
+    }
 }

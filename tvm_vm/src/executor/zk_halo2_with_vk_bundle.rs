@@ -11,19 +11,24 @@
 // opcode handler can run `verify_proof::<KZG, SHPLONK, Blake2bRead,
 // SingleStrategy>` against it.
 //
-// Frozen contract (2026-05-22, Q-WIRE-1..5 — see `docs/zkhalo2verifywithvk_design.md`):
+// Frozen contract (2026-05-22, Q-WIRE-1..5 — see `docs/zkhalo2verifywithvk_design.md`;
+// `circuit_shape` byte + v2 added 2026-05-29 for the deposit / RLC integration):
 //
 // ```text
 //   off  size  field
 //   ───  ────  ─────────────────────────────────────────────────────────
 //     0     8  magic           = b"HALO2TVM" (ASCII, no NUL)
-//     8     1  version         = 0x01
+//     8     1  version         = 0x01 (Base only) | 0x02 (shape-tagged)
 //     9     1  transcript_kind = 0x00 (Blake2b; 0x01 reserved for Keccak)
-//    10     6  reserved        = 0 × 6
+//    10     1  circuit_shape   = 0x00 Base | 0x01 Rlc (v1 pins this to 0x00)
+//    11     5  reserved        = 0 × 5
 //    16     4  config_len      (u32 LE)
-//    20  cl    config_json     (UTF-8 serde_json of `BaseCircuitParams`)
+//    20  cl    config_json     Base: serde_json(`BaseCircuitParams`)
+//                              Rlc : serde_json(`EthCircuitParams`)
 //   ...     4  vk_len          (u32 LE)
 //   ...  vl    vk_bytes        (`VerifyingKey::write(SerdeFormat::RawBytes)`)
+//                              Base VK ← BaseCircuitBuilder<Fr>
+//                              Rlc  VK ← EthCircuitImpl<Fr, Noop>
 //   ...     4  instances_len   (u32 LE; must be a multiple of 32)
 //   ...  il    instances_bytes (N × 32-byte LE `Fr::to_repr()`, strict)
 //   ...     4  proof_len       (u32 LE)
@@ -42,8 +47,26 @@ use tvm_types::fail;
 /// 8-byte ASCII magic at offset 0 of every bundle.
 pub const BUNDLE_MAGIC: &[u8; 8] = b"HALO2TVM";
 
-/// Current bundle layout version. Bump on any breaking change.
+/// Legacy bundle layout version: Base-shape only (`BaseCircuitParams` in
+/// `config_json`). The `circuit_shape` byte (offset 10) MUST be `0`.
 pub const BUNDLE_VERSION: u8 = 1;
+
+/// Shape-tagged bundle layout version (added 2026-05-29 for the deposit /
+/// `TokenBridge.finalizeDeposit` integration). The `circuit_shape` byte at
+/// offset 10 selects how `config_json` and `vk_bytes` are interpreted:
+///   - `CIRCUIT_SHAPE_BASE` → `config_json` is `BaseCircuitParams`, VK read
+///     with `BaseCircuitBuilder<Fr>` (identical to v1).
+///   - `CIRCUIT_SHAPE_RLC`  → `config_json` is `EthCircuitParams`, VK read
+///     with `EthCircuitImpl<Fr, Noop>` (RLC + keccak-coprocessor circuits,
+///     e.g. the deposit-prover's `EthCircuitImpl<Fr, DepositEventCircuitV2>`).
+/// Mirrors the producer-side `VK_BLOB_VERSION_V2` / `CircuitShape` in
+/// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`.
+pub const BUNDLE_VERSION_V2: u8 = 2;
+
+/// `circuit_shape` byte values (offset 10). Only meaningful in v2 bundles; a
+/// v1 bundle pins this to `CIRCUIT_SHAPE_BASE`.
+pub const CIRCUIT_SHAPE_BASE: u8 = 0;
+pub const CIRCUIT_SHAPE_RLC: u8 = 1;
 
 /// Transcript discriminator. Only `Blake2b = 0` is accepted by the opcode
 /// today; `0x01 = Keccak` is reserved for a future format version.
@@ -61,14 +84,30 @@ const MAX_BUNDLE_BYTES: usize = 16 * 1024 * 1024;
 /// Length prefix size in bytes.
 const LEN_PREFIX_BYTES: usize = 4;
 
+/// Circuit configuration carried inline in the bundle (Q-WIRE-4 / Option B —
+/// self-describing bundle). The variant is selected by the `circuit_shape`
+/// byte and tells the opcode handler which `Circuit` type to rebuild the
+/// constraint system with at VK-deserialisation time.
+#[derive(Clone, Debug)]
+pub enum BundleConfig {
+    /// `BaseCircuitParams` — VK read with `BaseCircuitBuilder<Fr>`.
+    Base(BaseCircuitParams),
+    /// Raw `EthCircuitParams` JSON bytes — VK read with
+    /// `EthCircuitImpl<Fr, Noop>`. Kept as raw bytes here so this parser
+    /// stays free of an `axiom-eth` dependency; the handler does the
+    /// `serde_json::from_slice::<EthCircuitParams>` itself.
+    Rlc(Vec<u8>),
+}
+
 /// Owned, validated view into a `Halo2TvmBundle`. Holds owned buffers for
 /// the four payload chunks so the caller can drop the original input
 /// `Vec<u8>` without invalidating these references.
 #[derive(Clone, Debug)]
 pub struct Halo2TvmBundle {
-    /// Circuit shape that `BaseCircuitBuilder` needs at VK-deserialisation
-    /// time. Carried inline (Q-WIRE-4 / Option B — self-describing bundle).
-    pub config: BaseCircuitParams,
+    /// Circuit shape + params that the VK deserialiser needs. `Base` for v1
+    /// bundles and v2 bundles with `circuit_shape = 0`; `Rlc` for v2 bundles
+    /// with `circuit_shape = 1`.
+    pub config: BundleConfig,
     /// `VerifyingKey<G1Affine>` serialised with `SerdeFormat::RawBytes`.
     pub vk_bytes: Vec<u8>,
     /// `N × 32` flat little-endian `Fr::to_repr()`. Strict — no u64
@@ -109,10 +148,11 @@ impl Halo2TvmBundle {
                 &bytes[0..8]
             );
         }
-        if bytes[8] != BUNDLE_VERSION {
+        let version = bytes[8];
+        if version != BUNDLE_VERSION && version != BUNDLE_VERSION_V2 {
             fail!(
-                "Halo2TvmBundle: bundle version mismatch (expected {BUNDLE_VERSION}, got {})",
-                bytes[8]
+                "Halo2TvmBundle: bundle version mismatch (expected {BUNDLE_VERSION} or \
+                 {BUNDLE_VERSION_V2}, got {version})"
             );
         }
         if bytes[9] != TRANSCRIPT_KIND_BLAKE2B {
@@ -122,7 +162,24 @@ impl Halo2TvmBundle {
                 bytes[9]
             );
         }
-        // bytes[10..16] reserved; ignored.
+
+        // Offset 10: circuit_shape. In a v1 bundle this is part of the
+        // reserved zero region and MUST be 0 (Base). In a v2 bundle it
+        // selects Base (0) vs Rlc (1).
+        let circuit_shape = bytes[10];
+        if version == BUNDLE_VERSION && circuit_shape != CIRCUIT_SHAPE_BASE {
+            fail!(
+                "Halo2TvmBundle: v1 bundle carries non-zero circuit_shape byte {circuit_shape} \
+                 (a shape-tagged bundle must set version = {BUNDLE_VERSION_V2})"
+            );
+        }
+        if circuit_shape != CIRCUIT_SHAPE_BASE && circuit_shape != CIRCUIT_SHAPE_RLC {
+            fail!(
+                "Halo2TvmBundle: unsupported circuit_shape byte {circuit_shape} (only 0 = Base \
+                 and 1 = Rlc are currently defined)"
+            );
+        }
+        // bytes[11..16] reserved; ignored.
 
         let mut cursor = HEADER_LEN;
         let config_bytes = read_chunk(bytes, &mut cursor, "config_json")?;
@@ -145,12 +202,29 @@ impl Halo2TvmBundle {
             );
         }
 
-        let config: BaseCircuitParams = match serde_json::from_slice(&config_bytes) {
-            Ok(c) => c,
-            Err(e) => fail!(
-                "Halo2TvmBundle: malformed config_json (cannot parse as BaseCircuitParams): {}",
-                e
-            ),
+        let config = match circuit_shape {
+            CIRCUIT_SHAPE_BASE => {
+                let params: BaseCircuitParams = match serde_json::from_slice(&config_bytes) {
+                    Ok(c) => c,
+                    Err(e) => fail!(
+                        "Halo2TvmBundle: malformed config_json (cannot parse as \
+                         BaseCircuitParams): {}",
+                        e
+                    ),
+                };
+                BundleConfig::Base(params)
+            }
+            // Rlc: keep the EthCircuitParams JSON opaque here; the handler
+            // parses it against axiom-eth's EthCircuitParams type. We still
+            // sanity-check it is non-empty so a malformed bundle fails at
+            // parse time rather than deep inside VK reconstruction.
+            CIRCUIT_SHAPE_RLC => {
+                if config_bytes.is_empty() {
+                    fail!("Halo2TvmBundle: Rlc bundle carries an empty config_json chunk");
+                }
+                BundleConfig::Rlc(config_bytes)
+            }
+            _ => unreachable!("circuit_shape validated above"),
         };
 
         Ok(Self {
@@ -214,11 +288,23 @@ mod tests {
         instances: &[u8],
         proof: &[u8],
     ) -> Vec<u8> {
+        make_bundle(BUNDLE_VERSION, CIRCUIT_SHAPE_BASE, config_json, vk, instances, proof)
+    }
+
+    fn make_bundle(
+        version: u8,
+        circuit_shape: u8,
+        config_json: &[u8],
+        vk: &[u8],
+        instances: &[u8],
+        proof: &[u8],
+    ) -> Vec<u8> {
         let mut out = Vec::new();
         out.extend_from_slice(BUNDLE_MAGIC);
-        out.push(BUNDLE_VERSION);
+        out.push(version);
         out.push(TRANSCRIPT_KIND_BLAKE2B);
-        out.extend_from_slice(&[0u8; 6]);
+        out.push(circuit_shape);
+        out.extend_from_slice(&[0u8; 5]);
         for chunk in [config_json, vk, instances, proof] {
             out.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
             out.extend_from_slice(chunk);
@@ -226,15 +312,68 @@ mod tests {
         out
     }
 
+    /// A small but structurally valid `EthCircuitParams` JSON, mirroring what
+    /// `EthCircuitParams::default()` serialises to (with `k`/`lookup_bits` set).
+    fn rlc_config_json() -> Vec<u8> {
+        br#"{"rlc":{"base":{"k":14,"num_advice_per_phase":[1,1],"num_fixed":1,"num_lookup_advice_per_phase":[1,0],"lookup_bits":13,"num_instance_columns":1},"num_rlc_columns":1},"keccak_rows_per_round":20}"#
+            .to_vec()
+    }
+
     #[test]
     fn parse_round_trips_minimal_bundle() {
         let cfg = dark_dex_config_json();
         let bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         let bundle = Halo2TvmBundle::parse(&bytes).expect("minimal bundle must parse");
+        assert!(matches!(bundle.config, BundleConfig::Base(_)), "v1 bundle must be Base shape");
         assert_eq!(bundle.vk_bytes, b"vk");
         assert_eq!(bundle.instances_bytes, vec![0u8; 32]);
         assert_eq!(bundle.proof_bytes, b"proof");
         assert_eq!(bundle.num_instances(), 1);
+    }
+
+    #[test]
+    fn parse_v2_base_bundle_is_base_shape() {
+        let cfg = dark_dex_config_json();
+        let bytes = make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_BASE, &cfg, b"vk", &[0u8; 32], b"p");
+        let bundle = Halo2TvmBundle::parse(&bytes).expect("v2 Base bundle must parse");
+        assert!(matches!(bundle.config, BundleConfig::Base(_)));
+    }
+
+    #[test]
+    fn parse_v2_rlc_bundle_carries_opaque_eth_params() {
+        let cfg = rlc_config_json();
+        let bytes = make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_RLC, &cfg, b"vk", &[0u8; 64], b"p");
+        let bundle = Halo2TvmBundle::parse(&bytes).expect("v2 Rlc bundle must parse");
+        match &bundle.config {
+            BundleConfig::Rlc(json) => {
+                assert_eq!(json, &cfg, "Rlc config bytes must round-trip verbatim")
+            }
+            BundleConfig::Base(_) => panic!("expected Rlc shape"),
+        }
+        assert_eq!(bundle.num_instances(), 2);
+    }
+
+    #[test]
+    fn parse_rejects_v1_with_nonzero_shape() {
+        let cfg = dark_dex_config_json();
+        let bytes = make_bundle(BUNDLE_VERSION, CIRCUIT_SHAPE_RLC, &cfg, b"vk", &[0u8; 32], b"p");
+        let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
+        assert!(err.to_string().contains("non-zero circuit_shape"), "actual: {err}");
+    }
+
+    #[test]
+    fn parse_rejects_unknown_shape() {
+        let cfg = rlc_config_json();
+        let bytes = make_bundle(BUNDLE_VERSION_V2, 7, &cfg, b"vk", &[0u8; 32], b"p");
+        let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
+        assert!(err.to_string().contains("unsupported circuit_shape"), "actual: {err}");
+    }
+
+    #[test]
+    fn parse_rejects_empty_rlc_config() {
+        let bytes = make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_RLC, b"", b"vk", &[0u8; 32], b"p");
+        let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
+        assert!(err.to_string().contains("empty config_json"), "actual: {err}");
     }
 
     #[test]
