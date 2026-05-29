@@ -28,6 +28,8 @@ use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_abi;
 use crate::helpers::now_ms;
+use crate::helpers::server_supports_dapp_id;
+use crate::helpers::strip_workchain;
 use crate::message::EncodedMessage;
 use crate::message::display_generated_message;
 
@@ -44,6 +46,20 @@ pub async fn deploy_contract(
 ) -> Result<(), String> {
     let config = &full_config.config;
     let tvm_client = create_client_verbose(config)?;
+
+    // v>=1.0.0 servers reject empty dapp_id on /v2/messages. Probe up
+    // front so the user gets a clear, actionable message instead of an
+    // opaque "dapp_id is required" SDK error after submission setup.
+    if !is_fee && dst_dapp_id.unwrap_or("").is_empty() {
+        let supports_v3 = server_supports_dapp_id(&tvm_client)
+            .await
+            .map_err(|e| format!("failed to probe server version: {e}"))?;
+        if supports_v3 {
+            return Err("--dst-dapp-id is required when deploying to a v>=1.0.0 server \
+                 (pass a 64-character hex dapp_id; use all zeros for a self-rooted dapp)"
+                .to_string());
+        }
+    }
 
     if !is_fee && !config.is_json {
         println!("Deploying...");
@@ -72,6 +88,13 @@ pub async fn deploy_contract(
         serde_json::from_value(result.clone())
             .map_err(|e| format!("failed to convert result: {e}"))?;
 
+    // For tvm-cli deploys the new contract roots its own dapp, so the
+    // dapp_id equals the account_id. Surface this in `deployed_at` using
+    // the extended `dapp_id::account_id` form (both halves are the same
+    // bare 64-hex account id, with the workchain prefix stripped).
+    let account_id = strip_workchain(&addr)?;
+    let deployed_at = format!("{account_id}::{account_id}");
+
     if !config.is_json {
         if !config.async_call {
             println!("Transaction succeeded.");
@@ -83,13 +106,13 @@ pub async fn deploy_contract(
                 println!("{k}: {v}");
             }
         });
-        println!("Contract deployed at address: {}", addr);
+        println!("Contract deployed at address: {}", deployed_at);
     } else {
-        map.insert("deployed_at".to_string(), serde_json::Value::String(addr.clone()));
+        map.insert("deployed_at".to_string(), serde_json::Value::String(deployed_at.clone()));
         print_json_result(serde_json::Value::Object(map), config)?;
     }
     if let Some(alias) = alias {
-        full_config.add_alias(alias, Some(addr), Some(abi.to_string()), keys_file)?;
+        full_config.add_alias(alias, Some(deployed_at), Some(abi.to_string()), keys_file)?;
     }
     Ok(())
 }

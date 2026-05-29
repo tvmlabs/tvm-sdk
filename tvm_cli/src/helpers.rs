@@ -55,6 +55,7 @@ use tvm_client::crypto::MnemonicDictionary;
 use tvm_client::error::ClientError;
 use tvm_client::net::NetworkConfig;
 use tvm_client::net::OrderBy;
+use tvm_client::net::ParamsOfQuery;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
@@ -312,11 +313,37 @@ impl Display for SdkAddress {
     }
 }
 
+/// Strips a leading `0:` workchain prefix from an account string and
+/// validates that the remainder is a 64-character hex string.
+/// Returns the account_id (no workchain, no 0x).
+pub fn strip_workchain(s: &str) -> Result<String, String> {
+    let account = match s.split_once(':') {
+        Some(("0", rest)) => rest,
+        Some((wc, _)) => return Err(format!("non-zero workchain not supported: {wc}")),
+        None => s,
+    };
+    if account.len() != 64 || !account.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(format!("account_id must be a 64-character hex string, got: {account}"));
+    }
+    Ok(account.to_string())
+}
+
+/// Resolves the GraphQL endpoint (forcing a connection if needed) and
+/// returns whether the server speaks the v3 dapp_id REST format.
+pub async fn server_supports_dapp_id(
+    client: &Arc<ClientContext>,
+) -> tvm_client::error::ClientResult<bool> {
+    client.supports_dapp_id().await
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
 
+    use serde_json::json;
+
     use super::SdkAddress;
+    use super::extract_message_boc;
 
     const DAPP_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     const ACCOUNT_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -371,6 +398,71 @@ mod tests {
         let err = SdkAddress::from_str(&format!("deadbeef::{RAW_ADDRESS}")).unwrap_err();
 
         assert_eq!(err, "dapp_id must be exactly 64 hex characters");
+    }
+
+    #[test]
+    fn extract_message_boc_reads_blockchain_message_response() {
+        let boc = extract_message_boc(json!({
+            "data": {
+                "blockchain": {
+                    "message": {
+                        "boc": "te6ccgEBAQEA"
+                    }
+                }
+            }
+        }))
+        .unwrap();
+
+        assert_eq!(boc, "te6ccgEBAQEA");
+    }
+
+    #[test]
+    fn extract_message_boc_reports_missing_message() {
+        let err = extract_message_boc(json!({
+            "data": {
+                "blockchain": {
+                    "message": null
+                }
+            }
+        }))
+        .unwrap_err();
+
+        assert_eq!(err, "message with specified id was not found.");
+    }
+
+    use super::strip_workchain;
+
+    #[test]
+    fn strip_workchain_removes_zero_workchain() {
+        assert_eq!(
+            strip_workchain("0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+                .unwrap(),
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        );
+    }
+
+    #[test]
+    fn strip_workchain_accepts_bare_hex() {
+        let bare = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert_eq!(strip_workchain(bare).unwrap(), bare);
+    }
+
+    #[test]
+    fn strip_workchain_rejects_non_zero_workchain() {
+        let s = "1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(strip_workchain(s).is_err());
+    }
+
+    #[test]
+    fn strip_workchain_rejects_bad_length() {
+        let s = "0:abc";
+        assert!(strip_workchain(s).is_err());
+    }
+
+    #[test]
+    fn strip_workchain_rejects_non_hex_account() {
+        let s = "0:zzzz456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(strip_workchain(s).is_err());
     }
 }
 
@@ -527,24 +619,34 @@ pub async fn query_with_limit(
 }
 
 pub async fn query_message(ton: TonClient, message_id: &str) -> Result<String, String> {
-    let messages = query_with_limit(
-        ton.clone(),
-        "messages",
-        json!({ "id": { "eq": message_id } }),
-        "boc",
-        None,
-        Some(1),
+    let result = tvm_client::net::query(
+        ton,
+        ParamsOfQuery {
+            query: "query message($hash:String!){blockchain{message(hash:$hash){boc}}}".into(),
+            variables: Some(json!({
+                "hash": message_id,
+            })),
+        },
     )
     .await
-    .map_err(|e| format!("failed to query account data: {}", e))?;
-    if messages.is_empty() {
-        Err("message with specified id was not found.".to_string())
-    } else {
-        Ok(messages[0]["boc"]
-            .as_str()
-            .ok_or("Failed to obtain message boc.".to_string())?
-            .to_string())
+    .map_err(|e| format!("failed to query message: {}", e))?;
+
+    extract_message_boc(result.result)
+}
+
+fn extract_message_boc(mut response: Value) -> Result<String, String> {
+    let message = response
+        .pointer_mut("/data/blockchain/message")
+        .ok_or("Failed to obtain message from response.".to_string())?;
+
+    if message.is_null() {
+        return Err("message with specified id was not found.".to_string());
     }
+
+    message["boc"]
+        .as_str()
+        .ok_or("Failed to obtain message boc.".to_string())
+        .map(ToString::to_string)
 }
 
 pub async fn query_account_field(
@@ -552,7 +654,11 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
-    let params = account::ParamsOfGetAccount { address: address.to_owned() };
+    let sdk_address =
+        SdkAddress::from_str(address).map_err(|e| format!("invalid address `{address}`: {e}"))?;
+    let account_id = strip_workchain(&sdk_address.account_id)?;
+    let dapp_id = sdk_address.dapp_id.unwrap_or_default();
+    let params = account::ParamsOfGetAccount { account_id, dapp_id };
     let result_of_get_acc = account::get_account(ton, params)
         .await
         .map_err(|e| format!("failed to get account: {e}"))?;
@@ -908,9 +1014,13 @@ pub async fn load_account(
                 None => create_client(config)?,
             };
 
+            let sdk_address = SdkAddress::from_str(source)
+                .map_err(|e| format!("invalid address `{source}`: {e}"))?;
+            let account_id = strip_workchain(&sdk_address.account_id)?;
+            let dapp_id = sdk_address.dapp_id.unwrap_or_default();
             let ResultOfGetAccount { boc, state_timestamp, .. } = account::get_account(
                 ton_client,
-                account::ParamsOfGetAccount { address: source.to_string() },
+                account::ParamsOfGetAccount { account_id, dapp_id },
             )
             .await
             .map_err(|e| format!("Failed to get account: {e}"))?;

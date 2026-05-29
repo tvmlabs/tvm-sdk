@@ -34,7 +34,8 @@ use tvm_types::base64_encode;
 use url::Url;
 
 use super::ErrorCode;
-use super::tvm_gql::ExtMessage;
+use super::tvm_gql::ExtMessageV2;
+use super::tvm_gql::ExtMessageV3;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
 use crate::error::AddNetworkUrl;
@@ -987,7 +988,7 @@ impl ServerLink {
         msg_body: &[u8],
         thread_id: ThreadIdentifier,
         dst: MsgAddressInt,
-        dst_dapp_id: Option<String>,
+        dapp_id: String,
     ) -> ClientResult<Value> {
         // This helper function adds "resource" part to the URL
         fn ensure_resource(url: &Url) -> Url {
@@ -998,21 +999,88 @@ impl ServerLink {
                 url.join(ENDPOINT_MESSAGES).unwrap_or(url.clone())
             }
         }
-        let mut attempts = 0;
 
+        // Force GraphQL endpoint resolution so server_version is populated
+        // before we choose v2 vs v3 wire format. Sample version once for
+        // the whole send attempt (including retries). All retries here go
+        // to nodes in the same cluster, so a mid-attempt version flip is
+        // not expected; we deliberately don't re-probe.
+        self.state.get_query_endpoint().await?;
+        let is_v3 = self.supports_dapp_id().await;
         let network_state = self.state();
-        let mut message = ExtMessage {
-            id: msg_id.to_string(),
-            body: base64_encode(msg_body),
-            expire_at: None,
-            thread_id: Some(thread_id.to_string()),
-            ext_message_token: network_state.get_bm_token().await,
-            dst_dapp_id,
+
+        if is_v3 && dapp_id.is_empty() {
+            return Err(crate::processing::Error::dapp_id_required());
+        }
+        if !dapp_id.is_empty() {
+            crate::account::validate_hex_id("dapp_id", &dapp_id)?;
+        }
+
+        // Wire-version-aware wrapper so the retry loop can mutate the
+        // mutable fields (`thread_id`, `ext_message_token`) and re-serialize
+        // without caring which wire format the connected server speaks.
+        enum WireMsg {
+            V2(ExtMessageV2),
+            V3(ExtMessageV3),
+        }
+        impl WireMsg {
+            fn set_thread_id(&mut self, t: Option<String>) {
+                match self {
+                    WireMsg::V2(m) => m.set_thread_id(t),
+                    WireMsg::V3(m) => m.set_thread_id(t),
+                }
+            }
+
+            fn set_ext_message_token(&mut self, token: Option<Value>) {
+                match self {
+                    WireMsg::V2(m) => m.ext_message_token = token,
+                    WireMsg::V3(m) => m.ext_message_token = token,
+                }
+            }
+
+            fn serialize_array(&self) -> ClientResult<String> {
+                match self {
+                    WireMsg::V2(m) => {
+                        serde_json::to_string(&[m]).map_err(crate::processing::Error::invalid_data)
+                    }
+                    WireMsg::V3(m) => {
+                        serde_json::to_string(&[m]).map_err(crate::processing::Error::invalid_data)
+                    }
+                }
+            }
+        }
+
+        // NOTE: account_id_hex assumes a 256-bit MsgAddressInt::AddrStd
+        // destination. For MsgAddressInt::AddrVar with non-aligned bit
+        // lengths the v3 wire format may fail server-side validation.
+        // Mainnet currently uses AddrStd; revisit if AddrVar becomes
+        // common on v>=1.0.0 nodes (NODE-3500 follow-up).
+        let account_id_hex = dst.address().as_hex_string();
+        let mut message = if is_v3 {
+            WireMsg::V3(ExtMessageV3 {
+                id: msg_id.to_string(),
+                body: base64_encode(msg_body),
+                expire_at: None,
+                thread_id: Some(thread_id.to_string()),
+                ext_message_token: network_state.get_bm_token().await,
+                dapp_id: dapp_id.clone(),
+                account_id: account_id_hex,
+            })
+        } else {
+            WireMsg::V2(ExtMessageV2 {
+                id: msg_id.to_string(),
+                body: base64_encode(msg_body),
+                expire_at: None,
+                thread_id: Some(thread_id.to_string()),
+                ext_message_token: network_state.get_bm_token().await,
+                dst_dapp_id: (!dapp_id.is_empty()).then(|| dapp_id.clone()),
+            })
         };
 
+        let mut attempts = 0;
         let mut endpoint = network_state.select_send_message_endpoint().await;
 
-        let query = json!([message]).to_string();
+        let mut query = message.serialize_array()?;
         log::debug!(
             "send_message: id={}, dst={}, endpoint={}, body={}",
             msg_id,
@@ -1042,7 +1110,7 @@ impl ServerLink {
 
             if let Some(Value::Object(_)) = err.data().get("ext_message_token") {
                 network_state.update_bm_data(&err.data()["ext_message_token"]).await;
-                message.ext_message_token = network_state.get_bm_token().await;
+                message.set_ext_message_token(network_state.get_bm_token().await);
             }
 
             let Some(ext) = err.data().get("node_error").and_then(|e| e.get("extensions")) else {
@@ -1086,7 +1154,7 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
                 endpoint = network_state.select_send_message_endpoint().await;
             }
-            let query = json!([message]).to_string();
+            query = message.serialize_array()?;
             log::debug!(
                 "send_message retry: id={}, attempt={}, endpoint={}, body={}",
                 msg_id,
@@ -1187,6 +1255,22 @@ impl ServerLink {
     pub async fn invalidate_querying_endpoint(&self) {
         self.state.invalidate_querying_endpoint().await
     }
+
+    /// Version of the currently selected GraphQL query endpoint, packed as
+    /// major*1_000_000 + minor*1_000 + patch. Returns 0 when no endpoint
+    /// has been resolved yet (treated as pre-1.0.0).
+    pub async fn server_version(&self) -> u32 {
+        match self.state.query_endpoint().await {
+            Some(ep) => ep.server_version.load(Ordering::Relaxed),
+            None => 0,
+        }
+    }
+
+    /// Returns true when the connected server speaks the v3 dapp_id REST
+    /// format (`info.version >= "1.0.0"`).
+    pub async fn supports_dapp_id(&self) -> bool {
+        self.server_version().await >= 1_000_000
+    }
 }
 
 fn ensure_address(err_data: &mut Value, dst: Value) {
@@ -1235,3 +1319,29 @@ fn test_construct_rest_endpoint() {
 // #[cfg(test)]
 // #[path = "tests/test_server_link.rs"]
 // mod tests;
+
+#[cfg(test)]
+mod server_version_tests {
+    use crate::ClientConfig;
+    use crate::ClientContext;
+    use crate::net::NetworkConfig;
+
+    fn make_client_context() -> ClientContext {
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:0".to_string()]),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        ClientContext::new(config).unwrap()
+    }
+
+    #[tokio::test]
+    async fn server_version_returns_zero_when_no_endpoint_resolved() {
+        let ctx = make_client_context();
+        let sl = ctx.get_server_link().unwrap();
+        assert_eq!(sl.server_version().await, 0);
+        assert!(!sl.supports_dapp_id().await);
+    }
+}
