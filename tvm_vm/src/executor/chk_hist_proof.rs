@@ -22,17 +22,18 @@ pub(super) fn execute_chk_hist_proof(engine: &mut Engine) -> Status {
 
     // Stack order: var(0)=top=layer_number, var(1)=hash
     let layer_number: u8 = engine.cmd.var(0).as_integer()?.into(1..=10)?;
-    let hash_builder = engine
-        .cmd
-        .var(1)
-        .as_integer()?
-        .as_builder::<UnsignedIntegerBigEndianEncoding>(256)?;
+    let hash_builder =
+        engine.cmd.var(1).as_integer()?.as_builder::<UnsignedIntegerBigEndianEncoding>(256)?;
     let mut hash_bytes = [0u8; 32];
     hash_bytes.copy_from_slice(hash_builder.data());
 
     let result = match &engine.check_history_proof_hash {
         Some(callback) => {
-            eprintln!("CHKHISTPROOF: callback present, calling with layer={}, hash={}", layer_number, hex::encode(hash_bytes));
+            eprintln!(
+                "CHKHISTPROOF: callback present, calling with layer={}, hash={}",
+                layer_number,
+                hex::encode(hash_bytes)
+            );
             let r = callback(layer_number, hash_bytes);
             eprintln!("CHKHISTPROOF: callback returned {}", r);
             r

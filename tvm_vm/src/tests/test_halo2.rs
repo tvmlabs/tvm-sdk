@@ -55,12 +55,12 @@ fn setup_engine() -> Engine {
     )
 }
 
-/// Run halo2 proof verification through the TVM engine and return (result, elapsed_ms).
+/// Run halo2 proof verification through the TVM engine and return (result,
+/// elapsed_ms).
 fn verify_proof(proof_path: &str, instances_path: &str) -> (bool, u128) {
     let mut engine = setup_engine();
 
-    let pub_inputs_bytes =
-        std::fs::read(instances_path).expect("Failed to read instances file");
+    let pub_inputs_bytes = std::fs::read(instances_path).expect("Failed to read instances file");
     let pub_inputs_cell = pack_data_to_cell(&pub_inputs_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(pub_inputs_cell));
 
@@ -177,9 +177,8 @@ fn test_verify_w128_mismatched_proof_and_instances() {
 /// BN254 Fr modulus p in little-endian (Fr::to_repr() encoding).
 /// p = 0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001
 const BN254_FR_MODULUS_LE: [u8; 32] = [
-    0x01, 0x00, 0x00, 0xf0, 0x93, 0xf5, 0xe1, 0x43, 0x91, 0x70, 0xb9, 0x79, 0x48, 0xe8, 0x33,
-    0x28, 0x5d, 0x58, 0x81, 0x81, 0xb6, 0x45, 0x50, 0xb8, 0x29, 0xa0, 0x31, 0xe1, 0x72, 0x4e,
-    0x64, 0x30,
+    0x01, 0x00, 0x00, 0xf0, 0x93, 0xf5, 0xe1, 0x43, 0x91, 0x70, 0xb9, 0x79, 0x48, 0xe8, 0x33, 0x28,
+    0x5d, 0x58, 0x81, 0x81, 0xb6, 0x45, 0x50, 0xb8, 0x29, 0xa0, 0x31, 0xe1, 0x72, 0x4e, 0x64, 0x30,
 ];
 
 /// Run verification with custom pub_input bytes and return the executor's
@@ -226,11 +225,7 @@ fn test_verify_w128_pub_input_equals_modulus_fails_cleanly() {
     pub_inputs_bytes[0..32].copy_from_slice(&BN254_FR_MODULUS_LE);
 
     let result = run_with_custom_pub_inputs(&pub_inputs_bytes, W128_L0_PROOF_PATH);
-    assert!(
-        result.is_err(),
-        "Expected FatalError for pub_input == p (modulus), got {:?}",
-        result
-    );
+    assert!(result.is_err(), "Expected FatalError for pub_input == p (modulus), got {:?}", result);
     println!("W128 pub_input == p: rejected with err (as expected)");
 }
 

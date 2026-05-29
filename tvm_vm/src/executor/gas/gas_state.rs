@@ -24,7 +24,7 @@ use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
 #[cfg(feature = "gosh")]
-use crate::executor::zk::VERGRTH16_WITH_VK_GAS_PRICE;
+use crate::executor::zk_halo2_with_vk::ZKHALO2_VERIFY_WITH_VK_GAS_PRICE;
 use crate::types::Exception;
 
 // Gas state
@@ -223,18 +223,6 @@ impl Gas {
         self.use_gas(VERGRTH16_GAS_PRICE)
     }
 
-
-    /// Compute VERGRTH16WITHVK usage cost
-    #[cfg(feature = "gosh")]
-    pub const fn vergrth16_with_vk_price() -> i64 {
-        VERGRTH16_WITH_VK_GAS_PRICE
-    }
-
-    #[cfg(feature = "gosh")]
-    pub fn consume_vergrth16_with_vk(&mut self) -> i64 {
-        self.use_gas(VERGRTH16_WITH_VK_GAS_PRICE)
-    }
-
     /// Compute CHKHISTPROOF usage cost
     #[cfg(feature = "gosh")]
     pub const fn chkhistproof_price() -> i64 {
@@ -244,6 +232,17 @@ impl Gas {
     #[cfg(feature = "gosh")]
     pub fn consume_chkhistproof(&mut self) -> i64 {
         self.use_gas(CHKHISTPROOF_GAS_PRICE)
+    }
+
+    #[cfg(feature = "gosh")]
+    /// Compute ZKHALO2VERIFYWITHVK usage cost
+    pub const fn zkhalo2_verify_with_vk_price() -> i64 {
+        ZKHALO2_VERIFY_WITH_VK_GAS_PRICE
+    }
+
+    #[cfg(feature = "gosh")]
+    pub fn consume_zkhalo2_verify_with_vk(&mut self) -> i64 {
+        self.use_gas(ZKHALO2_VERIFY_WITH_VK_GAS_PRICE)
     }
 
     #[cfg(feature = "gosh")]

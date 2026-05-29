@@ -8,7 +8,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc.an'
       - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+.an'
-      - 'v[0-9]+.[0-9]+.[0-9]+-rc-auto.an'
+      - 'v[0-9]+.[0-9]+.[0-9]+*-auto*'
       - '*.an'
 
 concurrency:
@@ -222,28 +222,100 @@ jobs:
   trigger-acki-nacki:
     needs:
       - release
-    if: endsWith(github.ref_name, '-rc-auto.an')
+    if: contains(github.ref_name, '-auto')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Trigger downstream pipeline
         env:
           WOODPECKER_HOST: ${{ secrets.WOODPECKER_HOST }}
           WOODPECKER_TOKEN: ${{ secrets.WOODPECKER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
           ACTOR: ${{ github.actor }}
         run: |
-          version="${TAG%-rc-auto.an}"
+          set -euo pipefail
+
+          version="${TAG%%-*}"
           test_branch="${version}-rc.an-release-testing"
 
-          payload=$(jq -n \
-            --arg tb "$test_branch" \
-            --arg t "$TAG" \
-            --arg a "$ACTOR" \
-            '{branch: "dev", variables: {test_branch: $tb, tag: $t, actor: $a}}')
+          compare_status=$(gh api "repos/$REPO/compare/main...$SHA" -q .status)
+          if [[ "$compare_status" == "identical" || "$compare_status" == "behind" ]]; then
+            pr_state=merged
+            msg=$(gh api "repos/$REPO/commits/main" -q '.commit.message' | head -1)
+            pr=$(printf '%s' "$msg" | grep -oE '#[0-9]+' | head -1 | tr -d '#' || true)
+            pr_numbers=()
+            [[ -n "$pr" ]] && pr_numbers+=("$pr")
+          else
+            pr_state=open
+            mapfile -t head_branches < <(gh api "repos/$REPO/commits/$SHA/branches-where-head" -q '.[].name')
+            pr_numbers=()
+            repo_owner="${REPO%%/*}"
+            for head_branch in "${head_branches[@]}"; do
+              mapfile -t branch_pr_numbers < <(gh api --method GET "repos/$REPO/pulls" \
+                -f state=open \
+                -f base=main \
+                -f "head=${repo_owner}:${head_branch}" \
+                -q '.[].number')
+              pr_numbers+=("${branch_pr_numbers[@]}")
+            done
 
-          curl -fsS -X POST \
-            -H "Authorization: Bearer ${WOODPECKER_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data "$payload" \
-            -o /dev/null -w "HTTP %{http_code}\n" \
-            "${WOODPECKER_HOST}"
+            if [[ ${#pr_numbers[@]} -gt 1 ]]; then
+              echo "ERROR: multiple open PRs to main found for $SHA: ${pr_numbers[*]}" >&2
+              exit 1
+            fi
+
+            if [[ ${#pr_numbers[@]} -eq 0 ]]; then
+              if [[ ${#head_branches[@]} -eq 0 ]]; then
+                echo "ERROR: no branch has $SHA as HEAD; cannot auto-create PR" >&2
+                exit 1
+              fi
+              if [[ ${#head_branches[@]} -gt 1 ]]; then
+                echo "ERROR: multiple branches have $SHA as HEAD: ${head_branches[*]}" >&2
+                exit 1
+              fi
+              head_branch="${head_branches[0]}"
+              new_pr_url=$(gh pr create \
+                --repo "$REPO" \
+                --base main \
+                --head "$head_branch" \
+                --assignee "$ACTOR" \
+                --title "Pre-release tvm-sdk $TAG" \
+                --body "Auto-created by release workflow for tag \`$TAG\` (pushed by @$ACTOR).")
+              pr_numbers=("${new_pr_url##*/}")
+            fi
+          fi
+
+          if [[ ${#pr_numbers[@]} -eq 0 ]]; then
+            echo "No tvm-sdk PR resolved for state=$pr_state; skipping downstream trigger."
+            exit 0
+          fi
+
+          for pr_number in "${pr_numbers[@]}"; do
+            payload=$(jq -n \
+              --arg tb "$test_branch" \
+              --arg t "$TAG" \
+              --arg a "$ACTOR" \
+              --arg pr "$pr_number" \
+              --arg url "https://github.com/$REPO/pull/$pr_number" \
+              --arg s "$pr_state" \
+              '{branch: "dev", variables: {
+                  test_branch: $tb,
+                  tag: $t,
+                  actor: $a,
+                  tvm_sdk_pr: $pr,
+                  tvm_sdk_pr_url: $url,
+                  tvm_sdk_pr_state: $s
+                }}')
+
+            curl -fsS -X POST \
+              -H "Authorization: Bearer ${WOODPECKER_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "$payload" \
+              -o /dev/null -w "PR=$pr_number state=$pr_state HTTP %{http_code}\n" \
+              "${WOODPECKER_HOST}"
+          done
