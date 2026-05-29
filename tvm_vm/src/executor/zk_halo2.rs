@@ -2,6 +2,7 @@ use std::sync::OnceLock;
 
 use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
 use halo2_base::utils::ScalarField;
@@ -116,7 +117,19 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
             };
             pub_inputs.push(Fr::from(elem));
         } else {
-            pub_inputs.push(Fr::from_bytes_le(pub_input_bytes));
+            // SECURITY: `Fr::from_bytes_le` calls `Fr::from_repr(repr).unwrap()`,
+            // which panics for any 32-byte LE value >= the BN254 scalar field
+            // modulus p (~2^254). `pub_input_bytes` comes from attacker-controlled
+            // cell data, so a crafted input (e.g. 0xFF…FF = 2^256-1) would crash
+            // the executor thread. Use the checked `from_repr` and abort the
+            // instruction cleanly on non-canonical encodings, matching the
+            // existing `% 32 != 0` length check above.
+            let mut repr = <Fr as PrimeField>::Repr::default();
+            repr.as_mut().copy_from_slice(pub_input_bytes);
+            let Some(fr) = Option::<Fr>::from(Fr::from_repr(repr)) else {
+                fail!(ExceptionCode::FatalError);
+            };
+            pub_inputs.push(fr);
         }
     }
 
