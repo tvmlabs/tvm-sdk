@@ -4,9 +4,13 @@
 # The stable BaseCircuitBuilder opcode path does not need this; the pin is here so
 # `cargo build` / CI selects a working toolchain without an explicit `+nightly`.
 #
-# `nightly` is a floating channel: for fully reproducible CI, pin a specific date
-# once the team agrees one (e.g. `channel = "nightly-2026-05-28"`, the rustc
-# 1.98.0-nightly (57d06900f 2026-05-27) build this stack was verified against).
+# Pinned to a FIXED nightly (not the floating `nightly` channel) so builds and the
+# CI Lint job (`cargo fmt --all -- --check`) are reproducible — this is our de-facto
+# "stable" for the RLC path. `nightly-2026-05-28` is rustc 1.98.0-nightly
+# (57d06900f 2026-05-27), the build the gosh RLC stack (axiom-eth ->
+# snark-verifier-sdk, both `#![feature(trait_alias)]`) was verified against and that
+# the deposit opcode test + Lint passed on. Bump deliberately, in lockstep with
+# .github/workflows/rust.yaml and acki-nacki/rust-toolchain.toml.
 [toolchain]
-channel = "nightly"
+channel = "nightly-2026-05-28"
 components = ["rustfmt", "clippy"]
