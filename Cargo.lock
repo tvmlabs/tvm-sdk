@@ -682,6 +682,7 @@ dependencies = [
 [[package]]
 name = "axiom-eth"
 version = "0.4.3"
+source = "git+https://github.com/SergeSPb/axiom-eth?branch=gosh-stable-rlcmanager-assignment#687a6daa773559fe85711411c721d8fa6b3e5caf"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2990,7 +2991,7 @@ dependencies = [
 [[package]]
 name = "halo2-base"
 version = "0.4.1"
-source = "git+file:///home/sergey/Pruvendo/gosh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#26b32240f9243ec4f57519f7f469e1a9f877dc64"
+source = "git+https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#26b32240f9243ec4f57519f7f469e1a9f877dc64"
 dependencies = [
  "ark-std 0.3.0",
  "getset",
@@ -3012,7 +3013,7 @@ dependencies = [
 [[package]]
 name = "halo2-ecc"
 version = "0.4.1"
-source = "git+file:///home/sergey/Pruvendo/gosh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#26b32240f9243ec4f57519f7f469e1a9f877dc64"
+source = "git+https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#26b32240f9243ec4f57519f7f469e1a9f877dc64"
 dependencies = [
  "halo2-base",
  "itertools 0.11.0",
@@ -8666,7 +8667,7 @@ dependencies = [
 [[package]]
 name = "zkevm-hashes"
 version = "0.2.1"
-source = "git+file:///home/sergey/Pruvendo/gosh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#26b32240f9243ec4f57519f7f469e1a9f877dc64"
+source = "git+https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#26b32240f9243ec4f57519f7f469e1a9f877dc64"
 dependencies = [
  "array-init",
  "ethers-core",

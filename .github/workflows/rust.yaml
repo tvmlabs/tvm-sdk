@@ -47,7 +47,13 @@ jobs:
       RUSTC_WRAPPER: sccache
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned nightly (matches rust-toolchain.toml): this job builds
+      # `--features tvm_vm/gosh`, which pulls axiom-eth / snark-verifier-sdk —
+      # those require nightly (`trait_alias`). Bump deliberately, in lockstep.
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly-2026-05-28
+          components: clippy, rustfmt
       - uses: rui314/setup-mold@v1
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Setup cargo cache
