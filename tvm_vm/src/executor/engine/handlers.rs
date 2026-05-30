@@ -45,6 +45,8 @@ use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::*;
+#[cfg(feature = "gosh")]
+use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -408,6 +410,7 @@ impl Handlers {
                 .set(0x46, execute_calculate_mbk)
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
+                .set(0x4A, execute_zkhalo2_verify_with_vk)
                 .set(0x50, execute_poseidon);
             #[cfg(feature = "wasmtime")]
             {
