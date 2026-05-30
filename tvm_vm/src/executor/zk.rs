@@ -54,11 +54,11 @@ pub const POSEIDON_ZK_LOGIN_GAS_PRICE: i64 = 356;
 pub const VERGRTH16_GAS_PRICE: i64 = 2380;
 /// Gas price for the `VERGRTH16WITHVK` opcode.
 ///
-/// **Marginal cost over [`VERGRTH16_GAS_PRICE`]:** `+220` gas. `VERGRTH16` already
-/// computes `global_pvk()` on every call (the full VK preparation including the
-/// `e(α, β)` pairing, ~6 ms on a modern x86 core) — that cost is *already*
-/// included in `2380`. The extra `220` here pays for the strictly additional
-/// work that the with-VK variant does:
+/// **Marginal cost over [`VERGRTH16_GAS_PRICE`]:** `+220` gas. `VERGRTH16`
+/// already computes `global_pvk()` on every call (the full VK preparation
+/// including the `e(α, β)` pairing, ~6 ms on a modern x86 core) — that cost is
+/// *already* included in `2380`. The extra `220` here pays for the strictly
+/// additional work that the with-VK variant does:
 ///
 /// - one `ark_groth16::VerifyingKey::<Bn254>::deserialize_compressed` of the
 ///   556-byte VK blob (a handful of decompressions and on-curve checks);
@@ -435,9 +435,9 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 ///
 /// This is the generic counterpart of [`execute_vergrth16`]: instead of using
 /// a hard-coded VK (zkLogin), the caller pushes its own VK as a third operand.
-/// The opcode is curve-fixed to BN254 (so the same one Ethereum precompiles use)
-/// and intended primarily for the AN side of the cross-chain bridge, where it
-/// verifies wrapped Halo2 deposit-event proofs produced on Ethereum.
+/// The opcode is curve-fixed to BN254 (so the same one Ethereum precompiles
+/// use) and intended primarily for the AN side of the cross-chain bridge, where
+/// it verifies wrapped Halo2 deposit-event proofs produced on Ethereum.
 ///
 /// **Stack** (top → bottom):
 /// - `vk_cell` — `Cell` holding the canonical-compressed binary form of
@@ -446,9 +446,8 @@ fn global_pvk() -> PreparedVerifyingKey<Bn254> {
 ///   storage once at deployment time.
 /// - `public_inputs_cell` — `Cell` containing the concatenation of
 ///   canonical-compressed `Fr` field elements (32 bytes each). For the bridge
-///   deposit circuit there are 7 of them in the order
-///   `[depositId, sender, amount, contractAddress, blockHashHigh,
-///   blockHashLow, promise_commit]`.
+///   deposit circuit there are 7 of them in the order `[depositId, sender,
+///   amount, contractAddress, blockHashHigh, blockHashLow, promise_commit]`.
 /// - `proof_cell` — `Cell` holding the canonical-compressed binary form of
 ///   `ark_groth16::Proof<Bn254>` (128 bytes for a standard A,B,C triple).
 ///

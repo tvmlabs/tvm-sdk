@@ -14,20 +14,26 @@
 // layout, frozen 2026-05-22 (Q-WIRE-1..5 + Q-NAME-1; see
 // `docs/zkhalo2verifywithvk_design.md`). The format is also implemented on
 // the producer side in
-// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`,
-// where it is round-trip-tested against real Circuit 1B fallback proofs.
+// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.
+// rs`, where it is round-trip-tested against real Circuit 1B fallback proofs.
 
-use std::collections::{HashMap, VecDeque};
-use std::sync::{Mutex, OnceLock};
+use std::collections::HashMap;
+use std::collections::VecDeque;
+use std::sync::Mutex;
+use std::sync::OnceLock;
 
 use axiom_eth::Field;
 use axiom_eth::mpt::MPTChip;
 use axiom_eth::rlc::circuit::builder::RlcCircuitBuilder;
-use axiom_eth::utils::eth_circuit::{EthCircuitImpl, EthCircuitInstructions, EthCircuitParams};
+use axiom_eth::utils::eth_circuit::EthCircuitImpl;
+use axiom_eth::utils::eth_circuit::EthCircuitInstructions;
+use axiom_eth::utils::eth_circuit::EthCircuitParams;
 use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
-use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
@@ -37,7 +43,8 @@ use tvm_types::fail;
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
-use crate::executor::zk_halo2_with_vk_bundle::{BundleConfig, Halo2TvmBundle};
+use crate::executor::zk_halo2_with_vk_bundle::BundleConfig;
+use crate::executor::zk_halo2_with_vk_bundle::Halo2TvmBundle;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Status;
@@ -149,6 +156,7 @@ struct Noop;
 
 impl<F: Field> EthCircuitInstructions<F> for Noop {
     type FirstPhasePayload = ();
+
     fn virtual_assign_phase0(&self, _builder: &mut RlcCircuitBuilder<F>, _mpt: &MPTChip<F>) {}
 }
 
@@ -260,13 +268,12 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// - `bundle_cell` — `Cell` whose payload is a [`Halo2TvmBundle`] (single
 ///   self-describing byte stream carrying a `circuit_shape` byte + circuit
 ///   params (`BaseCircuitParams` for `circuit_shape = 0`, `EthCircuitParams`
-///   for `circuit_shape = 1`) + `VerifyingKey<G1Affine>` bytes +
-///   public-input bytes + SHPLONK proof bytes, in that order, behind length
-///   prefixes). The VK is rebuilt with `BaseCircuitBuilder<Fr>` for the Base
-///   shape and `EthCircuitImpl<Fr, Noop>` for the Rlc shape. See
+///   for `circuit_shape = 1`) + `VerifyingKey<G1Affine>` bytes + public-input
+///   bytes + SHPLONK proof bytes, in that order, behind length prefixes). The
+///   VK is rebuilt with `BaseCircuitBuilder<Fr>` for the Base shape and
+///   `EthCircuitImpl<Fr, Noop>` for the Rlc shape. See
 ///   `super::zk_halo2_with_vk_bundle` for the format and
-///   `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format
-///   contract.
+///   `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format contract.
 ///
 /// **Pushes** a boolean: `true` on a cryptographically valid proof,
 /// `false` on a well-formed-but-invalid proof.
@@ -275,8 +282,8 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// - Bundle bytes don't deserialise (bad magic / version / transcript /
 ///   chunk-length overrun / trailing garbage / malformed `BaseCircuitParams`).
 /// - `VerifyingKey<G1Affine>::read` rejects the VK bytes (curve membership
-///   failure with `SerdeFormat::RawBytes`, or shape doesn't match the
-///   inline `BaseCircuitParams`).
+///   failure with `SerdeFormat::RawBytes`, or shape doesn't match the inline
+///   `BaseCircuitParams`).
 /// - Any 32-byte chunk in `instances_bytes` is `>= modulus` (strict
 ///   `Fr::from_repr`).
 ///
@@ -284,8 +291,7 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// the relation) is a normal `false` return, not an exception, matching
 /// `VERGRTH16WITHVK`'s contract.
 pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
-    engine
-        .load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
+    engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
     engine.try_use_gas(Gas::zkhalo2_verify_with_vk_price())?;
     fetch_stack(engine, 1)?;
 
@@ -314,8 +320,10 @@ mod rlc_branch_tests {
     //! discriminator routes to the right `Circuit` type.
     use axiom_eth::mpt::MPTChip;
     use axiom_eth::rlc::circuit::builder::RlcCircuitBuilder;
-    use axiom_eth::utils::eth_circuit::{EthCircuitInstructions, EthCircuitParams};
-    use halo2_base::gates::circuit::{BaseCircuitParams, CircuitBuilderStage};
+    use axiom_eth::utils::eth_circuit::EthCircuitInstructions;
+    use axiom_eth::utils::eth_circuit::EthCircuitParams;
+    use halo2_base::gates::circuit::BaseCircuitParams;
+    use halo2_base::gates::circuit::CircuitBuilderStage;
     use halo2_base::halo2_proofs::plonk::keygen_vk;
 
     use super::*;
@@ -331,6 +339,7 @@ mod rlc_branch_tests {
 
     impl<F: Field> EthCircuitInstructions<F> for KeygenProbe {
         type FirstPhasePayload = ();
+
         fn virtual_assign_phase0(&self, builder: &mut RlcCircuitBuilder<F>, mpt: &MPTChip<F>) {
             let keccak = mpt.keccak();
             let ctx = builder.base.main(0);
@@ -339,9 +348,9 @@ mod rlc_branch_tests {
         }
     }
 
-    /// Keygen a real `EthCircuitImpl`-shaped VK + its derived `EthCircuitParams`
-    /// JSON, exactly as a deposit-prover-class producer would emit into a
-    /// VkBlob-v2 `Rlc` bundle.
+    /// Keygen a real `EthCircuitImpl`-shaped VK + its derived
+    /// `EthCircuitParams` JSON, exactly as a deposit-prover-class producer
+    /// would emit into a VkBlob-v2 `Rlc` bundle.
     fn keygen_rlc_vk() -> (Vec<u8>, Vec<u8>) {
         let mut init = EthCircuitParams::default();
         init.rlc.base.k = 14;

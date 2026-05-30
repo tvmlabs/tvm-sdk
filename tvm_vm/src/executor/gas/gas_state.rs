@@ -225,7 +225,6 @@ impl Gas {
         self.use_gas(VERGRTH16_GAS_PRICE)
     }
 
-
     /// Compute VERGRTH16WITHVK usage cost
     #[cfg(feature = "gosh")]
     pub const fn vergrth16_with_vk_price() -> i64 {

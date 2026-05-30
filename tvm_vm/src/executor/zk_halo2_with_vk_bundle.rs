@@ -11,8 +11,9 @@
 // opcode handler can run `verify_proof::<KZG, SHPLONK, Blake2bRead,
 // SingleStrategy>` against it.
 //
-// Frozen contract (2026-05-22, Q-WIRE-1..5 — see `docs/zkhalo2verifywithvk_design.md`;
-// `circuit_shape` byte + v2 added 2026-05-29 for the deposit / RLC integration):
+// Frozen contract (2026-05-22, Q-WIRE-1..5 — see
+// `docs/zkhalo2verifywithvk_design.md`; `circuit_shape` byte + v2 added
+// 2026-05-29 for the deposit / RLC integration):
 //
 // ```text
 //   off  size  field
@@ -56,11 +57,12 @@ pub const BUNDLE_VERSION: u8 = 1;
 /// offset 10 selects how `config_json` and `vk_bytes` are interpreted:
 ///   - `CIRCUIT_SHAPE_BASE` → `config_json` is `BaseCircuitParams`, VK read
 ///     with `BaseCircuitBuilder<Fr>` (identical to v1).
-///   - `CIRCUIT_SHAPE_RLC`  → `config_json` is `EthCircuitParams`, VK read
-///     with `EthCircuitImpl<Fr, Noop>` (RLC + keccak-coprocessor circuits,
-///     e.g. the deposit-prover's `EthCircuitImpl<Fr, DepositEventCircuitV2>`).
+///   - `CIRCUIT_SHAPE_RLC`  → `config_json` is `EthCircuitParams`, VK read with
+///     `EthCircuitImpl<Fr, Noop>` (RLC + keccak-coprocessor circuits, e.g. the
+///     deposit-prover's `EthCircuitImpl<Fr, DepositEventCircuitV2>`).
 /// Mirrors the producer-side `VK_BLOB_VERSION_V2` / `CircuitShape` in
-/// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`.
+/// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.
+/// rs`.
 pub const BUNDLE_VERSION_V2: u8 = 2;
 
 /// `circuit_shape` byte values (offset 10). Only meaningful in v2 bundles; a
@@ -227,12 +229,7 @@ impl Halo2TvmBundle {
             _ => unreachable!("circuit_shape validated above"),
         };
 
-        Ok(Self {
-            config,
-            vk_bytes,
-            instances_bytes,
-            proof_bytes,
-        })
+        Ok(Self { config, vk_bytes, instances_bytes, proof_bytes })
     }
 
     /// Number of public inputs encoded in the bundle.
@@ -313,7 +310,8 @@ mod tests {
     }
 
     /// A small but structurally valid `EthCircuitParams` JSON, mirroring what
-    /// `EthCircuitParams::default()` serialises to (with `k`/`lookup_bits` set).
+    /// `EthCircuitParams::default()` serialises to (with `k`/`lookup_bits`
+    /// set).
     fn rlc_config_json() -> Vec<u8> {
         br#"{"rlc":{"base":{"k":14,"num_advice_per_phase":[1,1],"num_fixed":1,"num_lookup_advice_per_phase":[1,0],"lookup_bits":13,"num_instance_columns":1},"num_rlc_columns":1},"keccak_rows_per_round":20}"#
             .to_vec()
@@ -334,7 +332,8 @@ mod tests {
     #[test]
     fn parse_v2_base_bundle_is_base_shape() {
         let cfg = dark_dex_config_json();
-        let bytes = make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_BASE, &cfg, b"vk", &[0u8; 32], b"p");
+        let bytes =
+            make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_BASE, &cfg, b"vk", &[0u8; 32], b"p");
         let bundle = Halo2TvmBundle::parse(&bytes).expect("v2 Base bundle must parse");
         assert!(matches!(bundle.config, BundleConfig::Base(_)));
     }
@@ -342,7 +341,8 @@ mod tests {
     #[test]
     fn parse_v2_rlc_bundle_carries_opaque_eth_params() {
         let cfg = rlc_config_json();
-        let bytes = make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_RLC, &cfg, b"vk", &[0u8; 64], b"p");
+        let bytes =
+            make_bundle(BUNDLE_VERSION_V2, CIRCUIT_SHAPE_RLC, &cfg, b"vk", &[0u8; 64], b"p");
         let bundle = Halo2TvmBundle::parse(&bytes).expect("v2 Rlc bundle must parse");
         match &bundle.config {
             BundleConfig::Rlc(json) => {
@@ -382,10 +382,7 @@ mod tests {
         let mut bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         bytes[0] = b'X';
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("magic mismatch"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("magic mismatch"), "actual: {err}");
     }
 
     #[test]
@@ -394,10 +391,7 @@ mod tests {
         let mut bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         bytes[8] = 99;
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("version mismatch"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("version mismatch"), "actual: {err}");
     }
 
     #[test]
@@ -406,10 +400,7 @@ mod tests {
         let mut bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 32], b"proof");
         bytes[9] = 7;
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("transcript_kind"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("transcript_kind"), "actual: {err}");
     }
 
     #[test]
@@ -417,10 +408,7 @@ mod tests {
         let cfg = dark_dex_config_json();
         let bytes = make_minimal_bundle(&cfg, b"vk", &[0u8; 31], b"proof");
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("multiple of 32"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("multiple of 32"), "actual: {err}");
     }
 
     #[test]
@@ -430,8 +418,7 @@ mod tests {
         // Bump the vk_len prefix past end-of-buffer.
         let cfg_len = cfg.len();
         let vk_len_offset = HEADER_LEN + LEN_PREFIX_BYTES + cfg_len;
-        bytes[vk_len_offset..vk_len_offset + 4]
-            .copy_from_slice(&(u32::MAX - 100).to_le_bytes());
+        bytes[vk_len_offset..vk_len_offset + 4].copy_from_slice(&(u32::MAX - 100).to_le_bytes());
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
         assert!(err.to_string().contains("overruns bundle"), "actual: {err}");
     }
@@ -451,9 +438,6 @@ mod tests {
         bytes[0..8].copy_from_slice(BUNDLE_MAGIC);
         bytes[8] = BUNDLE_VERSION;
         let err = Halo2TvmBundle::parse(&bytes).unwrap_err();
-        assert!(
-            err.to_string().contains("MAX_BUNDLE_BYTES"),
-            "actual: {err}"
-        );
+        assert!(err.to_string().contains("MAX_BUNDLE_BYTES"), "actual: {err}");
     }
 }
