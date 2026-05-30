@@ -108,6 +108,19 @@ fn round_trip_dark_dex_w8_l0_valid_proof_returns_true() {
     run_with_bundle(&bundle).expect("valid DarkDex W=8 L0 bundle must verify");
 }
 
+/// Real EVM->AN deposit proof: the deposit-prover's RLC (`EthCircuitImpl`)
+/// SHPLONK proof for the Sepolia deposit tx (sender 0x967628..60Ce8e,
+/// 0.002 ETH) round-trips through the v2 `circuit_shape = Rlc` path of
+/// `ZKHALO2VERIFYWITHVK` and verifies `true`. The bundle was assembled from
+/// the deposit-prover artefacts (VkBlob v2 RLC + 7 public inputs + Blake2b
+/// proof) — the exact bytes `TokenBridge.finalizeDeposit` feeds the opcode.
+#[test]
+fn round_trip_deposit_rlc_real_proof_returns_true() {
+    let bundle = std::fs::read("halo2_test_data/deposit_rlc_bundle.bin")
+        .expect("deposit_rlc_bundle.bin must exist");
+    run_with_bundle(&bundle).expect("real deposit RLC bundle must verify true");
+}
+
 #[test]
 fn flipped_proof_byte_rejected_as_false() {
     let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
