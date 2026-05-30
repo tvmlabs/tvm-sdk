@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use tvm_types::SliceData;
 
+use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 use crate::executor::engine::Engine;
 use crate::executor::test_helper::*;
-use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
@@ -56,10 +56,7 @@ fn make_hash_bytes() -> [u8; 32] {
 
 fn push_chk_hist_proof_args(engine: &mut Engine, hash: &[u8; 32], layer: i32) {
     // Push in order: hash (bottom), layer_number (top)
-    engine
-        .cc
-        .stack
-        .push(StackItem::integer(IntegerData::from_unsigned_bytes_be(hash)));
+    engine.cc.stack.push(StackItem::integer(IntegerData::from_unsigned_bytes_be(hash)));
     engine.cc.stack.push(StackItem::int(layer));
 }
 

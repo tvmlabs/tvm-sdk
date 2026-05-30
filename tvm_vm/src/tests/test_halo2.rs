@@ -55,12 +55,12 @@ fn setup_engine() -> Engine {
     )
 }
 
-/// Run halo2 proof verification through the TVM engine and return (result, elapsed_ms).
+/// Run halo2 proof verification through the TVM engine and return (result,
+/// elapsed_ms).
 fn verify_proof(proof_path: &str, instances_path: &str) -> (bool, u128) {
     let mut engine = setup_engine();
 
-    let pub_inputs_bytes =
-        std::fs::read(instances_path).expect("Failed to read instances file");
+    let pub_inputs_bytes = std::fs::read(instances_path).expect("Failed to read instances file");
     let pub_inputs_cell = pack_data_to_cell(&pub_inputs_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(pub_inputs_cell));
 
