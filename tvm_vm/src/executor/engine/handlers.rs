@@ -422,8 +422,7 @@ impl Handlers {
                 // docs/zkhalo2verifywithvk_design.md.
                 .set(0x4A, execute_zkhalo2_verify_with_vk)
                 .set(0x50, execute_poseidon)
-                .set(0x51, execute_chk_hist_proof)
-                .set(0x52, execute_vergrth16_with_vk);
+                .set(0x51, execute_chk_hist_proof);
             // Pre-build VK + KZG params in background so the first
             // ZKHALO2VERIFY call doesn't block for seconds.
             crate::executor::zk_halo2::warmup_halo2();

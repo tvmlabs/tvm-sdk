@@ -55,8 +55,8 @@ use crate::utils::unpack_data_from_cell;
 /// bundle deserialisation + VK reconstruction + per-VK cache lookup.
 ///
 /// **Re-benchmark before mainnet**: this number is a structural guess
-/// modelled on `VERGRTH16_WITH_VK_GAS_PRICE`, scaled up for the bigger
-/// VK (kilobytes vs 192 B). Once we have a stable end-to-end node
+/// scaled up for the bigger VK (kilobytes vs 192 B). Once we have a
+/// stable end-to-end node
 /// integration we'll measure wall-clock for warm and cold paths and tune
 /// this constant. The cold-cache path (~3 s `EvaluationDomain` build for
 /// `K=20`) is intentionally **not** charged here — operators are
@@ -288,8 +288,7 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 ///   `Fr::from_repr`).
 ///
 /// Cryptographic rejection (well-formed proof that just doesn't satisfy
-/// the relation) is a normal `false` return, not an exception, matching
-/// `VERGRTH16WITHVK`'s contract.
+/// the relation) is a normal `false` return, not an exception.
 pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
     engine.try_use_gas(Gas::zkhalo2_verify_with_vk_price())?;
