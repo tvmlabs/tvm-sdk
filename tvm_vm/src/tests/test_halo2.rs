@@ -250,3 +250,80 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
     assert!(!res, "Verification must fail for mutated instances");
     println!("W128 pub_input == p-1: parsed OK, verify=false (as expected)");
 }
+
+// ---------------------------------------------------------------------------
+// ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK opcode, variant B
+// (isolated process verifier). Drives the opcode through the real TVM engine
+// on the live Sepolia deposit triplet and asserts ACCEPT.
+//
+// Stack ABI (top-of-stack last): push vk_blob, then public_inputs, then proof.
+// fetch_stack then binds var(0)=proof, var(1)=public_inputs, var(2)=vk_blob.
+//
+// Requires the isolated verifier binary; its path is taken from the
+// AN_RLC_VERIFY_BIN env var (the handler reads the same var). The on-wire
+// triplet lives under /tmp/deposit_e2e (produced by deposit-prover).
+// Ignored by default so CI without the binary/triplet stays green; run with:
+//   AN_RLC_VERIFY_BIN=.../an_rlc_verify cargo test -p tvm_vm \
+//     test_zkhalo2_with_vk_real_sepolia_triplet -- --ignored --nocapture
+// ---------------------------------------------------------------------------
+
+const DEPOSIT_VK_BLOB_PATH: &str = "/tmp/deposit_e2e/deposit_vk_blob.bin";
+const DEPOSIT_PUBIN_PATH: &str = "/tmp/deposit_e2e/deposit_public_inputs.bin";
+const DEPOSIT_PROOF_PATH: &str = "/tmp/deposit_e2e/deposit_proof_blake2b.bin";
+
+fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> bool {
+    use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
+    let mut engine = setup_engine();
+
+    // Push in source-argument order: vk_blob, public_inputs, proof (top last).
+    let vk_bytes = std::fs::read(vk_path).expect("read vk_blob");
+    let vk_cell = pack_data_to_cell(&vk_bytes, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(vk_cell));
+
+    let pubin_bytes = std::fs::read(pubin_path).expect("read public_inputs");
+    let pubin_cell = pack_data_to_cell(&pubin_bytes, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(pubin_cell));
+
+    let proof_bytes = std::fs::read(proof_path).expect("read proof");
+    let proof_cell = pack_data_to_cell(&proof_bytes, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(proof_cell));
+
+    execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
+    engine.cc.stack.get(0).as_bool().unwrap()
+}
+
+#[test]
+#[ignore]
+fn test_zkhalo2_with_vk_real_sepolia_triplet() {
+    let res = run_zkhalo2_with_vk(
+        DEPOSIT_VK_BLOB_PATH,
+        DEPOSIT_PUBIN_PATH,
+        DEPOSIT_PROOF_PATH,
+    );
+    println!("ZKHALO2VERIFYWITHVK real Sepolia triplet: result={}", res);
+    assert!(res, "expected ACCEPT on the real Sepolia deposit triplet");
+}
+
+#[test]
+#[ignore]
+fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
+    use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
+    let mut engine = setup_engine();
+
+    let vk_bytes = std::fs::read(DEPOSIT_VK_BLOB_PATH).expect("read vk_blob");
+    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&vk_bytes, &mut 0).unwrap()));
+
+    let pubin_bytes = std::fs::read(DEPOSIT_PUBIN_PATH).expect("read public_inputs");
+    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&pubin_bytes, &mut 0).unwrap()));
+
+    // Flip a byte deep in the proof body: structurally valid, fails verification.
+    let mut proof_bytes = std::fs::read(DEPOSIT_PROOF_PATH).expect("read proof");
+    let idx = proof_bytes.len() / 2;
+    proof_bytes[idx] ^= 0xFF;
+    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&proof_bytes, &mut 0).unwrap()));
+
+    execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
+    let verdict = engine.cc.stack.get(0).as_bool().unwrap();
+    println!("ZKHALO2VERIFYWITHVK corrupt proof: verdict={}", verdict);
+    assert!(!verdict, "expected REJECT (false) on a corrupted proof");
+}

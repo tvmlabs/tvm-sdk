@@ -413,6 +413,7 @@ impl Handlers {
                 .set(0x47, execute_calculate_miner_tap_coef)
                 .set(0x48, execute_calculate_miner_reward)
                 .set(0x49, execute_halo2_proof_verification)
+                .set(0x4A, execute_zkhalo2_verify_with_vk)
                 .set(0x50, execute_chk_hist_proof)
                 .set(0x51, execute_vergrth16_with_vk);
             // Pre-build VK + KZG params in background so the first
