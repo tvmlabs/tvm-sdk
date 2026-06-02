@@ -254,22 +254,44 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // ---------------------------------------------------------------------------
 // ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK opcode, variant B
 // (isolated process verifier). Drives the opcode through the real TVM engine
-// on the live Sepolia deposit triplet and asserts ACCEPT.
+// on the canonical deposit triplet and asserts ACCEPT.
+//
+// The triplet is the **10-public-input** deposit layout (AN recipient bound
+// in-circuit): [depositId, sender, amount, anWorkchain, anAccountHigh,
+// anAccountLow, contractAddress, blockHashHigh, blockHashLow, promiseCommit].
+// The opcode is generic over the input count (it forwards num_pi =
+// public_inputs.len()/32 to the isolated verifier), so no opcode change was
+// needed when the layout grew 7 -> 10.
 //
 // Stack ABI (top-of-stack last): push vk_blob, then public_inputs, then proof.
 // fetch_stack then binds var(0)=proof, var(1)=public_inputs, var(2)=vk_blob.
 //
 // Requires the isolated verifier binary; its path is taken from the
 // AN_RLC_VERIFY_BIN env var (the handler reads the same var). The on-wire
-// triplet lives under /tmp/deposit_e2e (produced by deposit-prover).
+// triplet is version-controlled in the acki-nacki-bridge repo at
+// `deposit-prover/fixtures/e2e_10pi/` (override the dir with DEPOSIT_E2E_DIR).
 // Ignored by default so CI without the binary/triplet stays green; run with:
 //   AN_RLC_VERIFY_BIN=.../an_rlc_verify cargo test -p tvm_vm \
-//     test_zkhalo2_with_vk_real_sepolia_triplet -- --ignored --nocapture
+//     test_zkhalo2_with_vk_deposit_10pi_triplet -- --ignored --nocapture
 // ---------------------------------------------------------------------------
 
-const DEPOSIT_VK_BLOB_PATH: &str = "/tmp/deposit_e2e/deposit_vk_blob.bin";
-const DEPOSIT_PUBIN_PATH: &str = "/tmp/deposit_e2e/deposit_public_inputs.bin";
-const DEPOSIT_PROOF_PATH: &str = "/tmp/deposit_e2e/deposit_proof_blake2b.bin";
+/// Directory holding the committed 10-PI deposit triplet. Defaults to the
+/// acki-nacki-bridge fixtures dir; override with the `DEPOSIT_E2E_DIR` env var.
+fn deposit_e2e_dir() -> String {
+    std::env::var("DEPOSIT_E2E_DIR").unwrap_or_else(|_| {
+        "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/fixtures/e2e_10pi".to_string()
+    })
+}
+
+fn deposit_vk_blob_path() -> String {
+    format!("{}/deposit_vk_blob.bin", deposit_e2e_dir())
+}
+fn deposit_pubin_path() -> String {
+    format!("{}/deposit_public_inputs.bin", deposit_e2e_dir())
+}
+fn deposit_proof_path() -> String {
+    format!("{}/deposit_proof_blake2b.bin", deposit_e2e_dir())
+}
 
 fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> bool {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
@@ -294,14 +316,14 @@ fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> boo
 
 #[test]
 #[ignore]
-fn test_zkhalo2_with_vk_real_sepolia_triplet() {
+fn test_zkhalo2_with_vk_deposit_10pi_triplet() {
     let res = run_zkhalo2_with_vk(
-        DEPOSIT_VK_BLOB_PATH,
-        DEPOSIT_PUBIN_PATH,
-        DEPOSIT_PROOF_PATH,
+        &deposit_vk_blob_path(),
+        &deposit_pubin_path(),
+        &deposit_proof_path(),
     );
-    println!("ZKHALO2VERIFYWITHVK real Sepolia triplet: result={}", res);
-    assert!(res, "expected ACCEPT on the real Sepolia deposit triplet");
+    println!("ZKHALO2VERIFYWITHVK 10-PI deposit triplet: result={}", res);
+    assert!(res, "expected ACCEPT on the 10-PI (AN-recipient-bound) deposit triplet");
 }
 
 #[test]
@@ -310,14 +332,14 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
-    let vk_bytes = std::fs::read(DEPOSIT_VK_BLOB_PATH).expect("read vk_blob");
+    let vk_bytes = std::fs::read(deposit_vk_blob_path()).expect("read vk_blob");
     engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&vk_bytes, &mut 0).unwrap()));
 
-    let pubin_bytes = std::fs::read(DEPOSIT_PUBIN_PATH).expect("read public_inputs");
+    let pubin_bytes = std::fs::read(deposit_pubin_path()).expect("read public_inputs");
     engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&pubin_bytes, &mut 0).unwrap()));
 
     // Flip a byte deep in the proof body: structurally valid, fails verification.
-    let mut proof_bytes = std::fs::read(DEPOSIT_PROOF_PATH).expect("read proof");
+    let mut proof_bytes = std::fs::read(deposit_proof_path()).expect("read proof");
     let idx = proof_bytes.len() / 2;
     proof_bytes[idx] ^= 0xFF;
     engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&proof_bytes, &mut 0).unwrap()));
