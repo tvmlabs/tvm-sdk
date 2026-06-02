@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+> **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
+> for a step-by-step migration guide covering the dapp_id changes below.
+
 ### Changed (breaking)
 - `tvm_client`: `ParamsOfGetAccount.address` renamed to `account_id`; now strict 64-character hex (no `0x`, no workchain). Added required `dapp_id` field.
 - `tvm_client`: `ResultOfGetAccount.dapp_id` is now `String` (not `Option`); added `account_id` field.
