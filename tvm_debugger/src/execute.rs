@@ -107,6 +107,7 @@ fn initialize_registers(
         mycode: code.into_cell(),
         unix_time: get_now(args).as_u32(),
         config_params: config_params(args),
+        seq_no: args.block_seq_no.unwrap_or(0),
         ..Default::default()
     };
     // TODO info.set_init_code_hash()
