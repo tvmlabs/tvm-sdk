@@ -525,24 +525,21 @@ mod cli_tests {
     use std::str::FromStr;
 
     use crate::helpers::SdkAddress;
-    use crate::helpers::strip_workchain;
 
     const VALID_ACC: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
     const VALID_DAPP: &str = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
 
     #[test]
-    fn cli_parses_dapp_id_double_colon_form() {
+    fn cli_rejects_dapp_id_double_colon_workchain_form() {
         let s = format!("{VALID_DAPP}::0:{VALID_ACC}");
-        let a = SdkAddress::from_str(&s).unwrap();
-        assert_eq!(a.dapp_id.as_deref(), Some(VALID_DAPP));
-        let acc = strip_workchain(&a.account_id).unwrap();
-        assert_eq!(acc, VALID_ACC);
+        let err = SdkAddress::from_str(&s).unwrap_err();
+        assert_eq!(err, "account_id must not include a workchain when dapp_id is specified");
     }
 
     #[test]
     fn cli_strips_workchain_from_bare_address() {
         let s = format!("0:{VALID_ACC}");
-        let acc = strip_workchain(&s).unwrap();
+        let acc = crate::helpers::strip_workchain(&s).unwrap();
         assert_eq!(acc, VALID_ACC);
     }
 }

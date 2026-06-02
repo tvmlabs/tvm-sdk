@@ -295,6 +295,11 @@ impl FromStr for SdkAddress {
         } else {
             (None, s.to_owned())
         };
+        if dapp_id.is_some() && account_id.contains(':') {
+            return Err(
+                "account_id must not include a workchain when dapp_id is specified".to_string()
+            );
+        }
         let _ = MsgAddressInt::from_str(&account_id).map_err(|e| {
             format!("Address is specified in the wrong format. Error description: {}", e)
         })?;
@@ -360,11 +365,18 @@ mod tests {
 
     #[test]
     fn sdk_address_from_str_parses_dapp_id_with_double_colon() {
-        let address = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap();
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}::{ACCOUNT_ID}")).unwrap();
 
         assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
-        assert_eq!(address.account_id, RAW_ADDRESS);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{RAW_ADDRESS}"));
+        assert_eq!(address.account_id, ACCOUNT_ID);
+        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_dapp_id_with_workchain_address() {
+        let err = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap_err();
+
+        assert_eq!(err, "account_id must not include a workchain when dapp_id is specified");
     }
 
     #[test]
