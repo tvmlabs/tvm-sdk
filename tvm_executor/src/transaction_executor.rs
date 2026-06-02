@@ -2706,4 +2706,95 @@ mod tests {
         assert_eq!(action_type(&OutAction::SetCode { new_code: Cell::default() }), "SetCode");
         assert_eq!(action_type(&OutAction::None), "Unknown");
     }
+
+    // ===== Athens E2E: finalizeDeposit -> opcode 0x4A -> mint (link 4) =====
+    #[test]
+    fn athens_finalize_deposit_reaches_mint() {
+        let tvc_path = "/home/sergey/Pruvendo/gosh/acki-nacki/contracts/0.79.3_compiled/exchange/TokenBridge.tvc";
+        let msg_path = "/tmp/deposit_e2e/finalize_msg.boc";
+        if !std::path::Path::new(tvc_path).exists() || !std::path::Path::new(msg_path).exists() {
+            eprintln!("ATHENS: artifacts missing, skipping");
+            return;
+        }
+        // Make the opcode's external verifier discoverable (fallback path is also baked in).
+        std::env::set_var("AN_RLC_VERIFY_BIN", "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/target/release/an_rlc_verify");
+        std::env::set_var("AN_RLC_SRS_DIR", "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/data");
+
+        let state_init = StateInit::construct_from_file(tvc_path).expect("load TokenBridge.tvc");
+        // Deploy account at the destination address used by finalize_msg.boc (0x3434..34).
+        let account = Account::active_by_init_code_hash(
+            address(0x34),
+            CurrencyCollection::with_grams(100_000_000_000),
+            0,
+            state_init,
+            false,
+        ).expect("build active account");
+        let mut account_root = account.serialize().expect("serialize account");
+
+        let msg = Message::construct_from_file(msg_path).expect("load finalize_msg.boc");
+
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let last_tr_lt = Arc::new(AtomicU64::new(1_000_000));
+        // Athens: trace executed instructions to see how far compute gets.
+        let trace_log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let saw_opcode: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+        let tl = trace_log.clone();
+        let so = saw_opcode.clone();
+        let trace_cb: Arc<tvm_vm::executor::TraceCallback> = Arc::new(move |_e, info| {
+            if info.has_cmd() {
+                let mut v = tl.lock().unwrap();
+                if v.len() < 100000 { v.push(format!("step {} gas {}: {}", info.step, info.gas_used, info.cmd_str)); }
+                if info.cmd_str.contains("ZKHALO2") { *so.lock().unwrap() = true; }
+            }
+        });
+        let params = ExecuteParams {
+            block_unixtime: 1_900_000_000,
+            block_lt: 2_000_000,
+            seq_no: 1,
+            last_tr_lt: last_tr_lt.clone(),
+            seed_block: UInt256::with_array([0x11; 32]),
+            debug: true,
+            trace_callback: Some(trace_cb),
+            ..ExecuteParams::default()
+        };
+
+        let res = executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params);
+        {
+            let v = trace_log.lock().unwrap();
+            eprintln!("ATHENS: total traced instructions = {}", v.len());
+            eprintln!("ATHENS: saw ZKHALO2 opcode = {}", *saw_opcode.lock().unwrap());
+            let n = v.len();
+            let start = if n > 25 { n - 25 } else { 0 };
+            eprintln!("ATHENS: --- last {} instructions ---", n - start);
+            for line in &v[start..] { eprintln!("ATHENS:   {}", line); }
+        }
+        match res {
+            Ok((tx, minted_shell)) => {
+                eprintln!("ATHENS: transaction executed OK, minted_shell={}", minted_shell);
+                match tx.read_description().expect("description") {
+                    TransactionDescr::Ordinary(d) => {
+                        match &d.compute_ph {
+                            TrComputePhase::Vm(vm) => {
+                                eprintln!("ATHENS: COMPUTE success={} exit_code={} gas_used={} vm_steps={}",
+                                    vm.success, vm.exit_code, vm.gas_used, vm.vm_steps);
+                            }
+                            TrComputePhase::Skipped(s) => {
+                                eprintln!("ATHENS: COMPUTE SKIPPED reason={:?}", s.reason);
+                            }
+                        }
+                        match &d.action {
+                            Some(a) => eprintln!("ATHENS: ACTION success={} result_code={} tot_actions={} msgs_created={}",
+                                a.success, a.result_code, a.tot_actions, a.msgs_created),
+                            None => eprintln!("ATHENS: no action phase"),
+                        }
+                        eprintln!("ATHENS: aborted={}", d.aborted);
+                    }
+                    other => eprintln!("ATHENS: unexpected descr {:?}", other),
+                }
+            }
+            Err(e) => {
+                eprintln!("ATHENS: executor returned Err: {:?}", e);
+            }
+        }
+    }
 }

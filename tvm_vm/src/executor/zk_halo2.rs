@@ -142,3 +142,134 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     engine.cc.stack.push(boolean!(res));
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// ZKHALO2VERIFYWITHVK (0xC7 0x4A) — RLC deposit-proof verification.
+//
+// Variant B (process isolation): the RLC verifier lives on the axiom-eth halo2
+// backend, which conflicts with the gosh-halo2 backend used by Dark DEX (0x49)
+// over a single `halo2_proofs` source. To keep BOTH opcodes in one node binary,
+// this handler does NOT verify in-process. It collects the three on-wire blobs
+// (vk_blob, public_inputs, proof) from the stack, writes them to temp files,
+// and spawns the standalone `an_rlc_verify` binary (separate Cargo.lock, axiom-eth).
+// The spawned process performs the exact golden-reference verification
+// (VkBlob::read RLC -> EthCircuitImpl -> 7 PI -> Blake2bRead SHPLONK verify_proof).
+//
+// Exit codes from `an_rlc_verify`:
+//   0 = ACCEPT  -> push true
+//   2 = REJECT  -> push false (proof structurally valid but verify_proof failed)
+//   3 = ERROR   -> fail! (malformed input / IO / SRS error)
+// ---------------------------------------------------------------------------
+pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
+    engine.load_instruction(crate::executor::types::Instruction::new(
+        "ZKHALO2VERIFYWITHVK",
+    ))?;
+
+    // Canonical 3-operand ABI (matches TokenBridge.sol gosh.zkhalo2VerifyWithVK
+    // and TVM-Solidity-Compiler Types.cpp: "VK blob, public-inputs, proof,
+    // top-of-stack last"). fetch_stack binds var(0) to the TOP of the stack
+    // (the last value pushed), so the index order is REVERSED vs the source
+    // argument order:
+    //   var(0) = proof, var(1) = public_inputs, var(2) = vk_blob
+    fetch_stack(engine, 3)?;
+
+    let proof_slice = SliceData::load_cell_ref(engine.cmd.var(0).as_cell()?)?;
+    let proof_bytes = unpack_data_from_cell(proof_slice, engine)?;
+
+    let pub_inputs_slice = SliceData::load_cell_ref(engine.cmd.var(1).as_cell()?)?;
+    let pub_inputs_bytes = unpack_data_from_cell(pub_inputs_slice, engine)?;
+
+    if pub_inputs_bytes.len() % 32 != 0 {
+        fail!(ExceptionCode::FatalError);
+    }
+
+    let vk_blob_slice = SliceData::load_cell_ref(engine.cmd.var(2).as_cell()?)?;
+    let vk_blob_bytes = unpack_data_from_cell(vk_blob_slice, engine)?;
+
+    let res = match run_isolated_rlc_verify(&vk_blob_bytes, &pub_inputs_bytes, &proof_bytes) {
+        Ok(verdict) => verdict,
+        Err(e) => {
+            log::error!("ZKHALO2VERIFYWITHVK isolated verifier error: {}", e);
+            fail!(ExceptionCode::FatalError);
+        }
+    };
+
+    engine.cc.stack.push(boolean!(res));
+    Ok(())
+}
+
+/// Spawn the standalone `an_rlc_verify` binary to verify an RLC deposit-proof
+/// triple out-of-process. Returns Ok(true)=accept, Ok(false)=reject,
+/// Err(..) on any technical/malformed error (exit 3 or spawn failure).
+fn run_isolated_rlc_verify(
+    vk_blob: &[u8],
+    public_inputs: &[u8],
+    proof: &[u8],
+) -> Result<bool, String> {
+    use std::io::Write;
+    use std::process::Command;
+
+    // Binary path: env override, else machine-local default for E2E.
+    let bin = std::env::var("AN_RLC_VERIFY_BIN").unwrap_or_else(|_| {
+        "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/target/release/an_rlc_verify"
+            .to_string()
+    });
+    let srs_dir = std::env::var("AN_RLC_SRS_DIR").unwrap_or_else(|_| {
+        "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/data".to_string()
+    });
+
+    // Unique temp dir so concurrent verifications don't collide.
+    let nonce = format!(
+        "{}_{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0)
+    );
+    let dir = std::env::temp_dir().join(format!("an_rlc_verify_{}", nonce));
+    std::fs::create_dir_all(&dir).map_err(|e| format!("mkdir tmp: {}", e))?;
+
+    let vk_path = dir.join("vk_blob.bin");
+    let pi_path = dir.join("public_inputs.bin");
+    let proof_path = dir.join("proof.bin");
+
+    let write_blob = |p: &std::path::Path, data: &[u8]| -> Result<(), String> {
+        let mut f = std::fs::File::create(p).map_err(|e| format!("create {:?}: {}", p, e))?;
+        f.write_all(data).map_err(|e| format!("write {:?}: {}", p, e))?;
+        Ok(())
+    };
+    write_blob(&vk_path, vk_blob)?;
+    write_blob(&pi_path, public_inputs)?;
+    write_blob(&proof_path, proof)?;
+
+    let num_pi = public_inputs.len() / 32;
+
+    let output = Command::new(&bin)
+        .arg("--vk-blob").arg(&vk_path)
+        .arg("--proof").arg(&proof_path)
+        .arg("--pubin").arg(&pi_path)
+        .arg("--degree").arg("18")
+        .arg("--srs-dir").arg(&srs_dir)
+        .arg("--expect-pi").arg(num_pi.to_string())
+        .arg("--quiet")
+        .output();
+
+    // Best-effort cleanup regardless of outcome.
+    let _ = std::fs::remove_dir_all(&dir);
+
+    let output = output.map_err(|e| format!("spawn {}: {}", bin, e))?;
+    match output.status.code() {
+        Some(0) => Ok(true),
+        Some(2) => Ok(false),
+        Some(3) => Err(format!(
+            "verifier ERROR (exit 3): {}",
+            String::from_utf8_lossy(&output.stderr)
+        )),
+        other => Err(format!(
+            "verifier unexpected exit {:?}: {}",
+            other,
+            String::from_utf8_lossy(&output.stderr)
+        )),
+    }
+}
