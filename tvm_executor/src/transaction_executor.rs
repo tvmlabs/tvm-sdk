@@ -2448,6 +2448,37 @@ mod tests {
         }
     }
 
+    fn currency_other_u64(balance: &CurrencyCollection, key: u32) -> u64 {
+        let Some(value) = balance.get_other(key).unwrap() else {
+            return 0;
+        };
+        value.value().iter_u64_digits().next().unwrap_or(0)
+    }
+
+    fn cross_dapp_exchange_balance(engine_version: semver::Version) -> CurrencyCollection {
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let code = tvm_assembler::compile_code_to_cell("PUSHINT 1\n").unwrap();
+        let account = active_account_with_code(7, code);
+        let mut account_root = account.serialize().unwrap();
+        let mut msg_value = CurrencyCollection::with_grams(1_000_000_000);
+        msg_value.set_other(2, 123).unwrap();
+        let mut header = InternalMessageHeader::with_addresses(address(1), address(7), msg_value);
+        header.set_src_dapp_id(Some(UInt256::with_array([0x33; 32])));
+        header.set_exchange(true);
+        let msg = Message::with_int_header(header);
+
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.dapp_id = Some(UInt256::with_array([0x22; 32]));
+        fixture.engine_version = engine_version;
+        let (tx, _) = executor
+            .execute_with_libs_and_params(Some(&msg), &mut account_root, fixture.build())
+            .unwrap();
+        let phase = vm_phase(&tx);
+        assert!(phase.success, "{phase:?}");
+
+        Account::construct_from_cell(account_root).unwrap().balance_checked()
+    }
+
     fn uint64_array_cell(values: &[u64]) -> Cell {
         use tvm_abi::TokenValue;
         use tvm_abi::contract::ABI_VERSION_2_2;
@@ -2666,34 +2697,13 @@ mod tests {
     }
 
     #[test]
-    fn node_params_engine_version_reaches_calc_min_stake() {
-        for (engine_version, expected_min_stake) in [
-            (semver::Version::new(1, 0, 1), 14_393_409_967_783u128),
-            (semver::Version::new(1, 0, 3), 10_000_000_000_000_000u128),
-        ] {
-            let mut fixture = BuildActionsExecuteParamsFixture::regular();
-            fixture.engine_version = engine_version;
+    fn node_params_engine_version_reaches_cross_dapp_exchange() {
+        let pre_1_0_3_balance = cross_dapp_exchange_balance(semver::Version::new(1, 0, 2));
+        let post_1_0_3_balance = cross_dapp_exchange_balance(semver::Version::new(1, 0, 3));
 
-            let (tx, _) = execute_node_contract(
-                &format!(
-                    "PUSHINT 0\n\
-                     PUSHINT 0\n\
-                     PUSHINT 0\n\
-                     PUSHINT 1\n\
-                     CALCMINSTAKE\n\
-                     PUSHINT {}\n\
-                     EQUAL\n\
-                     THROWIFNOT 204\n",
-                    expected_min_stake
-                ),
-                fixture.build(),
-            )
-            .unwrap();
-
-            let phase = vm_phase(&tx);
-            assert!(phase.success, "{phase:?}");
-            assert_eq!(phase.exit_code, 0);
-        }
+        assert_eq!(currency_other_u64(&pre_1_0_3_balance, 2), 123);
+        assert_eq!(currency_other_u64(&post_1_0_3_balance, 2), 0);
+        assert_eq!(post_1_0_3_balance.grams.as_u128() - pre_1_0_3_balance.grams.as_u128(), 123);
     }
 
     #[test]
@@ -2768,6 +2778,7 @@ mod tests {
         let wasm_hash = bytes_from_hex(hash_str);
         let mut fixture = BuildActionsExecuteParamsFixture::regular();
         fixture.wasm_cache.wasm_binary_root_path = "../tvm_vm/config/wasm".to_owned();
+        fixture.wasm_cache.wasm_hash_whitelist.clear();
         fixture.wasm_cache.wasm_engine =
             tvm_vm::executor::Engine::extern_wasm_engine_init().unwrap();
 
@@ -2793,14 +2804,33 @@ mod tests {
             );
         let mut fixture = BuildActionsExecuteParamsFixture::regular();
         fixture.wasm_cache.wasm_binary_root_path = "../tvm_vm/config/wasm".to_owned();
-        fixture.wasm_cache.wasm_engine = wasm_engine;
-        fixture.wasm_cache.wasm_hash_whitelist = wasm_hash_whitelist;
+        fixture.wasm_cache.wasm_engine = wasm_engine.clone();
+        fixture.wasm_cache.wasm_hash_whitelist = wasm_hash_whitelist.clone();
         fixture.wasm_cache.wasm_component_cache = wasm_component_cache;
 
         let phase =
             compute_node_contract("RUNWASM\n", run_wasm_hash_stack(&wasm_hash), fixture.build());
         assert!(phase.success, "{phase:?}");
         assert_eq!(phase.exit_code, 0);
+
+        let wrong_binary = std::fs::read(
+            "../tvm_vm/config/wasm/65b6403f531ba6504e590905712af3208ddcba3d0c4ea4c003d1ef9685ec4947",
+        )
+        .unwrap();
+        let wrong_component =
+            wasmtime::component::Component::new(&wasm_engine, wrong_binary.as_slice()).unwrap();
+        let mut poisoned_cache = std::collections::HashMap::new();
+        poisoned_cache.insert(wasm_hash, wrong_component);
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.wasm_cache.wasm_binary_root_path = "../tvm_vm/config/wasm".to_owned();
+        fixture.wasm_cache.wasm_engine = wasm_engine;
+        fixture.wasm_cache.wasm_hash_whitelist = wasm_hash_whitelist;
+        fixture.wasm_cache.wasm_component_cache = poisoned_cache;
+
+        let phase =
+            compute_node_contract("RUNWASM\n", run_wasm_hash_stack(&wasm_hash), fixture.build());
+        assert!(!phase.success, "{phase:?}");
+        assert_ne!(phase.exit_code, 0);
     }
 
     #[test]
