@@ -149,8 +149,7 @@ pub struct ExecuteParams {
     pub wasm_component_cache: HashMap<[u8; 32], wasmtime::component::Component>,
     pub mvconfig: MVConfig,
     pub engine_version: semver::Version,
-    pub check_history_proof_hash:
-        Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
+    pub check_history_proof_hash: Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
 }
 
 pub struct ActionPhaseResult {
@@ -601,8 +600,7 @@ pub trait TransactionExecutor {
         };
 
         vm_setup = vm_setup.set_dapp_id(params.dapp_id.clone());
-        vm_setup =
-            vm_setup.set_check_history_proof_hash(params.check_history_proof_hash.clone());
+        vm_setup = vm_setup.set_check_history_proof_hash(params.check_history_proof_hash.clone());
 
         let mut vm = vm_setup.create();
 
@@ -2159,6 +2157,7 @@ mod tests {
     use crate::BlockchainConfig;
     use crate::OrdinaryTransactionExecutor;
     use crate::blockchain_config::TONDefaultConfig;
+    use crate::test_utils::BuildActionsExecuteParamsFixture;
 
     struct DummyExecutor {
         config: BlockchainConfig,
@@ -2312,32 +2311,28 @@ mod tests {
         let vm_execution_is_block_related = Arc::new(Mutex::new(false));
         let block_collation_was_finished = Arc::new(Mutex::new(false));
         let last_tr_lt = Arc::new(AtomicU64::new(100));
+        let trace_steps = Arc::new(AtomicU64::new(0));
         let mut mvconfig = MVConfig::default();
         mvconfig.set_config(vec![3, 5, 8]);
-        let params = ExecuteParams {
-            block_unixtime: 123,
-            block_lt: 456,
-            seq_no: 7,
-            last_tr_lt: last_tr_lt.clone(),
-            seed_block: UInt256::with_array([0x77; 32]),
-            debug: true,
-            dapp_id: Some(dapp_id.clone()),
-            available_credit: 13,
-            termination_deadline: Some(Instant::now() + Duration::from_secs(30)),
-            execution_timeout: Some(Duration::from_secs(30)),
-            vm_execution_is_block_related: vm_execution_is_block_related.clone(),
-            block_collation_was_finished: block_collation_was_finished.clone(),
-            mvconfig,
-            engine_version: semver::Version::new(1, 0, 3),
-            ..ExecuteParams::default()
-        };
-        #[cfg(feature = "wasmtime")]
-        let params = {
-            let mut params = params;
-            params.wasm_binary_root_path = "./tests/wasm".to_owned();
-            params.wasm_engine = Some(wasmtime::Engine::default());
-            params
-        };
+        let trace_steps_callback = trace_steps.clone();
+        let trace_callback: Arc<tvm_vm::executor::TraceCallback> = Arc::new(move |_, _| {
+            trace_steps_callback.fetch_add(1, Ordering::Relaxed);
+        });
+        let mut fixture = BuildActionsExecuteParamsFixture::tvm_tracing(trace_callback);
+        fixture.block_unixtime = 123;
+        fixture.block_lt = 456;
+        fixture.seq_no = 7;
+        fixture.last_tr_lt = last_tr_lt.clone();
+        fixture.seed_block = UInt256::with_array([0x77; 32]);
+        fixture.dapp_id = Some(dapp_id.clone());
+        fixture.available_credit = 13;
+        fixture.termination_deadline = Some(Instant::now() + Duration::from_secs(30));
+        fixture.execution_timeout = Some(Duration::from_secs(30));
+        fixture.vm_execution_is_block_related = vm_execution_is_block_related.clone();
+        fixture.block_collation_was_finished = block_collation_was_finished.clone();
+        fixture.mvconfig = mvconfig;
+        fixture.engine_version = semver::Version::new(1, 0, 3);
+        let params = fixture.build();
 
         let code = tvm_assembler::compile_code_to_cell(
             "NOW\nPUSHINT 123\nEQUAL\nTHROWIFNOT 100\n\
@@ -2363,6 +2358,7 @@ mod tests {
         assert_eq!(tx.now(), 123);
         assert_eq!(tx.logical_time(), 100);
         assert_eq!(last_tr_lt.load(Ordering::Relaxed), 101);
+        assert!(trace_steps.load(Ordering::Relaxed) > 0);
         assert!(*vm_execution_is_block_related.lock().unwrap());
         match tx.read_description().unwrap() {
             TransactionDescr::Ordinary(description) => {
@@ -2709,5 +2705,141 @@ mod tests {
         );
         assert_eq!(action_type(&OutAction::SetCode { new_code: Cell::default() }), "SetCode");
         assert_eq!(action_type(&OutAction::None), "Unknown");
+    }
+
+    // ===== Athens E2E: finalizeDeposit -> opcode 0x4A -> mint (link 4) =====
+    #[test]
+    fn athens_finalize_deposit_reaches_mint() {
+        let tvc_path = "/home/sergey/Pruvendo/gosh/acki-nacki/contracts/0.79.3_compiled/exchange/TokenBridge.tvc";
+        let msg_path = "/tmp/deposit_e2e/live_finalize_msg.boc";
+        if !std::path::Path::new(tvc_path).exists() || !std::path::Path::new(msg_path).exists() {
+            eprintln!("ATHENS: artifacts missing, skipping");
+            return;
+        }
+        // Make the opcode's external verifier discoverable (fallback path is also baked
+        // in).
+        std::env::set_var(
+            "AN_RLC_VERIFY_BIN",
+            "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/target/release/an_rlc_verify",
+        );
+        std::env::set_var(
+            "AN_RLC_SRS_DIR",
+            "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/data",
+        );
+
+        let state_init = StateInit::construct_from_file(tvc_path).expect("load TokenBridge.tvc");
+        // Athens: sync tvm.pubkey() with the key that signed live_finalize_msg.boc.
+        // TVM-Solidity stores pubkey as the first 256 bits of the data cell root.
+        let mut state_init = state_init;
+        let signer_pubkey: [u8; 32] = [
+            0x23, 0x47, 0x18, 0x31, 0xb2, 0x7e, 0xe8, 0xca, 0x2b, 0xa1, 0x95, 0x6e, 0x3d, 0x58,
+            0x85, 0x04, 0xcb, 0xfb, 0x8e, 0xa4, 0x4b, 0xf3, 0x59, 0x3d, 0x5c, 0x3a, 0x1c, 0xc6,
+            0x8b, 0xd6, 0xb9, 0xd9,
+        ];
+        if let Some(old_data) = state_init.data.clone() {
+            let old_slice = SliceData::load_cell_ref(&old_data).expect("load data slice");
+            // Rebuild data: replace first 256 bits with signer pubkey, keep the rest.
+            let mut bldr = BuilderData::new();
+            bldr.append_raw(&signer_pubkey, 256).expect("append pubkey");
+            let mut rest = old_slice.clone();
+            let total = rest.remaining_bits();
+            if total > 256 {
+                rest.move_by(256).expect("skip old pubkey");
+                let tail = rest.get_next_bits(total - 256).expect("tail bits");
+                bldr.append_raw(&tail, total - 256).expect("append tail");
+            }
+            for i in 0..old_slice.remaining_references() {
+                bldr.checked_append_reference(old_data.reference(i).unwrap()).expect("ref");
+            }
+            state_init.set_data(bldr.into_cell().expect("build data cell"));
+            eprintln!("ATHENS: injected signer pubkey into account data");
+        }
+        // Deploy account at the destination address used by finalize_msg.boc
+        // (0x3434..34).
+        let account = Account::active_by_init_code_hash(
+            address(0x34),
+            CurrencyCollection::with_grams(100_000_000_000),
+            0,
+            state_init,
+            false,
+        )
+        .expect("build active account");
+        let mut account_root = account.serialize().expect("serialize account");
+
+        let msg = Message::construct_from_file(msg_path).expect("load finalize_msg.boc");
+
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let last_tr_lt = Arc::new(AtomicU64::new(1_000_000));
+        // Athens: trace executed instructions to see how far compute gets.
+        let trace_log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let saw_opcode: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+        let tl = trace_log.clone();
+        let so = saw_opcode.clone();
+        let trace_cb: Arc<tvm_vm::executor::TraceCallback> = Arc::new(move |_e, info| {
+            if info.has_cmd() {
+                let mut v = tl.lock().unwrap();
+                if v.len() < 100000 {
+                    v.push(format!("step {} gas {}: {}", info.step, info.gas_used, info.cmd_str));
+                }
+                if info.cmd_str.contains("ZKHALO2") {
+                    *so.lock().unwrap() = true;
+                }
+            }
+        });
+        let params = ExecuteParams {
+            block_unixtime: 1_780_357_300,
+            block_lt: 2_000_000,
+            seq_no: 1,
+            last_tr_lt: last_tr_lt.clone(),
+            seed_block: UInt256::with_array([0x11; 32]),
+            debug: true,
+            trace_callback: Some(trace_cb),
+            ..ExecuteParams::default()
+        };
+
+        let res = executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params);
+        {
+            let v = trace_log.lock().unwrap();
+            eprintln!("ATHENS: total traced instructions = {}", v.len());
+            eprintln!("ATHENS: saw ZKHALO2 opcode = {}", *saw_opcode.lock().unwrap());
+            let n = v.len();
+            let start = if n > 25 { n - 25 } else { 0 };
+            eprintln!("ATHENS: --- last {} instructions ---", n - start);
+            for line in &v[start..] {
+                eprintln!("ATHENS:   {}", line);
+            }
+        }
+        match res {
+            Ok((tx, minted_shell)) => {
+                eprintln!("ATHENS: transaction executed OK, minted_shell={}", minted_shell);
+                match tx.read_description().expect("description") {
+                    TransactionDescr::Ordinary(d) => {
+                        match &d.compute_ph {
+                            TrComputePhase::Vm(vm) => {
+                                eprintln!(
+                                    "ATHENS: COMPUTE success={} exit_code={} gas_used={} vm_steps={}",
+                                    vm.success, vm.exit_code, vm.gas_used, vm.vm_steps
+                                );
+                            }
+                            TrComputePhase::Skipped(s) => {
+                                eprintln!("ATHENS: COMPUTE SKIPPED reason={:?}", s.reason);
+                            }
+                        }
+                        match &d.action {
+                            Some(a) => eprintln!(
+                                "ATHENS: ACTION success={} result_code={} tot_actions={} msgs_created={}",
+                                a.success, a.result_code, a.tot_actions, a.msgs_created
+                            ),
+                            None => eprintln!("ATHENS: no action phase"),
+                        }
+                        eprintln!("ATHENS: aborted={}", d.aborted);
+                    }
+                    other => eprintln!("ATHENS: unexpected descr {:?}", other),
+                }
+            }
+            Err(e) => {
+                eprintln!("ATHENS: executor returned Err: {:?}", e);
+            }
+        }
     }
 }

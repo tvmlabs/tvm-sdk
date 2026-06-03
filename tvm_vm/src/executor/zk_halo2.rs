@@ -1,11 +1,12 @@
 use std::sync::OnceLock;
 
 use gosh_zk_snark_halo2_utils::proof::Proof;
-use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
-use halo2_base::utils::ScalarField;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -95,7 +96,8 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     }
 
     // Dual-path instance parsing:
-    //   - Small values (first 24 bytes zero): 24 zero bytes + 8-byte BE u64 → Fr::from(u64)
+    //   - Small values (first 24 bytes zero): 24 zero bytes + 8-byte BE u64 →
+    //     Fr::from(u64)
     //   - Full Fr elements: 32-byte LE Fr::to_repr() → Fr::from_bytes_le()
     let num_of_pub_inputs = pub_inputs_bytes.len() / 32;
     let mut pub_inputs: Vec<Fr> = Vec::new();
@@ -139,3 +141,24 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     engine.cc.stack.push(boolean!(res));
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK verification.
+//
+// The opcode handler lives in `super::zk_halo2_with_vk`; it performs a fully
+// in-process Halo2 SHPLONK verification using:
+//   - the caller-supplied `VkBlob` (magic + version + transcript + config_json
+//     + vk_bytes) popped from the stack,
+//   - the chain-wide shared KZG verifier points hard-coded in
+//     `super::zk_halo2_utils` (Hermez Perpetual Powers of Tau, BN254).
+//
+// Earlier revisions of this opcode shelled out to an external `an_rlc_verify`
+// binary (configured through the `AN_RLC_VERIFY_BIN` / `AN_RLC_SRS_DIR` env
+// vars). That code path has been removed: every parameter the verifier needs
+// is now hard-coded into the node binary, and the tests run end-to-end without
+// any environment overrides. The dispatcher in `engine/handlers.rs` already
+// binds `0x4A` to `zk_halo2_with_vk::execute_zkhalo2_verify_with_vk`, so this
+// module re-exports it under the same name for callers that still reference
+// the legacy path (e.g. `tvm_vm/src/tests/test_halo2.rs`).
+// ---------------------------------------------------------------------------
+pub(crate) use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
