@@ -706,7 +706,7 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                     vec![],
                 );
                 engine.wasm_engine_init_cached().unwrap();
-                engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
+                engine.add_wasm_hash_to_whitelist_by_str(WASM_TLS_CHECK_HASH_STR.to_owned()).unwrap();
                 let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
 
                 let start = std::time::Instant::now();

@@ -456,32 +456,30 @@ pub fn compile_code_debuggable(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "gosh"))]
 mod gosh_zk_opcode_tests {
-    use super::*;
+    use super::compile_code_to_builder;
 
-    /// Sanity check: every gosh-feature ZK opcode mnemonic compiles to the
-    /// expected dispatch bytes. These constants must stay in lock-step with
-    /// `tvm_vm/src/executor/engine/handlers.rs` and the assembler table in
-    /// `tvm_assembler/src/simple.rs`. Failures here usually mean someone moved
-    /// the opcode byte without updating one of the two tables.
-    #[cfg(feature = "gosh")]
+    /// Regression guard: keeps mnemonic ↔ byte mapping stable for the
+    /// gosh-feature ZK opcodes. If the dispatch byte of any entry below
+    /// drifts, this test fails before runtime users hit a wrong handler.
     #[test]
     fn zk_opcode_bytes_round_trip() {
-        for (mnemonic, expected) in [
-            ("VERGRTH16", [0xC7u8, 0x31u8]),
-            ("POSEIDON", [0xC7, 0x32]),
-            ("VERGRTH16WITHVK", [0xC7, 0x49]),
-        ] {
-            let compiled =
-                compile_code(mnemonic).expect("mnemonic should compile under feature 'gosh'");
-            let bytes = compiled.get_bytestring(0);
+        let cases: &[(&str, &[u8])] = &[
+            ("VERGRTH16", &[0xC7, 0x31]),
+            ("POSEIDON", &[0xC7, 0x32]),
+            ("ZKHALO2VERIFY", &[0xC7, 0x49]),
+            ("ZKHALO2VERIFYWITHVK", &[0xC7, 0x4A]),
+            ("CHKHISTPROOF", &[0xC7, 0x50]),
+        ];
+        for (mnemonic, expected) in cases {
+            let builder = compile_code_to_builder(mnemonic)
+                .unwrap_or_else(|e| panic!("compile {mnemonic} failed: {e:?}"));
+            let actual = builder.data();
             assert_eq!(
-                &bytes[..2],
-                &expected[..],
-                "{} should compile to {:02X?}",
-                mnemonic,
-                expected
+                &actual[..expected.len()],
+                *expected,
+                "byte mapping drifted for {mnemonic}: got {actual:02x?}, want {expected:02x?}",
             );
         }
     }
