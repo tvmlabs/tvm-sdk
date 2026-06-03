@@ -154,17 +154,29 @@ pub fn build_dark_dex_w128_vk() -> VerifyingKey<G1Affine> {
     read_vk(&DARK_DEX_W128_VK_BYTES, &dark_dex_w128_config_params())
 }
 
-/// G1 generator point `g[0]` from the KZG SRS (K=19), 64 bytes (BN256 G1Affine
-/// uncompressed).
-const KZG_G0_BYTES: [u8; 64] = [
+// Dark-DEX-specific KZG verifier points (K=19). The `dark_dex_w128_*` proof
+// fixtures committed under `tvm_vm/halo2_test_data/` were generated against a
+// *different* trusted setup than the Hermez ceremony used by the
+// ZKHALO2VERIFYWITHVK opcode (see the top-of-file Hermez constants). Keeping
+// the two ceremonies separate is correct: every KZG verifier needs the exact
+// `[s]·G2` point its proofs were created with, so the dark-dex tests must
+// reuse the ceremony their fixtures were produced against. The bytes are
+// embedded literally so no env var / external SRS file is needed at runtime.
+
+/// G1 generator point `g[0]` for the dark-dex KZG SRS (K=19), 64 bytes
+/// (BN256 G1Affine uncompressed). Curve generator — identical across all
+/// well-formed BN254 SRSes.
+const DARK_DEX_KZG_G0_BYTES: [u8; 64] = [
     157, 13, 143, 197, 141, 67, 93, 211, 61, 11, 199, 245, 40, 235, 120, 10, 44, 70, 121, 120, 111,
     163, 110, 102, 47, 223, 7, 154, 193, 119, 10, 14, 58, 27, 30, 139, 27, 135, 186, 166, 123, 22,
     142, 235, 81, 214, 241, 20, 88, 140, 242, 240, 222, 70, 221, 204, 94, 190, 15, 52, 131, 239,
     20, 28,
 ];
 
-/// G2 generator from the KZG SRS, 128 bytes (BN256 G2Affine uncompressed).
-const KZG_G2_BYTES: [u8; 128] = [
+/// G2 generator for the dark-dex KZG SRS, 128 bytes (BN256 G2Affine
+/// uncompressed). Curve generator — identical across all well-formed BN254
+/// SRSes.
+const DARK_DEX_KZG_G2_BYTES: [u8; 128] = [
     38, 32, 188, 2, 209, 181, 131, 142, 114, 1, 123, 73, 53, 25, 235, 220, 223, 26, 129, 151, 71,
     38, 184, 251, 59, 80, 150, 175, 65, 56, 87, 25, 64, 97, 76, 168, 125, 115, 180, 175, 196, 216,
     2, 88, 90, 221, 67, 96, 134, 47, 160, 82, 252, 80, 233, 9, 107, 123, 234, 58, 131, 240, 254,
@@ -174,8 +186,11 @@ const KZG_G2_BYTES: [u8; 128] = [
     160, 164, 13,
 ];
 
-/// `[s] * G2` from the KZG SRS (toxic-waste-scaled G2), 128 bytes.
-const KZG_S_G2_BYTES: [u8; 128] = [
+/// `[s] · G2` for the dark-dex KZG SRS (toxic-waste-scaled G2), 128 bytes.
+/// **Ceremony-specific:** must match the SRS the `dark_dex_w128_*` proof
+/// fixtures were generated against. Distinct from the Hermez
+/// `KZG_S_G2_BYTES` used by the ZKHALO2VERIFYWITHVK opcode.
+const DARK_DEX_KZG_S_G2_BYTES: [u8; 128] = [
     198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250, 139, 224, 102, 28, 120,
     209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4, 247, 119, 82, 189, 13, 15, 148, 115, 180, 255,
     211, 139, 77, 173, 84, 51, 12, 6, 85, 171, 152, 202, 243, 42, 190, 151, 134, 220, 160, 12, 159,
@@ -198,14 +213,14 @@ pub fn build_kzg_verifier_params() -> ParamsKZG<Bn256> {
     // g_lagrange.
     let mut blob = Vec::with_capacity(388);
     blob.extend_from_slice(&0u32.to_le_bytes()); // k = 0 → n = 1
-    blob.extend_from_slice(&KZG_G0_BYTES); // g[0]
-    blob.extend_from_slice(&KZG_G0_BYTES); // g_lagrange[0] (placeholder)
-    blob.extend_from_slice(&KZG_G2_BYTES); // g2
-    blob.extend_from_slice(&KZG_S_G2_BYTES); // s_g2
+    blob.extend_from_slice(&DARK_DEX_KZG_G0_BYTES); // g[0]
+    blob.extend_from_slice(&DARK_DEX_KZG_G0_BYTES); // g_lagrange[0] (placeholder)
+    blob.extend_from_slice(&DARK_DEX_KZG_G2_BYTES); // g2
+    blob.extend_from_slice(&DARK_DEX_KZG_S_G2_BYTES); // s_g2
     let mut cursor: &[u8] = &blob;
     let dummy = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked)
         .expect("Parsing embedded KZG verifier blob should not fail");
 
-    let g0 = G1Affine::from_raw_bytes_unchecked(&KZG_G0_BYTES);
+    let g0 = G1Affine::from_raw_bytes_unchecked(&DARK_DEX_KZG_G0_BYTES);
     dummy.from_parts(19, vec![g0], Some(vec![]), dummy.g2(), dummy.s_g2())
 }

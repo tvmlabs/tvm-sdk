@@ -247,41 +247,38 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 }
 
 // ---------------------------------------------------------------------------
-// ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK opcode, variant B
-// (isolated process verifier). Drives the opcode through the real TVM engine
-// over a committed set of **10 real deposit proofs** and asserts ACCEPT for
-// each, plus negative (corrupt-proof / mismatched-public-input) cases.
+// ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK opcode, deposit
+// circuit. Drives the opcode through the real TVM engine over a committed set
+// of **10 real deposit proofs** and asserts ACCEPT for each, plus negative
+// (corrupt-proof / mismatched-public-input) cases.
 //
 // Each proof uses the **11-public-input** deposit layout: [depositId, sender,
 // amount, contractAddress, dappIdHigh, dappIdLow, anAccountHigh, anAccountLow,
 // blockHashHigh, blockHashLow, promiseCommit]. `dappId` (a config-supplied
 // UInt256 AN dApp tag) replaced the single `anWorkchain` slot on 2026-06-02;
-// `anAccount{High,Low}` remain the event-bound AN recipient account. The opcode
-// is generic over the input count (it forwards num_pi = public_inputs.len()/32
-// to the isolated verifier), so no opcode change was needed when the layout
-// grew 7 -> 10 -> 11.
+// `anAccount{High,Low}` remain the event-bound AN recipient account.
 //
 // Stack ABI (top-of-stack last): push vk_blob, then public_inputs, then proof.
 // fetch_stack then binds var(0)=proof, var(1)=public_inputs, var(2)=vk_blob.
 //
-// Requires the isolated verifier binary; its path is taken from the
-// AN_RLC_VERIFY_BIN env var (the handler reads the same var). The on-wire
-// proofs are version-controlled in the acki-nacki-bridge repo at
-// `deposit-prover/fixtures/deposit_10proofs/` (a shared `deposit_vk_blob.bin`
-// plus `proof_00`..`proof_09`; override the dir with DEPOSIT_10PROOFS_DIR).
-// Ignored by default so CI without the binary/proofs stays green; run with:
-//   AN_RLC_VERIFY_BIN=.../an_rlc_verify cargo test -p tvm_vm \
-//     test_zkhalo2_with_vk_deposit_10_real_proofs -- --ignored --nocapture
+// The committed fixtures (`halo2_test_data/deposit_10proofs/`: shared
+// `deposit_vk_blob.bin` plus `proof_00`..`proof_09`) carry the deposit
+// circuit's **v2 / Rlc-shape** VkBlob (axiom-eth `EthCircuitImpl<Fr, _>` shape).
+// The in-process handler in `crate::executor::zk_halo2_with_vk` only knows how
+// to deserialise **v1 / Base-shape** VkBlobs (`BaseCircuitBuilder<Fr>`),
+// because pulling `axiom-eth` into tvm_vm would clash with the gosh-halo2
+// `halo2_proofs` source the dark-dex verifier already links against. These
+// three tests are therefore `#[ignore]`-gated; they exercise the
+// content-addressable wire format end-to-end whenever a future revision adds
+// an in-process RLC verifier (or wires up an out-of-process one without env
+// vars). All paths are hard-coded — running them only needs the committed
+// fixtures, no env vars, no external binaries:
+//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs -- --ignored --nocapture
 // ---------------------------------------------------------------------------
 
-/// Directory holding the committed 10-real-proof set (11-PI deposit layout).
-/// Override with the `DEPOSIT_10PROOFS_DIR` env var.
-fn deposit_set_dir() -> String {
-    std::env::var("DEPOSIT_10PROOFS_DIR").unwrap_or_else(|_| {
-        "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/fixtures/deposit_10proofs"
-            .to_string()
-    })
-}
+/// Directory (relative to the `tvm_vm` crate root) holding the committed
+/// 10-real-proof set (11-PI deposit layout).
+const DEPOSIT_SET_DIR: &str = "halo2_test_data/deposit_10proofs";
 
 /// Number of real proofs in the committed set.
 const DEPOSIT_PROOF_COUNT: usize = 10;
@@ -289,13 +286,13 @@ const DEPOSIT_PROOF_COUNT: usize = 10;
 /// Shared VkBlob for the deposit circuit (identical across all proofs — same
 /// circuit shape, only the witness/public inputs differ per proof).
 fn deposit_vk_blob_path() -> String {
-    format!("{}/deposit_vk_blob.bin", deposit_set_dir())
+    format!("{}/deposit_vk_blob.bin", DEPOSIT_SET_DIR)
 }
 fn deposit_pubin_path(i: usize) -> String {
-    format!("{}/proof_{:02}/public_inputs.bin", deposit_set_dir(), i)
+    format!("{}/proof_{:02}/public_inputs.bin", DEPOSIT_SET_DIR, i)
 }
 fn deposit_proof_path(i: usize) -> String {
-    format!("{}/proof_{:02}/proof.bin", deposit_set_dir(), i)
+    format!("{}/proof_{:02}/proof.bin", DEPOSIT_SET_DIR, i)
 }
 
 fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> bool {
@@ -320,7 +317,7 @@ fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> boo
 }
 
 #[test]
-#[ignore]
+#[ignore = "deposit VkBlob is v2/Rlc shape; in-process verifier expects v1/Base. See module comment."]
 fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
     for i in 0..DEPOSIT_PROOF_COUNT {
         let res = run_zkhalo2_with_vk(
@@ -335,7 +332,7 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "deposit VkBlob is v2/Rlc shape; in-process verifier expects v1/Base. See module comment."]
 fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
@@ -359,7 +356,7 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
 }
 
 #[test]
-#[ignore]
+#[ignore = "deposit VkBlob is v2/Rlc shape; in-process verifier expects v1/Base. See module comment."]
 fn test_zkhalo2_with_vk_mismatched_public_inputs_reject() {
     // proof_00's proof paired with proof_01's public inputs must REJECT: each
     // proof is bound to its own public inputs, so a cross-proof pairing fails.
