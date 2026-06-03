@@ -274,7 +274,7 @@ impl SdkAddress {
 // Format:
 // dapp_hex64::account_hex64
 
-fn is_hex64(s: &str) -> bool {
+pub(crate) fn is_hex64(s: &str) -> bool {
     s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
 }
 
@@ -327,14 +327,6 @@ pub fn strip_workchain(s: &str) -> Result<String, String> {
         return Err(format!("account_id must be a 64-character hex string, got: {account}"));
     }
     Ok(account.to_string())
-}
-
-/// Resolves the GraphQL endpoint (forcing a connection if needed) and
-/// returns whether the server speaks the v3 dapp_id REST format.
-pub async fn server_supports_dapp_id(
-    client: &Arc<ClientContext>,
-) -> tvm_client::error::ClientResult<bool> {
-    client.supports_dapp_id().await
 }
 
 #[cfg(test)]

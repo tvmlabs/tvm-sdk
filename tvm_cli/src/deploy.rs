@@ -28,7 +28,6 @@ use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_abi;
 use crate::helpers::now_ms;
-use crate::helpers::server_supports_dapp_id;
 use crate::helpers::strip_workchain;
 use crate::message::EncodedMessage;
 use crate::message::display_generated_message;
@@ -47,19 +46,10 @@ pub async fn deploy_contract(
     let config = &full_config.config;
     let tvm_client = create_client_verbose(config)?;
 
-    // v>=1.0.0 servers reject empty dapp_id on /v2/messages. Probe up
-    // front so the user gets a clear, actionable message instead of an
-    // opaque "dapp_id is required" SDK error after submission setup.
-    if !is_fee && dst_dapp_id.unwrap_or("").is_empty() {
-        let supports_v3 = server_supports_dapp_id(&tvm_client)
-            .await
-            .map_err(|e| format!("failed to probe server version: {e}"))?;
-        if supports_v3 {
-            return Err("--dst-dapp-id is required when deploying to a v>=1.0.0 server \
-                 (pass a 64-character hex dapp_id; use all zeros for a self-rooted dapp)"
-                .to_string());
-        }
-    }
+    // dapp_id is always required on the CLI (including --fee). The SDK
+    // ignores it on the wire for legacy v2 servers, but it must be
+    // supplied explicitly here.
+    require_dst_dapp_id(dst_dapp_id)?;
 
     if !is_fee && !config.is_json {
         println!("Deploying...");
@@ -175,6 +165,17 @@ pub async fn prepare_deploy_message(
     .await
 }
 
+/// Validates that `--dst-dapp-id` was supplied as a 64-character hex
+/// dapp_id. Required for every deploy regardless of node version (use all
+/// zeros for a self-rooted dapp).
+fn require_dst_dapp_id(dst_dapp_id: Option<&str>) -> Result<String, String> {
+    let dapp_id = dst_dapp_id.unwrap_or("");
+    if !crate::helpers::is_hex64(dapp_id) {
+        return Err("--dst-dapp-id is required (pass a 64-character hex dapp_id)".to_string());
+    }
+    Ok(dapp_id.to_string())
+}
+
 pub async fn prepare_deploy_message_params(
     tvc_bytes: &[u8],
     abi: Abi,
@@ -220,4 +221,58 @@ pub async fn prepare_deploy_message_params(
         },
         address,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::require_dst_dapp_id;
+
+    const VALID: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+
+    #[test]
+    fn require_dst_dapp_id_accepts_64_hex() {
+        assert_eq!(require_dst_dapp_id(Some(VALID)).unwrap(), VALID);
+    }
+
+    #[test]
+    fn require_dst_dapp_id_accepts_uppercase_hex() {
+        let upper = "A".repeat(64);
+        assert_eq!(require_dst_dapp_id(Some(&upper)).unwrap(), upper);
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_missing() {
+        assert!(require_dst_dapp_id(None).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_empty() {
+        assert!(require_dst_dapp_id(Some("")).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_short() {
+        assert!(require_dst_dapp_id(Some("dead")).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_non_hex() {
+        // Exactly 64 chars but non-hex content, so the hex check (not the
+        // length check) is what rejects it.
+        let bad = "z".repeat(64);
+        assert_eq!(bad.len(), 64);
+        assert!(require_dst_dapp_id(Some(&bad)).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_63_chars() {
+        let short = "a".repeat(63);
+        assert!(require_dst_dapp_id(Some(&short)).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_65_chars() {
+        let long = "a".repeat(65);
+        assert!(require_dst_dapp_id(Some(&long)).is_err());
+    }
 }
