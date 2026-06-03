@@ -80,6 +80,10 @@ pub(crate) const KZG_S_G2_BYTES: [u8; 128] = [
 
 use gosh_zk_snark_halo2_utils::io::read_vk;
 use halo2_base::gates::circuit::BaseCircuitParams;
+use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
+use halo2_base::halo2_proofs::plonk::VerifyingKey;
+use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
 
 /// Circuit configuration parameters for the Dark DEX circuit (K=19, W=128
 /// historical window).
@@ -146,29 +150,58 @@ pub const DARK_DEX_W128_VK_BYTES: [u8; 842] = [
 /// Deserialize VK from the embedded bytes. Called on each verification — the
 /// 842-byte deserialization cost is negligible compared to actual proof
 /// verification.
-pub fn build_dark_dex_w128_vk() -> halo2_base::halo2_proofs::plonk::VerifyingKey<
-    halo2_base::halo2_proofs::halo2curves::bn256::G1Affine,
-> {
+pub fn build_dark_dex_w128_vk() -> VerifyingKey<G1Affine> {
     read_vk(&DARK_DEX_W128_VK_BYTES, &dark_dex_w128_config_params())
 }
 
-/// Build verifier-only KZG params (K=19) from the 3 embedded points instead of
-/// loading the full SRS file.
-pub fn build_kzg_verifier_params() -> halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG<
-    halo2_base::halo2_proofs::halo2curves::bn256::Bn256,
-> {
-    use halo2_base::halo2_proofs::SerdeFormat;
-    use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
-    use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
-    use halo2_base::halo2_proofs::halo2curves::serde::SerdeObject;
-    use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
+/// G1 generator point `g[0]` from the KZG SRS (K=19), 64 bytes (BN256 G1Affine
+/// uncompressed).
+const KZG_G0_BYTES: [u8; 64] = [
+    157, 13, 143, 197, 141, 67, 93, 211, 61, 11, 199, 245, 40, 235, 120, 10, 44, 70, 121, 120, 111,
+    163, 110, 102, 47, 223, 7, 154, 193, 119, 10, 14, 58, 27, 30, 139, 27, 135, 186, 166, 123, 22,
+    142, 235, 81, 214, 241, 20, 88, 140, 242, 240, 222, 70, 221, 204, 94, 190, 15, 52, 131, 239,
+    20, 28,
+];
 
+/// G2 generator from the KZG SRS, 128 bytes (BN256 G2Affine uncompressed).
+const KZG_G2_BYTES: [u8; 128] = [
+    38, 32, 188, 2, 209, 181, 131, 142, 114, 1, 123, 73, 53, 25, 235, 220, 223, 26, 129, 151, 71,
+    38, 184, 251, 59, 80, 150, 175, 65, 56, 87, 25, 64, 97, 76, 168, 125, 115, 180, 175, 196, 216,
+    2, 88, 90, 221, 67, 96, 134, 47, 160, 82, 252, 80, 233, 9, 107, 123, 234, 58, 131, 240, 254,
+    20, 246, 233, 107, 136, 157, 250, 157, 97, 120, 155, 158, 245, 151, 210, 127, 254, 254, 125,
+    27, 35, 98, 26, 158, 255, 6, 66, 158, 174, 235, 126, 253, 40, 238, 86, 24, 199, 86, 91, 9, 100,
+    187, 60, 125, 50, 34, 249, 87, 220, 118, 16, 53, 51, 190, 53, 249, 85, 130, 100, 253, 147, 230,
+    160, 164, 13,
+];
+
+/// `[s] * G2` from the KZG SRS (toxic-waste-scaled G2), 128 bytes.
+const KZG_S_G2_BYTES: [u8; 128] = [
+    198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250, 139, 224, 102, 28, 120,
+    209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4, 247, 119, 82, 189, 13, 15, 148, 115, 180, 255,
+    211, 139, 77, 173, 84, 51, 12, 6, 85, 171, 152, 202, 243, 42, 190, 151, 134, 220, 160, 12, 159,
+    38, 45, 111, 242, 166, 81, 163, 42, 141, 88, 61, 242, 122, 139, 118, 253, 115, 4, 61, 229, 102,
+    162, 17, 57, 112, 221, 213, 115, 157, 229, 203, 21, 22, 124, 133, 139, 91, 90, 14, 242, 86,
+    211, 197, 224, 251, 73, 198, 176, 240, 176, 131, 18, 138, 95, 92, 74, 66, 227, 79, 115, 151,
+    214, 102, 69, 21,
+];
+
+/// Build verifier-only KZG params (K=19) from 3 embedded points (~320 bytes)
+/// instead of loading the full 64MB SRS file. Only `g[0]`, `g2`, and `s_g2` are
+/// needed for SHPLONK verification. Called on each verification —
+/// reconstruction is sub-millisecond.
+pub fn build_kzg_verifier_params() -> ParamsKZG<Bn256> {
+    use halo2_base::halo2_proofs::SerdeFormat;
+    use halo2_base::halo2_proofs::halo2curves::serde::SerdeObject;
+
+    // Build a minimal K=0 binary blob (388 bytes) containing the real g[0], g2,
+    // s_g2. read_custom with K=0 reads exactly 1 G1 point for g and 1 for
+    // g_lagrange.
     let mut blob = Vec::with_capacity(388);
-    blob.extend_from_slice(&0u32.to_le_bytes());
-    blob.extend_from_slice(&KZG_G0_BYTES);
-    blob.extend_from_slice(&KZG_G0_BYTES);
-    blob.extend_from_slice(&KZG_G2_BYTES);
-    blob.extend_from_slice(&KZG_S_G2_BYTES);
+    blob.extend_from_slice(&0u32.to_le_bytes()); // k = 0 → n = 1
+    blob.extend_from_slice(&KZG_G0_BYTES); // g[0]
+    blob.extend_from_slice(&KZG_G0_BYTES); // g_lagrange[0] (placeholder)
+    blob.extend_from_slice(&KZG_G2_BYTES); // g2
+    blob.extend_from_slice(&KZG_S_G2_BYTES); // s_g2
     let mut cursor: &[u8] = &blob;
     let dummy = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked)
         .expect("Parsing embedded KZG verifier blob should not fail");

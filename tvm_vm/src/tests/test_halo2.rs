@@ -249,43 +249,53 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // ---------------------------------------------------------------------------
 // ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK opcode, variant B
 // (isolated process verifier). Drives the opcode through the real TVM engine
-// on the canonical deposit triplet and asserts ACCEPT.
+// over a committed set of **10 real deposit proofs** and asserts ACCEPT for
+// each, plus negative (corrupt-proof / mismatched-public-input) cases.
 //
-// The triplet is the **10-public-input** deposit layout (AN recipient bound
-// in-circuit): [depositId, sender, amount, anWorkchain, anAccountHigh,
-// anAccountLow, contractAddress, blockHashHigh, blockHashLow, promiseCommit].
-// The opcode is generic over the input count (it forwards num_pi =
-// public_inputs.len()/32 to the isolated verifier), so no opcode change was
-// needed when the layout grew 7 -> 10.
+// Each proof uses the **11-public-input** deposit layout: [depositId, sender,
+// amount, contractAddress, dappIdHigh, dappIdLow, anAccountHigh, anAccountLow,
+// blockHashHigh, blockHashLow, promiseCommit]. `dappId` (a config-supplied
+// UInt256 AN dApp tag) replaced the single `anWorkchain` slot on 2026-06-02;
+// `anAccount{High,Low}` remain the event-bound AN recipient account. The opcode
+// is generic over the input count (it forwards num_pi = public_inputs.len()/32
+// to the isolated verifier), so no opcode change was needed when the layout
+// grew 7 -> 10 -> 11.
 //
 // Stack ABI (top-of-stack last): push vk_blob, then public_inputs, then proof.
 // fetch_stack then binds var(0)=proof, var(1)=public_inputs, var(2)=vk_blob.
 //
 // Requires the isolated verifier binary; its path is taken from the
 // AN_RLC_VERIFY_BIN env var (the handler reads the same var). The on-wire
-// triplet is version-controlled in the acki-nacki-bridge repo at
-// `deposit-prover/fixtures/e2e_10pi/` (override the dir with DEPOSIT_E2E_DIR).
-// Ignored by default so CI without the binary/triplet stays green; run with:
+// proofs are version-controlled in the acki-nacki-bridge repo at
+// `deposit-prover/fixtures/deposit_10proofs/` (a shared `deposit_vk_blob.bin`
+// plus `proof_00`..`proof_09`; override the dir with DEPOSIT_10PROOFS_DIR).
+// Ignored by default so CI without the binary/proofs stays green; run with:
 //   AN_RLC_VERIFY_BIN=.../an_rlc_verify cargo test -p tvm_vm \
-//     test_zkhalo2_with_vk_deposit_10pi_triplet -- --ignored --nocapture
+//     test_zkhalo2_with_vk_deposit_10_real_proofs -- --ignored --nocapture
 // ---------------------------------------------------------------------------
 
-/// Directory holding the committed 10-PI deposit triplet. Defaults to the
-/// acki-nacki-bridge fixtures dir; override with the `DEPOSIT_E2E_DIR` env var.
-fn deposit_e2e_dir() -> String {
-    std::env::var("DEPOSIT_E2E_DIR").unwrap_or_else(|_| {
-        "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/fixtures/e2e_10pi".to_string()
+/// Directory holding the committed 10-real-proof set (11-PI deposit layout).
+/// Override with the `DEPOSIT_10PROOFS_DIR` env var.
+fn deposit_set_dir() -> String {
+    std::env::var("DEPOSIT_10PROOFS_DIR").unwrap_or_else(|_| {
+        "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/fixtures/deposit_10proofs"
+            .to_string()
     })
 }
 
+/// Number of real proofs in the committed set.
+const DEPOSIT_PROOF_COUNT: usize = 10;
+
+/// Shared VkBlob for the deposit circuit (identical across all proofs — same
+/// circuit shape, only the witness/public inputs differ per proof).
 fn deposit_vk_blob_path() -> String {
-    format!("{}/deposit_vk_blob.bin", deposit_e2e_dir())
+    format!("{}/deposit_vk_blob.bin", deposit_set_dir())
 }
-fn deposit_pubin_path() -> String {
-    format!("{}/deposit_public_inputs.bin", deposit_e2e_dir())
+fn deposit_pubin_path(i: usize) -> String {
+    format!("{}/proof_{:02}/public_inputs.bin", deposit_set_dir(), i)
 }
-fn deposit_proof_path() -> String {
-    format!("{}/deposit_proof_blake2b.bin", deposit_e2e_dir())
+fn deposit_proof_path(i: usize) -> String {
+    format!("{}/proof_{:02}/proof.bin", deposit_set_dir(), i)
 }
 
 fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> bool {
@@ -311,14 +321,17 @@ fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> boo
 
 #[test]
 #[ignore]
-fn test_zkhalo2_with_vk_deposit_10pi_triplet() {
-    let res = run_zkhalo2_with_vk(
-        &deposit_vk_blob_path(),
-        &deposit_pubin_path(),
-        &deposit_proof_path(),
-    );
-    println!("ZKHALO2VERIFYWITHVK 10-PI deposit triplet: result={}", res);
-    assert!(res, "expected ACCEPT on the 10-PI (AN-recipient-bound) deposit triplet");
+fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
+    for i in 0..DEPOSIT_PROOF_COUNT {
+        let res = run_zkhalo2_with_vk(
+            &deposit_vk_blob_path(),
+            &deposit_pubin_path(i),
+            &deposit_proof_path(i),
+        );
+        println!("ZKHALO2VERIFYWITHVK 11-PI deposit proof_{:02}: result={}", i, res);
+        assert!(res, "expected ACCEPT on real deposit proof_{:02}", i);
+    }
+    println!("All {} real deposit proofs ACCEPTED.", DEPOSIT_PROOF_COUNT);
 }
 
 #[test]
@@ -330,11 +343,11 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     let vk_bytes = std::fs::read(deposit_vk_blob_path()).expect("read vk_blob");
     engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&vk_bytes, &mut 0).unwrap()));
 
-    let pubin_bytes = std::fs::read(deposit_pubin_path()).expect("read public_inputs");
+    let pubin_bytes = std::fs::read(deposit_pubin_path(0)).expect("read public_inputs");
     engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&pubin_bytes, &mut 0).unwrap()));
 
     // Flip a byte deep in the proof body: structurally valid, fails verification.
-    let mut proof_bytes = std::fs::read(deposit_proof_path()).expect("read proof");
+    let mut proof_bytes = std::fs::read(deposit_proof_path(0)).expect("read proof");
     let idx = proof_bytes.len() / 2;
     proof_bytes[idx] ^= 0xFF;
     engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&proof_bytes, &mut 0).unwrap()));
@@ -343,4 +356,18 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     let verdict = engine.cc.stack.get(0).as_bool().unwrap();
     println!("ZKHALO2VERIFYWITHVK corrupt proof: verdict={}", verdict);
     assert!(!verdict, "expected REJECT (false) on a corrupted proof");
+}
+
+#[test]
+#[ignore]
+fn test_zkhalo2_with_vk_mismatched_public_inputs_reject() {
+    // proof_00's proof paired with proof_01's public inputs must REJECT: each
+    // proof is bound to its own public inputs, so a cross-proof pairing fails.
+    let res = run_zkhalo2_with_vk(
+        &deposit_vk_blob_path(),
+        &deposit_pubin_path(1),
+        &deposit_proof_path(0),
+    );
+    println!("ZKHALO2VERIFYWITHVK mismatched pubin: result={}", res);
+    assert!(!res, "expected REJECT when pairing proof_00 with proof_01 public inputs");
 }
