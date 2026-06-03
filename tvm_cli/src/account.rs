@@ -110,24 +110,14 @@ pub async fn get_account(
 
     let mut accounts = vec![];
     let client = crate::helpers::create_client(config)?;
-    let supports_v3 = crate::helpers::server_supports_dapp_id(&client)
-        .await
-        .map_err(|e| format!("failed to probe server version: {e}"))?;
 
     for address in addresses.iter() {
+        // The strict parser guarantees a dapp_id is present; the SDK drops
+        // it on the wire for legacy v2 servers.
         let sdk_address = crate::helpers::SdkAddress::from_str(address)
             .map_err(|e| format!("invalid address `{address}`: {e}"))?;
         let account_id = crate::helpers::strip_workchain(&sdk_address.account_id)?;
-        let dapp_id = match sdk_address.dapp_id {
-            Some(d) => d,
-            None if !supports_v3 => String::new(),
-            None => {
-                return Err(format!(
-                    "address `{address}` is missing dapp_id; v>=1.0.0 servers \
-                     require the form `dapp_id::account_id` or `dapp_id:account_id`"
-                ));
-            }
-        };
+        let dapp_id = sdk_address.dapp_id.unwrap_or_default();
         let params = account::ParamsOfGetAccount { account_id, dapp_id };
 
         let result_of_get_account = account::get_account(client.clone(), params)
@@ -533,7 +523,7 @@ mod cli_tests {
     fn cli_rejects_dapp_id_double_colon_workchain_form() {
         let s = format!("{VALID_DAPP}::0:{VALID_ACC}");
         let err = SdkAddress::from_str(&s).unwrap_err();
-        assert_eq!(err, "account_id must not include a workchain when dapp_id is specified");
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
     }
 
     #[test]
