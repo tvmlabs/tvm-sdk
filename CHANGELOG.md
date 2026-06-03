@@ -2,12 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [3.0.0] - ????-??-??
 
 > **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
 > for a step-by-step migration guide covering the dapp_id changes below.
 
 ### Changed (breaking)
+- Default HD key derivation path changed from `m/44'/396'/0'/0/0` to `m/44'/1331'/0'/0/0`. Crypto functions (`tvm_client`) and key/address generation (`tvm_cli`) that rely on the default path now derive different keys from the same seed phrase. To keep previous keys, pass the old path explicitly.
 - `tvm_client`: `ParamsOfGetAccount.address` renamed to `account_id`; now strict 64-character hex (no `0x`, no workchain). Added required `dapp_id` field.
 - `tvm_client`: `ResultOfGetAccount.dapp_id` is now `String` (not `Option`); added `account_id` field.
 - `tvm_client`: `ParamsOfSendMessage.dst_dapp_id: Option<String>` renamed to `dapp_id: String` (empty allowed only for pre-1.0.0 servers).

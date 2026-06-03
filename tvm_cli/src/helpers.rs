@@ -71,7 +71,7 @@ use crate::debug::debug_level_from_env;
 use crate::replay::CONFIG_ADDR;
 use crate::replay::construct_blockchain_config;
 use crate::resolve_net_name;
-pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
+pub const HD_PATH: &str = "m/44'/1331'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
 const DEPRECATED_CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
