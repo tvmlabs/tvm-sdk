@@ -18,6 +18,8 @@ use tvm_types::types::ExceptionCode;
 
 use crate::error::TvmError;
 use crate::executor::blockchain::*;
+#[cfg(feature = "gosh")]
+use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 use crate::executor::config::*;
 use crate::executor::continuation::*;
 use crate::executor::crypto::*;
@@ -43,8 +45,6 @@ use crate::executor::token::*;
 use crate::executor::tuple::*;
 use crate::executor::types::Instruction;
 use crate::executor::types::InstructionOptions;
-#[cfg(feature = "gosh")]
-use crate::executor::chk_hist_proof::execute_chk_hist_proof;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::*;
 #[cfg(feature = "gosh")]

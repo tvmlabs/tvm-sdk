@@ -1,7 +1,9 @@
 use std::sync::OnceLock;
 
 use gosh_zk_snark_halo2_utils::proof::Proof;
-use halo2_base::halo2_proofs::halo2curves::bn256::{Bn256, Fr, G1Affine};
+use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
+use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
@@ -95,7 +97,8 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
     }
 
     // Dual-path instance parsing:
-    //   - Small values (first 24 bytes zero): 24 zero bytes + 8-byte BE u64 → Fr::from(u64)
+    //   - Small values (first 24 bytes zero): 24 zero bytes + 8-byte BE u64 →
+    //     Fr::from(u64)
     //   - Full Fr elements: 32-byte LE Fr::to_repr() → Fr::from_bytes_le()
     let num_of_pub_inputs = pub_inputs_bytes.len() / 32;
     let mut pub_inputs: Vec<Fr> = Vec::new();
@@ -148,19 +151,18 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
 // over a single `halo2_proofs` source. To keep BOTH opcodes in one node binary,
 // this handler does NOT verify in-process. It collects the three on-wire blobs
 // (vk_blob, public_inputs, proof) from the stack, writes them to temp files,
-// and spawns the standalone `an_rlc_verify` binary (separate Cargo.lock, axiom-eth).
-// The spawned process performs the exact golden-reference verification
-// (VkBlob::read RLC -> EthCircuitImpl -> 7 PI -> Blake2bRead SHPLONK verify_proof).
+// and spawns the standalone `an_rlc_verify` binary (separate Cargo.lock,
+// axiom-eth). The spawned process performs the exact golden-reference
+// verification (VkBlob::read RLC -> EthCircuitImpl -> 7 PI -> Blake2bRead
+// SHPLONK verify_proof).
 //
 // Exit codes from `an_rlc_verify`:
 //   0 = ACCEPT  -> push true
-//   2 = REJECT  -> push false (proof structurally valid but verify_proof failed)
-//   3 = ERROR   -> fail! (malformed input / IO / SRS error)
+//   2 = REJECT  -> push false (proof structurally valid but verify_proof
+// failed)   3 = ERROR   -> fail! (malformed input / IO / SRS error)
 // ---------------------------------------------------------------------------
 pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
-    engine.load_instruction(crate::executor::types::Instruction::new(
-        "ZKHALO2VERIFYWITHVK",
-    ))?;
+    engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
 
     // Canonical 3-operand ABI (matches TokenBridge.sol gosh.zkhalo2VerifyWithVK
     // and TVM-Solidity-Compiler Types.cpp: "VK blob, public-inputs, proof,
@@ -243,12 +245,18 @@ fn run_isolated_rlc_verify(
     let num_pi = public_inputs.len() / 32;
 
     let output = Command::new(&bin)
-        .arg("--vk-blob").arg(&vk_path)
-        .arg("--proof").arg(&proof_path)
-        .arg("--pubin").arg(&pi_path)
-        .arg("--degree").arg("18")
-        .arg("--srs-dir").arg(&srs_dir)
-        .arg("--expect-pi").arg(num_pi.to_string())
+        .arg("--vk-blob")
+        .arg(&vk_path)
+        .arg("--proof")
+        .arg(&proof_path)
+        .arg("--pubin")
+        .arg(&pi_path)
+        .arg("--degree")
+        .arg("18")
+        .arg("--srs-dir")
+        .arg(&srs_dir)
+        .arg("--expect-pi")
+        .arg(num_pi.to_string())
         .arg("--quiet")
         .output();
 
@@ -259,10 +267,9 @@ fn run_isolated_rlc_verify(
     match output.status.code() {
         Some(0) => Ok(true),
         Some(2) => Ok(false),
-        Some(3) => Err(format!(
-            "verifier ERROR (exit 3): {}",
-            String::from_utf8_lossy(&output.stderr)
-        )),
+        Some(3) => {
+            Err(format!("verifier ERROR (exit 3): {}", String::from_utf8_lossy(&output.stderr)))
+        }
         other => Err(format!(
             "verifier unexpected exit {:?}: {}",
             other,
