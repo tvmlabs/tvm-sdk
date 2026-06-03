@@ -263,17 +263,18 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 //
 // The committed fixtures (`halo2_test_data/deposit_10proofs/`: shared
 // `deposit_vk_blob.bin` plus `proof_00`..`proof_09`) carry the deposit
-// circuit's **v2 / Rlc-shape** VkBlob (axiom-eth `EthCircuitImpl<Fr, _>` shape).
-// The in-process handler in `crate::executor::zk_halo2_with_vk` only knows how
-// to deserialise **v1 / Base-shape** VkBlobs (`BaseCircuitBuilder<Fr>`),
-// because pulling `axiom-eth` into tvm_vm would clash with the gosh-halo2
-// `halo2_proofs` source the dark-dex verifier already links against. These
-// three tests are therefore `#[ignore]`-gated; they exercise the
-// content-addressable wire format end-to-end whenever a future revision adds
-// an in-process RLC verifier (or wires up an out-of-process one without env
-// vars). All paths are hard-coded — running them only needs the committed
-// fixtures, no env vars, no external binaries:
-//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs -- --ignored --nocapture
+// circuit's **v2 / Rlc-shape** VkBlob (axiom-eth `EthCircuitImpl<Fr, _>`
+// shape). The in-process handler in `crate::executor::zk_halo2_with_vk` only
+// knows how to deserialise **v1 / Base-shape** VkBlobs
+// (`BaseCircuitBuilder<Fr>`), because pulling `axiom-eth` into tvm_vm would
+// clash with the gosh-halo2 `halo2_proofs` source the dark-dex verifier already
+// links against. These three tests are therefore `#[ignore]`-gated; they
+// exercise the content-addressable wire format end-to-end whenever a future
+// revision adds an in-process RLC verifier (or wires up an out-of-process one
+// without env vars). All paths are hard-coded — running them only needs the
+// committed fixtures, no env vars, no external binaries:
+//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs --
+// --ignored --nocapture
 // ---------------------------------------------------------------------------
 
 /// Directory (relative to the `tvm_vm` crate root) holding the committed
