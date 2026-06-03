@@ -17,8 +17,8 @@ changed. This guide walks you through the migration.
 | `ParamsOfSendMessage.dst_dapp_id: Option<String>` | `dapp_id: String` |
 | `ParamsOfProcessMessage.dst_dapp_id` | `dapp_id: String` |
 | `ResultOfSendMessage` — no account_id/dapp_id | now exposes both (`String`) |
-| `tvm-cli account 0:abc…` (against v3 node) | `tvm-cli account <dapp>::<acc>` |
-| `tvm-cli deploy/deployx` — no flag needed | requires `--dst-dapp-id <hex>` on v3 nodes |
+| `tvm-cli account 0:abc…` (any node) | `tvm-cli account <dapp>::<acc>` |
+| `tvm-cli deploy/deployx` — no flag needed | requires `--dst-dapp-id <hex>` on all nodes |
 | `deployed_at: "0:abc…"` | `deployed_at: "<acc>::<acc>"` |
 
 ---
@@ -33,11 +33,8 @@ You are affected if **any** of the following is true:
   `ParamsOfProcessMessage`, `ResultOfGetAccount`, or
   `ResultOfSendMessage`.
 - You drive `tvm-cli account`, `deploy`, `deployx`, `call`, `callx`,
-  `send`, or `message` against a node reporting `info.version >=
-  "1.0.0"` over GraphQL.
-
-You are **not** affected if you only talk to legacy (`< 1.0.0`) nodes
-through the older SDK — the new SDK handles them transparently.
+  `send`, or `message` against any node (legacy `< 1.0.0` or v3
+  `>= 1.0.0`) over GraphQL.
 
 ---
 
@@ -185,38 +182,33 @@ is always present.
 
 ### `account`
 
-The legacy form still works against `< 1.0.0` (GraphQL `info.version`) nodes:
+The `dapp_id::account_id` double-colon form is now **required on all nodes**,
+including legacy `< 1.0.0` (GraphQL `info.version`) nodes. Legacy `0:abc...`
+and bare-hex address inputs are no longer accepted as CLI input.
 
 ```bash
-tvm-cli account 0:abc...
-```
-
-Against a `>= 1.0.0` (GraphQL `info.version`) node, `account_id` alone is not
-enough — provide the `dapp_id` via the extended form:
-
-```bash
-# Extended form, double-colon (preferred):
 tvm-cli account <dapp_id>::<account_id>
-
-# Single-colon when the dapp portion is 64-hex:
-tvm-cli account <dapp_id>:<account_id>
 ```
 
-If you forget the `dapp_id` on a v3-compatible node, the CLI errors with:
+Against a legacy node the `dapp_id` is dropped on the wire automatically.
+Against a v3 (`>= 1.0.0`) node it is forwarded as-is. Either way the
+double-colon form must be supplied.
+
+Passing a legacy `0:abc...` or bare-hex address now errors with:
 
 ```
-address `...` is missing dapp_id; v>=1.0.0 servers require the form
-`dapp_id::account_id` or `dapp_id:account_id`
+address must be in the form `dapp_id::account_id`
 ```
 
-The output now always shows both `account_id` and `dapp_id` as plain
-fields (JSON `dapp_id` is `null` when the legacy node didn't return one;
+The output always shows both `account_id` and `dapp_id` as plain fields
+(JSON `dapp_id` is `null` when the legacy node didn't return one;
 text output prints `None`).
 
 ### `deploy` / `deployx`
 
-The CLI flag `--dst-dapp-id` is unchanged in name. It is now **required**
-on `>= 1.0.0` nodes. Examples:
+The CLI flag `--dst-dapp-id` is unchanged in name. It is now **always required**
+on every node — legacy and v3 alike — including when running in `--fee`
+estimation mode. Use all zeros for a self-rooted dapp. Examples:
 
 ```bash
 # Self-rooted deployment (dapp_id == future account_id): pass all zeros
@@ -234,11 +226,10 @@ tvm-cli deployx \
   MyContract.tvc '{...}'
 ```
 
-If you forget `--dst-dapp-id` on a v3-compatible node, the CLI errors with:
+If you omit `--dst-dapp-id`, the CLI errors with:
 
 ```
---dst-dapp-id is required when deploying to a v>=1.0.0 server
-(pass a 64-character hex dapp_id; use all zeros for a self-rooted dapp)
+--dst-dapp-id is required (pass a 64-character hex dapp_id)
 ```
 
 The `deployed_at` field and any saved alias now use the extended
@@ -251,17 +242,18 @@ identical:
 
 ### `call`, `callx`, `send`, `message`
 
-If a destination address is passed in the new `dapp_id::account_id`
-form, the dapp_id is automatically extracted and forwarded to the
-SDK. The legacy `--dst-dapp-id` flag is still accepted for backward
-compatibility (it overrides any dapp_id embedded in the address).
+The destination address must be supplied in the `dapp_id::account_id`
+form; the dapp_id is automatically extracted and forwarded to the SDK.
+The `--dst-dapp-id` flag is still accepted and overrides any dapp_id
+embedded in the address. Legacy `0:<acc>` address inputs are no longer
+accepted.
 
 ```bash
-# New form — dapp_id derived from the address:
+# Required form — dapp_id derived from the address:
 tvm-cli call <dapp>::<acc> --abi ... --method ... '{...}'
 
-# Legacy form with explicit flag (still works):
-tvm-cli call 0:<acc> --abi ... --method ... '{...}' --dst-dapp-id <dapp>
+# Explicit flag overrides the embedded dapp_id:
+tvm-cli call <dapp>::<acc> --abi ... --method ... '{...}' --dst-dapp-id <other-dapp>
 ```
 
 ---
@@ -311,7 +303,7 @@ emit `null` when the string is empty.
 - [ ] Audit CLI shell scripts: use `--dst-dapp-id` (hyphens), and pass
       a real 64-hex value (not the extended `dapp::acc` form) to the
       flag itself.
-- [ ] If you store contract addresses in a database / config, decide
-      whether to migrate stored values to the extended
-      `dapp::acc` form. Both forms are accepted by the SDK; the
-      extended form is preferred going forward.
+- [ ] If you store contract addresses in a database / config, migrate
+      stored values to the extended `dapp::acc` form. The CLI now
+      requires this form on every command; legacy `0:<hex>` stored
+      values must be converted before use.
