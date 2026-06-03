@@ -85,8 +85,8 @@ pub fn prepare_message_params(
     // the SDK's message encoder. The dapp_id is consumed only by the
     // SDK call layer; the on-chain destination address never carries it.
     let sdk = SdkAddress::from_str(addr).map_err(|e| format!("invalid address `{addr}`: {e}"))?;
-    let dst =
-        if sdk.account_id.contains(':') { sdk.account_id } else { format!("0:{}", sdk.account_id) };
+    // The strict parser guarantees account_id is bare 64-hex; prepend workchain 0.
+    let dst = format!("0:{}", sdk.account_id);
 
     Ok(ParamsOfEncodeMessage {
         abi,
@@ -240,4 +240,50 @@ pub fn display_generated_message(
         println!("}}");
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use tvm_client::abi::Abi;
+
+    use super::prepare_message_params;
+
+    const DAPP_ID: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const ACCOUNT_ID: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+    // Minimal valid ABI JSON. prepare_message_params only stores the Abi and
+    // does not parse it (the encoder, which we never call here, would), so a
+    // trivial document is sufficient and keeps the test free of file/network IO.
+    const MINIMAL_ABI: &str = r#"{"ABI version":2,"functions":[],"events":[],"data":[]}"#;
+
+    #[test]
+    fn prepare_message_params_collapses_dapp_account_to_workchain_address() {
+        let addr = format!("{DAPP_ID}::{ACCOUNT_ID}");
+        let params = prepare_message_params(
+            &addr,
+            Abi::Json(MINIMAL_ABI.to_string()),
+            "method",
+            "{}",
+            None,
+            None,
+        )
+        .expect("dapp_id::account_id form must be accepted by the strict parser");
+
+        // The dapp_id is dropped; the on-chain destination is `0:<account_id>`.
+        assert_eq!(params.address.as_deref(), Some(format!("0:{ACCOUNT_ID}").as_str()));
+    }
+
+    #[test]
+    fn prepare_message_params_rejects_bare_account_id() {
+        let err = prepare_message_params(
+            ACCOUNT_ID,
+            Abi::Json(MINIMAL_ABI.to_string()),
+            "method",
+            "{}",
+            None,
+            None,
+        )
+        .unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
 }
