@@ -259,6 +259,9 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
 
 #[derive(Debug)]
 pub struct SdkAddress {
+    /// Invariant: always `Some` after `from_str` (the strict parser
+    /// requires a dapp_id). The `Option` is retained only to avoid churn
+    /// in call sites that still pattern-match on it.
     pub dapp_id: Option<String>,
     pub account_id: String,
 }
@@ -270,48 +273,41 @@ impl SdkAddress {
 }
 // Format:
 // dapp_hex64::account_hex64
-// dapp_hex64:account_hex64
-// wc_int:account_hex64
-// account_hex64
+
+fn is_hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn strict_address_error(input: &str) -> String {
+    format!(
+        "address `{input}` must be in the form `dapp_id::account_id` \
+         (two 64-character hex ids, no 0x, no workchain); legacy `0:…`, \
+         bare-hex, single-colon and 128-hex forms are no longer accepted"
+    )
+}
 
 impl FromStr for SdkAddress {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (dapp_id, account_id) = if let Some((dapp, account)) = s.split_once("::") {
-            if dapp.len() != 64 || !dapp.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err("dapp_id must be exactly 64 hex characters".to_string());
-            }
-            (Some(dapp.to_owned()), account.to_owned())
-        } else if let Some((dapp_or_wc, account)) = s.split_once(":") {
-            if dapp_or_wc.len() == 64 && dapp_or_wc.chars().all(|c| c.is_ascii_hexdigit()) {
-                (Some(dapp_or_wc.to_owned()), account.to_owned())
-            } else {
-                (None, s.to_owned())
-            }
-        } else if s.len() == 128 && s.chars().all(|c| c.is_ascii_hexdigit()) {
-            let (dapp, account) = s.split_at(64);
-            (Some(dapp.to_owned()), account.to_owned())
-        } else {
-            (None, s.to_owned())
-        };
-        if dapp_id.is_some() && account_id.contains(':') {
-            return Err(
-                "account_id must not include a workchain when dapp_id is specified".to_string()
-            );
+        let (dapp, account) = s.split_once("::").ok_or_else(|| strict_address_error(s))?;
+        if !is_hex64(dapp) || !is_hex64(account) {
+            return Err(strict_address_error(s));
         }
-        let _ = MsgAddressInt::from_str(&account_id).map_err(|e| {
+        // Defensive: the account half must be a valid internal address.
+        // A bare 64-hex id resolves to workchain 0.
+        let _ = MsgAddressInt::from_str(account).map_err(|e| {
             format!("Address is specified in the wrong format. Error description: {}", e)
         })?;
-        Ok(Self { dapp_id, account_id })
+        Ok(Self { dapp_id: Some(dapp.to_owned()), account_id: account.to_owned() })
     }
 }
 
 impl Display for SdkAddress {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(dapp_id) = &self.dapp_id {
-            f.write_str(&dapp_id)?;
-            f.write_str(":")?;
+            f.write_str(dapp_id)?;
+            f.write_str("::")?;
         }
         f.write_str(&self.account_id)?;
         Ok(())
@@ -350,66 +346,78 @@ mod tests {
     use super::SdkAddress;
     use super::extract_message_boc;
 
-    const DAPP_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    const ACCOUNT_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    const DAPP_ID: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const ACCOUNT_ID: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     const RAW_ADDRESS: &str = "0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     #[test]
-    fn sdk_address_from_str_parses_raw_address() {
-        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
-
-        assert_eq!(address.dapp_id, None);
-        assert_eq!(address.account_id, RAW_ADDRESS);
-        assert_eq!(address.to_string(), RAW_ADDRESS);
-    }
-
-    #[test]
-    fn sdk_address_from_str_parses_dapp_id_with_double_colon() {
+    fn sdk_address_from_str_accepts_dapp_double_colon_account() {
         let address = SdkAddress::from_str(&format!("{DAPP_ID}::{ACCOUNT_ID}")).unwrap();
 
         assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
         assert_eq!(address.account_id, ACCOUNT_ID);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+        // Display round-trips back through the strict parser (double colon).
+        assert_eq!(address.to_string(), format!("{DAPP_ID}::{ACCOUNT_ID}"));
+        assert!(SdkAddress::from_str(&address.to_string()).is_ok());
     }
 
     #[test]
-    fn sdk_address_from_str_rejects_dapp_id_with_workchain_address() {
+    fn sdk_address_from_str_accepts_mixed_case_hex() {
+        let dapp = DAPP_ID.to_uppercase();
+        let address = SdkAddress::from_str(&format!("{dapp}::{ACCOUNT_ID}")).unwrap();
+
+        assert_eq!(address.dapp_id.as_deref(), Some(dapp.as_str()));
+        assert_eq!(address.account_id, ACCOUNT_ID);
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_workchain_form() {
+        let err = SdkAddress::from_str(RAW_ADDRESS).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_masterchain_form() {
+        let masterchain = format!("-1:{ACCOUNT_ID}");
+        let err = SdkAddress::from_str(&masterchain).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_bare_hex() {
+        let err = SdkAddress::from_str(ACCOUNT_ID).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_single_colon() {
+        let err = SdkAddress::from_str(&format!("{DAPP_ID}:{ACCOUNT_ID}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_concatenated_128_hex() {
+        let err = SdkAddress::from_str(&format!("{DAPP_ID}{ACCOUNT_ID}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_workchain_in_account_half() {
+        // dapp::0:acc — the account half carries a workchain, which is invalid.
         let err = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap_err();
-
-        assert_eq!(err, "account_id must not include a workchain when dapp_id is specified");
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
     }
 
     #[test]
-    fn sdk_address_from_str_parses_dapp_id_with_single_colon() {
-        let address = SdkAddress::from_str(&format!("{DAPP_ID}:{ACCOUNT_ID}")).unwrap();
-
-        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
-        assert_eq!(address.account_id, ACCOUNT_ID);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+    fn sdk_address_from_str_rejects_short_dapp_id() {
+        let err = SdkAddress::from_str(&format!("deadbeef::{ACCOUNT_ID}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
     }
 
     #[test]
-    fn sdk_address_from_str_parses_concatenated_dapp_id_and_account_id() {
-        let address = SdkAddress::from_str(&format!("{DAPP_ID}{ACCOUNT_ID}")).unwrap();
-
-        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
-        assert_eq!(address.account_id, ACCOUNT_ID);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
-    }
-
-    #[test]
-    fn sdk_address_from_str_keeps_workchain_address_without_dapp_id() {
-        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
-
-        assert_eq!(address.dapp_id, None);
-        assert_eq!(address.account_id, RAW_ADDRESS);
-    }
-
-    #[test]
-    fn sdk_address_from_str_rejects_invalid_dapp_id_length_for_double_colon() {
-        let err = SdkAddress::from_str(&format!("deadbeef::{RAW_ADDRESS}")).unwrap_err();
-
-        assert_eq!(err, "dapp_id must be exactly 64 hex characters");
+    fn sdk_address_from_str_rejects_empty_double_colon() {
+        let err = SdkAddress::from_str("::").unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
     }
 
     #[test]
