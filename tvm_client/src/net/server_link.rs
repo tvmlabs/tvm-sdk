@@ -364,6 +364,35 @@ impl NetworkState {
         Ok(fastest)
     }
 
+    /// Best-effort, single-attempt query-endpoint resolution for fast version
+    /// detection. Unlike `get_query_endpoint`, it does NOT enter the reconnect
+    /// retry loop (`max_reconnect_timeout`), so it fails fast when no GraphQL
+    /// endpoint is reachable. On success it populates the cache, so a later
+    /// `get_query_endpoint`/`server_version` reuses the resolved endpoint.
+    pub async fn try_resolve_query_endpoint(
+        self: &Arc<NetworkState>,
+    ) -> ClientResult<Arc<Endpoint>> {
+        if let Some(endpoint) = &*self.query_endpoint.read().await {
+            return Ok(endpoint.clone());
+        }
+        let mut locked_query_endpoint = self.query_endpoint.write().await;
+        if let Some(endpoint) = &*locked_query_endpoint {
+            return Ok(endpoint.clone());
+        }
+        let addresses = self.endpoint_addresses.read().await.clone();
+        let mut last_err = crate::client::Error::net_module_not_init();
+        for address in &addresses {
+            match self.resolve_endpoint(address).await {
+                Ok(endpoint) => {
+                    *locked_query_endpoint = Some(endpoint.clone());
+                    return Ok(endpoint);
+                }
+                Err(err) => last_err = err,
+            }
+        }
+        Err(last_err)
+    }
+
     pub async fn get_all_endpoint_addresses(&self) -> ClientResult<Vec<String>> {
         Ok(self.endpoint_addresses.read().await.clone())
     }
