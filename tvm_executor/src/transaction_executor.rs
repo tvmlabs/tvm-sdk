@@ -2129,6 +2129,7 @@ mod tests {
     use tvm_block::CurrencyCollection;
     use tvm_block::Deserializable;
     use tvm_block::GasLimitsPrices;
+    use tvm_block::GetRepresentationHash;
     use tvm_block::GlobalVersion;
     use tvm_block::HashUpdate;
     use tvm_block::InternalMessageHeader;
@@ -2285,6 +2286,70 @@ mod tests {
         .unwrap()
     }
 
+    fn internal_message(src: u8, dst: u8, value: u64) -> Message {
+        Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(src),
+            address(dst),
+            CurrencyCollection::with_grams(value),
+        ))
+    }
+
+    fn outbound_internal_message(dst: u8, value: u64) -> Message {
+        let mut header = InternalMessageHeader::new();
+        header.ihr_disabled = true;
+        header.set_dst(address(dst));
+        header.value = CurrencyCollection::with_grams(value);
+        Message::with_int_header(header)
+    }
+
+    fn append_cell_asm(cell: &Cell, code: &mut String, indent: &str) {
+        code.push_str(indent);
+        code.push_str(".CELL {\n");
+        let inner_indent = format!("{indent}  ");
+        if cell.bit_length() > 0 {
+            code.push_str(&inner_indent);
+            code.push_str(".BLOB x");
+            code.push_str(&cell.to_hex_string(true));
+            code.push('\n');
+        }
+        for index in 0..cell.references_count() {
+            append_cell_asm(&cell.reference(index).unwrap(), code, &inner_indent);
+        }
+        code.push_str(indent);
+        code.push_str("}\n");
+    }
+
+    fn push_ref_cell_asm(cell: &Cell) -> String {
+        let mut code = String::from("PUSHREF {\n");
+        if cell.bit_length() > 0 {
+            code.push_str("  .BLOB x");
+            code.push_str(&cell.to_hex_string(true));
+            code.push('\n');
+        }
+        for index in 0..cell.references_count() {
+            append_cell_asm(&cell.reference(index).unwrap(), &mut code, "  ");
+        }
+        code.push_str("}\n");
+        code
+    }
+
+    fn collect_out_messages(tx: &Transaction) -> Vec<Message> {
+        let mut messages = Vec::new();
+        tx.iterate_out_msgs(|msg| {
+            messages.push(msg);
+            Ok(true)
+        })
+        .unwrap();
+        messages
+    }
+
+    fn ordinary_description(tx: &Transaction) -> tvm_block::TransactionDescrOrdinary {
+        match tx.read_description().unwrap() {
+            TransactionDescr::Ordinary(description) => description,
+            _ => panic!("unexpected transaction description"),
+        }
+    }
+
     #[test]
     fn action_phase_result_from_phase_starts_empty() {
         let phase = TrActionPhase {
@@ -2372,6 +2437,129 @@ mod tests {
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_CELL_DEPTH.with_borrow(|x| assert!(x.is_none()));
         tvm_types::DataCell::UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT
             .with_borrow(|x| assert!(x.is_none()));
+    }
+
+    #[test]
+    fn execute_with_libs_and_node_like_params_applies_action_effects() {
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let dapp_id = UInt256::with_array([0x52; 32]);
+        let vm_execution_is_block_related = Arc::new(Mutex::new(false));
+        let block_collation_was_finished = Arc::new(Mutex::new(false));
+        let last_tr_lt = Arc::new(AtomicU64::new(500));
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.block_unixtime = 321;
+        fixture.block_lt = 654;
+        fixture.seq_no = 9;
+        fixture.last_tr_lt = last_tr_lt.clone();
+        fixture.seed_block = UInt256::with_array([0x71; 32]);
+        fixture.vm_execution_is_block_related = vm_execution_is_block_related.clone();
+        fixture.block_collation_was_finished = block_collation_was_finished.clone();
+        fixture.dapp_id = Some(dapp_id.clone());
+        fixture.available_credit = 13;
+        let params = fixture.build();
+
+        let outbound_value = 123_000_000;
+        let mut actions = OutActions::default();
+        actions.push_back(OutAction::new_mint_shellq(20));
+        actions.push_back(OutAction::new_send(
+            SENDMSG_PAY_FEE_SEPARATELY,
+            outbound_internal_message(9, outbound_value),
+        ));
+        let code = format!(
+            "NOW\nPUSHINT 321\nEQUAL\nTHROWIFNOT 301\n\
+             BLOCKLT\nPUSHINT 654\nEQUAL\nTHROWIFNOT 302\n\
+             SEQNO\nPUSHINT 9\nEQUAL\nTHROWIFNOT 303\n\
+             {}POP c5\n",
+            push_ref_cell_asm(&actions.serialize().unwrap())
+        );
+        let account =
+            active_account_with_code(7, tvm_assembler::compile_code_to_cell(&code).unwrap());
+        let original_balance = account.balance_checked();
+        let mut account_root = account.serialize().unwrap();
+        let old_account_hash = account_root.repr_hash();
+        let msg = internal_message(1, 7, 1_000_000_000);
+
+        let (tx, minted_shell) =
+            executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params).unwrap();
+
+        assert_eq!(minted_shell, 13);
+        assert_eq!(tx.account_id(), &address(7).address());
+        assert_eq!(tx.logical_time(), 500);
+        assert_eq!(tx.now(), 321);
+        assert_eq!(last_tr_lt.load(Ordering::Relaxed), 502);
+        assert!(*vm_execution_is_block_related.lock().unwrap());
+
+        let description = ordinary_description(&tx);
+        assert!(!description.aborted);
+        match description.compute_ph {
+            TrComputePhase::Vm(phase) => {
+                assert!(phase.success, "{phase:?}");
+                assert_eq!(phase.exit_code, 0);
+            }
+            _ => panic!("unexpected compute phase"),
+        }
+        let action = description.action.expect("action phase");
+        assert!(action.success, "{action:?}");
+        assert_eq!(action.result_code, 0);
+        assert_eq!(action.tot_actions, 2);
+        assert_eq!(action.spec_actions, 1);
+        assert_eq!(action.msgs_created, 1);
+
+        let out_messages = collect_out_messages(&tx);
+        assert_eq!(out_messages.len(), 1);
+        let out_msg = &out_messages[0];
+        assert_eq!(out_msg.src(), Some(address(7)));
+        assert_eq!(out_msg.dst(), Some(address(9)));
+        assert_eq!(out_msg.at_and_lt(), Some((321, 501)));
+        assert_eq!(out_msg.get_value().unwrap().grams.as_u128(), outbound_value as u128);
+        let out_header = out_msg.int_header().unwrap();
+        assert_eq!(out_header.src_dapp_id(), &Some(dapp_id));
+        assert_eq!(out_header.dest_dapp_id(), &None);
+        assert!(!out_header.is_exchange());
+
+        let state_update = tx.read_state_update().unwrap();
+        assert_eq!(state_update.old_hash, old_account_hash);
+        assert_eq!(state_update.new_hash, account_root.repr_hash());
+        assert_ne!(state_update.old_hash, state_update.new_hash);
+        let updated = Account::construct_from_cell(account_root).unwrap();
+        assert_eq!(updated.get_id().unwrap(), address(7).address());
+        assert_eq!(updated.last_paid(), 321);
+        assert_eq!(updated.last_tr_time(), Some(502));
+        assert!(updated.balance_checked().grams > original_balance.grams);
+    }
+
+    #[test]
+    fn execute_with_libs_keeps_node_block_related_flag_false_without_block_related_ops() {
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let vm_execution_is_block_related = Arc::new(Mutex::new(false));
+        let last_tr_lt = Arc::new(AtomicU64::new(700));
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.block_unixtime = 222;
+        fixture.block_lt = 333;
+        fixture.seq_no = 4;
+        fixture.last_tr_lt = last_tr_lt.clone();
+        fixture.vm_execution_is_block_related = vm_execution_is_block_related.clone();
+        let params = fixture.build();
+
+        let code = tvm_assembler::compile_code_to_cell("PUSHINT 1\n").unwrap();
+        let account = active_account_with_code(7, code);
+        let mut account_root = account.serialize().unwrap();
+        let msg = internal_message(1, 7, 1_000_000_000);
+
+        let (tx, minted_shell) =
+            executor.execute_with_libs_and_params(Some(&msg), &mut account_root, params).unwrap();
+
+        assert_eq!(minted_shell, 0);
+        assert_eq!(tx.logical_time(), 700);
+        assert_eq!(last_tr_lt.load(Ordering::Relaxed), 701);
+        assert!(!*vm_execution_is_block_related.lock().unwrap());
+        assert!(collect_out_messages(&tx).is_empty());
+        let description = ordinary_description(&tx);
+        assert!(!description.aborted);
+        assert_eq!(description.action.unwrap().tot_actions, 0);
+        let updated = Account::construct_from_cell(account_root).unwrap();
+        assert_eq!(updated.last_paid(), 222);
+        assert_eq!(updated.last_tr_time(), Some(701));
     }
 
     #[test]
