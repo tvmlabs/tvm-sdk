@@ -123,8 +123,8 @@ mod tests {
 
     use super::*;
 
-    const PUBLIC: &str = "9711a04f0b19474272bc7bae5472a8fbbb6ef71ce9c193f5ec3f5af808069a41";
-    const PRIVATE: &str = "cdf2a820517fa783b9b6094d15e650af92d485084ab217fc2c859f02d49623f3";
+    const PUBLIC: &str = "1a45739a421eada273512fbbd6dc9dd813f1eb8f06260c3102286827a1e3c267";
+    const PRIVATE: &str = "0900aa3a7e5c37fe7ee8b85c34f11353537f6f2ff60cce88e17fac65ad8725b9";
     const SEED: &str =
         "episode polar pistol excite essence van cover fox visual gown yellow minute";
     const KEYS_FILE: &str = "./keys.json";
