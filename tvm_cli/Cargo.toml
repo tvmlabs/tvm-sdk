@@ -60,6 +60,7 @@ tvm_vm.workspace = true
 assert_cmd = "2"
 predicates = "3"
 string-error = "0.1"
+testdir = "0.9.3"
 
 [[bin]]
 name = "tvm-cli"
