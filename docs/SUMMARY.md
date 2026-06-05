@@ -2,6 +2,7 @@
 
 * [Dapp ID Full Guide: creation, fees, centralized replenishment](README.md)
   * [Get Test Tokens in Shellnet](readme/get-test-tokens-in-shellnet.md)
+* [Migration to TVM SDK v3](migration-to-tvm-sdk-v3.md)
 * [Developer Portal Overview](developer-portal-overview.md)
 * [How to deploy a Multisig Wallet](how-to-deploy-a-multisig-wallet.md)
 * [Add Acki Nacki to your backend](add-acki-nacki-to-your-backend.md)
