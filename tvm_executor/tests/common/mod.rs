@@ -528,21 +528,16 @@ fn node_default_wc_fwd_prices() -> MsgForwardPrices {
     }
 }
 
-// RUNWASM (opcode 0x39) reads five stack items via `fetch_stack(engine, 5)` and
-// indexes them as var(0)..var(4). PUSHREF order below is chosen so the
-// resulting stack matches the mapping the opcode expects.
+// RUNWASM (opcode 0x39) reads five stack items via `fetch_stack(engine, 5)`
+// and indexes them as var(0)..var(4). The PUSHREF order below produces a
+// stack that matches this mapping.
 //
 // Stack top-to-bottom before RUNWASM:
-//   var(0) top    = empty_executable_cell
-//                   (treated as wasm_executable; an empty cell selects hash
-// mode)   var(1)        = interface_cell
-//                   (wasm_instance_name)
-//   var(2)        = function_cell
-//                   (wasm_func_name)
-//   var(3)        = args_cell
-//                   (wasm_func_args)
-//   var(4) bottom = hash_cell
-//                   (wasm_hash, ABI bytes)
+//   var(0) top    empty_executable_cell  (empty -> hash mode)
+//   var(1)        interface_cell         (wasm_instance_name)
+//   var(2)        function_cell          (wasm_func_name)
+//   var(3)        args_cell              (wasm_func_args)
+//   var(4) bottom hash_cell              (wasm_hash, ABI bytes)
 #[cfg(all(feature = "gosh", feature = "wasmtime"))]
 pub fn wasm_validation_code(call: &WasmCallFixture, actions: OutActions) -> String {
     format!(
