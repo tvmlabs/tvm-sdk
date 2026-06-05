@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [3.0.0] - ????-??-??
+## [3.0.0] - 2026-06-05
 
 > **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
 > for a step-by-step migration guide covering the dapp_id changes below.
