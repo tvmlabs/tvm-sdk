@@ -682,7 +682,7 @@ impl TestClient {
                     ..Default::default()
                 },
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             Self::default_callback,
         )
@@ -793,7 +793,7 @@ impl TestClient {
                 ParamsOfProcessMessage {
                     message_encode_params: params,
                     send_events: false,
-                    dst_dapp_id: None,
+                    dapp_id: String::new(),
                 },
                 Self::default_callback,
             )
