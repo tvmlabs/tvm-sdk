@@ -33,7 +33,7 @@ fn gosh_actions_full_executor_observable_effects() {
     let outbound_value = 123_000_000;
     let mut actions = OutActions::default();
     actions.push_back(OutAction::new_mint_shellq(20));
-    actions.push_back(send_action(9, outbound_value));
+    actions.push_back(send_action(9, outbound_value, 0));
 
     let code = compile_code(&format!(
         "NOW\nPUSHINT 321\nEQUAL\nTHROWIFNOT 301\n\
@@ -75,7 +75,7 @@ fn gosh_actions_full_executor_observable_effects() {
     assert_eq!(observation.out_messages.len(), 1);
     let out_msg = &observation.out_messages[0];
     assert_eq!(out_msg.src(), Some(address(7)));
-    assert_eq!(out_msg.dst(), Some(masterchain_address(9)));
+    assert_eq!(out_msg.dst(), Some(address(9)));
     assert_eq!(out_msg.at_and_lt(), Some((321, 501)));
     assert_eq!(out_msg.get_value().unwrap().grams.as_u128(), outbound_value as u128);
     assert_eq!(out_msg.int_header().unwrap().src_dapp_id(), &Some(dapp_id));
@@ -94,11 +94,12 @@ fn gosh_action_failure_rolls_back_observable_effects() {
     params.block_unixtime = 400;
     params.last_tr_lt = last_tr_lt;
     params.vm_execution_is_block_related = vm_execution_is_block_related;
-    params.available_credit = 13;
+    // Node uses available_credit = 0 when dapp_id is absent.
+    params.available_credit = 0;
 
     let mut actions = OutActions::default();
     actions.push_back(OutAction::new_mint_shellq(20));
-    actions.push_back(send_action(9, 10_000_000_000_000));
+    actions.push_back(send_action(9, 10_000_000_000_000, 0));
 
     let code =
         compile_code(&format!("NOW\nDROP\n{}POP c5\n", push_ref_cell_asm(&action_cell(actions))));
@@ -169,7 +170,7 @@ fn non_block_related_execution_keeps_flag_false() {
     params.last_tr_lt = Arc::new(AtomicU64::new(900));
 
     let mut actions = OutActions::default();
-    actions.push_back(send_action(9, 100_000_000));
+    actions.push_back(send_action(9, 100_000_000, 0));
     let code = compile_code(&format!("{}POP c5\n", push_ref_cell_asm(&action_cell(actions))));
     let observation = harness.run(code, internal_message(1, 7, 1_000_000_000), params).unwrap();
 
@@ -198,7 +199,7 @@ fn wasm_hash_fixture_runs_through_full_executor() {
     params.wasm_fixtures = wasm;
 
     let mut actions = OutActions::default();
-    actions.push_back(send_action(9, 100_000_000));
+    actions.push_back(send_action(9, 100_000_000, -1));
     let code = compile_code(&wasm_validation_code(&call, actions));
     let observation = harness.run(code, internal_message(1, 7, 1_000_000_000), params).unwrap();
 
@@ -221,7 +222,7 @@ fn wasm_whitelist_blocks_unlisted_hash() {
     params.wasm_fixtures = NodeWasmFixtures::without_hash(call.hash);
 
     let mut actions = OutActions::default();
-    actions.push_back(send_action(9, 100_000_000));
+    actions.push_back(send_action(9, 100_000_000, -1));
     let code = compile_code(&wasm_validation_code(&call, actions));
     let observation = harness.run(code, internal_message(1, 7, 1_000_000_000), params).unwrap();
 
@@ -248,7 +249,7 @@ fn wasm_block_time_comes_from_execute_params() {
     params.wasm_fixtures = wasm.clone();
 
     let mut actions = OutActions::default();
-    actions.push_back(send_action(9, 100_000_000));
+    actions.push_back(send_action(9, 100_000_000, -1));
     let code = compile_code(&wasm_validation_code(&call, actions));
     let observation =
         harness.run(code.clone(), internal_message(1, 7, 1_000_000_000), params).unwrap();

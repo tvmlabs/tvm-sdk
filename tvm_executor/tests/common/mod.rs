@@ -13,6 +13,7 @@ use std::time::Instant;
 use sha2::Digest;
 use tvm_block::Account;
 use tvm_block::ConfigParam8;
+use tvm_block::ConfigParam12;
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParam31;
 use tvm_block::ConfigParamEnum;
@@ -33,6 +34,9 @@ use tvm_block::StateInit;
 use tvm_block::StoragePrices;
 use tvm_block::Transaction;
 use tvm_block::TransactionDescr;
+use tvm_block::WorkchainDescr;
+use tvm_block::WorkchainFormat;
+use tvm_block::WorkchainFormat1;
 use tvm_executor::BlockchainConfig;
 use tvm_executor::ExecuteParams;
 use tvm_executor::OrdinaryTransactionExecutor;
@@ -293,10 +297,8 @@ impl MockBlockSink {
         original_balance: CurrencyCollection,
     ) -> ExecutionObservation {
         let out_messages = collect_out_messages(&transaction);
-        let state_update = transaction.read_state_update().unwrap_or_else(|_| HashUpdate {
-            old_hash: UInt256::default(),
-            new_hash: UInt256::default(),
-        });
+        let state_update =
+            transaction.read_state_update().expect("executor must write state_update");
         let account = Account::construct_from_cell(account_root.clone()).unwrap();
         ExecutionObservation {
             transaction,
@@ -343,6 +345,7 @@ pub fn address(byte: u8) -> MsgAddressInt {
     MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
 }
 
+#[allow(dead_code)]
 pub fn masterchain_address(byte: u8) -> MsgAddressInt {
     MsgAddressInt::with_standart(None, -1, UInt256::with_array([byte; 32]).into()).unwrap()
 }
@@ -355,10 +358,13 @@ pub fn internal_message(src: u8, dst: u8, value: u64) -> Message {
     ))
 }
 
-pub fn outbound_internal_message(dst: u8, value: u64) -> Message {
+pub fn outbound_internal_message(dst: u8, value: u64, workchain_id: i8) -> Message {
     let mut header = InternalMessageHeader::new();
     header.ihr_disabled = true;
-    header.set_dst(masterchain_address(dst));
+    header.set_dst(
+        MsgAddressInt::with_standart(None, workchain_id, UInt256::with_array([dst; 32]).into())
+            .unwrap(),
+    );
     header.value = CurrencyCollection::with_grams(value);
     Message::with_int_header(header)
 }
@@ -385,10 +391,10 @@ pub fn action_cell(actions: OutActions) -> Cell {
     actions.serialize().unwrap()
 }
 
-pub fn send_action(dst: u8, value: u64) -> OutAction {
+pub fn send_action(dst: u8, value: u64, workchain_id: i8) -> OutAction {
     OutAction::new_send(
         tvm_block::SENDMSG_PAY_FEE_SEPARATELY,
-        outbound_internal_message(dst, value),
+        outbound_internal_message(dst, value, workchain_id),
     )
 }
 
@@ -470,15 +476,73 @@ fn executor_config() -> BlockchainConfig {
             global_version: GlobalVersion { version: 42, capabilities: 0x572e },
         }))
         .unwrap();
+    let mut workchains = ConfigParam12::new();
+    workchains.insert(0, &base_workchain()).unwrap();
+    workchains.insert(-1, &masterchain_workchain()).unwrap();
+    config.set_config(ConfigParamEnum::ConfigParam12(workchains)).unwrap();
     config.set_config(ConfigParamEnum::ConfigParam18(storage_prices())).unwrap();
     config.set_config(ConfigParamEnum::ConfigParam20(gas_prices())).unwrap();
     config.set_config(ConfigParamEnum::ConfigParam21(gas_prices())).unwrap();
-    config.set_config(ConfigParamEnum::ConfigParam24(MsgForwardPrices::default())).unwrap();
-    config.set_config(ConfigParamEnum::ConfigParam25(MsgForwardPrices::default())).unwrap();
+    config.set_config(ConfigParamEnum::ConfigParam24(node_default_mc_fwd_prices())).unwrap();
+    config.set_config(ConfigParamEnum::ConfigParam25(node_default_wc_fwd_prices())).unwrap();
     config.set_config(ConfigParamEnum::ConfigParam31(ConfigParam31::new())).unwrap();
     BlockchainConfig::with_config(config).unwrap()
 }
 
+fn base_workchain() -> WorkchainDescr {
+    let mut wc = WorkchainDescr::new();
+    wc.active = true;
+    wc.accept_msgs = true;
+    wc.format = WorkchainFormat::Basic(WorkchainFormat1::default());
+    wc
+}
+
+fn masterchain_workchain() -> WorkchainDescr {
+    let mut wc = base_workchain();
+    wc.flags = 1;
+    wc
+}
+
+// Forward-prices used by the acki-nacki node for ConfigParam24/25.
+// Mirrors tvm_executor::blockchain_config::TONDefaultConfig::default_mc/wc for
+// MsgForwardPrices, kept local because the trait is pub(crate).
+fn node_default_mc_fwd_prices() -> MsgForwardPrices {
+    MsgForwardPrices {
+        lump_price: 10000000,
+        bit_price: 655360000,
+        cell_price: 65536000000,
+        ihr_price_factor: 98304,
+        first_frac: 21845,
+        next_frac: 21845,
+    }
+}
+
+fn node_default_wc_fwd_prices() -> MsgForwardPrices {
+    MsgForwardPrices {
+        lump_price: 1000000,
+        bit_price: 65536000,
+        cell_price: 6553600000,
+        ihr_price_factor: 98304,
+        first_frac: 21845,
+        next_frac: 21845,
+    }
+}
+
+// RUNWASM (opcode 0x39) reads five stack items via `fetch_stack(engine, 5)` and
+// indexes them as var(0)..var(4). PUSHREF order below is chosen so the
+// resulting stack matches the mapping the opcode expects.
+//
+// Stack top-to-bottom before RUNWASM:
+//   var(0) top    = empty_executable_cell
+//                   (treated as wasm_executable; an empty cell selects hash
+// mode)   var(1)        = interface_cell
+//                   (wasm_instance_name)
+//   var(2)        = function_cell
+//                   (wasm_func_name)
+//   var(3)        = args_cell
+//                   (wasm_func_args)
+//   var(4) bottom = hash_cell
+//                   (wasm_hash, ABI bytes)
 #[cfg(all(feature = "gosh", feature = "wasmtime"))]
 pub fn wasm_validation_code(call: &WasmCallFixture, actions: OutActions) -> String {
     format!(
