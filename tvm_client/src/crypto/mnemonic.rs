@@ -202,7 +202,7 @@ pub fn mnemonic_verify(
 pub struct ParamsOfMnemonicDeriveSignKeys {
     /// Phrase
     pub phrase: String,
-    /// Derivation path, for instance "m/44'/396'/0'/0/0"
+    /// Derivation path, for instance "m/44'/1331'/0'/0/0"
     pub path: Option<String>,
     /// Dictionary identifier
     pub dictionary: Option<MnemonicDictionary>,

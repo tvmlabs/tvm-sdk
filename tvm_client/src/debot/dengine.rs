@@ -776,7 +776,7 @@ impl DEngine {
             ParamsOfProcessMessage {
                 message_encode_params: call_params,
                 send_events: true,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             callback,
         )

@@ -178,7 +178,7 @@ Note that the build script generates binaries compatible with the platform used 
 Rebuild `api.json`:
 
 ```shell
-cd tvmcli
+cd tools/tvm_api_gen
 cargo run api -o ../tools
 ```
 

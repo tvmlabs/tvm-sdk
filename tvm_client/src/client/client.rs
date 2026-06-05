@@ -109,6 +109,14 @@ impl ClientContext {
         self.net.get_server_link()
     }
 
+    /// Forces a GraphQL endpoint connection (if not already resolved) and
+    /// returns whether the server speaks the v3 dapp_id REST format.
+    pub async fn supports_dapp_id(&self) -> ClientResult<bool> {
+        let sl = self.get_server_link()?;
+        sl.state().get_query_endpoint().await?;
+        Ok(sl.supports_dapp_id().await)
+    }
+
     pub async fn set_timer(&self, ms: u64) -> ClientResult<()> {
         self.env.set_timer(ms).await
     }
