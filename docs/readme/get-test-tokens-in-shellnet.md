@@ -7,7 +7,13 @@ description: >-
 # Get Test Tokens in Shellnet
 
 {% hint style="danger" %}
-**for the `Shellnet` network only**
+**For the `Shellnet` network only**
+{% endhint %}
+
+{% hint style="warning" %}
+**Please update `tvm-cli v3+` and use the new extended address format:**
+
+`<dapp_id>::<account_id>`
 {% endhint %}
 
 You can receive test tokens in two ways:\
@@ -50,7 +56,7 @@ The command below sends `1000 SHELL`.
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
   --abi acki-nacki/contracts/giver/GiverV3.abi.json \
-  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  --addr 0000000000000000000000000000000000000000000000000000000000000000::1111111111111111111111111111111111111111111111111111111111111111 \
   -m sendCurrency \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"2":1000000000000}}'
 ```
@@ -64,7 +70,7 @@ The command below sends `100 NACKL`.
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
   --abi acki-nacki/contracts/giver/GiverV3.abi.json \
-  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  --addr 0000000000000000000000000000000000000000000000000000000000000000::1111111111111111111111111111111111111111111111111111111111111111 \
   -m sendCurrency \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":100000000000}}'
 ```
@@ -78,7 +84,7 @@ The command below sends `5000 USDC`.
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
   --abi acki-nacki/contracts/giver/GiverV3.abi.json \
-  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  --addr 0000000000000000000000000000000000000000000000000000000000000000::1111111111111111111111111111111111111111111111111111111111111111 \
   -m sendCurrency \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"3":5000000000}}'
 ```
@@ -92,7 +98,7 @@ The command below sends `1000 NACKL`, `50000 SHELL`, and `5000 USDC`.
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
   --abi acki-nacki/contracts/giver/GiverV3.abi.json \
-  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  --addr 0000000000000000000000000000000000000000000000000000000000000000::1111111111111111111111111111111111111111111111111111111111111111 \
   -m sendCurrency \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":1000000000000,"2":50000000000000,"3":5000000000}}'
 ```
@@ -114,7 +120,7 @@ The command below sends `1000 SHELL`, which will be credited as `1000 VMSHELL`.
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
   --abi acki-nacki/contracts/giver/GiverV3.abi.json \
-  --addr 0:1111111111111111111111111111111111111111111111111111111111111111 \
+  --addr 0000000000000000000000000000000000000000000000000000000000000000::1111111111111111111111111111111111111111111111111111111111111111 \
   -m sendCurrencyWithFlag \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"2":1000000000000},"flag":16}'
 ```
