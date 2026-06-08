@@ -62,6 +62,10 @@ impl DataCell {
         pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT: RefCell<Option<u64>> = const { RefCell::new(None) };
     }
 
+    pub fn reset_unique_bloom() {
+        UNIQUE_BLOOM.with_borrow_mut(|bloom| bloom.clear());
+    }
+
     pub fn new() -> Self {
         Self::with_refs_and_data(smallvec![], &[0x80]).unwrap()
     }
