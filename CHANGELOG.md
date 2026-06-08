@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [3.0.1] - 2026-06-08
+
+### Fixed
+- `tvm_types`/`tvm_executor`: use a fixed seed for the per-thread unique-cell Bloom filter, reset it before and after transaction execution, and manage executor cell size limits with an RAII guard so Bloom state and TLS limits are always cleared, including early error paths such as `MaxBOCSizeExceeded`. This makes transaction cell/tree size accounting deterministic and prevents producer/verifier divergence caused by stale warm Bloom state.
+- `tvm_cli`: fixed `decode::tests::test_decode_body_json` to use an existing manifest-relative wallet ABI fixture instead of a missing `tests/samples/wallet.abi.json` path.
+- `tvm_debugger`: fixed the test `RunArgs` initializer to include `block_seq_no`.
+
 ## [3.0.0] - 2026-06-05
 
 > **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)

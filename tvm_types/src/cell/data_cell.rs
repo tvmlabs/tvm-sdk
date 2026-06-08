@@ -53,7 +53,8 @@ pub enum DataCellError {
 }
 
 thread_local! {
-    static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
+    static UNIQUE_BLOOM: RefCell<BloomFilter> =
+        RefCell::new(BloomFilter::with_false_pos(0.00001).seed(&0u128).expected_items(1000000));
 }
 
 impl DataCell {
