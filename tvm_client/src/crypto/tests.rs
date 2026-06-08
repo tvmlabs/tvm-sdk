@@ -458,7 +458,7 @@ fn mnemonic() {
 
     let result: KeyPair = client.request("crypto.mnemonic_derive_sign_keys", ParamsOfMnemonicDeriveSignKeys {
         phrase: "unit follow zone decline glare flower crisp vocal adapt magic much mesh cherry teach mechanic rain float vicious solution assume hedgehog rail sort chuckle".into(),
-        path: None,
+        path: Some("m/44'/396'/0'/0/0".into()),
         dictionary: Some(MnemonicDictionary::Ton),
         word_count: Some(24),
     }).unwrap();
@@ -489,7 +489,7 @@ fn mnemonic() {
             phrase:
                 "abandon math mimic master filter design carbon crystal rookie group knife young"
                     .into(),
-            path: None,
+            path: Some("m/44'/396'/0'/0/0".into()),
             dictionary: None,
             word_count: None,
         })
@@ -548,7 +548,7 @@ fn mnemonic() {
             "crypto.mnemonic_derive_sign_keys",
             ParamsOfMnemonicDeriveSignKeys {
                 phrase: result.phrase,
-                path: None,
+                path: Some("m/44'/396'/0'/0/0".into()),
                 dictionary: None,
                 word_count: None,
             },

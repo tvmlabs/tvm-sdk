@@ -160,7 +160,7 @@ async fn test_wait_message() {
                 message: encoded.message.clone(),
                 thread_id: None,
                 send_events: true,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             callback.clone(),
         )
@@ -230,7 +230,7 @@ async fn test_process_message() {
             ParamsOfProcessMessage {
                 message_encode_params: encode_params,
                 send_events: true,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             callback,
         )
@@ -270,7 +270,7 @@ async fn test_process_message() {
                     ..Default::default()
                 },
                 send_events: true,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             callback,
         )
@@ -361,7 +361,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -384,7 +384,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -414,7 +414,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: run_params.clone(),
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -435,7 +435,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params.clone(),
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -449,7 +449,7 @@ async fn test_error_resolving() {
             ParamsOfProcessMessage {
                 message_encode_params: run_params.clone(),
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -523,7 +523,7 @@ async fn test_retries() {
                             ..Default::default()
                         },
                         send_events: false,
-                        dst_dapp_id: None,
+                        dapp_id: String::new(),
                     },
                     TestClient::default_callback,
                 )
@@ -591,7 +591,7 @@ async fn test_fees() {
             ParamsOfProcessMessage {
                 message_encode_params: params,
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -662,7 +662,7 @@ async fn test_deploy_from_tvc_v1() {
             ParamsOfProcessMessage {
                 message_encode_params: encode_params,
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
@@ -685,7 +685,7 @@ async fn test_deploy_from_tvc_v1() {
                     ..Default::default()
                 },
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             move |_: ProcessingEvent, _: ProcessingResponseType| async {},
         )
@@ -750,7 +750,7 @@ fn test_process_message_sync() {
         .process_message_sync(ParamsOfProcessMessage {
             message_encode_params: encode_params,
             send_events: true,
-            dst_dapp_id: None,
+            dapp_id: String::new(),
         })
         .unwrap();
 
@@ -773,7 +773,7 @@ fn test_process_message_sync() {
                 ..Default::default()
             },
             send_events: true,
-            dst_dapp_id: None,
+            dapp_id: String::new(),
         })
         .unwrap();
     assert_eq!(output.out_messages.len(), 2);
