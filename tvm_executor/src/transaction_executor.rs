@@ -2128,9 +2128,9 @@ mod tests {
     use tvm_block::Account;
     use tvm_block::AccountStatus;
     use tvm_block::AnycastInfo;
+    use tvm_block::ConfigParam8;
     use tvm_block::ConfigParam18;
     use tvm_block::ConfigParam31;
-    use tvm_block::ConfigParam8;
     use tvm_block::ConfigParamEnum;
     use tvm_block::ConfigParams;
     use tvm_block::CurrencyCollection;
