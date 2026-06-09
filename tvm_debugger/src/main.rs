@@ -300,6 +300,7 @@ mod tests {
             json: true,
             trace: false,
             replace_code: None,
+            block_seq_no: None,
         }
     }
 
