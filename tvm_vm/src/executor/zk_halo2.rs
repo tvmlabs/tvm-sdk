@@ -133,7 +133,8 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
 // ---------------------------------------------------------------------------
 // ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK verification.
 //
-// Handler lives in `super::zk_halo2_with_vk` (Base + RLC `circuit_shape` paths).
-// Re-exported here for legacy callers (e.g. `tvm_vm/src/tests/test_halo2.rs`).
+// Handler lives in `super::zk_halo2_with_vk` (Base + RLC `circuit_shape`
+// paths). Re-exported here for legacy callers (e.g.
+// `tvm_vm/src/tests/test_halo2.rs`).
 // ---------------------------------------------------------------------------
 pub(crate) use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;

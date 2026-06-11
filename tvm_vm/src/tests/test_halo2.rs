@@ -266,7 +266,8 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // circuit's **v2 / Rlc-shape** VkBlob (axiom-eth `EthCircuitImpl<Fr, _>`
 // shape). The handler in `crate::executor::zk_halo2_with_vk` reads both
 // v1/Base and v2/Rlc VkBlobs (`circuit_shape` byte). All paths are hard-coded:
-//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs --nocapture
+//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs
+// --nocapture
 // ---------------------------------------------------------------------------
 
 /// Directory (relative to the `tvm_vm` crate root) holding the committed
@@ -362,7 +363,8 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
-    let (cfg, vk) = parse_vk_blob_chunks(&std::fs::read(deposit_vk_blob_path()).expect("read vk_blob"));
+    let (cfg, vk) =
+        parse_vk_blob_chunks(&std::fs::read(deposit_vk_blob_path()).expect("read vk_blob"));
     let instances = std::fs::read(deposit_pubin_path(0)).expect("read public_inputs");
     let mut proof = std::fs::read(deposit_proof_path(0)).expect("read proof");
     let idx = proof.len() / 2;
