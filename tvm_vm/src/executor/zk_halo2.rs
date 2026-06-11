@@ -4,6 +4,7 @@ use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
+use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
 use halo2_base::utils::ScalarField;
@@ -28,7 +29,7 @@ static VK_AND_PARAMS: OnceLock<(VerifyingKey<G1Affine>, ParamsKZG<Bn256>)> = Onc
 
 fn get_vk_and_params() -> &'static (VerifyingKey<G1Affine>, ParamsKZG<Bn256>) {
     VK_AND_PARAMS.get_or_init(|| {
-        let vk = crate::executor::zk_halo2_utils::build_dark_dex_w8_vk();
+        let vk = crate::executor::zk_halo2_utils::build_dark_dex_w128_vk();
         let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params();
         (vk, params)
     })
@@ -119,7 +120,12 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
             };
             pub_inputs.push(Fr::from(elem));
         } else {
-            pub_inputs.push(Fr::from_bytes_le(pub_input_bytes));
+            let mut repr = <Fr as PrimeField>::Repr::default();
+            repr.as_mut().copy_from_slice(pub_input_bytes);
+            let Some(fr) = Option::<Fr>::from(Fr::from_repr(repr)) else {
+                fail!(ExceptionCode::FatalError);
+            };
+            pub_inputs.push(fr);
         }
     }
 

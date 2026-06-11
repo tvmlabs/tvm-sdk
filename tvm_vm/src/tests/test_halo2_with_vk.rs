@@ -1,58 +1,67 @@
-//! Real round-trip test for `ZKHALO2VERIFYWITHVK` (opcode `0xC7 0x4A`).
+//! Real round-trip tests for `ZKHALO2VERIFYWITHVK` (opcode `0xC7 0x4A`).
 //!
-//! Builds a [`Halo2TvmBundle`](`tvm_vm::executor::zk_halo2_with_vk_bundle::Halo2TvmBundle`)
-//! payload from the checked-in DarkDex W=8 L0 fixture
-//! (`tvm_vm/halo2_test_data/dark_dex_w8_L0_{proof,instances}.bin` and the
-//! embedded `DARK_DEX_W8_VK_BYTES` constant), pushes it as a cell onto the
-//! VM stack, runs the handler, and asserts the boolean result.
+//! Builds a v2 RLC [`Halo2TvmBundle`] from the checked-in deposit-prover
+//! fixtures (`tvm_vm/halo2_test_data/deposit_rlc_{vk_blob,public_inputs,proof}.
+//! bin` or the pre-assembled `deposit_rlc_bundle.bin`), pushes it as a single
+//! cell onto the VM stack, runs the handler, and asserts the boolean result.
 //!
-//! Covers:
-//!
-//! - **Positive path**: a real Halo2 SHPLONK proof for DarkDex W=8 L0
-//!   round-trips through `Halo2TvmBundle` → `execute_zkhalo2_verify_with_vk` →
-//!   `true`.
-//! - **Negative paths**:
-//!   - Flip a byte in the proof — handler returns `false` (cryptographic
-//!     reject).
-//!   - Tweak an instance Fr — handler returns `false`.
-//!   - Bad bundle magic — handler returns `FatalError`.
-//!
-//! The fixture file is the SAME `instances.bin` used by `test_halo2.rs` for
-//! the bare `ZKHALO2VERIFY` opcode, so the AN team can confirm parity at a
-//! glance. The encoding in that file uses strict 32-byte LE `Fr` already
-//! (Q-WIRE-3) — no u64 shortcuts — so it slots directly into the new
-//! opcode's strict layout without conversion.
+//! Dark DEX W=128 proofs belong to the legacy `ZKHALO2VERIFY` opcode path
+//! (`test_halo2.rs`); they use a different KZG ceremony than deposit proofs.
 
 use tvm_types::SliceData;
 
 use crate::executor::Engine;
 use crate::executor::test_helper::*;
-use crate::executor::zk_halo2_utils::DARK_DEX_W8_VK_BYTES;
 use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::savelist::SaveList;
 use crate::utils::pack_data_to_cell;
 
-const DARK_DEX_W8_L0_INSTANCES: &str = "halo2_test_data/dark_dex_w8_L0_instances.bin";
-const DARK_DEX_W8_L0_PROOF: &str = "halo2_test_data/dark_dex_w8_L0_proof.bin";
-const DARK_DEX_W8_CONFIG_JSON: &str = "halo2_test_data/dark_dex_w8_config_params.json";
+const DEPOSIT_RLC_VK_BLOB: &str = "halo2_test_data/deposit_rlc_vk_blob.bin";
+const DEPOSIT_RLC_INSTANCES: &str = "halo2_test_data/deposit_rlc_public_inputs.bin";
+const DEPOSIT_RLC_PROOF: &str = "halo2_test_data/deposit_rlc_proof.bin";
+const DEPOSIT_RLC_BUNDLE: &str = "halo2_test_data/deposit_rlc_bundle.bin";
 
-const BUNDLE_MAGIC: &[u8; 8] = b"HALO2TVM";
-const BUNDLE_VERSION: u8 = 1;
-const TRANSCRIPT_BLAKE2B: u8 = 0;
+fn parse_vk_blob_chunks(vk_blob: &[u8]) -> (Vec<u8>, Vec<u8>) {
+    const VK_MAGIC: &[u8; 8] = b"VKBLOB\x00\x00";
+    const HEADER_LEN: usize = 16;
+    const LEN: usize = 4;
+    assert!(vk_blob.starts_with(VK_MAGIC), "expected VKBLOB magic");
+    let mut off = HEADER_LEN;
+    let read_u32 = |buf: &[u8], o: &mut usize| -> usize {
+        let n = u32::from_le_bytes(buf[*o..*o + LEN].try_into().unwrap()) as usize;
+        *o += LEN;
+        n
+    };
+    let cfg_len = read_u32(vk_blob, &mut off);
+    let cfg = vk_blob[off..off + cfg_len].to_vec();
+    off += cfg_len;
+    let vk_len = read_u32(vk_blob, &mut off);
+    let vk = vk_blob[off..off + vk_len].to_vec();
+    (cfg, vk)
+}
 
-fn build_bundle_bytes(config_json: &[u8], vk: &[u8], instances: &[u8], proof: &[u8]) -> Vec<u8> {
+fn build_deposit_bundle(config: &[u8], vk: &[u8], instances: &[u8], proof: &[u8]) -> Vec<u8> {
     let mut out = Vec::new();
-    out.extend_from_slice(BUNDLE_MAGIC);
-    out.push(BUNDLE_VERSION);
-    out.push(TRANSCRIPT_BLAKE2B);
-    out.extend_from_slice(&[0u8; 6]);
-    for chunk in [config_json, vk, instances, proof] {
+    out.extend_from_slice(b"HALO2TVM");
+    out.push(2); // BUNDLE_VERSION_V2
+    out.push(0); // TRANSCRIPT_BLAKE2B
+    out.push(1); // CIRCUIT_SHAPE_RLC
+    out.extend_from_slice(&[0u8; 5]);
+    for chunk in [config, vk, instances, proof] {
         out.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
         out.extend_from_slice(chunk);
     }
     out
+}
+
+fn load_deposit_bundle() -> Vec<u8> {
+    let vk_blob = std::fs::read(DEPOSIT_RLC_VK_BLOB).expect("deposit_rlc_vk_blob.bin must exist");
+    let (cfg, vk) = parse_vk_blob_chunks(&vk_blob);
+    let instances = std::fs::read(DEPOSIT_RLC_INSTANCES).expect("deposit_rlc_public_inputs.bin");
+    let proof = std::fs::read(DEPOSIT_RLC_PROOF).expect("deposit_rlc_proof.bin");
+    build_deposit_bundle(&cfg, &vk, &instances, &proof)
 }
 
 fn setup_engine() -> Engine {
@@ -101,46 +110,23 @@ fn run_with_bundle(bundle_bytes: &[u8]) -> tvm_types::Status {
 }
 
 #[test]
-fn round_trip_dark_dex_w8_l0_valid_proof_returns_true() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).expect("config_params.json must exist");
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).expect("instances file must exist");
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).expect("proof file must exist");
-    let bundle = build_bundle_bytes(&cfg, &DARK_DEX_W8_VK_BYTES, &instances, &proof);
-
-    run_with_bundle(&bundle).expect("valid DarkDex W=8 L0 bundle must verify");
+fn round_trip_deposit_rlc_real_proof_returns_true() {
+    let bundle = std::fs::read(DEPOSIT_RLC_BUNDLE).expect("deposit_rlc_bundle.bin must exist");
+    run_with_bundle(&bundle).expect("pre-assembled deposit RLC bundle must verify true");
 }
 
-/// Real EVM->AN deposit proof: the deposit-prover's RLC (`EthCircuitImpl`)
-/// SHPLONK proof for the Sepolia deposit tx (sender 0x967628..60Ce8e,
-/// 0.002 ETH) round-trips through the v2 `circuit_shape = Rlc` path of
-/// `ZKHALO2VERIFYWITHVK` and verifies `true`. The bundle was assembled from
-/// the deposit-prover artefacts (VkBlob v2 RLC + 7 public inputs + Blake2b
-/// proof) — the exact bytes `TokenBridge.finalizeDeposit` feeds the opcode.
 #[test]
-fn round_trip_deposit_rlc_real_proof_returns_true() {
-    let bundle = std::fs::read("halo2_test_data/deposit_rlc_bundle.bin")
-        .expect("deposit_rlc_bundle.bin must exist");
-    run_with_bundle(&bundle).expect("real deposit RLC bundle must verify true");
+fn round_trip_deposit_rlc_assembled_bundle_returns_true() {
+    run_with_bundle(&load_deposit_bundle())
+        .expect("deposit RLC bundle assembled from triple must verify true");
 }
 
 #[test]
 fn flipped_proof_byte_rejected_as_false() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let mut proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
+    let mut bundle = load_deposit_bundle();
+    let mid = bundle.len() / 2;
+    bundle[mid] ^= 0xFF;
 
-    // Flip a byte in the middle of the proof. Almost-any byte flip in a SHPLONK
-    // proof results in either a structural deserialisation failure (panic-safe
-    // path via Result inside verify_proof) OR a sound cryptographic reject.
-    // Both surface here as `verifier returned false` because the handler
-    // catches the structural error and returns `bool` via Proof::verify_with_vk.
-    let mid = proof.len() / 2;
-    proof[mid] ^= 0xFF;
-
-    let bundle = build_bundle_bytes(&cfg, &DARK_DEX_W8_VK_BYTES, &instances, &proof);
-
-    // Run twice: either FatalError or false-from-stack are acceptable rejections.
-    // We assert that the result is NOT `Ok(true on stack)`.
     let mut engine = setup_engine();
     let cell = pack_data_to_cell(&bundle, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(cell));
@@ -150,26 +136,19 @@ fn flipped_proof_byte_rejected_as_false() {
             let res = engine.cc.stack.get(0).as_bool().unwrap();
             assert!(!res, "flipped proof byte must NOT verify as true");
         }
-        Err(_) => {
-            // Structural reject inside verify (e.g. malformed proof bytes)
-            // is also an acceptable rejection.
-        }
+        Err(_) => {}
     }
 }
 
 #[test]
 fn tweaked_instance_fr_rejected_as_false() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let mut instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-
-    // Flip the LOW byte of the first instance (it's a real Fr — flipping the
-    // low byte stays inside the modulus and stays a valid Fr, but no longer
-    // equals what the proof was computed against).
+    let vk_blob = std::fs::read(DEPOSIT_RLC_VK_BLOB).unwrap();
+    let (cfg, vk) = parse_vk_blob_chunks(&vk_blob);
+    let mut instances = std::fs::read(DEPOSIT_RLC_INSTANCES).unwrap();
+    let proof = std::fs::read(DEPOSIT_RLC_PROOF).unwrap();
     instances[0] ^= 0x01;
 
-    let bundle = build_bundle_bytes(&cfg, &DARK_DEX_W8_VK_BYTES, &instances, &proof);
-
+    let bundle = build_deposit_bundle(&cfg, &vk, &instances, &proof);
     let mut engine = setup_engine();
     let cell = pack_data_to_cell(&bundle, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(cell));
@@ -181,12 +160,7 @@ fn tweaked_instance_fr_rejected_as_false() {
 
 #[test]
 fn bad_magic_returns_fatal_error() {
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-    let mut bundle = build_bundle_bytes(&cfg, &DARK_DEX_W8_VK_BYTES, &instances, &proof);
-
-    // Corrupt the first byte of the magic.
+    let mut bundle = load_deposit_bundle();
     bundle[0] = b'X';
 
     let mut engine = setup_engine();
@@ -203,15 +177,8 @@ fn bad_magic_returns_fatal_error() {
 
 #[test]
 fn lru_cache_reused_across_two_invocations() {
-    // Same VK twice in a row → second invocation should hit the per-VK cache.
-    // We can't directly observe cache state, but we can sanity-check that two
-    // sequential proves with the same VK both verify and complete quickly.
-    let cfg = std::fs::read(DARK_DEX_W8_CONFIG_JSON).unwrap();
-    let instances = std::fs::read(DARK_DEX_W8_L0_INSTANCES).unwrap();
-    let proof = std::fs::read(DARK_DEX_W8_L0_PROOF).unwrap();
-    let bundle = build_bundle_bytes(&cfg, &DARK_DEX_W8_VK_BYTES, &instances, &proof);
-
+    let bundle = load_deposit_bundle();
     for _ in 0..2 {
-        run_with_bundle(&bundle).expect("identical bundle must verify on every call");
+        run_with_bundle(&bundle).expect("identical deposit bundle must verify on every call");
     }
 }
