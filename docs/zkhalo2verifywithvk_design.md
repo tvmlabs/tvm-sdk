@@ -1,239 +1,177 @@
-# `ZKHALO2VERIFYWITHVK` — TVM Opcode Design Notes
+# `ZKHALO2VERIFYWITHVK` — Design Note + Frozen Wire-Format Contract
 
-**Status:** landed (this commit).
-**Dispatch:** `0xC7 0x4A` (gosh-feature gated).
-**Mnemonic:** `ZKHALO2VERIFYWITHVK`.
-**ABI variant:** **A — three stack operands** (frozen 2026-05-25).
+**Status**: design **CLOSED**, implementation **LANDED** in this PR.
+**Authors**: bridge integration team @ Pruvendo.
+**Timeline**: design opened 2026-05-17, frozen 2026-05-22, real
+implementation landed 2026-05-22.
+**Parent branch**: [`serhii/node-3406-vergrth16-with-vk`](https://github.com/tvmlabs/tvm-sdk/tree/serhii/node-3406-vergrth16-with-vk) — Serhii's `ZKHALO2VERIFY` (hard-coded DarkDex W=8 VK) + `VERGRTH16WITHVK`.
+**Companion**: bridge-side memo `docs/zk_halo2_an_side_design.md` in [`Pruvendo/acki-nacki-bridge`](https://github.com/Pruvendo/acki-nacki-bridge).
 
-## 1. Purpose
+## TL;DR
 
-Native verification of Halo2 SHPLONK proofs inside TVM where the
-verifying key + circuit configuration are **caller-supplied** rather
-than baked into the node binary. Each Acki Nacki ↔ Ethereum bridge
-`TokenBridge` (and any other dApp using Halo2) carries its own VK;
-this opcode covers all of them without growing per-circuit code in
-the node.
+`ZKHALO2VERIFY` (0xC7 0x49) hard-codes the verifying key to the DarkDex
+W=8 circuit. The Acki Nacki ↔ Ethereum bridge needs to verify a
+**different** Halo2 SHPLONK proof — produced by the
+`bridge-prover-orchestrator` Halo2 Circuit 1B (Fallback BLS attestation),
+with a different K, different `BaseCircuitParams`, and different VK.
+Generalising in place would mean a per-circuit `match` in the VM, which
+doesn't scale across the bridge / NFT / app-circuit roadmap.
 
-## 2. Stack ABI
+We add the same pivot that `VERGRTH16WITHVK` made for the Groth16 side:
+a sibling opcode whose **single stack operand carries the verifying key
+(and config, and instances, and proof) bundled together in a
+self-describing byte payload**. That payload is the `Halo2TvmBundle`
+format, locked in §4 below.
 
-Three `Cell` operands, top → bottom:
+| | `ZKHALO2VERIFY` (0xC7 0x49) | `ZKHALO2VERIFYWITHVK` (0xC7 0x4A) |
+| --- | --- | --- |
+| Stack | 2 cells: `[pub_inputs, proof]` | 1 cell: `[bundle]` |
+| VK | Hard-coded DarkDex W=8 | Caller-supplied (from bundle) |
+| Public inputs | Dual-path: u64 shortcut + LE Fr | Strict 32-byte LE Fr only |
+| Gas | Lower (no per-call VK deserialisation) | Higher (~5000 placeholder, re-bench pending) |
+| Cache | Single static `OnceLock<(VK, Params)>` | Bounded-FIFO map keyed by `vk_bytes` (capacity = 8) |
 
-```text
-input : ...
-        proof_cell           ← top
-        public_inputs_cell
-        vk_cell              ← bottom
-output: ...
-        ok: int (-1 = true, 0 = false)
-```
+Keeping both opcodes means system circuits (DarkDex / zkLogin variants)
+don't pay the WithVK gas premium, and app circuits (bridge / NFT / per-
+contract VKs) don't need a per-circuit fork of the VM.
 
-Assembly:
+## Decisions — frozen 2026-05-22
 
-```text
-PUSHREF vk_cell
-PUSHREF public_inputs_cell
-PUSHREF proof_cell
-ZKHALO2VERIFYWITHVK
-```
+Closed via Serhii's "Принимай решения на свой вкус, Сергей готов
+принять любое наше решение" directive. Canonical reference is
+`acki-nacki-bridge/docs/zk_halo2_an_side_design.md` §4. **Any future
+change requires bumping `BUNDLE_VERSION` in both producer
+(`bridge-prover-orchestrator`) and consumer (`tvm_vm`) and a paired
+Decision Log entry in both repos.**
 
-Returns:
+| ID | Decision |
+| -- | -------- |
+| Q-WIRE-1 (transcript) | **Blake2b SHPLONK**. `transcript_kind` byte in the bundle is `0x00 = Blake2b`. Values ≥ `0x01` reserved for a future Keccak variant under a bumped `BUNDLE_VERSION`. |
+| Q-WIRE-2 (KZG SRS) | **Verifier-only `ParamsKZG<Bn256>`** built at runtime from 3 globally-embedded points (`g[0]`, `g2`, `s_g2`), parameterised by `k = vk.cs.degree`. NOT carried in the bundle and NOT loaded from disk — SHPLONK verification only needs these three points, so the 64-MB-per-`k` SRS file is unnecessary. Implementation: `zk_halo2_with_vk::build_shared_kzg_params(k)`, reusing the `KZG_*_BYTES` constants from `zk_halo2_utils.rs` (same constants `ZKHALO2VERIFY` uses for DarkDex W=8 at `k=19`). |
+| Q-WIRE-3 (pub inputs) | **Strict 32-byte little-endian `Fr::to_repr()`**. `Fr::from_repr` rejects ≥ modulus inputs structurally (`FatalError`). No u64 shortcut on this opcode (legacy `ZKHALO2VERIFY` keeps its shortcut for DarkDex backward compat). |
+| Q-WIRE-4 (VK envelope) | **Self-describing `Halo2TvmBundle`** (see §4 byte layout). Magic `b"HALO2TVM"` (8 bytes ASCII), `BUNDLE_VERSION = 0x01`, `transcript_kind = 0x00` (Blake2b), 6 reserved bytes, then LE-u32-length-prefixed `(config_json, vk_bytes, instances_bytes, proof_bytes)` in that order. |
+| Q-WIRE-5 (fork pinning) | **Inherits Serhii's branch pin** of `gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381` and `gosh-sh/gosh-zk-snark-halo2-utils`. Both deps are already in `tvm_vm/Cargo.toml` under `[dependencies]` with branch pins; promotion to commit-SHA + a format-stability CI gate is a follow-up. |
+| Q-NAME-1 (opcode name) | **`ZKHALO2VERIFYWITHVK` at `0xC7 0x4A`**. Adjacent to Serhii's `ZKHALO2VERIFY` (0xC7 0x49) and below `POSEIDON` (0x50) / `CHKHISTPROOF` (0x51) / `VERGRTH16WITHVK` (0x52). Compiler builtin name pending: `gosh.zkHalo2VerifyWithVK(bundle_cell)`. |
 
-- **`Ok(int(-1))`** — proof verified.
-- **`Ok(int(0))`** — proof rejected by Halo2 verifier (cryptographic
-  reject; well-formed operands, just don't satisfy the relation).
-- **`Err(FatalError(…))`** — structural input error: `vk_cell` bytes
-  don't parse as a `VkBlob`, VK byte stream invalid, `BaseCircuitBuilder`
-  panics on internally-inconsistent config, public input ≥ Fr modulus,
-  `public_inputs_cell` length not a multiple of 32, `proof_cell`
-  exceeds the hard cap, or `config.k` disagrees with the VK's domain
-  `k`.
+Empirical sizes (real Circuit 1B fallback fixture, k=20, 10 signers):
+bundle ≈ 21.2 KB (VK 6.1 KB + proof 14.8 KB + 4 × 32 B instances +
+config_json ~120 B + 16 B header + 4 × 4 B length prefixes).
+Round-trip-tested in
+`acki-nacki-bridge/crates/bridge-prover-orchestrator/tests/halo2_tvm_bundle_round_trip.rs`.
+DarkDex W=8 L0 fixture (k=19, used by this PR's unit tests) yields a
+~9 KB bundle.
 
-The `Ok(false)` vs `FatalError` distinction matches `VERGRTH16`'s
-contract: caller bugs throw, adversarial-but-valid proofs are
-silently rejected.
+## 4. Wire format — `Halo2TvmBundle`
 
-### Rationale for the 3-operand split
-
-| Operand               | Why a separate cell                                                  |
-|-----------------------|----------------------------------------------------------------------|
-| `vk_cell`             | Long-lived. A `TokenBridge` contract stores it once in `c4` / storage at deploy time and re-uses it on every call. Magic + version + transcript_kind framing live here so a drifted producer / consumer is rejected loudly. |
-| `public_inputs_cell`  | Computed per-call from the call arguments. Headerless so a contract can build it O(1) on the hot path — `BUILDER`, repeated `STZEROES`/`STIR`, `ENDC`. |
-| `proof_cell`          | Comes straight from off-chain prover output. Headerless so it can be stored / forwarded verbatim through messages without re-encoding. |
-
-## 3. `VkBlob` wire format (`vk_cell` payload)
-
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│ 0   "VKBLOB\x00\x00"           8 B   magic                       │
-│ 8   0x01                       1 B   version                     │
-│ 9   0x00 = Blake2b             1 B   transcript-kind (Q-WIRE-1)  │
-│ 10  0x00 × 6                   6 B   reserved (zero)             │
-│ 16  cfg_len                    4 B   u32 little-endian           │
-│ 20  config_json                cfg_len B  serde_json(BaseCircuitParams)
-│ ..  vk_len                     4 B   u32 little-endian           │
-│ ..  vk_bytes                   vk_len B  VerifyingKey<G1Affine>  │
-│                                            SerdeFormat::RawBytes │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-Constraints checked on parse:
-
-- Magic matches `b"VKBLOB\x00\x00"`, version = `1`, transcript = `0`.
-- Reserved bytes `[10..16]` are intentionally **not** validated by
-  the parser — they exist for future-proofing (e.g. capability
-  flags). Producers must emit them as zero, but consumers ignore the
-  content.
-- Each length prefix fits in the remaining buffer (no overflow /
-  overrun).
-- No trailing garbage after `vk_bytes`.
-- Total `vk_cell` payload ≤ 1 MiB hard cap.
-
-## 4. `public_inputs_cell` wire format
-
-**No header.** Just a contiguous sequence of `N × 32` little-endian
-`Fr::to_repr()` values. The number of public inputs `N` is implied
-by `payload_len / 32` and is cross-checked against the VK on every
-verify.
-
-Constraints checked on read:
-
-- `payload_len % 32 == 0`.
-- `payload_len ≤ 256 KiB` (= 8192 distinct `Fr`).
-- For each 32-byte chunk: `Fr::from_repr(chunk)` succeeds (i.e.
-  the chunk represents a canonical field element strictly `<` BN254
-  scalar modulus).
-
-### How to assemble `public_inputs_cell` from contract code
-
-Given `N` public inputs as TVM `int`s (each fitting in a 256-bit Fr),
-the contract builds the cell payload in two steps:
-
-1. Encode each `int` as a **32-byte little-endian** byte string and
-   concatenate. TL-B notation:
-   ```text
-   public_inputs#_ {N:#} values:(N * fr_le)
-       = PublicInputs N;
-   fr_le#_ value:(## 256) = FrLittleEndian;
-   ```
-2. `STREF`-build the resulting bytes into a fresh `Cell`. Empty cell
-   (N=0) is legal in principle but rejected by every realistic VK
-   (every Halo2 circuit has at least one public input).
-
-For instances that fit in `u64`, the contract can build the bottom
-8 bytes from the integer and append 24 bytes of zeros — this is the
-common case for amounts, block heights, addresses, hashes (where
-the field element is exactly the 32-byte digest interpreted as
-little-endian `Fr`).
-
-**Worked example (3 inputs):**
+Frozen by the Decisions table above. Producer reference implementation:
+`acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`.
+Consumer reference implementation:
+`tvm_vm/src/executor/zk_halo2_with_vk_bundle.rs`.
 
 ```text
-                   ┌──────────────────────────────────────────────┐
-   instances[0]    │ block_seqno = 7  →  0x07 00..00 (32 B LE)    │
-   instances[1]    │ nullifier   = 0xdead..beef (32 B LE)          │
-   instances[2]    │ commitment  = 0xbabe..cafe (32 B LE)          │
-                   └──────────────────────────────────────────────┘
-   public_inputs_cell payload = bytes[0] ‖ bytes[1] ‖ bytes[2]
-                              (96 B total, no header, no separator)
+  off  size  field
+  ───  ────  ─────────────────────────────────────────────────────────
+    0     8  magic           = b"HALO2TVM" (ASCII, no NUL)
+    8     1  version         = 0x01 (BUNDLE_VERSION)
+    9     1  transcript_kind = 0x00 (Blake2b)
+   10     6  reserved        = 0 × 6
+   16     4  config_len      (u32 LE)
+   20  cl    config_json     (UTF-8 serde_json of `BaseCircuitParams`)
+  ...     4  vk_len          (u32 LE)
+  ...  vl    vk_bytes        (`VerifyingKey::write(SerdeFormat::RawBytes)`)
+  ...     4  instances_len   (u32 LE; must be a multiple of 32)
+  ...  il    instances_bytes (N × 32-byte LE `Fr::to_repr()`, strict)
+  ...     4  proof_len       (u32 LE)
+  ...  pl    proof_bytes     (SHPLONK proof with Blake2b transcript)
 ```
 
-Out-of-range field elements (e.g. flipping a high bit so the chunk
-exceeds the BN254 scalar modulus) are **always** structural errors
-(`FatalError`), not silent verify-fails — this catches caller bugs
-early instead of letting them masquerade as cryptographic rejects.
+All length prefixes are `u32` LE. Producer-side cap: 16 MiB
+(`zk_halo2_with_vk_bundle::MAX_BUNDLE_BYTES`); the consumer fails
+structurally above that cap as a DoS guard.
 
-## 5. `proof_cell` wire format
+### Safety of VK deserialisation
 
-**No header.** Just the SHPLONK proof bytes emitted by
-`Blake2bWrite::<_, _, Challenge255<_>>::finalize()` on the producer
-side. The handler hands these bytes directly to `Blake2bRead::init`
-and runs `halo2_proofs::plonk::verify_proof`.
+The consumer deserialises the VK using
+`SerdeFormat::RawBytes` (NOT `RawBytesUnchecked`). `RawBytes` runs the
+curve-membership check on every group element on read, which is
+soundness-critical for caller-supplied VKs.
+`gosh-zk-snark-halo2-utils::io::read_vk` uses `RawBytesUnchecked` and is
+**deliberately not used** by this opcode — `RawBytesUnchecked` is only
+safe for compile-time-pinned VKs (like Serhii's `DARK_DEX_W8_VK_BYTES`),
+not for runtime-supplied ones.
 
-Constraints checked on read:
+### Per-VK cache
 
-- `payload_len ≤ 1 MiB` hard cap.
-- No further structural validation; any malformed proof is a
-  cryptographic reject (`Ok(false)`), never a `FatalError` — this is
-  necessary to match `VERGRTH16`'s contract (well-formed inputs,
-  arbitrary content).
+Bounded FIFO `HashMap<Vec<u8>, Arc<CachedVk>>` keyed by the bundle's
+`vk_bytes`, capacity 8 (`VK_CACHE_CAPACITY`). Cold-cache verification
+costs ~3 s on `k=20` because `EvaluationDomain::new` precomputes 2^20
+FFT twiddle factors; warm-cache cost is dominated by the actual
+SHPLONK pairing check (~50 ms on a 2024-era laptop). Operators are
+expected to pre-warm cached VKs at node startup (mirroring
+`warmup_halo2()` for the DarkDex W=8 VK in `zk_halo2.rs`).
 
-## 6. Q-WIRE design pivots
+## 5. Implementation layout
 
-| Q | Decision |
-|---|----------|
-| Q-WIRE-1 | Transcript kind byte (in `VkBlob` header) is reserved for future hash agility; only `0x00` (Blake2b) is currently accepted. |
-| Q-WIRE-2 | KZG SRS points (`g[0]`, `g2`, `s_g2`) are globally shared per `k` and embedded as constants in `zk_halo2_utils`. SHPLONK verification only needs those three points; the full multi-MB SRS blob is never loaded at runtime. |
-| Q-WIRE-3 | Public inputs are **strict** 32-byte little-endian `Fr::from_repr`. No `u64` shortcut. Out-of-range bytes are a `FatalError`. |
-| Q-WIRE-4 | VK is self-describing — magic + version + transcript-kind + reserved header + two `u32 LE` length-prefixed chunks (config_json, vk_bytes). Public inputs and proof are headerless because they are computed per-call and don't benefit from per-call framing. |
-| Q-WIRE-5 | Halo2 stack (verifier transcript, multiopen, strategy) is fixed at `(Blake2b, SHPLONK, SingleStrategy)`. Adding GWC / Keccak transcript would require a new transcript kind byte. |
+| File | Role |
+| ---- | ---- |
+| `tvm_vm/src/executor/zk_halo2_with_vk.rs` | Handler entry point + per-VK cache + shared KZG-params builder + `decode_instances_strict` + the actual `Proof::verify_with_vk` call. |
+| `tvm_vm/src/executor/zk_halo2_with_vk_bundle.rs` | Pure wire-format decoder. No crypto; just byte-level validation of magic / version / transcript / chunk lengths / trailing-garbage / instances-multiple-of-32 / oversized bundle. 8 unit tests covering all rejection paths. |
+| `tvm_vm/src/executor/zk_halo2_utils.rs` | Existing module. `KZG_G0_BYTES` / `KZG_G2_BYTES` / `KZG_S_G2_BYTES` promoted to `pub(crate)` so the new opcode can reuse them. |
+| `tvm_vm/src/tests/test_halo2_with_vk.rs` | Real round-trip test. Builds a `Halo2TvmBundle` from the checked-in DarkDex W=8 L0 fixture, pushes it through `execute_zkhalo2_verify_with_vk`, asserts `true`. Negative cases: flipped proof byte (false), tweaked instance Fr (false), bad bundle magic (FatalError). |
+| `tvm_assembler/src/simple.rs` | Mnemonic `ZKHALO2VERIFYWITHVK` → `0xC7 0x4A`. |
+| `tvm_assembler/src/lib.rs` | `gosh_zk_opcode_tests::zk_opcode_bytes_round_trip` table-driven assembler dispatch test. |
+| `tvm_vm/src/executor/engine/handlers.rs` | `c7_handlers.set(0x4A, execute_zkhalo2_verify_with_vk)` under `#[cfg(feature = "gosh")]`. |
+| `tvm_vm/src/executor/gas/gas_state.rs` | `Gas::zkhalo2_verify_with_vk_price()` getter + placeholder `ZKHALO2_VERIFY_WITH_VK_GAS_PRICE = 5_000`. |
 
-## 7. Implementation notes
+## 6. Drive-by fixes applied on this branch
 
-- **VK cache:** bounded FIFO, 8 entries, keyed by `VkBlob.vk_bytes`.
-  Eviction is oldest-insert-first. The cached value holds the
-  deserialised `VerifyingKey<G1Affine>` and a verifier-only
-  `ParamsKZG<Bn256>` rebuilt for the VK's domain `k` via
-  `from_parts(k, vec![g0], Some(vec![]), g2, s_g2)`.
-- **Config-`k` defence-in-depth:** both the cold path (after
-  `VK::read`) and the hot path (cache hit) reject `VkBlob` payloads
-  whose `BaseCircuitParams.k` disagrees with `vk.get_domain().k()`.
-  Catches a malicious blob that reuses a benign VK byte-string but
-  lies about `k` in the JSON header.
-- **Panic safety:** `BaseCircuitBuilder::new(...)` (driven by
-  `VerifyingKey::read::<_, BaseCircuitBuilder<Fr>>`) is not
-  panic-safe for adversarial `BaseCircuitParams` — e.g.
-  `lookup_bits >= k` triggers a `panic!` deep inside halo2-base.
-  The handler wraps the read in `std::panic::catch_unwind` and
-  converts the unwind into a structured `FatalError`, so a single
-  malicious blob cannot crash the executor thread.
-- **VK curve checks:** `SerdeFormat::RawBytes` validates curve
-  membership on every G1 element of the VK as it is read. BN254 G1
-  is prime-order (cofactor=1) so curve membership implies subgroup
-  membership.
-- **Verification call:** the handler invokes
-  `halo2_proofs::plonk::verify_proof::<KZGCommitmentScheme<Bn256>,
-  VerifierSHPLONK<'_, Bn256>, Challenge255<G1Affine>, Blake2bRead<&[u8],
-  G1Affine, Challenge255<G1Affine>>, SingleStrategy<'_, Bn256>>`
-  directly — no `gosh-zk-snark-halo2-utils` dependency. The producer
-  side uses the **same** generic parameters, so any well-formed
-  proof from one is verifiable by the other.
-- **Dependencies:** `tvm_vm/Cargo.toml` is unchanged from
-  `origin/main`. The handler builds against public
-  `halo2-base = "0.5.1"` from crates.io. No gosh-fork patch entries
-  are required.
+The parent branch (`serhii/node-3406-vergrth16-with-vk`) does not compile
+with `--features gosh` as it stands. Two pre-existing breaks were fixed
+inline so this PR's CI can pass:
 
-## 8. Gas model (Q-GAS-1, **must re-benchmark before mainnet**)
+1. **Stray identifier in `gas_state.rs`** — `consume_chkhistproof`
+   contained a bare `full_dex_test_with_final_halo2_circuit` token
+   (looks like a branch-name accidentally pasted into source during a
+   merge). Removed.
+2. **Missing `execute_poseidon` in `zk.rs`** — the dispatch table
+   references `execute_poseidon` at `0xC7 0x50` but the function was
+   dropped during the merge from `full_dex_test_with_final_halo2_circuit`.
+   Restored from `origin/main` verbatim.
+3. **Missing `IntegerData::from_unsigned_bytes_le`** — same merge dropped
+   this method. Restored from `origin/main` verbatim. Needed by
+   `execute_poseidon`.
 
-Current placeholder:
+These are intentionally **separate, narrow** fixes and easy to drop into
+Serhii's branch before merge if preferred. They are listed at the top of
+the PR's commits.
 
-```rust
-pub const ZKHALO2_VERIFY_WITH_VK_GAS_PRICE: i64 = 5_000;
-```
+## 7. Re-benchmark TODO before mainnet
 
-This is a structural guess modelled on
-`VERGRTH16_GAS_PRICE = 2_380`, scaled up for the larger VK
-(kilobytes vs 192 B) and SHPLONK pairing cost. The cold path
-includes `EvaluationDomain` construction at `k = 20` which
-benchmarks at ~3 seconds on commodity hardware — that wall-clock
-is **not** charged here. The operational assumption is that
-operators pre-warm the per-VK cache at node startup so the
-production hot path dominates.
+`ZKHALO2_VERIFY_WITH_VK_GAS_PRICE = 5_000` is a placeholder modelled on
+`VERGRTH16_WITH_VK_GAS_PRICE`. The numbers we want to nail down with a
+proper benchmark:
 
-**Open task:** measure warm + cold path wall-clock against a
-realistic bridge Circuit 1B `(vk_cell, public_inputs_cell, proof_cell)`
-triple (already checked in as `tvm_vm/halo2_test_data/fallback_*.bin`)
-and either set the constant to the warm-path cost (and document the
-cold-path DoS surface) or introduce a `k`-scaled / cold-path
-surcharge.
+- **Warm-cache verify** — VK already in the LRU, just bundle parse + 
+  `verify_proof`. Expected: ~50 ms wall-clock at `k=20` → ~few thousand
+  gas at typical AN gas-to-CPU ratio.
+- **Cold-cache verify** — VK newly inserted, plus
+  `EvaluationDomain::new(k)` (the slow step). Expected: ~3 s at `k=20`.
+  Cold path is **NOT** charged extra in the current placeholder because
+  operators are expected to pre-warm; if pre-warming proves
+  operationally fragile we'll add a gas multiplier on the cold path.
+- **Bundle parse + strict-LE instance decode** — pure bytewise work.
+  Expected: <1 ms for typical bundle sizes.
 
-## 9. Cross-references
+## Cooperation model (going forward)
 
-- Wire-format producer: `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`
-- Integration reference (consumer-side): `acki-nacki-bridge/docs/zkhalo2verifywithvk_reference.md`
-- Assembler mnemonic: `tvm_assembler/src/simple.rs` (`ZKHALO2VERIFYWITHVK => 0xC7, 0x4A`)
-- Round-trip test guarding mnemonic↔byte mapping: `tvm_assembler/src/lib.rs` → `gosh_zk_opcode_tests::zk_opcode_bytes_round_trip`
-- Integration tests (12 — positive + 10 negative + real bridge Circuit 1B):
-  `tvm_vm/src/tests/test_halo2_with_vk.rs`
-- Real bridge Circuit 1B fixture (produced by
-  `bridge-prover-orchestrator` round-trip test): 
-  `tvm_vm/halo2_test_data/fallback_{vk_blob,public_inputs,proof}.bin`
+1. This PR rebases cleanly onto `serhii/node-3406-vergrth16-with-vk`.
+   Once that branch is on `main`, this PR rebases onto `main` as a
+   single follow-up commit.
+2. In parallel, the bridge team lands the producer-side companion
+   changes in `Pruvendo/acki-nacki-bridge`:
+   - `crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs` — wire
+     format (already in tree, round-trip-tested against real Circuit 1B
+     fallback proofs).
+   - `TVM-Solidity-Compiler` `gosh.zkHalo2VerifyWithVK` builtin — PR
+     pending.
+   - AN-side `TokenBridge.finalizeDeposit(...)` Solidity — PR pending.

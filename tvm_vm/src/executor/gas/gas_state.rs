@@ -234,8 +234,10 @@ impl Gas {
         self.use_gas(CHKHISTPROOF_GAS_PRICE)
     }
 
+    /// Compute `ZKHALO2VERIFYWITHVK` usage cost. Placeholder value, to be
+    /// re-benchmarked at real-impl follow-up time (see
+    /// `tvm_vm/src/executor/zk_halo2_with_vk.rs`).
     #[cfg(feature = "gosh")]
-    /// Compute ZKHALO2VERIFYWITHVK usage cost
     pub const fn zkhalo2_verify_with_vk_price() -> i64 {
         ZKHALO2_VERIFY_WITH_VK_GAS_PRICE
     }

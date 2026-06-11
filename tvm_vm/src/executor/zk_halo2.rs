@@ -4,9 +4,9 @@ use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
-use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
+use halo2_base::utils::ScalarField;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -28,7 +28,7 @@ static VK_AND_PARAMS: OnceLock<(VerifyingKey<G1Affine>, ParamsKZG<Bn256>)> = Onc
 
 fn get_vk_and_params() -> &'static (VerifyingKey<G1Affine>, ParamsKZG<Bn256>) {
     VK_AND_PARAMS.get_or_init(|| {
-        let vk = crate::executor::zk_halo2_utils::build_dark_dex_w128_vk();
+        let vk = crate::executor::zk_halo2_utils::build_dark_dex_w8_vk();
         let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params();
         (vk, params)
     })
@@ -119,19 +119,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
             };
             pub_inputs.push(Fr::from(elem));
         } else {
-            // SECURITY: `Fr::from_bytes_le` calls `Fr::from_repr(repr).unwrap()`,
-            // which panics for any 32-byte LE value >= the BN254 scalar field
-            // modulus p (~2^254). `pub_input_bytes` comes from attacker-controlled
-            // cell data, so a crafted input (e.g. 0xFF…FF = 2^256-1) would crash
-            // the executor thread. Use the checked `from_repr` and abort the
-            // instruction cleanly on non-canonical encodings, matching the
-            // existing `% 32 != 0` length check above.
-            let mut repr = <Fr as PrimeField>::Repr::default();
-            repr.as_mut().copy_from_slice(pub_input_bytes);
-            let Some(fr) = Option::<Fr>::from(Fr::from_repr(repr)) else {
-                fail!(ExceptionCode::FatalError);
-            };
-            pub_inputs.push(fr);
+            pub_inputs.push(Fr::from_bytes_le(pub_input_bytes));
         }
     }
 
@@ -145,20 +133,7 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
 // ---------------------------------------------------------------------------
 // ZKHALO2VERIFYWITHVK (0xC7 0x4A) — caller-supplied-VK verification.
 //
-// The opcode handler lives in `super::zk_halo2_with_vk`; it performs a fully
-// in-process Halo2 SHPLONK verification using:
-//   - the caller-supplied `VkBlob` (magic + version + transcript + config_json
-//     + vk_bytes) popped from the stack,
-//   - the chain-wide shared KZG verifier points hard-coded in
-//     `super::zk_halo2_utils` (Hermez Perpetual Powers of Tau, BN254).
-//
-// Earlier revisions of this opcode shelled out to an external `an_rlc_verify`
-// binary (configured through the `AN_RLC_VERIFY_BIN` / `AN_RLC_SRS_DIR` env
-// vars). That code path has been removed: every parameter the verifier needs
-// is now hard-coded into the node binary, and the tests run end-to-end without
-// any environment overrides. The dispatcher in `engine/handlers.rs` already
-// binds `0x4A` to `zk_halo2_with_vk::execute_zkhalo2_verify_with_vk`, so this
-// module re-exports it under the same name for callers that still reference
-// the legacy path (e.g. `tvm_vm/src/tests/test_halo2.rs`).
+// Handler lives in `super::zk_halo2_with_vk` (Base + RLC `circuit_shape` paths).
+// Re-exported here for legacy callers (e.g. `tvm_vm/src/tests/test_halo2.rs`).
 // ---------------------------------------------------------------------------
 pub(crate) use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;

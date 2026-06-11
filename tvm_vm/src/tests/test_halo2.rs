@@ -264,17 +264,9 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // The committed fixtures (`halo2_test_data/deposit_10proofs/`: shared
 // `deposit_vk_blob.bin` plus `proof_00`..`proof_09`) carry the deposit
 // circuit's **v2 / Rlc-shape** VkBlob (axiom-eth `EthCircuitImpl<Fr, _>`
-// shape). The in-process handler in `crate::executor::zk_halo2_with_vk` only
-// knows how to deserialise **v1 / Base-shape** VkBlobs
-// (`BaseCircuitBuilder<Fr>`), because pulling `axiom-eth` into tvm_vm would
-// clash with the gosh-halo2 `halo2_proofs` source the dark-dex verifier already
-// links against. These three tests are therefore `#[ignore]`-gated; they
-// exercise the content-addressable wire format end-to-end whenever a future
-// revision adds an in-process RLC verifier (or wires up an out-of-process one
-// without env vars). All paths are hard-coded — running them only needs the
-// committed fixtures, no env vars, no external binaries:
-//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs --
-// --ignored --nocapture
+// shape). The handler in `crate::executor::zk_halo2_with_vk` reads both
+// v1/Base and v2/Rlc VkBlobs (`circuit_shape` byte). All paths are hard-coded:
+//   cargo test -p tvm_vm test_zkhalo2_with_vk_deposit_10_real_proofs --nocapture
 // ---------------------------------------------------------------------------
 
 /// Directory (relative to the `tvm_vm` crate root) holding the committed
@@ -296,29 +288,62 @@ fn deposit_proof_path(i: usize) -> String {
     format!("{}/proof_{:02}/proof.bin", DEPOSIT_SET_DIR, i)
 }
 
-fn run_zkhalo2_with_vk(vk_path: &str, pubin_path: &str, proof_path: &str) -> bool {
+/// Parse a producer-side `VkBlob` (`VKBLOB\x00\x00` header) into
+/// `(config_json, vk_bytes)` — the two chunks that feed a v2 RLC
+/// `Halo2TvmBundle`.
+fn parse_vk_blob_chunks(vk_blob: &[u8]) -> (Vec<u8>, Vec<u8>) {
+    const VK_MAGIC: &[u8; 8] = b"VKBLOB\x00\x00";
+    const HEADER_LEN: usize = 16;
+    const LEN: usize = 4;
+    assert!(vk_blob.starts_with(VK_MAGIC), "expected VKBLOB magic");
+    let mut off = HEADER_LEN;
+    let read_u32 = |buf: &[u8], o: &mut usize| -> usize {
+        let n = u32::from_le_bytes(buf[*o..*o + LEN].try_into().unwrap()) as usize;
+        *o += LEN;
+        n
+    };
+    let cfg_len = read_u32(vk_blob, &mut off);
+    let cfg = vk_blob[off..off + cfg_len].to_vec();
+    off += cfg_len;
+    let vk_len = read_u32(vk_blob, &mut off);
+    let vk = vk_blob[off..off + vk_len].to_vec();
+    (cfg, vk)
+}
+
+/// Build a v2 RLC `Halo2TvmBundle` (single opcode operand) from the
+/// deposit fixture triple.
+fn build_deposit_bundle(config: &[u8], vk: &[u8], instances: &[u8], proof: &[u8]) -> Vec<u8> {
+    let mut out = Vec::new();
+    out.extend_from_slice(b"HALO2TVM");
+    out.push(2); // BUNDLE_VERSION_V2
+    out.push(0); // TRANSCRIPT_BLAKE2B
+    out.push(1); // CIRCUIT_SHAPE_RLC
+    out.extend_from_slice(&[0u8; 5]);
+    for chunk in [config, vk, instances, proof] {
+        out.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
+        out.extend_from_slice(chunk);
+    }
+    out
+}
+
+fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -> bool {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
-    // Push in source-argument order: vk_blob, public_inputs, proof (top last).
-    let vk_bytes = std::fs::read(vk_path).expect("read vk_blob");
-    let vk_cell = pack_data_to_cell(&vk_bytes, &mut 0).unwrap();
-    engine.cc.stack.push(StackItem::cell(vk_cell));
+    let vk_blob = std::fs::read(vk_blob_path).expect("read vk_blob");
+    let (cfg, vk) = parse_vk_blob_chunks(&vk_blob);
+    let instances = std::fs::read(pubin_path).expect("read public_inputs");
+    let proof = std::fs::read(proof_path).expect("read proof");
+    let bundle = build_deposit_bundle(&cfg, &vk, &instances, &proof);
 
-    let pubin_bytes = std::fs::read(pubin_path).expect("read public_inputs");
-    let pubin_cell = pack_data_to_cell(&pubin_bytes, &mut 0).unwrap();
-    engine.cc.stack.push(StackItem::cell(pubin_cell));
-
-    let proof_bytes = std::fs::read(proof_path).expect("read proof");
-    let proof_cell = pack_data_to_cell(&proof_bytes, &mut 0).unwrap();
-    engine.cc.stack.push(StackItem::cell(proof_cell));
+    let bundle_cell = pack_data_to_cell(&bundle, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(bundle_cell));
 
     execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     engine.cc.stack.get(0).as_bool().unwrap()
 }
 
 #[test]
-#[ignore = "deposit VkBlob is v2/Rlc shape; in-process verifier expects v1/Base. See module comment."]
 fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
     for i in 0..DEPOSIT_PROOF_COUNT {
         let res = run_zkhalo2_with_vk(
@@ -333,23 +358,18 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
 }
 
 #[test]
-#[ignore = "deposit VkBlob is v2/Rlc shape; in-process verifier expects v1/Base. See module comment."]
 fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
-    let vk_bytes = std::fs::read(deposit_vk_blob_path()).expect("read vk_blob");
-    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&vk_bytes, &mut 0).unwrap()));
+    let (cfg, vk) = parse_vk_blob_chunks(&std::fs::read(deposit_vk_blob_path()).expect("read vk_blob"));
+    let instances = std::fs::read(deposit_pubin_path(0)).expect("read public_inputs");
+    let mut proof = std::fs::read(deposit_proof_path(0)).expect("read proof");
+    let idx = proof.len() / 2;
+    proof[idx] ^= 0xFF;
+    let bundle = build_deposit_bundle(&cfg, &vk, &instances, &proof);
 
-    let pubin_bytes = std::fs::read(deposit_pubin_path(0)).expect("read public_inputs");
-    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&pubin_bytes, &mut 0).unwrap()));
-
-    // Flip a byte deep in the proof body: structurally valid, fails verification.
-    let mut proof_bytes = std::fs::read(deposit_proof_path(0)).expect("read proof");
-    let idx = proof_bytes.len() / 2;
-    proof_bytes[idx] ^= 0xFF;
-    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&proof_bytes, &mut 0).unwrap()));
-
+    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&bundle, &mut 0).unwrap()));
     execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     let verdict = engine.cc.stack.get(0).as_bool().unwrap();
     println!("ZKHALO2VERIFYWITHVK corrupt proof: verdict={}", verdict);
@@ -357,7 +377,6 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
 }
 
 #[test]
-#[ignore = "deposit VkBlob is v2/Rlc shape; in-process verifier expects v1/Base. See module comment."]
 fn test_zkhalo2_with_vk_mismatched_public_inputs_reject() {
     // proof_00's proof paired with proof_01's public inputs must REJECT: each
     // proof is bound to its own public inputs, so a cross-proof pairing fails.
