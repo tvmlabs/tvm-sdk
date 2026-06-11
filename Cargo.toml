@@ -142,29 +142,31 @@ version = "0.28"
 # cannot patch multiple sources — cargo then keeps the original for the loser, yielding
 # two halo2-base copies).
 #
-# The fork is hosted at `github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381`
+# The fork is hosted at `github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381`
 # on branch `bump-halo2-lib-v0.4.1` (halo2-base 0.4.1 / zkevm-hashes 0.2.1 — the version
-# axiom-eth v0.4.3 builds against, kept stable-Rust-compatible). This is a temporary
-# publish-so-CI-can-fetch home; once the gosh PR lands, swap these URLs for
-# `https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381` at the merged rev.
+# axiom-eth v0.4.3 builds against, kept stable-Rust-compatible). The branch sits one
+# commit ahead of `main` (commit `26b3224`, "Bump fork to axiom halo2-lib v0.4.1 /
+# zkevm-hashes 0.2.1"); `main` lacks the v0.4.1 API surface axiom-eth needs.
 # NOTE: editing the fork requires a commit + `cargo update` to refetch.
 [patch.crates-io]
-halo2-base = { git = "https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+
 halo2-axiom = { git = "https://github.com/gosh-sh/halo2-axiom", branch = "main" }
 
 # tvm_vm + gosh-zk-snark-halo2-utils pull halo2-base from this git source.
 [patch."https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381"]
-halo2-base = { git = "https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
 
 # axiom-eth + snark-verifier-sdk pull halo2-base / halo2-ecc / zkevm-hashes from here.
 [patch."https://github.com/axiom-crypto/halo2-lib.git"]
-halo2-base = { git = "https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
-halo2-ecc = { git = "https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
-zkevm-hashes = { git = "https://github.com/SergeSPb/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+halo2-ecc = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+zkevm-hashes = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
 
 # axiom-eth: fork carrying a one-line patch (RlcManager names
 # `VirtualRegionManager::Assignment` explicitly) so it builds against the
-# gosh halo2-base fork above. Hosted at `github.com/SergeSPb/axiom-eth`,
-# branch `gosh-stable-rlcmanager-assignment` (temporary publish-for-CI home).
+# gosh halo2-base fork above. Hosted at `github.com/gosh-sh/axiom-eth`,
+# branch `gosh-stable-rlcmanager-assignment` (one commit `687a6da` ahead of
+# upstream axiom-crypto/axiom-eth `main`).
 [patch."https://github.com/axiom-crypto/axiom-eth"]
-axiom-eth = { git = "https://github.com/SergeSPb/axiom-eth", branch = "gosh-stable-rlcmanager-assignment" }
+axiom-eth = { git = "https://github.com/gosh-sh/axiom-eth", branch = "gosh-stable-rlcmanager-assignment" }
