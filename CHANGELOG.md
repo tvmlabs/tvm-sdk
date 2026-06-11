@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 
+## [3.0.2-rc]
+
+### Fixed
+- `tvm_client`/`tvm-cli`: sending a message (e.g. `tvm-cli call`/`callx`) to a node that serves only the REST message API and returns 404 on `/graphql` no longer fails with `code 11: Server responded with code 404`. The GraphQL server-version probe is now best-effort: when GraphQL is reachable its `info.version` is trusted as before; when it is unavailable the send proceeds using the current v3 wire format instead of aborting, mirroring the existing `get_account` fallback.
+
 ## [3.0.1] - 2026-06-08
 
 ### Fixed
