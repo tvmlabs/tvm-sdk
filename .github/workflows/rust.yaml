@@ -34,8 +34,40 @@ jobs:
       # - run: cargo clippy -- -D warnings
 
   test:
-    name: Test / Priority Units
+    name: Test / ${{ matrix.name }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Core Libs
+            command: |
+              cargo test -r --lib --no-fail-fast \
+                -p tvm_abi \
+                -p tvm_types \
+                -p tvm_block_json \
+                -p tvm_sdk \
+                -p tvm_vm \
+                --features tvm_vm/gosh,tvm_vm/signature_with_id
+
+          - name: tvm_block / default
+            command: |
+              cargo test -r --tests --no-fail-fast \
+                -p tvm_block
+
+          - name: tvm_block / signature_with_id
+            command: |
+              cargo test -r --lib --no-fail-fast \
+                -p tvm_block \
+                --features tvm_block/signature_with_id
+
+          - name: tvm_executor
+            command: |
+              cargo test -r --no-fail-fast \
+                -p tvm_executor \
+                --lib \
+                --test node_executor_gosh \
+                --features tvm_executor/gosh,tvm_executor/signature_with_id,tvm_executor/wasmtime
     env:
       CARGO_TERM_COLOR: always
       SCCACHE_GHA_ENABLED: "true"
@@ -56,20 +88,8 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Run priority unit tests
-        run: |
-          cargo test -r --lib --no-fail-fast \
-            -p tvm_abi \
-            -p tvm_block \
-            -p tvm_types \
-            -p tvm_block_json \
-            -p tvm_sdk \
-            -p tvm_vm \
-            -p tvm_executor \
-            --features tvm_vm/gosh,tvm_executor/signature_with_id
-
-          cargo test -r --tests --no-fail-fast \
-            -p tvm_block
+      - name: Run ${{ matrix.name }} tests
+        run: ${{ matrix.command }}
 
   test-client:
     name: Test / tvm_client
