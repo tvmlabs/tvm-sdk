@@ -216,8 +216,6 @@ pub async fn get_account(
                     None => "null".to_owned(),
                 };
 
-                let dapp_id = dapp_id.as_deref().unwrap_or("None");
-
                 let ecc_balance = acc
                     .balance()
                     .map(|balance| {
@@ -247,7 +245,7 @@ pub async fn get_account(
                     );
                     acc_json["dapp_id"] = json!(dapp_id);
                     acc_json["ecc_balance"] = ecc_balance;
-                    json_results.push(acc_json);
+                    json_res = acc_json;
                 } else {
                     print_account(
                         config,
@@ -290,7 +288,7 @@ pub async fn get_account(
                     println!("ecc:             {}", serde_json::to_string(&ecc_balance).unwrap());
                 }
             } else if config.is_json {
-                json_results.push(json_account(
+                json_res = json_account(
                     Some(acc_type),
                     Some(address.clone()),
                     None,
@@ -300,7 +298,7 @@ pub async fn get_account(
                     None,
                     None,
                     *state_timestamp,
-                ));
+                );
             } else {
                 print_account(
                     config,
@@ -329,10 +327,10 @@ pub async fn get_account(
                 normalized.as_deref().map_or(false, |n| found_addresses.iter().any(|f| f == n));
             if !is_found {
                 if config.is_json {
-                    json_results.push(json!({
+                    json_res = json!({
                        "address": address.clone(),
                        "acc_type": "NonExist"
-                    }));
+                    });
                 } else {
                     println!("{} not found", address);
                     println!();
@@ -340,11 +338,7 @@ pub async fn get_account(
             }
         }
         if config.is_json {
-            if json_results.len() == 1 {
-                println!("{:#}", json_results[0]);
-            } else {
-                println!("{:#}", Value::Array(json_results));
-            }
+            println!("{:#}", json_res);
         }
     } else if config.is_json {
         println!("{{\n}}");
