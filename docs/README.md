@@ -1,5 +1,13 @@
 # Dapp ID Full Guide: creation, fees, centralized replenishment
 
+{% hint style="info" %}
+**Upgrading from `tvm_client` / `tvm-cli` 2.x?** See the
+[3.0.0 migration guide](MIGRATION-3.0.md) for breaking changes in the
+SDK types and CLI inputs (renamed `address` → `account_id`,
+`dst_dapp_id` → `dapp_id`, the extended `dapp_id::account_id` address
+form, and required `--dst-dapp-id` on deploy commands against v3 nodes).
+{% endhint %}
+
 ## **What will you learn from this guide?** <a href="#prerequisites" id="prerequisites"></a>
 
 * How to create your [Dapp ID](https://docs.ackinacki.com/glossary#dapp-id)
