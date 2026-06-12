@@ -8,6 +8,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+
+// 2022-2026 (c) Copyright Contributors to the GOSH DAO. All rights reserved.
+//
+
 use clap::Arg;
 use clap::ArgMatches;
 use clap::Command;
@@ -23,6 +27,7 @@ use tvm_client::abi::decode_account_data;
 use tvm_types::Cell;
 use tvm_types::SliceData;
 use tvm_types::base64_decode;
+use tvm_types::base64_encode;
 use tvm_types::read_single_root_boc;
 use tvm_types::write_boc;
 
@@ -432,10 +437,41 @@ async fn decode_body(
 }
 
 async fn decode_message(msg_boc: Vec<u8>, abi_path: Option<String>) -> Result<String, String> {
-    let tvm_msg = tvm_sdk::Contract::deserialize_message(&msg_boc[..])
-        .map_err(|e| format!("failed to deserialize message boc: {}", e))?;
+    let tvm_msg = match tvm_sdk::Contract::deserialize_message(&msg_boc[..]) {
+        Ok(tvm_msg) => tvm_msg,
+        Err(err) => {
+            if let Some(abi_path) = abi_path {
+                return decode_message_body_boc(msg_boc, abi_path, err.to_string()).await;
+            }
+            return Err(format!("failed to deserialize message boc: {}", err));
+        }
+    };
     let config = Config::default();
     let result = msg_printer::serialize_msg(&tvm_msg, abi_path, &config).await?;
+    serde_json::to_string_pretty(&result)
+        .map_err(|e| format!("Failed to serialize the result: {}", e))
+}
+
+async fn decode_message_body_boc(
+    body_boc: Vec<u8>,
+    abi_path: String,
+    message_decode_error: String,
+) -> Result<String, String> {
+    let config = Config::default();
+    let ton = create_client_local()?;
+    let body_call = msg_printer::serialize_body(body_boc.clone(), &abi_path, ton, &config)
+        .await
+        .map_err(|body_err| {
+            format!(
+                "failed to deserialize message boc: {}; failed to decode message body boc: {}",
+                message_decode_error, body_err
+            )
+        })?;
+    let result = json!({
+        "Body": base64_encode(&body_boc),
+        "BodyCall": body_call,
+    });
+
     serde_json::to_string_pretty(&result)
         .map_err(|e| format!("Failed to serialize the result: {}", e))
 }
@@ -708,6 +744,26 @@ mod tests {
     async fn test_decode_body_json() {
         let body = "te6ccgEBAgEAlgAB4ddyAENPhARLqvYWfcfwyY4fDOfGj88sVFpJjVp9Rh4QN6iL06hBowkex5kc8haTCwWTnugx1OKTuxOumBzdGwLCSzzna0XhE6urkzQv0XbzKbLpZicIiuqBenAdx6nbCkAAAGCSbtgxWLjxbUl77IIgAQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGU=";
         let config = Config::default();
-        decode_body(body, "tests/decode_body.abi.json", true, &config).await.unwrap();
+        let abi_path = format!(
+            "{}/../tvm_client/src/tests/contracts/abi_v2/Wallet.abi.json",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        decode_body(body, &abi_path, true, &config).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_decode_msg_accepts_body_boc_json() {
+        let body = "te6ccgEBAwEAjwACo2+no2wyAkB+MuqZCHtRwDm2zVzLVxUTBnW5j2J7MuI0qdObuQAAAAGAGihtF2PLyyrMusIxaVDCQ/Kd68OR19zsIL5qSqSptrQgAAAAMAAAABwCAQAj0AAAAAAAAAAAAAAAAAAAADJAAEXQQAuAnkoeStxQDpGfxIWTebJgMbu91dZIJGZc7PwxEGJFeA==";
+        let body_boc = base64_decode(body).unwrap();
+        let out = decode_message(
+            body_boc,
+            Some("../docs/.gitbook/assets/PrivateNote.abi.json".to_owned()),
+        )
+        .await
+        .unwrap();
+        let json: serde_json::Value = serde_json::from_str(&out).unwrap();
+
+        assert_eq!(json["Body"], body);
+        assert!(json["BodyCall"]["PMPDeployed"].is_object());
     }
 }

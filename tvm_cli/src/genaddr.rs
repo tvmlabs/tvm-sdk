@@ -20,6 +20,14 @@ use crate::helpers::load_abi;
 use crate::helpers::load_abi_str;
 use crate::helpers::read_keys;
 
+/// Builds the self-rooted `dapp_id::account_id` form from a freshly
+/// generated address. For a not-yet-deployed contract dapp_id == account_id,
+/// so both halves are the bare account hex (any workchain prefix dropped).
+fn self_rooted_form(addr: &str) -> String {
+    let account_hex = addr.split_once(':').map_or(addr, |(_, rest)| rest);
+    format!("{account_hex}::{account_hex}")
+}
+
 pub async fn generate_address(
     config: &Config,
     tvc: &str,
@@ -95,6 +103,7 @@ pub async fn generate_address(
             println!(r#"Seed phrase: "{}""#, phrase);
         }
         println!("Raw address: {}", addr);
+        println!("dapp::account: {}", self_rooted_form(&addr));
         println!("Succeeded");
     } else {
         let mut res = json!({});
@@ -102,6 +111,7 @@ pub async fn generate_address(
             res["seed_phrase"] = json!(phrase);
         }
         res["raw_address"] = json!(addr);
+        res["dapp_account"] = json!(self_rooted_form(&addr));
         println!("{:#}", res);
     }
     Ok(())
@@ -166,4 +176,26 @@ fn update_contract_state(
         .map_err(|e| format!("failed to update the tvc file: {}", e))?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::self_rooted_form;
+
+    const ACC: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
+    #[test]
+    fn self_rooted_form_strips_workchain_and_mirrors() {
+        assert_eq!(self_rooted_form(&format!("0:{ACC}")), format!("{ACC}::{ACC}"));
+    }
+
+    #[test]
+    fn self_rooted_form_handles_bare_hex() {
+        assert_eq!(self_rooted_form(ACC), format!("{ACC}::{ACC}"));
+    }
+
+    #[test]
+    fn self_rooted_form_handles_masterchain_prefix() {
+        assert_eq!(self_rooted_form(&format!("-1:{ACC}")), format!("{ACC}::{ACC}"));
+    }
 }

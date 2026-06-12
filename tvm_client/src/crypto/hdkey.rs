@@ -155,7 +155,7 @@ pub fn hdkey_derive_from_xprv(
 pub struct ParamsOfHDKeyDeriveFromXPrvPath {
     /// Serialized extended private key
     pub xprv: String,
-    /// Derivation path, for instance "m/44'/396'/0'/0/0"
+    /// Derivation path, for instance "m/44'/1331'/0'/0/0"
     pub path: String,
 }
 

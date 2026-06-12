@@ -28,6 +28,7 @@ use crate::helpers::create_client_local;
 use crate::helpers::create_client_verbose;
 use crate::helpers::load_abi;
 use crate::helpers::now_ms;
+use crate::helpers::strip_workchain;
 use crate::message::EncodedMessage;
 use crate::message::display_generated_message;
 
@@ -44,6 +45,11 @@ pub async fn deploy_contract(
 ) -> Result<(), String> {
     let config = &full_config.config;
     let tvm_client = create_client_verbose(config)?;
+
+    // dapp_id is always required on the CLI (including --fee). The SDK
+    // ignores it on the wire for legacy v2 servers, but it must be
+    // supplied explicitly here.
+    require_dst_dapp_id(dst_dapp_id)?;
 
     if !is_fee && !config.is_json {
         println!("Deploying...");
@@ -72,6 +78,13 @@ pub async fn deploy_contract(
         serde_json::from_value(result.clone())
             .map_err(|e| format!("failed to convert result: {e}"))?;
 
+    // For tvm-cli deploys the new contract roots its own dapp, so the
+    // dapp_id equals the account_id. Surface this in `deployed_at` using
+    // the extended `dapp_id::account_id` form (both halves are the same
+    // bare 64-hex account id, with the workchain prefix stripped).
+    let account_id = strip_workchain(&addr)?;
+    let deployed_at = format!("{account_id}::{account_id}");
+
     if !config.is_json {
         if !config.async_call {
             println!("Transaction succeeded.");
@@ -83,13 +96,13 @@ pub async fn deploy_contract(
                 println!("{k}: {v}");
             }
         });
-        println!("Contract deployed at address: {}", addr);
+        println!("Contract deployed at address: {}", deployed_at);
     } else {
-        map.insert("deployed_at".to_string(), serde_json::Value::String(addr.clone()));
+        map.insert("deployed_at".to_string(), serde_json::Value::String(deployed_at.clone()));
         print_json_result(serde_json::Value::Object(map), config)?;
     }
     if let Some(alias) = alias {
-        full_config.add_alias(alias, Some(addr), Some(abi.to_string()), keys_file)?;
+        full_config.add_alias(alias, Some(deployed_at), Some(abi.to_string()), keys_file)?;
     }
     Ok(())
 }
@@ -152,6 +165,17 @@ pub async fn prepare_deploy_message(
     .await
 }
 
+/// Validates that `--dst-dapp-id` was supplied as a 64-character hex
+/// dapp_id. Required for every deploy regardless of node version (use all
+/// zeros for a self-rooted dapp).
+fn require_dst_dapp_id(dst_dapp_id: Option<&str>) -> Result<String, String> {
+    let dapp_id = dst_dapp_id.unwrap_or("");
+    if !crate::helpers::is_hex64(dapp_id) {
+        return Err("--dst-dapp-id is required (pass a 64-character hex dapp_id)".to_string());
+    }
+    Ok(dapp_id.to_string())
+}
+
 pub async fn prepare_deploy_message_params(
     tvc_bytes: &[u8],
     abi: Abi,
@@ -197,4 +221,58 @@ pub async fn prepare_deploy_message_params(
         },
         address,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::require_dst_dapp_id;
+
+    const VALID: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+
+    #[test]
+    fn require_dst_dapp_id_accepts_64_hex() {
+        assert_eq!(require_dst_dapp_id(Some(VALID)).unwrap(), VALID);
+    }
+
+    #[test]
+    fn require_dst_dapp_id_accepts_uppercase_hex() {
+        let upper = "A".repeat(64);
+        assert_eq!(require_dst_dapp_id(Some(&upper)).unwrap(), upper);
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_missing() {
+        assert!(require_dst_dapp_id(None).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_empty() {
+        assert!(require_dst_dapp_id(Some("")).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_short() {
+        assert!(require_dst_dapp_id(Some("dead")).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_non_hex() {
+        // Exactly 64 chars but non-hex content, so the hex check (not the
+        // length check) is what rejects it.
+        let bad = "z".repeat(64);
+        assert_eq!(bad.len(), 64);
+        assert!(require_dst_dapp_id(Some(&bad)).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_63_chars() {
+        let short = "a".repeat(63);
+        assert!(require_dst_dapp_id(Some(&short)).is_err());
+    }
+
+    #[test]
+    fn require_dst_dapp_id_rejects_65_chars() {
+        let long = "a".repeat(65);
+        assert!(require_dst_dapp_id(Some(&long)).is_err());
+    }
 }

@@ -189,7 +189,7 @@ pub async fn send_message_and_wait(
         ParamsOfSendMessage {
             message: msg.clone(),
             abi: abi.clone(),
-            dst_dapp_id: dst_dapp_id.map(ToString::to_string),
+            dapp_id: dst_dapp_id.map(String::from).unwrap_or_default(),
             ..Default::default()
         },
         callback,
@@ -220,7 +220,7 @@ pub async fn send_message(
             message: msg.clone(),
             abi,
             thread_id: thread_id.map(ToString::to_string),
-            dst_dapp_id: dst_dapp_id.map(ToString::to_string),
+            dapp_id: dst_dapp_id.map(String::from).unwrap_or_default(),
             ..Default::default()
         },
         callback,
@@ -248,13 +248,13 @@ pub async fn process_message(
             println!("MessageId: {}", message_id)
         }
     };
-    let dst_dapp_id = dst_dapp_id.map(ToString::to_string);
+    let dapp_id = dst_dapp_id.map(String::from).unwrap_or_default();
     let res = if !config.is_json {
         tvm_client::processing::process_message(
             ton.clone(),
             ParamsOfProcessMessage {
                 message_encode_params: msg.clone(),
-                dst_dapp_id: dst_dapp_id.clone(),
+                dapp_id: dapp_id.clone(),
                 ..Default::default()
             },
             callback,
@@ -266,7 +266,7 @@ pub async fn process_message(
             ParamsOfProcessMessage {
                 message_encode_params: msg.clone(),
                 send_events: true,
-                dst_dapp_id,
+                dapp_id,
             },
             |_| async move {},
         )

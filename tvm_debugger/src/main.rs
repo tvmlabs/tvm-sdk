@@ -318,6 +318,7 @@ mod tests {
             json: true,
             trace: false,
             replace_code: None,
+            block_seq_no: None,
             message_dst_dapp_id: None,
             message_source_dapp_id: None,
         }

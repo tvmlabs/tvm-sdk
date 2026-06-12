@@ -1317,8 +1317,6 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
         .map(|s| s.to_string())
         .or(config.keys_path.clone());
 
-    let thread_id = matches.value_of("THREAD");
-
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
         print_args!(address, method, params, abi, keys, lifetime, output);
@@ -1327,10 +1325,17 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
 
     match call {
         CallType::Call | CallType::Fee => {
+            // The `message` subcommand does not define a THREAD argument, so
+            // only read it on the call/fee path (clap panics on an unknown id).
+            let thread_id = matches.value_of("THREAD");
             let is_fee = matches!(call, CallType::Fee);
             call_contract(
                 config,
-                &sdk_addr.account_id,
+                // Pass the full round-trippable `dapp_id::account_id` form:
+                // call_contract re-parses the address via SdkAddress::from_str
+                // (prepare_message_params / emulate_locally), which rejects the
+                // bare account_id.
+                &sdk_addr.to_string(),
                 &abi.unwrap(),
                 method.unwrap(),
                 &params.unwrap(),
@@ -1358,7 +1363,9 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
                 .transpose()?;
             generate_message(
                 config,
-                &sdk_addr.account_id,
+                // generate_message re-parses the address via
+                // SdkAddress::from_str; pass the full dapp_id::account_id form.
+                &sdk_addr.to_string(),
                 &abi.unwrap(),
                 method.unwrap(),
                 &params.unwrap(),
@@ -1395,7 +1402,9 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
 
     call_contract(
         config,
-        &sdk_addr.account_id,
+        // call_contract re-parses the address via SdkAddress::from_str; pass
+        // the full dapp_id::account_id form.
+        &sdk_addr.to_string(),
         &abi.unwrap(),
         method.unwrap(),
         &params.unwrap(),
@@ -1650,8 +1659,11 @@ async fn dump_accounts_command(matches: &ArgMatches, config: &Config) -> Result<
     let addresses_list = matches.values_of("ADDRESS").unwrap().collect::<Vec<_>>();
     let mut formatted_list = vec![];
     for address in addresses_list.iter() {
-        let formatted = SdkAddress::validate(address)?;
-        formatted_list.push(formatted);
+        // dump_accounts uses the address directly in a raw GraphQL
+        // `accounts.id` filter and compares it against the server `id`
+        // (`0:<hex>`), so the `dapp_id::account_id` form never matches.
+        let sdk_addr = SdkAddress::from_str(address)?;
+        formatted_list.push(format!("0:{}", sdk_addr.account_id));
     }
     let path = matches.value_of("PATH");
     let addresses = Some(formatted_list.join(", "));
@@ -1663,7 +1675,11 @@ async fn dump_accounts_command(matches: &ArgMatches, config: &Config) -> Result<
 
 async fn account_wait_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let address = matches.value_of("ADDRESS").unwrap();
-    let address = SdkAddress::validate(address)?;
+    // wait_for_change uses the address directly in a raw GraphQL `accounts.id`
+    // filter and compares it against the server `id` (`0:<hex>`), so the
+    // `dapp_id::account_id` form never matches.
+    let sdk_addr = SdkAddress::from_str(address)?;
+    let address = format!("0:{}", sdk_addr.account_id);
     let timeout = matches
         .value_of("TIMEOUT")
         .unwrap_or("30")
@@ -1712,7 +1728,10 @@ async fn proposal_create_command(matches: &ArgMatches, config: &Config) -> Resul
 
     create_proposal(
         config,
-        &sdk_addr.account_id,
+        // create_proposal forwards the address to generate_message /
+        // call_contract, both of which re-parse via SdkAddress::from_str;
+        // pass the full dapp_id::account_id form.
+        &sdk_addr.to_string(),
         sdk_addr.dapp_id.as_deref(),
         keys,
         dest.unwrap(),
@@ -1737,7 +1756,10 @@ async fn proposal_vote_command(matches: &ArgMatches, config: &Config) -> Result<
 
     vote(
         config,
-        &sdk_addr.account_id,
+        // vote forwards the address to generate_message / call_contract, both
+        // of which re-parse via SdkAddress::from_str; pass the full
+        // dapp_id::account_id form.
+        &sdk_addr.to_string(),
         sdk_addr.dapp_id.as_deref(),
         keys,
         id.unwrap(),
@@ -1756,7 +1778,10 @@ async fn proposal_decode_command(matches: &ArgMatches, config: &Config) -> Resul
         print_args!(address, id);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
-    decode_proposal(config, &sdk_addr.account_id, sdk_addr.dapp_id.as_deref(), id.unwrap()).await
+    // decode_proposal forwards the address to call_contract_with_result, which
+    // re-parses via SdkAddress::from_str; pass the full dapp_id::account_id
+    // form.
+    decode_proposal(config, &sdk_addr.to_string(), sdk_addr.dapp_id.as_deref(), id.unwrap()).await
 }
 
 async fn getconfig_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {

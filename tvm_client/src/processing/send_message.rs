@@ -17,6 +17,19 @@ use std::sync::Arc;
 
 use serde::Deserialize;
 use serde_json::Value;
+
+/// Deserializes both a missing key (via `#[serde(default)]`) and an explicit
+/// JSON `null` as the type's `Default` value.  Without this, a server that
+/// returns `"account_id": null` would cause deserialization failure even
+/// though `#[serde(default)]` only handles the absent-key case.
+fn deserialize_null_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    T: Default + Deserialize<'de>,
+    D: serde::Deserializer<'de>,
+{
+    let opt = Option::<T>::deserialize(deserializer)?;
+    Ok(opt.unwrap_or_default())
+}
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
 
@@ -62,8 +75,11 @@ pub struct ParamsOfSendMessage {
     /// Default is `false`.
     #[serde(default)]
     pub send_events: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dst_dapp_id: Option<String>,
+    /// Destination dapp_id (64-character hex, no 0x).
+    /// Required for v>=1.0.0 servers; for v<1.0.0 may be empty
+    /// (sent as legacy `dst_dapp_id: null`).
+    #[serde(default)]
+    pub dapp_id: String,
 }
 
 #[derive(Serialize, Deserialize, ApiType, Default, PartialEq, Debug)]
@@ -107,6 +123,17 @@ pub struct ResultOfSendMessage {
 
     /// The timestamp of generating this response.
     pub current_time: Option<String>,
+
+    /// Destination account_id (64-hex, no workchain). Always populated:
+    /// taken from the server response on v>=1.0.0, derived locally
+    /// from the message destination on v<1.0.0.
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub account_id: String,
+
+    /// Destination dapp_id (64-hex). Always populated: taken from the
+    /// server response on v>=1.0.0, mirrored from the request on v<1.0.0.
+    #[serde(default, deserialize_with = "deserialize_null_default")]
+    pub dapp_id: String,
 }
 
 #[derive(Clone)]
@@ -117,7 +144,7 @@ struct SendingMessage {
     id: String,
     body: Vec<u8>,
     dst: MsgAddressInt,
-    dst_dapp_id: Option<String>,
+    dapp_id: String,
     thread_id: ThreadIdentifier,
 }
 
@@ -127,7 +154,7 @@ impl SendingMessage {
         serialized: &str,
         abi: Option<&Abi>,
         thread_id: Option<String>,
-        dst_dapp_id: Option<String>,
+        dapp_id: String,
     ) -> ClientResult<Self> {
         // Check message
         let deserialized = deserialize_object_from_boc::<Message>(context, serialized, "message")?;
@@ -153,7 +180,7 @@ impl SendingMessage {
             id,
             body,
             dst,
-            dst_dapp_id,
+            dapp_id,
             thread_id,
         })
     }
@@ -166,7 +193,7 @@ impl SendingMessage {
                 &self.body,
                 self.thread_id,
                 self.dst.clone(),
-                self.dst_dapp_id.clone(),
+                self.dapp_id.clone(),
             )
             .await
     }
@@ -182,7 +209,7 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
         &params.message,
         params.abi.as_ref(),
         params.thread_id,
-        params.dst_dapp_id,
+        params.dapp_id.clone(),
     )?;
 
     let raw_result = message.send(&context).await?;
@@ -191,6 +218,15 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
         Some(result_value) if !result_value.is_null() => {
             let mut res: ResultOfSendMessage =
                 serde_json::from_value(result_value.clone()).map_err(Error::invalid_data)?;
+
+            // Always-populated fields: derive locally if the server (v<1.0.0)
+            // didn't return them.
+            if res.account_id.is_empty() {
+                res.account_id = message.dst.address().as_hex_string();
+            }
+            if res.dapp_id.is_empty() {
+                res.dapp_id = params.dapp_id.clone();
+            }
 
             if let Some(abi) = params.abi {
                 if let Ok(ext_out_msgs) = result_value.get_array("ext_out_msgs") {
@@ -262,17 +298,22 @@ mod test {
     use axum::Json;
     use axum::Router;
     use axum::body::Body;
+    use axum::body::to_bytes;
     use axum::response::IntoResponse;
+    use axum::routing::get;
     use axum::routing::post;
     use if_addrs::get_if_addrs;
     use serde_json::json;
+    use tokio::sync::Mutex;
     use tokio::task::JoinHandle;
 
     use crate::ClientConfig;
     use crate::ClientContext;
     use crate::error::ClientError;
     use crate::net::NetworkConfig;
+    use crate::processing::ParamsOfSendMessage;
     use crate::processing::send_message::SendingMessage;
+    use crate::processing::send_message::send_message as public_send_message;
 
     // This helper function gets the external IP address of the host, for example
     // 192.168.1.20. For our test, we can use this address in addition to the
@@ -297,39 +338,43 @@ mod test {
 
     async fn mock_server(socket_addr: SocketAddr) -> JoinHandle<()> {
         let socket_addr_clone = socket_addr.to_string();
-        let app = Router::new().route(
-            "/v2/messages",
-            post(|_body: Body| async move {
-                if socket_addr_clone == "127.0.0.1:9000" {
-                    let resp_json =  json!({
-                        "result": null,
-                        "error": {
-                            "code": "WRONG_PRODUCER",
-                            "message": "Resend message to the active Block Producer",
-                            "data": {
-                                "producers": vec![format!("{}:18600", get_ext_ip().unwrap().to_string())],
-                                "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
-                                "exit_code": null,
-                                "current_time": "1748084498461",
-                                "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
+        let app = Router::new()
+            // Serve a /graphql info endpoint so endpoint resolution succeeds
+            // and the server is identified as pre-1.0.0 (v2 wire format).
+            .route("/graphql", graphql_info_handler("0.54.0"))
+            .route(
+                "/v2/messages",
+                post(|_body: Body| async move {
+                    if socket_addr_clone == "127.0.0.1:9000" {
+                        let resp_json = json!({
+                            "result": null,
+                            "error": {
+                                "code": "WRONG_PRODUCER",
+                                "message": "Resend message to the active Block Producer",
+                                "data": {
+                                    "producers": vec![format!("{}:18600", get_ext_ip().unwrap().to_string())],
+                                    "message_hash": "77ac2790a7a20d90572c3c27c7725d0e0195440664d6bd7925a19fbe23ff3315",
+                                    "exit_code": null,
+                                    "current_time": "1748084498461",
+                                    "thread_id": "00000000000000000000000000000000000000000000000000000000000000000000"
+                                }
+                            },
+                            "block_manager": {
+                                "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
+                                "token": {
+                                    "unsigned": "1748084798476",
+                                    "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
+                                    "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
+                                }
                             }
-                        },
-                        "block_manager": {
-                            "license_address": "0:8e8dad0462a4d5c528e18251846f24bc5c04cd1871115fb1e9b00c9741f60800",
-                            "token": {
-                                "unsigned": "1748084798476",
-                                "signature": "c0c4fc73a9bab0f9d648eb1c2402d21a44559bf2a4b24f735f55a384d3a3914cbe2c9d1ed403ef548dded51c62510581b0dad96891ac6fa16af8687c7586b901",
-                                "verifying_key": "e2c9d4be54d342d3f0e6394a7738fc39b93d4fe3fdba317aa699f7305566de2b"
-                            }
-                        }
-                    });
+                        });
 
-                    Json(resp_json).into_response()
-                } else {
-                    Json(json!({"my_addr": socket_addr_clone})).into_response()
-                }
-            }),
-        );
+                        Json(resp_json).into_response()
+                    } else {
+                        Json(json!({"my_addr": socket_addr_clone})).into_response()
+                    }
+                }),
+            );
 
         let listener = tokio::net::TcpListener::bind(socket_addr).await.unwrap();
         let handle = tokio::spawn(async move {
@@ -342,7 +387,7 @@ mod test {
 
     fn create_message(context: &Arc<ClientContext>) -> Result<SendingMessage, ClientError> {
         let boc = "te6ccgEBBQEA3gABRYgB0sAot7nO81FRdsdro5q5hNKjB6k6k6N0XXZSSbXxTUoMAQHh4AxQHiMp1/uMXYuNfGnJTSsq1DVvVlzApSGJkiF2orMR7b4l5EDxyH+tSUgEiCa+PjBmLMDnpf5H6LU1nLxSAcWYRhwySlz8mR2+azk8IhaQSMlY/kcFs4BX0+ppdawTwAAAZf1xorQaHASN34I/2WACAmWAHADCv78M71zAKAvf+gThFn5J+iUYEGTkeR5uVkByCnogAAAAAAAAAAAAAAAAAAAAEAwEAwAAABGgAAAAAhg9CQQ=";
-        SendingMessage::new(context, boc, None, None, None)
+        SendingMessage::new(context, boc, None, None, String::new())
     }
 
     #[tokio::test]
@@ -374,10 +419,12 @@ mod test {
         }
 
         // 2. external_ip:18600.
+        // Use explicit http:// so endpoint resolution doesn't try HTTPS on the
+        // plain HTTP mock server.
         {
             let config = ClientConfig {
                 network: NetworkConfig {
-                    endpoints: Some(vec![format!("{external_ip}:18600")]),
+                    endpoints: Some(vec![format!("http://{external_ip}:18600")]),
                     api_token: Some("secret".to_string()),
                     ..Default::default()
                 },
@@ -395,11 +442,13 @@ mod test {
         }
 
         // 3. Localhost ip, specific port.
-        // This server must redirect the client to external_ip:18600
+        // This server must redirect the client to external_ip:18600.
+        // Use explicit http:// for both the initial endpoint and the redirect
+        // target so endpoint resolution doesn't try HTTPS.
         {
             let config = ClientConfig {
                 network: NetworkConfig {
-                    endpoints: Some(vec!["127.0.0.1:9000".to_string()]),
+                    endpoints: Some(vec!["http://127.0.0.1:9000".to_string()]),
                     api_token: Some("secret".to_string()),
                     ..Default::default()
                 },
@@ -418,5 +467,221 @@ mod test {
         handle_0.abort();
         handle_1.abort();
         handle_2.abort();
+    }
+
+    // ------------------------------------------------------------------
+    // v3 wire-format and local-derivation tests for the public
+    // `send_message` API.
+    // ------------------------------------------------------------------
+
+    /// A minimal GraphQL /graphql handler that returns the given server version
+    /// string, satisfying the `Endpoint::resolve` info-query.
+    fn graphql_info_handler(version: &'static str) -> axum::routing::MethodRouter {
+        get(move || async move {
+            Json(json!({
+                "data": {
+                    "info": {
+                        "version": version,
+                        "time": 1700000000_i64,
+                        "latency": 1_i64,
+                        "rempEnabled": false
+                    }
+                }
+            }))
+        })
+    }
+
+    /// Triggers endpoint resolution so the server version gets populated from
+    /// the /graphql info response before any REST calls are made.
+    async fn resolve_endpoint_version(client: &Arc<ClientContext>) {
+        let sl = client.get_server_link().unwrap();
+        let _ = sl.state().get_query_endpoint().await;
+    }
+
+    async fn start_capturing_mock(
+        port: u16,
+        version: &'static str,
+        response: serde_json::Value,
+    ) -> (JoinHandle<()>, Arc<Mutex<Option<serde_json::Value>>>) {
+        let captured: Arc<Mutex<Option<serde_json::Value>>> = Arc::new(Mutex::new(None));
+        let captured_handle = captured.clone();
+        let response = Arc::new(response);
+        let app = Router::new().route("/graphql", graphql_info_handler(version)).route(
+            "/v2/messages",
+            post(move |body: Body| {
+                let captured = captured_handle.clone();
+                let response = response.clone();
+                async move {
+                    let bytes = to_bytes(body, usize::MAX).await.unwrap();
+                    let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+                    *captured.lock().await = Some(v);
+                    Json((*response).clone()).into_response()
+                }
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", port)).await.unwrap();
+        let handle = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        (handle, captured)
+    }
+
+    // Same BOC as `create_message` above.
+    const TEST_MSG_BOC: &str = "te6ccgEBBQEA3gABRYgB0sAot7nO81FRdsdro5q5hNKjB6k6k6N0XXZSSbXxTUoMAQHh4AxQHiMp1/uMXYuNfGnJTSsq1DVvVlzApSGJkiF2orMR7b4l5EDxyH+tSUgEiCa+PjBmLMDnpf5H6LU1nLxSAcWYRhwySlz8mR2+azk8IhaQSMlY/kcFs4BX0+ppdawTwAAAZf1xorQaHASN34I/2WACAmWAHADCv78M71zAKAvf+gThFn5J+iUYEGTkeR5uVkByCnogAAAAAAAAAAAAAAAAAAAAEAwEAwAAABGgAAAAAhg9CQQ=";
+
+    #[tokio::test]
+    async fn send_message_v3_sends_dapp_id_and_account_id() {
+        let (handle, captured) = start_capturing_mock(
+            18621,
+            "1.0.0",
+            json!({
+                "result": {
+                    "message_hash": "deadbeef",
+                    "thread_id": null,
+                    "producers": [],
+                    "account_id": "aaaa",
+                    "dapp_id": "bbbb"
+                },
+                "error": null,
+                "ext_message_token": null
+            }),
+        )
+        .await;
+
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:18621".to_string()]),
+                api_token: Some("secret".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let client = Arc::new(ClientContext::new(config).unwrap());
+        resolve_endpoint_version(&client).await;
+
+        let dapp_hex = "2".repeat(64);
+        let res = public_send_message(
+            client,
+            ParamsOfSendMessage {
+                message: TEST_MSG_BOC.to_string(),
+                abi: None,
+                thread_id: None,
+                send_events: false,
+                dapp_id: dapp_hex.clone(),
+            },
+            |_| async {},
+        )
+        .await
+        .unwrap();
+
+        let body = captured.lock().await.clone().expect("body captured");
+        let item = &body[0];
+        assert_eq!(item["dapp_id"], serde_json::Value::String(dapp_hex));
+        assert!(
+            !item["account_id"].as_str().unwrap_or("").is_empty(),
+            "account_id must be non-empty in v3 wire"
+        );
+        assert!(item.get("dst_dapp_id").is_none());
+
+        // Result fields populated from server response:
+        assert_eq!(res.account_id, "aaaa");
+        assert_eq!(res.dapp_id, "bbbb");
+
+        handle.abort();
+    }
+
+    #[tokio::test]
+    async fn send_message_v2_sends_dst_dapp_id_and_derives_result_locally() {
+        let (handle, captured) = start_capturing_mock(
+            18622,
+            "0.9.0",
+            json!({
+                "result": {
+                    "message_hash": "deadbeef",
+                    "thread_id": null,
+                    "producers": []
+                },
+                "error": null,
+                "ext_message_token": null
+            }),
+        )
+        .await;
+
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:18622".to_string()]),
+                api_token: Some("secret".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let client = Arc::new(ClientContext::new(config).unwrap());
+        resolve_endpoint_version(&client).await;
+
+        let dapp_hex = "3".repeat(64);
+        let res = public_send_message(
+            client,
+            ParamsOfSendMessage {
+                message: TEST_MSG_BOC.to_string(),
+                abi: None,
+                thread_id: None,
+                send_events: false,
+                dapp_id: dapp_hex.clone(),
+            },
+            |_| async {},
+        )
+        .await
+        .unwrap();
+
+        let body = captured.lock().await.clone().expect("body captured");
+        let item = &body[0];
+        assert_eq!(item["dst_dapp_id"], serde_json::Value::String(dapp_hex.clone()));
+        assert!(item.get("dapp_id").is_none());
+        assert!(item.get("account_id").is_none());
+
+        // Result fields derived locally from request:
+        assert!(!res.account_id.is_empty(), "account_id should be derived from message dst");
+        assert_eq!(res.dapp_id, dapp_hex);
+
+        handle.abort();
+    }
+
+    #[tokio::test]
+    async fn send_message_v3_rejects_empty_dapp_id() {
+        let (handle, _captured) = start_capturing_mock(
+            18623,
+            "1.0.0",
+            json!({ "result": null, "error": null, "ext_message_token": null }),
+        )
+        .await;
+
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:18623".to_string()]),
+                api_token: Some("secret".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let client = Arc::new(ClientContext::new(config).unwrap());
+        resolve_endpoint_version(&client).await;
+
+        let err = public_send_message(
+            client,
+            ParamsOfSendMessage {
+                message: TEST_MSG_BOC.to_string(),
+                abi: None,
+                thread_id: None,
+                send_events: false,
+                dapp_id: String::new(),
+            },
+            |_| async {},
+        )
+        .await
+        .unwrap_err();
+        assert!(err.message().contains("dapp_id"));
+
+        handle.abort();
     }
 }
