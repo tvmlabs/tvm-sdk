@@ -4,6 +4,9 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
+		"ai:check": "node docs-ai-check.cjs",
+		"ai:check:live": "node docs-ai-check.cjs --live",
+		"ai:index": "node docs-ai-index.cjs",
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"docs": "node index docs -o ../docs/reference/types-and-methods"
 	},

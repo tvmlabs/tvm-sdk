@@ -3,9 +3,18 @@
 * [Dapp ID Full Guide: creation, fees, centralized replenishment](README.md)
   * [Get Test Tokens in Shellnet](readme/get-test-tokens-in-shellnet.md)
 * [Migration to 3.0 SDK and 1.0 GQL API](migration-to-tvm-sdk-v3.md "Migration to 3.0 SDK and 1.0 GQL API")
-* [Developer Portal Overview](developer-portal-overview.md)
 * [How to deploy a Multisig Wallet](how-to-deploy-a-multisig-wallet.md)
-* [Add Acki Nacki to your backend](add-acki-nacki-to-your-backend.md)
+* [For AI Agents](for-ai-agents.md)
+
+## Recipes
+
+* [Configure TVM CLI](recipes/configure-tvm-cli.md)
+* [Get Test Tokens](recipes/get-test-tokens.md)
+* [Deploy a Multisig Wallet](recipes/deploy-multisig-wallet.md)
+* [Deploy a Contract](recipes/deploy-contract.md)
+* [Call a Get Method](recipes/call-get-method.md)
+* [Query an Account with GraphQL](recipes/query-account-graphql.md)
+* [Inspect GraphQL Schema](recipes/inspect-graphql-schema.md)
 
 ## DEX.DO
 
@@ -62,10 +71,10 @@
 * [GraphQL Quick Start](graphql/graphql-quick-start.md)
 * [Blockchain API](graphql/blockchain-api.md)
 * [Info API](graphql/info-api.md)
+* [GraphQL Schema for AI Agents](graphql/graphql-schema-for-ai-agents.md)
 * [Web Playground](graphql/web-playground.md)
 * [GraphQL API Examples](graphql/graphql-api-examples/README.md)
   * [Connect to GraphQL API](graphql/graphql-api-examples/connect-to-graphql-api.md)
-  * [Send message](graphql/graphql-api-examples/send-message.md)
   * [Retrieve all blocks, transactions, events](graphql/graphql-api-examples/retrieve-all-blocks-transactions-events.md)
   * [Account queries](graphql/graphql-api-examples/accounts-queries.md)
   * [Messages](graphql/graphql-api-examples/messages.md)
@@ -85,7 +94,6 @@
 * [Configuration](js-ts-guides/configuration/README.md)
   * [Endpoint Configuration](js-ts-guides/configuration/endpoint-configuration.md)
   * [Message Expiration](js-ts-guides/configuration/message-expiration.md)
-  * [Message Retry](js-ts-guides/configuration/message-retry.md)
   * [Config Reference](js-ts-guides/configuration/config-reference.md)
 * [Work with contracts](js-ts-guides/work-with-contracts/README.md)
   * [Add Contract to your App](js-ts-guides/work-with-contracts/add-contract-to-your-app.md)

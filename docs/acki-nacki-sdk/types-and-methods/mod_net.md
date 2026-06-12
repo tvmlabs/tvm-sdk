@@ -711,7 +711,7 @@ Iterated range can be reduced with some filters:
 
 Items iterated is a JSON objects with block data. The minimal set of returned fields is:
 
-```
+```text
 id
 gen_utime
 workchain_id
@@ -842,7 +842,7 @@ Iterated range can be reduced with some filters:
 
 Iterated item is a JSON objects with transaction data. The minimal set of returned fields is:
 
-```
+```text
 id
 account_addr
 now

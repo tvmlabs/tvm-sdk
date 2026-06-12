@@ -133,7 +133,7 @@ A buyer sends ECC USDC to the Root (directly or via Exchange). The amount must b
 
 **Matching algorithm (largest-first FIFO):**
 
-```
+```text
 remaining = usdcAmount / USDC_DECIMALS_FACTOR   // whole USDC
 
 for each D in [1000, 100, 10, 1]:
@@ -250,7 +250,7 @@ A NACKL holder sends ECC NACKL to the Root's `receive()` to burn it and claim a 
 
 **Payout formula:**
 
-```
+```text
 supply        = M(t)                    // NACKL emission curve
 currentSupply = supply - _nacklBurned   // subtract all previously burned NACKL
 redeemable    = _usdcBalance - owedUsdcTotal()  // free reserve

@@ -395,7 +395,7 @@ Error code 213 means different things in different contracts: `ERR_MULTIPLE_CURR
 
 ### Denominations
 
-```
+```text
 DENOM_1    = 1
 DENOM_10   = 10
 DENOM_100  = 100

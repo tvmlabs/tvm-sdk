@@ -1,3 +1,11 @@
+---
+description: Overview of the GraphQL blockchain root type and cursor-based pagination.
+status: stable
+product: graphql
+audience: app-developer
+last_verified: 2026-06-11
+---
+
 # Blockchain API
 
 `blockchain` root type is API that includes such basic real-time data as:

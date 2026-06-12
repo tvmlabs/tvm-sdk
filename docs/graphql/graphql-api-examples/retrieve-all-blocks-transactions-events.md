@@ -6,7 +6,7 @@
 
 As the API is eventually consistant before starting pagination we need to limit the pagination range by the finalized timestamp (timestamp that guarantees that there is not missed objects before it).
 
-```
+```graphql
 query{
     blockchain{
         finalized_timestamp
@@ -22,7 +22,7 @@ Because Acki Nacki blockchain dynamically splits and merges it is not possible t
 
 We added a unique index for blocks to paginate them across all the threads: `chain_order`
 
-```
+```text
 chain_order = block-timestamp-in-seconds + 
                 placeholder-for-future-purposes +
                 thread_id + height
@@ -46,7 +46,7 @@ chain\_order=`7698320d0006700000000000000000000000000000000000000000000000000000
 
 Pagination parameters:&#x20;
 
-```
+```text
 master_seq_no_range:{
     start: 1770201296 # start timestamp
     end: 1770204896 # end timestamp <=finalized_timestamp !!!
@@ -88,7 +88,7 @@ query{
 
 Result:
 
-```
+```json
 {
   "data": {
     "blockchain": {
@@ -271,7 +271,7 @@ query{
 
 The result:
 
-```
+```json
 {
   "data": {
     "blockchain": {

@@ -126,7 +126,7 @@ const resultOfGenKeys = await gen_mining_keys(APP_ID);
 
 The output of the key generation process has the following type:
 
-```
+```json
 {
   deep_link: string, 
   secret: string

@@ -1,10 +1,18 @@
+---
+description: Acki Nacki-specific TVM instructions and opcode behavior.
+status: stable
+product: vm
+audience: app-developer
+last_verified: 2026-06-11
+---
+
 # Acki Nacki VM Instructions
 
 ## MINTECC (C726)
 
 Mint any ECC Token
 
-```
+```text
 Input: ECC KEY
 ```
 
@@ -15,7 +23,7 @@ Can be invoked only in special contracts. \
 
 Converts SHELL to VMSHELL at a 1:1 ratio.
 
-```
+```text
 Input: amount of nanotokens to convert
 ```
 
@@ -28,7 +36,7 @@ If the account balance does not have the required number of tokens, the exchange
 
 Mint some VMSHELL tokens, allowed by available credit in Dapp Config for this Dapp Id
 
-```
+```text
 Input: amount of nanoVMSHELL to mint
 ```
 
@@ -38,7 +46,7 @@ Input: amount of nanoVMSHELL to mint
 
 Calculate reward for BK after epoch ended.
 
-```
+```text
 Input: params of bkroot state:
     uint128 numberOfActiveBlockKeepers,
     uint128 stake,
@@ -54,7 +62,7 @@ Input: params of bkroot state:
 
 Calculate minstake for BK epoch start.
 
-```
+```text
 Input: params of bkroot state:
     uint128 epochDuration,
     uint128 timenetwork,
@@ -68,14 +76,14 @@ Input: params of bkroot state:
 
 Verify Groth16 zero-knowledge proof prepared based on JWT token and extra salt password to prove that the user owns some OpenId account (Google, Facebook, Kakao accounts etc). Takes as input the proof, related public input Poseidon hash and index of verification key.
 
-```
+```text
 Input:
     uint32 vk_index,
     bytes public_inputs, // of length = 32 bytes
     bytes proof // of length = 128 bytes
 ```
 
-```
+```text
 Output:
     boolean value indicating if proof is valid or not.
 ```
@@ -88,7 +96,7 @@ Note: public\_inputs must be prepared using POSEIDON instruction.
 
 Calculate POSEIDON hash function. This hash function is designed for now especially for ZkLogin protocol needs. It takes as input all public ZkLogin data related to OpenId authentication (i.e. some public fields of JWT token and extra public data).
 
-```
+```text
 Inputs:
     string zkaddr,
     uint256 ephimeral_pub_key,
@@ -99,7 +107,7 @@ Inputs:
     string header_base_64
 ```
 
-```
+```text
 Outputs:
     Poseidon hash (32 bytes array) of input data being sequentially concatenated.
 ```
@@ -111,7 +119,7 @@ Note: There is: zkaddr = Poseidon(JWT.stable\_id, JWT.iss, User salt password), 
 
 Instruction allows arbitrary pre-compiled wasm code to be executed directly by the node.
 
-```
+```text
 Input:
     wasmHash,
     wasmArgs,

@@ -521,7 +521,7 @@ Parameters
 
 The proposal is identified deterministically by:
 
-```
+```text
 proposalId = hash(function_type, data)
 ```
 

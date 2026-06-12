@@ -1,5 +1,9 @@
 ---
 description: Create a Multisig wallet  with TVM CLI
+status: stable
+product: sdk
+audience: app-developer
+last_verified: 2026-06-11
 ---
 
 # How to deploy a Multisig Wallet
@@ -12,7 +16,7 @@ description: Create a Multisig wallet  with TVM CLI
 
 Create a folder:
 
-```
+```bash
 cd ~
 mkdir wallet
 cd wallet
@@ -29,7 +33,7 @@ The contract code can be downloaded from [here](https://github.com/ackinacki/ack
 In this guide, we will use the test network at [`shellnet.ackinacki.org`](https://shellnet.ackinacki.org).\
 We need to specify the blockchain endpoint for deployment:
 
-```
+```bash
 tvm-cli config -g --url shellnet.ackinacki.org
 ```
 
@@ -39,7 +43,7 @@ In Acki Nacki blockchain, the Multisig wallet address depends on its binary code
 
 You can generate everything with one command:
 
-```
+```bash
 
 tvm-cli genaddr UpdateCustodianMultisigWallet.tvc --save --genkey UpdateCustodianMultisigWallet.keys.json
 ```
@@ -58,7 +62,7 @@ The `Raw address` is the future Multisig wallet address. Keys are saved to `upda
 
 Be sure to copy your seed phrase if you need it.
 
-<figure><img src=".gitbook/assets/multisig_create_address (1).jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing the generated multisig wallet raw address](<.gitbook/assets/multisig_create_address (1).jpg>)
 
 ## **Request Test tokens** <a href="#request-test-tokens-for-future-use" id="request-test-tokens-for-future-use"></a>
 
@@ -75,7 +79,7 @@ If you plan to test your smart contract systems, you can use the provided Multis
 
 Once you receive the test tokens, check the state of the pre-deployed contract. It should be **`Uninit`**:
 
-```
+```bash
 tvm-cli account <YourAddress>
 ```
 
@@ -86,11 +90,11 @@ VMSHELL tokens are transferred and stored in (_in_ [_nanotokens_](https://github
 The received **SHELL** tokens will be displayed in the `ecc` field under index **2**
 {% endhint %}
 
-<figure><img src=".gitbook/assets/Uninit.jpg" alt=""><figcaption></figcaption></figure>
+![Explorer view showing the multisig wallet account in Uninit state](.gitbook/assets/Uninit.jpg)
 
 Now you are ready to deploy your Multisig wallet using the following command:
 
-```
+```bash
 
 tvm-cli deploy --abi UpdateCustodianMultisigWallet.abi.json --sign UpdateCustodianMultisigWallet.keys.json UpdateCustodianMultisigWallet.tvc '{"owners_pubkey":[<PubKeyList>], "owners_address": [], "reqConfirms":<ConfirmsNum>, "reqConfirmsData": <NumConfirms>, "value":<NumTokens>}'
 ```
@@ -106,12 +110,12 @@ The arguments for the constructor must be enclosed in curly brackets: `{<constru
 
 In our example, the command will be as follows:
 
-```
+```bash
 
 tvm-cli deploy --abi UpdateCustodianMultisigWallet.abi.json --sign UpdateCustodianMultisigWallet.keys.json UpdateCustodianMultisigWallet.tvc '{"owners_pubkey":["0x92658a2dee35923cc628b7f5f09e014eeeb7f492dd4dfd2f65cd304a73d2d2f4"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":10000000000}'
 ```
 
-<figure><img src=".gitbook/assets/deploy.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output for multisig wallet deployment](.gitbook/assets/deploy.jpg)
 
 Check the contract state again. This time, it should be `Active`
 
@@ -119,7 +123,7 @@ Check the contract state again. This time, it should be `Active`
 The contract deployment fee was deducted from the VMSHELL balance.
 {% endhint %}
 
-<figure><img src=".gitbook/assets/active.jpg" alt=""><figcaption></figcaption></figure>
+![Explorer view showing the multisig wallet account in Active state](.gitbook/assets/active.jpg)
 
 {% hint style="success" %}
 During contract deployment, **10** **SHELL** tokens were converted into **10** **VMSHELL** (values are specified in nanotokens).
