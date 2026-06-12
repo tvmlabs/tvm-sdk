@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [3.0.1] - 2026-06-08
+
+### Fixed
+- `tvm_types`/`tvm_executor`: use a fixed seed for the per-thread unique-cell Bloom filter, reset it before and after transaction execution, and manage executor cell size limits with an RAII guard so Bloom state and TLS limits are always cleared, including early error paths such as `MaxBOCSizeExceeded`. This makes transaction cell/tree size accounting deterministic and prevents producer/verifier divergence caused by stale warm Bloom state.
+- `tvm_cli`: fixed `decode::tests::test_decode_body_json` to use an existing manifest-relative wallet ABI fixture instead of a missing `tests/samples/wallet.abi.json` path.
+- `tvm_debugger`: fixed the test `RunArgs` initializer to include `block_seq_no`.
+
+## [3.0.0] - 2026-06-05
+
+> **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
+> for a step-by-step migration guide covering the dapp_id changes below.
+
+### Changed (breaking)
+- Default HD key derivation path changed from `m/44'/396'/0'/0/0` to `m/44'/1331'/0'/0/0`. Crypto functions (`tvm_client`) and key/address generation (`tvm_cli`) that rely on the default path now derive different keys from the same seed phrase. To keep previous keys, pass the old path explicitly.
+- `tvm_client`: `ParamsOfGetAccount.address` renamed to `account_id`; now strict 64-character hex (no `0x`, no workchain). Added required `dapp_id` field.
+- `tvm_client`: `ResultOfGetAccount.dapp_id` is now `String` (not `Option`); added `account_id` field.
+- `tvm_client`: `ParamsOfSendMessage.dst_dapp_id: Option<String>` renamed to `dapp_id: String` (empty allowed only for pre-1.0.0 servers).
+- `tvm_client`: `ResultOfSendMessage` now exposes `account_id` and `dapp_id` (always populated; derived from the request when the server doesn't return them).
+- `tvm_client`: `ParamsOfProcessMessage.dst_dapp_id` renamed to `dapp_id: String`.
+- `tvm-cli` now requires the `dapp_id::account_id` address form on all commands and against all nodes; legacy `0:<hex>` and bare-hex address inputs are no longer accepted.
+- `tvm-cli` `deploy`/`deployx` now always require `--dst-dapp-id` (including `--fee` mode); pass all zeros for a self-rooted dapp.
+- `tvm-cli` `genaddr` additionally prints the `dapp_id::account_id` (`dapp_account` in JSON) self-rooted form.
+
+### Added
+- `tvm_client`: SDK version-gates `/v2/account` and `/v2/messages` wire formats based on GraphQL `info.version`. v>=1.0.0 sends new `dapp_id`/`account_id` fields; v<1.0.0 keeps legacy `address`/`dst_dapp_id`.
+- `tvm_client`: new `ServerLink::server_version()` and `ServerLink::supports_dapp_id()` helpers.
+
+## [2.24.21] - 2026-04-29
+
+### Added
+- `--block-seq-no` option for `tvm-debugger run` that allows to set block seq no for TVM execution
+
+
 ## [2.24.20] - 2026-04-20
 
 ### Changed

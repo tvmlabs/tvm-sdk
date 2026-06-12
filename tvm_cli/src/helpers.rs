@@ -55,6 +55,7 @@ use tvm_client::crypto::MnemonicDictionary;
 use tvm_client::error::ClientError;
 use tvm_client::net::NetworkConfig;
 use tvm_client::net::OrderBy;
+use tvm_client::net::ParamsOfQuery;
 use tvm_client::net::ParamsOfQueryCollection;
 use tvm_client::net::query_collection;
 use tvm_executor::BlockchainConfig;
@@ -70,7 +71,7 @@ use crate::debug::debug_level_from_env;
 use crate::replay::CONFIG_ADDR;
 use crate::replay::construct_blockchain_config;
 use crate::resolve_net_name;
-pub const HD_PATH: &str = "m/44'/396'/0'/0/0";
+pub const HD_PATH: &str = "m/44'/1331'/0'/0/0";
 pub const WORD_COUNT: u8 = 12;
 
 const DEPRECATED_CONFIG_BASE_NAME: &str = "tonos-cli.conf.json";
@@ -258,6 +259,9 @@ pub fn read_keys(filename: &str) -> Result<KeyPair, String> {
 
 #[derive(Debug)]
 pub struct SdkAddress {
+    /// Invariant: always `Some` after `from_str` (the strict parser
+    /// requires a dapp_id). The `Option` is retained only to avoid churn
+    /// in call sites that still pattern-match on it.
     pub dapp_id: Option<String>,
     pub account_id: String,
 }
@@ -269,108 +273,208 @@ impl SdkAddress {
 }
 // Format:
 // dapp_hex64::account_hex64
-// dapp_hex64:account_hex64
-// wc_int:account_hex64
-// account_hex64
+
+pub(crate) fn is_hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+fn strict_address_error(input: &str) -> String {
+    format!(
+        "address `{input}` must be in the form `dapp_id::account_id` \
+         (two 64-character hex ids, no 0x, no workchain); legacy `0:…`, \
+         bare-hex, single-colon and 128-hex forms are no longer accepted"
+    )
+}
 
 impl FromStr for SdkAddress {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (dapp_id, account_id) = if let Some((dapp, account)) = s.split_once("::") {
-            if dapp.len() != 64 || !dapp.chars().all(|c| c.is_ascii_hexdigit()) {
-                return Err("dapp_id must be exactly 64 hex characters".to_string());
-            }
-            (Some(dapp.to_owned()), account.to_owned())
-        } else if let Some((dapp_or_wc, account)) = s.split_once(":") {
-            if dapp_or_wc.len() == 64 && dapp_or_wc.chars().all(|c| c.is_ascii_hexdigit()) {
-                (Some(dapp_or_wc.to_owned()), account.to_owned())
-            } else {
-                (None, s.to_owned())
-            }
-        } else if s.len() == 128 && s.chars().all(|c| c.is_ascii_hexdigit()) {
-            let (dapp, account) = s.split_at(64);
-            (Some(dapp.to_owned()), account.to_owned())
-        } else {
-            (None, s.to_owned())
-        };
-        let _ = MsgAddressInt::from_str(&account_id).map_err(|e| {
+        let (dapp, account) = s.split_once("::").ok_or_else(|| strict_address_error(s))?;
+        if !is_hex64(dapp) || !is_hex64(account) {
+            return Err(strict_address_error(s));
+        }
+        // Defensive: the account half must be a valid internal address.
+        // A bare 64-hex id resolves to workchain 0.
+        let _ = MsgAddressInt::from_str(account).map_err(|e| {
             format!("Address is specified in the wrong format. Error description: {}", e)
         })?;
-        Ok(Self { dapp_id, account_id })
+        Ok(Self { dapp_id: Some(dapp.to_owned()), account_id: account.to_owned() })
     }
 }
 
 impl Display for SdkAddress {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if let Some(dapp_id) = &self.dapp_id {
-            f.write_str(&dapp_id)?;
-            f.write_str(":")?;
+            f.write_str(dapp_id)?;
+            f.write_str("::")?;
         }
         f.write_str(&self.account_id)?;
         Ok(())
     }
 }
 
+/// Strips a leading `0:` workchain prefix from an account string and
+/// validates that the remainder is a 64-character hex string.
+/// Returns the account_id (no workchain, no 0x).
+pub fn strip_workchain(s: &str) -> Result<String, String> {
+    let account = match s.split_once(':') {
+        Some(("0", rest)) => rest,
+        Some((wc, _)) => return Err(format!("non-zero workchain not supported: {wc}")),
+        None => s,
+    };
+    if account.len() != 64 || !account.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(format!("account_id must be a 64-character hex string, got: {account}"));
+    }
+    Ok(account.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use std::str::FromStr;
 
-    use super::SdkAddress;
+    use serde_json::json;
 
-    const DAPP_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-    const ACCOUNT_ID: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    use super::SdkAddress;
+    use super::extract_message_boc;
+
+    const DAPP_ID: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const ACCOUNT_ID: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
     const RAW_ADDRESS: &str = "0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     #[test]
-    fn sdk_address_from_str_parses_raw_address() {
-        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
-
-        assert_eq!(address.dapp_id, None);
-        assert_eq!(address.account_id, RAW_ADDRESS);
-        assert_eq!(address.to_string(), RAW_ADDRESS);
-    }
-
-    #[test]
-    fn sdk_address_from_str_parses_dapp_id_with_double_colon() {
-        let address = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap();
-
-        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
-        assert_eq!(address.account_id, RAW_ADDRESS);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{RAW_ADDRESS}"));
-    }
-
-    #[test]
-    fn sdk_address_from_str_parses_dapp_id_with_single_colon() {
-        let address = SdkAddress::from_str(&format!("{DAPP_ID}:{ACCOUNT_ID}")).unwrap();
+    fn sdk_address_from_str_accepts_dapp_double_colon_account() {
+        let address = SdkAddress::from_str(&format!("{DAPP_ID}::{ACCOUNT_ID}")).unwrap();
 
         assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
         assert_eq!(address.account_id, ACCOUNT_ID);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
+        // Display round-trips back through the strict parser (double colon).
+        assert_eq!(address.to_string(), format!("{DAPP_ID}::{ACCOUNT_ID}"));
+        assert!(SdkAddress::from_str(&address.to_string()).is_ok());
     }
 
     #[test]
-    fn sdk_address_from_str_parses_concatenated_dapp_id_and_account_id() {
-        let address = SdkAddress::from_str(&format!("{DAPP_ID}{ACCOUNT_ID}")).unwrap();
+    fn sdk_address_from_str_accepts_mixed_case_hex() {
+        let dapp = DAPP_ID.to_uppercase();
+        let address = SdkAddress::from_str(&format!("{dapp}::{ACCOUNT_ID}")).unwrap();
 
-        assert_eq!(address.dapp_id.as_deref(), Some(DAPP_ID));
+        assert_eq!(address.dapp_id.as_deref(), Some(dapp.as_str()));
         assert_eq!(address.account_id, ACCOUNT_ID);
-        assert_eq!(address.to_string(), format!("{DAPP_ID}:{ACCOUNT_ID}"));
     }
 
     #[test]
-    fn sdk_address_from_str_keeps_workchain_address_without_dapp_id() {
-        let address = SdkAddress::from_str(RAW_ADDRESS).unwrap();
-
-        assert_eq!(address.dapp_id, None);
-        assert_eq!(address.account_id, RAW_ADDRESS);
+    fn sdk_address_from_str_rejects_workchain_form() {
+        let err = SdkAddress::from_str(RAW_ADDRESS).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
     }
 
     #[test]
-    fn sdk_address_from_str_rejects_invalid_dapp_id_length_for_double_colon() {
-        let err = SdkAddress::from_str(&format!("deadbeef::{RAW_ADDRESS}")).unwrap_err();
+    fn sdk_address_from_str_rejects_masterchain_form() {
+        let masterchain = format!("-1:{ACCOUNT_ID}");
+        let err = SdkAddress::from_str(&masterchain).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
 
-        assert_eq!(err, "dapp_id must be exactly 64 hex characters");
+    #[test]
+    fn sdk_address_from_str_rejects_bare_hex() {
+        let err = SdkAddress::from_str(ACCOUNT_ID).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_single_colon() {
+        let err = SdkAddress::from_str(&format!("{DAPP_ID}:{ACCOUNT_ID}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_concatenated_128_hex() {
+        let err = SdkAddress::from_str(&format!("{DAPP_ID}{ACCOUNT_ID}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_workchain_in_account_half() {
+        // dapp::0:acc — the account half carries a workchain, which is invalid.
+        let err = SdkAddress::from_str(&format!("{DAPP_ID}::{RAW_ADDRESS}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_short_dapp_id() {
+        let err = SdkAddress::from_str(&format!("deadbeef::{ACCOUNT_ID}")).unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn sdk_address_from_str_rejects_empty_double_colon() {
+        let err = SdkAddress::from_str("::").unwrap_err();
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+    }
+
+    #[test]
+    fn extract_message_boc_reads_blockchain_message_response() {
+        let boc = extract_message_boc(json!({
+            "data": {
+                "blockchain": {
+                    "message": {
+                        "boc": "te6ccgEBAQEA"
+                    }
+                }
+            }
+        }))
+        .unwrap();
+
+        assert_eq!(boc, "te6ccgEBAQEA");
+    }
+
+    #[test]
+    fn extract_message_boc_reports_missing_message() {
+        let err = extract_message_boc(json!({
+            "data": {
+                "blockchain": {
+                    "message": null
+                }
+            }
+        }))
+        .unwrap_err();
+
+        assert_eq!(err, "message with specified id was not found.");
+    }
+
+    use super::strip_workchain;
+
+    #[test]
+    fn strip_workchain_removes_zero_workchain() {
+        assert_eq!(
+            strip_workchain("0:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+                .unwrap(),
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+        );
+    }
+
+    #[test]
+    fn strip_workchain_accepts_bare_hex() {
+        let bare = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert_eq!(strip_workchain(bare).unwrap(), bare);
+    }
+
+    #[test]
+    fn strip_workchain_rejects_non_zero_workchain() {
+        let s = "1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(strip_workchain(s).is_err());
+    }
+
+    #[test]
+    fn strip_workchain_rejects_bad_length() {
+        let s = "0:abc";
+        assert!(strip_workchain(s).is_err());
+    }
+
+    #[test]
+    fn strip_workchain_rejects_non_hex_account() {
+        let s = "0:zzzz456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        assert!(strip_workchain(s).is_err());
     }
 }
 
@@ -527,24 +631,34 @@ pub async fn query_with_limit(
 }
 
 pub async fn query_message(ton: TonClient, message_id: &str) -> Result<String, String> {
-    let messages = query_with_limit(
-        ton.clone(),
-        "messages",
-        json!({ "id": { "eq": message_id } }),
-        "boc",
-        None,
-        Some(1),
+    let result = tvm_client::net::query(
+        ton,
+        ParamsOfQuery {
+            query: "query message($hash:String!){blockchain{message(hash:$hash){boc}}}".into(),
+            variables: Some(json!({
+                "hash": message_id,
+            })),
+        },
     )
     .await
-    .map_err(|e| format!("failed to query account data: {}", e))?;
-    if messages.is_empty() {
-        Err("message with specified id was not found.".to_string())
-    } else {
-        Ok(messages[0]["boc"]
-            .as_str()
-            .ok_or("Failed to obtain message boc.".to_string())?
-            .to_string())
+    .map_err(|e| format!("failed to query message: {}", e))?;
+
+    extract_message_boc(result.result)
+}
+
+fn extract_message_boc(mut response: Value) -> Result<String, String> {
+    let message = response
+        .pointer_mut("/data/blockchain/message")
+        .ok_or("Failed to obtain message from response.".to_string())?;
+
+    if message.is_null() {
+        return Err("message with specified id was not found.".to_string());
     }
+
+    message["boc"]
+        .as_str()
+        .ok_or("Failed to obtain message boc.".to_string())
+        .map(ToString::to_string)
 }
 
 pub async fn query_account_field(
@@ -552,7 +666,11 @@ pub async fn query_account_field(
     address: &str,
     field: &str,
 ) -> Result<String, String> {
-    let params = account::ParamsOfGetAccount { address: address.to_owned() };
+    let sdk_address =
+        SdkAddress::from_str(address).map_err(|e| format!("invalid address `{address}`: {e}"))?;
+    let account_id = strip_workchain(&sdk_address.account_id)?;
+    let dapp_id = sdk_address.dapp_id.unwrap_or_default();
+    let params = account::ParamsOfGetAccount { account_id, dapp_id };
     let result_of_get_acc = account::get_account(ton, params)
         .await
         .map_err(|e| format!("failed to get account: {e}"))?;
@@ -908,9 +1026,13 @@ pub async fn load_account(
                 None => create_client(config)?,
             };
 
+            let sdk_address = SdkAddress::from_str(source)
+                .map_err(|e| format!("invalid address `{source}`: {e}"))?;
+            let account_id = strip_workchain(&sdk_address.account_id)?;
+            let dapp_id = sdk_address.dapp_id.unwrap_or_default();
             let ResultOfGetAccount { boc, state_timestamp, .. } = account::get_account(
                 ton_client,
-                account::ParamsOfGetAccount { address: source.to_string() },
+                account::ParamsOfGetAccount { account_id, dapp_id },
             )
             .await
             .map_err(|e| format!("Failed to get account: {e}"))?;
