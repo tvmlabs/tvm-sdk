@@ -200,7 +200,7 @@ pub fn aggregate_bls_signatures(sig_bytes_with_nodes_info_vec: &[&[u8]]) -> Resu
     for it in &bls_sigs_refs {
         nodes_info_refs.push(&it.nodes_info);
         let sig = convert_signature_bytes_to_signature(&it.sig_bytes)?;
-        println!("{:?}", &sig.to_bytes());
+        println!("{:?}", sig.to_bytes());
         // return this part to exclude zero sig
         // let res = sig.validate(true);
         // if res.is_err() {
@@ -294,11 +294,11 @@ impl BlsKeyPair {
         println!("BLS key pair:");
         println!("--------------------------------------------------");
         println!("Secret key bytes:");
-        println!("{:?}", &self.sk_bytes);
-        println!("Secret key len: {}", &self.sk_bytes.len());
+        println!("{:?}", self.sk_bytes);
+        println!("Secret key len: {}", self.sk_bytes.len());
         println!("Public key bytes:");
-        println!("{:?}", &self.pk_bytes);
-        println!("Public key len: {}", &self.pk_bytes.len());
+        println!("{:?}", self.pk_bytes);
+        println!("Public key len: {}", self.pk_bytes.len());
         println!("--------------------------------------------------");
     }
 
@@ -404,7 +404,7 @@ impl NodesInfo {
 
     pub fn print(&self) {
         println!("--------------------------------------------------");
-        println!("Total number of nodes: {}", &self.total_num_of_nodes);
+        println!("Total number of nodes: {}", self.total_num_of_nodes);
         println!("Indexes -- occurrences: ");
         for (index, number_of_occurrence) in &self.map {
             println!("{}: \"{}\"", index, number_of_occurrence);
@@ -609,7 +609,7 @@ impl BlsSignature {
         println!("Aggregated BLS signature:");
         println!("--------------------------------------------------");
         println!("Signature bytes:");
-        println!("{:?}", &self.sig_bytes);
+        println!("{:?}", self.sig_bytes);
         self.nodes_info.print();
         println!("--------------------------------------------------");
     }
