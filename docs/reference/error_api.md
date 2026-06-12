@@ -30,7 +30,7 @@ Additional data provided with error. All the fields in `ErrorData` are optional 
 
 All the fields in `ErrorData` are optional and their presence depends on the error code.
 
-```
+```json
 {
     message_id?: string,
     shard_block_id?: string
@@ -91,7 +91,7 @@ Here you can see an error returned by process\_message function when message was
 
 In such cases SDK emulated the same transaction locally and here it got a local\_error with possible reason - wrong signature - exit code = 40.
 
-```
+```json
 {
   "code": 507,
   "message": "Message expired. Possible reason: Contract execution was terminated with error: Contract did not accept message, exit code: 40 (Invalid signature). Check sign keys. For more information about exit code check the contract source code or ask the contract developer",

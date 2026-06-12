@@ -80,7 +80,7 @@ fetch("endpoint", requestOptions)
 {% endtab %}
 
 {% tab title="Postman" %}
-```
+```text
 URL: endpoint
 Body: GraphQL
 Query:

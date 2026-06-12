@@ -1,0 +1,32 @@
+on:
+  push:
+    paths:
+      - "docs/**"
+      - "tools/docs-ai-*.cjs"
+      - "tools/package.json"
+      - ".github/workflows/docs.yaml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "tools/docs-ai-*.cjs"
+      - "tools/package.json"
+      - ".github/workflows/docs.yaml"
+
+name: Docs
+
+concurrency:
+  group: docs-${{ github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  ai-index:
+    name: AI index
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm --prefix tools run ai:index
+      - run: npm --prefix tools run ai:check
+      - run: git diff --exit-code -- docs/ai-index.jsonl

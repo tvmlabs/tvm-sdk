@@ -1,3 +1,11 @@
+---
+description: Mnemonic standards, key derivation, and signing algorithms used by the SDK.
+status: stable
+product: cryptography
+audience: app-developer
+last_verified: 2026-06-11
+---
+
 # Mnemonics and Keys
 
 This guide explains which mnemonic standards the SDK uses, how it derives signing keys from a mnemonic, how to create signing keys without a mnemonic, and which signature algorithm is used for messages.
@@ -46,7 +54,7 @@ console.log(`Generated seed phrase: "${phrase}"`);
 
 Result:
 
-```
+```text
 Generated seed phrase: "garden wedding range mixed during left powder grid modify safe recycle cup"
 ```
 
@@ -72,7 +80,7 @@ console.log(keyPair);
 
 Result:
 
-```
+```text
 Generated key pair:
 {
   public: '4085d11b6d607c44ef0e8ddc535786af1a4b1f971e758206cd222ed3eba47d8b',
@@ -103,7 +111,7 @@ console.log(simpleKeys);
 
 Result:
 
-```
+```text
 Key pair not from mnemonic:
 {
   public: 'de996e3004e2bc73b47e8a4fce665847194e2245ddbfc30d9ec2014913249f50',
@@ -133,7 +141,7 @@ console.log(`Serialized extended master private key:\n${hdkRoot}`);
 
 Result:
 
-```
+```text
 Serialized extended master private key:
 xprv9s21ZrQH143K45hXeaopM1rAUJDszLAcwFkxrZ4njANoGhFPYFsB7rzspWC8wAnWoZ2bPia7covh3mVVboC2nEswu18iEHs5LjVknSWMR2w
 ```
@@ -157,14 +165,14 @@ console.log(`Serialized derived extended private key:\n${extendedPrKey}`);
 
 Result:
 
-```
+```text
 Serialized derived extended private key:
 xprvA45BBKdrZKobCbeFvC316LZ6AVDXbDn8Sa3btCMCcgTRM4CRxX4Tg3fk7sNNXPza9aMiS6mBMp7wfHdmT23bri6YgwHbTJgXqKnJNNHAw98
 ```
 
 The default derivation path used by `mnemonic_derive_sign_keys` is:
 
-```
+```text
 m/44'/396'/0'/0/0 // Will switch to 1331 after Acki Nacki is registered in the SLIP-0044 registry via the SatoshiLabs PR
 ```
 
@@ -182,7 +190,7 @@ console.log(`Derived private key:\n${secret}`);
 
 Result:
 
-```
+```text
 Derived private key:
 e90866b307ea6a72c216a34786762e648e9b382779fdfb88cf7b1e900a6bf0e2
 ```
@@ -202,7 +210,7 @@ console.log(naclKeyPair);
 
 Result:
 
-```
+```text
 NaCl key pair for signing:
 {
   public: '4085d11b6d607c44ef0e8ddc535786af1a4b1f971e758206cd222ed3eba47d8b',

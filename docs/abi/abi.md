@@ -1,5 +1,10 @@
 ---
 title: ABI Specification
+description: ABI message body layout specification for contract interactions.
+status: stable
+product: abi
+audience: app-developer
+last_verified: 2026-06-11
 ---
 
 # ABI Specification
@@ -693,7 +698,7 @@ There are some specifics when working with "big" structures as values in arrays.
 
 When working with "big" structures in mappings and arrays data may be written in two possible ways - either into cell or into reference, depending on the size:
 
-```
+```text
 if (12 + len(key) + maxValueBitLength <= 1023) then write data into cell
 
 else write data to reference.

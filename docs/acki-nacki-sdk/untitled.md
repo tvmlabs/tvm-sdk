@@ -1,5 +1,9 @@
 ---
 description: Overview of SDK components
+status: stable
+product: sdk
+audience: app-developer
+last_verified: 2026-06-11
 ---
 
 # About Acki Nacki SDK
@@ -204,13 +208,13 @@ node index binding -l ts -o ../../ever-sdk-js/packages/core/src
 
 To run test suite use standard Rust test command
 
-```
+```bash
 cargo test
 ```
 
 SDK tests need GraphQL endpoint to run on. Such an API is exposed by a Block Manager or Keeper node.
 
-```
+```text
 TON_USE_SE: true/false - flag defining if tests run against local network (true) or a real network (false)
 TON_NETWORK_ADDRESS - Block Keeper addresses separated by comma.
 TON_GIVER_SECRET - Sponsor Wallet secret key. If not defined, default Local Network giver keys are used

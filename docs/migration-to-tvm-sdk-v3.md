@@ -1,3 +1,11 @@
+---
+description: Migration guide for TVM SDK v3.0 and Acki Nacki GraphQL API v1.0.
+status: stable
+product: sdk
+audience: app-developer
+last_verified: 2026-06-11
+---
+
 # Migration to 3.0 SDK and 1.0 GQL API
 
 TVM SDK v3.0 and updated Acki Nacki service APIs introduce **Dapp ID** support in address format. The migration affects SDK calls, `tvm-cli` tool, GraphQL queries, and Block Keeper / Block Manager REST APIs.
@@ -6,7 +14,7 @@ TVM SDK v3.0 and updated Acki Nacki service APIs introduce **Dapp ID** support i
 
 Account address is now represented by two raw 64-character hex values:
 
-```
+```text
 <dapp_id>::<account_id>
 ```
 
@@ -29,7 +37,7 @@ Pass `dapp_id` as a raw 64-character hex string without the `0:` prefix.
 
 Commands that take an address argument require the extended address format:
 
-```
+```text
 <dapp_id>::<account_id>
 ```
 

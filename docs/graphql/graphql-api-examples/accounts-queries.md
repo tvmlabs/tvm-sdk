@@ -346,13 +346,13 @@ Then, by decoding the \`body\` of that message you can obtain the data attached 
 You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body) or use tvm-cli comand:\
 For example:
 
-```
+```bash
 tvm-cli decode body te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA== --abi ./contracts/0.79.3_compiled/exchange/Exchange.abi.json
 ```
 
 As a result, you will get something approximately like this:
 
-```
+```text
 Input arguments:
     body: te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==
      abi: ./contracts/0.79.3_compiled/exchange/Exchange.abi.json

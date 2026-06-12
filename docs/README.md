@@ -1,3 +1,11 @@
+---
+description: Guide to Dapp ID creation, contract interactions, fees, and centralized replenishment.
+status: stable
+product: dapp-id
+audience: app-developer
+last_verified: 2026-06-11
+---
+
 # Dapp ID Full Guide: creation, fees, centralized replenishment
 
 ## **What will you learn from this guide?** <a href="#prerequisites" id="prerequisites"></a>
@@ -17,7 +25,7 @@
 In this guide, we will use the test network at [`shellnet.ackinacki.org`](https://shellnet.ackinacki.org).\
 We need to specify the blockchain endpoint for deployment:
 
-```
+```bash
 tvm-cli config -g --url shellnet.ackinacki.org
 ```
 
@@ -169,16 +177,16 @@ contract helloWorld {
 
 Let's create a folder for our project and clone the [repository](https://github.com/tvmlabs/sdk-examples/tree/main) with examples into it:
 
-<pre><code>cd ~
+```bash
+cd ~
 mkdir helloWorld
-<strong>cd helloWorld
-</strong>git clone https://github.com/tvmlabs/sdk-examples.git
-
-</code></pre>
+cd helloWorld
+git clone https://github.com/tvmlabs/sdk-examples.git
+```
 
 and copy the `contracts` folder from there:
 
-```
+```bash
 cp -r sdk-examples/contracts .
 cd contracts/helloWorld
 ```
@@ -187,7 +195,7 @@ cd contracts/helloWorld
 
 Compile the contract `helloWorld` using [TVM Solidity compiler](https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/tag/gosh_0.79.3):
 
-```
+```bash
 sold --tvm-version gosh helloWorld.sol
 ```
 
@@ -201,15 +209,16 @@ To deploy a contract, its balance must be funded with SHELL tokens.
 
 To do this, we first need to determine its address. Let's start by generating a **seed phrase** and **keys** for your contract:
 
-<pre><code><strong>tvm-cli genphrase --dump helloWorld.keys.json
-</strong></code></pre>
+```bash
+tvm-cli genphrase --dump helloWorld.keys.json
+```
 
 {% hint style="info" %}
 **Seed phrase** is printed to stdout.\
 **Key pair** will be generated and saved to the file **`helloWorld.keys.json`**.
 {% endhint %}
 
-<figure><img src=".gitbook/assets/seed_phrase (2).jpg" alt=""><figcaption></figcaption></figure>
+![Example output with generated seed phrase](<.gitbook/assets/seed_phrase (2).jpg>)
 
 {% hint style="danger" %}
 **Write your Seed Phrase down and store it somewhere safe, and never share it with anyone. Avoid storing it in plain text or screenshots, or any other non-secure way. If you lose it, you will not be able to recover it from your Key Pair. If you lose both Seed Phrase and Key Pair you lose access to your assets. Anyone who gets it, gets full access to your assets.**\
@@ -218,7 +227,7 @@ To do this, we first need to determine its address. Let's start by generating a 
 
 Now let's generate the **contract address** using the keys obtained earlier:
 
-```
+```bash
 tvm-cli genaddr helloWorld.tvc --save --setkey helloWorld.keys.json
 ```
 
@@ -228,7 +237,7 @@ After this step, the `.tvc` file will be overwritten with the specified keys.
 
 Address of your contract in the blockchain is located after `Raw address:`
 
-<figure><img src=".gitbook/assets/raw_address (1).jpg" alt=""><figcaption></figcaption></figure>
+![Example output showing the generated raw contract address](<.gitbook/assets/raw_address (1).jpg>)
 
 {% hint style="info" %}
 **Save `Raw address` value** - you will need it to deploy your contract and to work with it.\
@@ -239,7 +248,7 @@ To top up the balance (approx. 10 SHELL) of the `helloWorld` contract, [use your
 
 and apply the following method `sendTransaction`:
 
-```
+```text
 sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bool bounce, uint8 flags, TvmCell payload)
 ```
 
@@ -252,9 +261,9 @@ sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bo
 
 For example: you can use the command:
 
-<pre><code><strong>tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
-</strong>
-</code></pre>
+```bash
+tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+```
 
 {% hint style="info" %}
 Within Dapp ID, you can transfer both ECC tokens (e.x.SHELL) and VMSHELL.\
@@ -263,13 +272,13 @@ Within Dapp ID, you can transfer both ECC tokens (e.x.SHELL) and VMSHELL.\
 
 Check the state of the pre-deployed contract. It should be `Uninit`:
 
-```
+```bash
 tvm-cli account <YourAddress>
 ```
 
 You will see something similar to the following:
 
-<figure><img src=".gitbook/assets/uinit.jpg" alt=""><figcaption></figcaption></figure>
+![Explorer view showing the contract in Uninit state](.gitbook/assets/uinit.jpg)
 
 ### Deploy
 
@@ -287,22 +296,22 @@ Go back now and check the constructor code of `helloWallet` - you will find this
 
 Lets deploy `helloWorld` and create our first Dapp ID with this command:
 
-```
+```bash
 tvm-cli deploy --abi helloWorld.abi.json --sign helloWorld.keys.json helloWorld.tvc '{"value":10000000000}'
 ```
 
-<figure><img src=".gitbook/assets/deploing.jpg" alt=""><figcaption></figcaption></figure>
+![Example deployment command result for the helloWorld contract](.gitbook/assets/deploing.jpg)
 
 6. Check the contract state again. This time, it is should be `Active`.
 
-<figure><img src=".gitbook/assets/active (2).jpg" alt=""><figcaption></figcaption></figure>
+![Explorer view showing the deployed helloWorld contract in Active state](<.gitbook/assets/active (2).jpg>)
 
 **View contract information with Explorer**
 
 Go to [testnet Acki Nacki explorer](https://shellnet.ackinacki.org) and search for in search bar.\
 Open your account page. You will need it later to see its transactions and messages, that we will produce in the next steps.
 
-<figure><img src=".gitbook/assets/expl (1).jpg" alt=""><figcaption></figcaption></figure>
+![Acki Nacki explorer account page for the deployed contract](<.gitbook/assets/expl (1).jpg>)
 
 **Explore contract information with GraphQL**
 
@@ -310,7 +319,7 @@ Go to [GraphQL playground](https://shellnet.ackinacki.org/graphql).
 
 Enter the information in the left pane and click the "Run" button (replace the contract's address with the one you obtained in the previous steps).
 
-```
+```graphql
 query {
   accounts(
     filter: {
@@ -335,38 +344,38 @@ The `dapp_id` field will contain the identifier of your decentralized contract s
 
 You will see something that looks similar following:
 
-<figure><img src=".gitbook/assets/GQL_.jpg" alt=""><figcaption></figcaption></figure>
+![GraphQL playground result showing account fields including dapp_id](.gitbook/assets/GQL_.jpg)
 
 {% hint style="info" %}
 **You can specify any other fields in the result section that are available in GraphQL Schema.**\
-Click the icon <img src=".gitbook/assets/image (2).png" alt="" data-size="line"> in the upper-left corner of the screen to view the API documentation.
+Click the icon <img src=".gitbook/assets/image (2).png" alt="GraphQL playground documentation icon" data-size="line"> in the upper-left corner of the screen to view the API documentation.
 {% endhint %}
 
 ## **Run a getter**
 
 The `helloWorld` contract features a get-method: `timestamp`. Let's call it and check the result:
 
-```
+```bash
 tvm-cli run <YourAddress> timestamp {} --abi helloWorld.abi.json
 ```
 
 result:
 
-<figure><img src=".gitbook/assets/timestamp.jpg" alt="" width="423"><figcaption></figcaption></figure>
+![tvm-cli output showing the timestamp getter result](.gitbook/assets/timestamp.jpg)
 
 ## Call a method on-chain
 
 The helloWorld contract has a `touch` method. Let’s run it on-chain using the `call` command:
 
-```
+```bash
 tvm-cli call <YourAddress> touch {} --abi helloWorld.abi.json --sign helloWorld.keys.json
 ```
 
-<figure><img src=".gitbook/assets/touch (1).jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output for calling the touch method](<.gitbook/assets/touch (1).jpg>)
 
 Call the get-method `timestamp` again to verify that the timestamp has been updated:
 
-<figure><img src=".gitbook/assets/timestamp_after.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing the timestamp value after calling touch](.gitbook/assets/timestamp_after.jpg)
 
 ## Add another contract to your Dapp ID
 
@@ -376,7 +385,7 @@ To add a contract to the Dapp ID system, it must be deployed via an internal mes
 
 In our case, this can be done using the following function:
 
-```
+```solidity
 function deployNewContract(
         TvmCell stateInit,
         uint128 initialBalance,
@@ -390,37 +399,37 @@ function deployNewContract(
 
 Let’s add another contract to our Dapp ID. For this, we’ll use a copy of the `helloWorld` contract and name it `helloUniverse:`
 
-```
+```bash
 cp helloWorld.tvc helloUniverse.tvc
 cp helloWorld.abi.json helloUniverse.abi.json
 ```
 
 Now, let’s calculate the address of the `helloUniverse` contract using the existing key pair.
 
-```
+```bash
 tvm-cli genaddr helloUniverse.tvc --save --setkey helloWorld.keys.json
 ```
 
 And we get the same address as the `helloWorld` contract.
 
-<figure><img src=".gitbook/assets/universe_gen_addr_too.jpg" alt=""><figcaption></figcaption></figure>
+![Example output showing helloUniverse gets the same address when using the existing key pair](.gitbook/assets/universe_gen_addr_too.jpg)
 
 To avoid this, it’s essential to use a different key pair.\
 Let’s generate a new seed phrase with a fresh pair of keys:
 
-```
+```bash
 tvm-cli genphrase --dump helloUniverse.keys.json
 ```
 
-<figure><img src=".gitbook/assets/seed_phrase_universe.jpg" alt=""><figcaption></figcaption></figure>
+![Example output with generated seed phrase for helloUniverse](.gitbook/assets/seed_phrase_universe.jpg)
 
 Let’s calculate the address and prepare the TVC file for the new contract:
 
-```
+```bash
 tvm-cli genaddr helloUniverse.tvc --save --setkey helloUniverse.keys.json
 ```
 
-<figure><img src=".gitbook/assets/raw_address_universe.jpg" alt=""><figcaption></figcaption></figure>
+![Example output showing the generated raw address for helloUniverse](.gitbook/assets/raw_address_universe.jpg)
 
 To deploy a new contract, you need to prepare its `stateInit` and a deployment message body.
 
@@ -428,17 +437,17 @@ To obtain the `stateInit`, execute the following command:
 
 Since the result can be quite large, let’s save this value in a variable: `HW_STATE_INIT`.
 
-```
+```bash
 HW_STATE_INIT=$(base64 -w 0 helloUniverse.tvc)
 ```
 
 Let’s generate the message body with a constructor call for the internal deployment of the contract from another contract.:
 
-```
+```bash
 tvm-cli body --abi helloUniverse.abi.json constructor '{"value": 10000000000}'
 ```
 
-<figure><img src=".gitbook/assets/msg_body_for_HU.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing the generated constructor message body for helloUniverse](.gitbook/assets/msg_body_for_HU.jpg)
 
 We’ll need to place the `Message body` field value into the deployment payload.
 
@@ -446,7 +455,7 @@ Now we can call `deployNewContract` function.
 
 In our case, the command will be as follows:
 
-```
+```bash
 tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e deployNewContract '{"stateInit":"'$HW_STATE_INIT'", "initialBalance":10000000000, "payload":"te6ccgEBAQEADgAAGHA94s8AAAACVAvkAA=="}' --abi helloWorld.abi.json 
 ```
 
@@ -454,7 +463,7 @@ This way, the new contract within the DAPP ID will be deployed through an intern
 
 Check the contract state:
 
-<figure><img src=".gitbook/assets/universe_activ.jpg" alt=""><figcaption></figcaption></figure>
+![Explorer view showing helloUniverse deployed in Active state](.gitbook/assets/universe_activ.jpg)
 
 {% hint style="success" %}
 Note that the `helloUniverse` contract shares **the same DAPP ID** as the `helloWorld` contract.
@@ -464,7 +473,7 @@ Note that the `helloUniverse` contract shares **the same DAPP ID** as the `hello
 
 To transfer SHELL, within the same DAPP ID, use the function `sendShell`
 
-```
+```solidity
 function sendShell(address dest, uint128 value)
 ```
 
@@ -473,7 +482,7 @@ function sendShell(address dest, uint128 value)
 
 To transfer VMSHELL, within the same DAPP ID, use the function `sendVMShell`
 
-```
+```solidity
 function sendVMShell(address dest, uint128 amount, bool bounce)
 ```
 
@@ -484,17 +493,17 @@ function sendVMShell(address dest, uint128 amount, bool bounce)
 Let's call the `touch` function in `helloUniverse` through the `helloWorld` contract.\
 But first, let's check the value of the `timestamp` variable in the `helloUniverse` contract.
 
-```
+```bash
 tvm-cli run <Address_helloUniverse> timestamp {} --abi helloUniverse.abi.json
 ```
 
 result:
 
-<figure><img src=".gitbook/assets/timestamp_HU_before.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing helloUniverse timestamp before the cross-contract call](.gitbook/assets/timestamp_HU_before.jpg)
 
 To call the `touch` function in `helloUniverse`, we’ll invoke the `callExtTouch` method in `helloWorld`.
 
-```
+```solidity
 function callExtTouch(address addr)
 ```
 
@@ -502,15 +511,15 @@ function callExtTouch(address addr)
 
 In our case, the command will be as follows:
 
-```
+```bash
 tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:4d5639cd88ee726492b767db774b5a2fe8573c46fd598a75febb5525dc12f918"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
 ```
 
-<figure><img src=".gitbook/assets/callExtTouch_HU.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output for callExtTouch invocation on helloUniverse](.gitbook/assets/callExtTouch_HU.jpg)
 
 Then, let's check if the `timestamp` has changed in the `helloUniverse` contract:
 
-<figure><img src=".gitbook/assets/timestamp_HU_after.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing helloUniverse timestamp after the cross-contract call](.gitbook/assets/timestamp_HU_after.jpg)
 
 Output: The timestamp has changed.
 
@@ -524,21 +533,23 @@ Let's deploy the `helloWorld2` contract the same way as `helloWorld`.
 
 The `helloWorld` and `helloWorld2` contracts are deployed with different Dapp IDs.
 
-<div><figure><img src=".gitbook/assets/ballance_HW.jpg" alt=""><figcaption><p>helloWorld</p></figcaption></figure> <figure><img src=".gitbook/assets/ballance_HW2.jpg" alt=""><figcaption><p>helloWorld2</p></figcaption></figure></div>
+![Balance view for the helloWorld contract](.gitbook/assets/ballance_HW.jpg)
+
+![Balance view for the helloWorld2 contract](.gitbook/assets/ballance_HW2.jpg)
 
 Let’s check the current `timestamp` in the `helloWorld2` contract:
 
-```
+```bash
 tvm-cli run <YourAddress> timestamp {} --abi helloWorld2.abi.json
 ```
 
 result:
 
-<figure><img src=".gitbook/assets/timestamp_HW2_before.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing helloWorld2 timestamp before the external call](.gitbook/assets/timestamp_HW2_before.jpg)
 
 To call the `touch` function in `helloWorld2`, we’ll invoke the `callExtTouch` method in `helloWorld`.
 
-```
+```solidity
 function callExtTouch(address addr)
 ```
 
@@ -546,7 +557,7 @@ function callExtTouch(address addr)
 
 In our case, the command will be as follows:
 
-```
+```bash
 tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:f2fe666ad8126ca78f8190305bdf6436971236c477699b3c34e90c5ed6b0691e"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
 
 ```
@@ -555,11 +566,11 @@ tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e 
 If the message is sent to a different Dapp ID, all VMSHELL tokens (in `msg_value)` are set to zero.
 {% endhint %}
 
-<figure><img src=".gitbook/assets/callExtTouch_HW2.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output for callExtTouch invocation on helloWorld2](.gitbook/assets/callExtTouch_HW2.jpg)
 
 Then, let's check if the `timestamp` has changed in the `helloWorld2` contract:
 
-<figure><img src=".gitbook/assets/timestamp_HW2_after.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli output showing helloWorld2 timestamp after the external call](.gitbook/assets/timestamp_HW2_after.jpg)
 
 Output: The timestamp has changed.
 
@@ -585,13 +596,13 @@ The `DappConfig` contract is an informational contract that holds data about the
 
 1. To deploy the `DappConfig` contract, you need to know the Dapp ID. You can obtain it as follows:
 
-```
+```bash
 tvm-cli account <CONTRACT_ADDRESS>
 ```
 
 For example, our HelloWorld contract will have the following Dapp ID:
 
-<figure><img src=".gitbook/assets/dc1.jpg" alt=""><figcaption></figcaption></figure>
+![tvm-cli account output showing the Dapp ID for the helloWorld contract](.gitbook/assets/dc1.jpg)
 
 2.  To deploy a `DappConfig` contract, you need to call the `deployNewConfigCustom` function via an internal message from a contract within the Dapp where you want to deploy the `DappConfig` contract.
 
@@ -630,7 +641,7 @@ The address of the `DappRoot` contract is: `0:9999999999999999999999999999999999
 
 Example command:
 
-```
+```bash
 tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json.abi.json --sign helloWorld.keys.json
 
 ```
@@ -641,7 +652,7 @@ Upon deployment, the contract's balance is credited with **100 VMSHELL tokens**.
 
 3. Use the getConfigAddr method to retrieve the address of the deployed `DappConfig` contract:
 
-```
+```text
 getConfigAddr(uint256 dapp_id)
 ```
 
@@ -649,14 +660,14 @@ getConfigAddr(uint256 dapp_id)
 
 Example command to get the address of the DappConfig contract:
 
-```
+```bash
 tvm-cli -u shellnet.ackinacki.org -j run 0:9999999999999999999999999999999999999999999999999999999999999999 getConfigAddr '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi acki-nacki/contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
 
 ```
 
 result:
 
-```
+```json
 {
 "config": "0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d",
 "state_timestamp": 1774094007991
@@ -669,7 +680,7 @@ To fund the balance of the `DappConfig` contract, you can call the `sendTransact
 
 Example command to transfer 10 SHELL from the balance of the Multisig contract to the balance of the `DappConfig` contract:
 
-```
+```bash
 
 tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d","value": 1000000000,"bounce":false, "cc": {"2":10000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
 
@@ -680,7 +691,7 @@ tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 
 To automate the funding process, add balance check and token minting logic to your DAPP ID contracts.\
 Use the TVM instruction `gosh.mintshell` which mints some VMSHELL tokens, allowed by the available credit in the DappConfig contract for this Dapp ID:
 
-```
+```text
 gosh.mintshell(value)
 ```
 
@@ -703,47 +714,47 @@ Let's try:
 
 Check the balance of the HelloWorld contract:
 
-```
+```bash
 tvm-cli -j account 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
 ```
 
 Result: the balance is 0.465631997 VMSHELL tokens.
 
-<figure><img src=".gitbook/assets/avtR1 (1).jpg" alt=""><figcaption></figcaption></figure>
+![Account balance before automatic replenishment](<.gitbook/assets/avtR1 (1).jpg>)
 
 Using the `getDetails()` method, you can view the available balance of the DappConfig contract.
 
-```
+```bash
 tvm-cli -j run 0:020473650f8bf0d3df871aadf28a40315ce6ae6d7fffe63e5e557198e0c68b5d getDetails {} --abi dappConfig/DappConfig.abi.json
 ```
 
 Result: the balance is 500.
 
-<figure><img src=".gitbook/assets/dcb1.jpg" alt=""><figcaption></figcaption></figure>
+![DappConfig getDetails output before automatic replenishment](.gitbook/assets/dcb1.jpg)
 
 Thus, when using the `touch()` method, the `getTokens()` function will be called. This function will check the balance of the HelloWorld contract, and since it is less than 100 VMSHELL, it will trigger a replenishment:
 
-<figure><img src=".gitbook/assets/touch.jpg" alt=""><figcaption></figcaption></figure>
+![touch method call that triggers automatic replenishment](.gitbook/assets/touch.jpg)
 
 Call the `touch()` function:
 
-```
+```bash
 tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e touch {} --abi helloWorld.abi.json
 ```
 
 and check the contract balance:
 
-```
+```bash
 tvm-cli -j account 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
 ```
 
 As a result, we see that the balance has been replenished by 100 VMSHELL and now amounts to 100.460237956 VMSHELL.
 
-<figure><img src=".gitbook/assets/dc2.jpg" alt=""><figcaption></figcaption></figure>
+![Account balance after automatic replenishment](.gitbook/assets/dc2.jpg)
 
 And checking the available balance of the DappConfig contract will also show that it has decreased by 100 tokens:
 
-<figure><img src=".gitbook/assets/dcb2.jpg" alt=""><figcaption></figcaption></figure>
+![DappConfig getDetails output after automatic replenishment](.gitbook/assets/dcb2.jpg)
 
 {% hint style="danger" %}
 When calling `getDetails()`, you retrieve the available balance in SHELL tokens.\
@@ -751,7 +762,7 @@ In contrast, when checking the account data, the `ecc` field will show the cumul
 **This behavior is relevant only for the** `DappConfig` **contract.**
 {% endhint %}
 
-<figure><img src=".gitbook/assets/accDC.jpg" alt="" width="563"><figcaption></figcaption></figure>
+![DappConfig account data showing cumulative ECC token fields](.gitbook/assets/accDC.jpg)
 
 ## Fees
 
@@ -771,7 +782,7 @@ When transferring messages between contracts under different Dapp IDs, the entir
 
 When running the deploy command, you may encounter the following error:
 
-```
+```text
 Input arguments:
      tvc: UpdateCustodianMultisigWallet.tvc
   params: {"owners_pubkey":["0x7111b817f126522ead42c315ed1d908110bb7caf033fb1c4428537d0dc82cf4b"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":0}

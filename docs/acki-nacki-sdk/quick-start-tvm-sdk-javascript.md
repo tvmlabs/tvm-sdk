@@ -30,7 +30,7 @@ To replenish the balance of the Multisig wallet contract, please contact us in t
 
 We will perform all the tasks in this quick start within a separate `~/test-sdk` folder. Let's create it:
 
-```
+```bash
 cd ~
 mkdir test-sdk
 ```
@@ -39,14 +39,14 @@ mkdir test-sdk
 
 1. Clone the repository into a separate directory:
 
-```
+```bash
 cd ~/test-sdk
 git clone https://github.com/tvmlabs/tvm-sdk-js.git
 ```
 
 2. Run build:
 
-```
+```bash
 cd tvm-sdk-js/packages/lib-node/build
 cargo run
 ```
@@ -57,7 +57,7 @@ As a result, the built binding `tvmsdk.node` will be placed in the folder `~/tes
 
 1. Clone the repository containing the demo application:
 
-```
+```bash
 cd ~/test-sdk
 git clone https://github.com/tvmlabs/sdk-examples.git
 cd sdk-examples/js/nodejs/helloWorld
@@ -67,20 +67,20 @@ cd sdk-examples/js/nodejs/helloWorld
 
 To do this, in the demo folder, edit the `.env` file with the following content:
 
-```
+```text
 WALLET_ADDRESS=YOUR_MULTISIG_WALLET_ADDRESS
 WALLET_KEYS=FULL_PATH_TO_YOUR_MULTISIG_WALLET_KEYS_FILE  # the absolute path must be specified
 ```
 
 3. Install the `@tvmsdk/core` and `@tvmsdk/lib-node` packages for the demo application:
 
-```
+```bash
 npm install
 ```
 
 4. Replace the binary file in `@tvmsdk/lib-node` with the Acki Nacki - compatible one that was built earlier:
 
-```
+```bash
 cp ~/test-sdk/tvm-sdk-js/packages/lib-node/tvmsdk.node ~/test-sdk/sdk-examples/js/nodejs/helloWorld/node_modules/@tvmsdk/lib-node/
 ```
 
@@ -88,7 +88,7 @@ cp ~/test-sdk/tvm-sdk-js/packages/lib-node/tvmsdk.node ~/test-sdk/sdk-examples/j
 
 Go to the folder containing the demo application and run it:
 
-```
+```bash
 cd ~/test-sdk/sdk-examples/js/nodejs/helloWorld
 node index.js
 ```
@@ -99,7 +99,7 @@ You will see a result similar to the following:
 All amounts are specified in nanotokens.
 {% endhint %}
 
-```
+```text
 wallet keys fname: /home/username/wallet/wallet.keys.json
 Future address of helloWorld contract is: 0:ef6e287ce266c9ab6bc1190b3bed061bef935796e4a0d659eb28ddcc6f9ecd03
 Transferring 2000000000 nanoSHELL tokens from Multisig wallet to 0:ef6e287ce266c9ab6bc1190b3bed061bef935796e4a0d659eb28ddcc6f9ecd03

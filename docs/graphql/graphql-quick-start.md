@@ -1,3 +1,11 @@
+---
+description: Quick start for querying Acki Nacki GraphQL API from playground, curl, and JavaScript.
+status: stable
+product: graphql
+audience: app-developer
+last_verified: 2026-06-11
+---
+
 # GraphQL Quick Start
 
 Let's start with observing API playground of Acki Nacki testnet [https://shellnet.ackinacki.org/graphql](https://shellnet.ackinacki.org/graphql).
@@ -35,7 +43,7 @@ Click on the button "book" in the upper left corner of the screen. You will see 
 
 ## Request with curl
 
-```
+```bash
 curl --location --request POST https://shellnet.ackinacki.org/graphql \
 --header 'Content-Type: application/json' \
 --data-raw '{"query":"query($address: String!){\n  blockchain{\n    account(address:$address){\n      info{\n        balance(format:DEC)\n      }\n    }\n  }\n}","variables":{"address":"0:ee150cacfc7508f522dbd9bd6c705238ef316b324244843eea3e81e35ae2a962"}}'
