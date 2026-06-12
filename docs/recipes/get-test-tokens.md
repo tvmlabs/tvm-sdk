@@ -1,7 +1,7 @@
 ---
 description: Get Shellnet test tokens for development and contract deployment.
 status: stable
-product: dapp-id
+product: sdk
 audience: app-developer
 task: get-test-tokens
 last_verified: 2026-06-11

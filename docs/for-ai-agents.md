@@ -60,9 +60,22 @@ When generating code, use the language from the nearest matching example. If no 
 
 When an API element is marked `UNSTABLE` or `DEPRECATED`, mention that status before recommending it.
 
+## Metadata Taxonomy
+
+Use frontmatter metadata as retrieval hints:
+
+| Field | Values |
+| --- | --- |
+| `status` | `stable`, `draft`, `deprecated` |
+| `product` | `sdk`, `graphql`, `vm`, `abi`, `cryptography`, `dapp-id`, `docs` |
+| `audience` | `app-developer`, `binding-developer`, `ai-agent` |
+| `task` | A kebab-case task identifier, or an empty string when the page is general reference material. |
+
+Use `product` for the primary documentation surface. For `tvm-cli` recipes, use `sdk` even when the workflow deploys a Dapp ID contract.
+
 ## Structured Index
 
-The source repository contains `docs/ai-index.jsonl` with JSON Lines records for public pages and page sections. If GitBook serves repository files as static assets, expose the same file at `https://dev.ackinacki.com/ai-index.jsonl`.
+The source repository contains `docs/ai-index.jsonl` with JSON Lines records for public pages and page sections.
 
 Use `page` records for navigation and source selection:
 
@@ -70,17 +83,17 @@ Use `page` records for navigation and source selection:
 {
   "type": "page",
   "visibility": "public",
-  "source_path": "docs/graphql/graphql-quick-start.md",
-  "url": "https://dev.ackinacki.com/graphql/graphql-quick-start.md",
-  "title": "GraphQL Quick Start",
-  "description": "Short page description when available",
-  "section": "GraphQL",
+  "source_path": "docs/recipes/query-account-graphql.md",
+  "url": "https://dev.ackinacki.com/recipes/query-account-graphql.md",
+  "title": "Query an Account with GraphQL",
+  "description": "Query an Acki Nacki account through the GraphQL API.",
+  "section": "Recipes",
   "status": "stable",
   "product": "graphql",
   "audience": "app-developer",
   "task": "query-account-graphql",
   "last_verified": "2026-06-11",
-  "headings": ["Playground", "Documentation", "Request with curl"]
+  "headings": ["Goal", "Prerequisites", "Endpoint", "Query", "Curl Example", "Expected Result", "Notes", "Related Docs"]
 }
 ```
 
@@ -90,14 +103,15 @@ Use `section` records for precise retrieval:
 {
   "type": "section",
   "visibility": "public",
-  "source_path": "docs/graphql/graphql-quick-start.md",
-  "parent_url": "https://dev.ackinacki.com/graphql/graphql-quick-start.md",
-  "url": "https://dev.ackinacki.com/graphql/graphql-quick-start.md#request-with-curl",
-  "title": "Request with curl",
-  "page_title": "GraphQL Quick Start",
-  "section": "GraphQL",
-  "section_path": ["Request with curl"],
-  "anchor": "request-with-curl",
+  "source_path": "docs/recipes/query-account-graphql.md",
+  "parent_url": "https://dev.ackinacki.com/recipes/query-account-graphql.md",
+  "url": "https://dev.ackinacki.com/recipes/query-account-graphql.md#query",
+  "title": "Query",
+  "page_title": "Query an Account with GraphQL",
+  "section": "Recipes",
+  "section_path": ["Query"],
+  "anchor": "query",
+  "depth": 2,
   "status": "stable",
   "product": "graphql",
   "audience": "app-developer",

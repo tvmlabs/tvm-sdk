@@ -3,17 +3,19 @@
 const fs = require("fs");
 const https = require("https");
 const path = require("path");
+const { parseFrontmatter } = require("./docs-frontmatter.cjs");
 
 const rootDir = path.resolve(__dirname, "..");
 const docsDir = path.join(rootDir, "docs");
 const summaryPath = path.join(docsDir, "SUMMARY.md");
 const indexPath = path.join(docsDir, "ai-index.jsonl");
+const baseUrl = process.env.DOCS_BASE_URL || "https://dev.ackinacki.com";
 const checkLive = process.argv.includes("--live");
 const liveUrls = [
-    "https://dev.ackinacki.com/llms.txt",
-    "https://dev.ackinacki.com/llms-full.txt",
-    "https://dev.ackinacki.com/sitemap.xml",
-    "https://dev.ackinacki.com/sitemap-pages.xml",
+    `${baseUrl}/llms.txt`,
+    `${baseUrl}/llms-full.txt`,
+    `${baseUrl}/sitemap.xml`,
+    `${baseUrl}/sitemap-pages.xml`,
 ];
 const requiredMetadataPages = new Set([
     "docs/README.md",
@@ -33,24 +35,6 @@ const requiredMetadataFields = ["status", "product", "audience", "last_verified"
 
 function readText(filePath) {
     return fs.readFileSync(filePath, "utf8");
-}
-
-function parseFrontmatter(markdown) {
-    if (!markdown.startsWith("---\n")) {
-        return {};
-    }
-    const end = markdown.indexOf("\n---", 4);
-    if (end === -1) {
-        return {};
-    }
-    const data = {};
-    for (const line of markdown.slice(4, end).split(/\r?\n/)) {
-        const match = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
-        if (match) {
-            data[match[1]] = match[2].trim();
-        }
-    }
-    return data;
 }
 
 function collectSummaryLinks() {
@@ -260,7 +244,7 @@ async function main() {
             if (!record.title) {
                 errors.push(`AI index record has empty title: ${record.source_path}`);
             }
-            if (!record.url || !record.url.startsWith("https://dev.ackinacki.com/")) {
+            if (!record.url || !record.url.startsWith(`${baseUrl}/`)) {
                 errors.push(`AI index record has invalid url: ${record.source_path}`);
             }
             if (record.type === "page") {

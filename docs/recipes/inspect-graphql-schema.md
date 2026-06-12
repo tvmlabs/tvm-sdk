@@ -2,7 +2,7 @@
 description: Inspect live Acki Nacki GraphQL schemas for Shellnet and Mainnet.
 status: stable
 product: graphql
-audience: ai-agent
+audience: app-developer
 task: inspect-graphql-schema
 last_verified: 2026-06-11
 ---

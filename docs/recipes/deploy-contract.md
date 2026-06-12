@@ -1,7 +1,7 @@
 ---
 description: Deploy a contract to Shellnet with tvm-cli.
 status: stable
-product: dapp-id
+product: sdk
 audience: app-developer
 task: deploy-contract
 last_verified: 2026-06-11

@@ -2,6 +2,11 @@
 
 const fs = require("fs");
 const path = require("path");
+const {
+    cleanFrontmatterValue,
+    parseFrontmatter,
+    stripFrontmatter,
+} = require("./docs-frontmatter.cjs");
 
 const rootDir = path.resolve(__dirname, "..");
 const docsDir = path.join(rootDir, "docs");
@@ -13,42 +18,6 @@ const baseUrl = process.env.DOCS_BASE_URL || "https://dev.ackinacki.com";
 
 function readText(filePath) {
     return fs.readFileSync(filePath, "utf8");
-}
-
-function parseFrontmatter(markdown) {
-    if (!markdown.startsWith("---\n")) {
-        return {};
-    }
-    const end = markdown.indexOf("\n---", 4);
-    if (end === -1) {
-        return {};
-    }
-    const body = markdown.slice(4, end).split(/\r?\n/);
-    const data = {};
-    let currentKey = null;
-    for (const line of body) {
-        const match = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
-        if (match) {
-            currentKey = match[1];
-            data[currentKey] = match[2].trim();
-            continue;
-        }
-        if (currentKey && /^\s+/.test(line)) {
-            data[currentKey] = `${data[currentKey]} ${line.trim()}`.trim();
-        }
-    }
-    return data;
-}
-
-function cleanFrontmatterValue(value) {
-    if (!value) {
-        return "";
-    }
-    return value
-        .replace(/^>-\s*/, "")
-        .replace(/^["']|["']$/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
 }
 
 function parseSummary() {
@@ -105,11 +74,24 @@ function titleFromMarkdown(markdown, fallback) {
 
 function cleanHeading(text) {
     return text
-        .replace(/\s*<a\s+[^>]+><\/a>\s*/g, "")
+        .replace(/\s*<a\s+[^>]*><\/a>\s*/gi, "")
+        .replace(/<[^>]+>/g, "")
         .replace(/[*_`]/g, "")
-        .replace(/[^\x20-\x7E]/g, "")
+        .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g, "")
         .replace(/\s+/g, " ")
         .trim();
+}
+
+function explicitAnchorFromHeading(text) {
+    const match = text.match(/<a\s+[^>]*\bid=["']([^"']+)["'][^>]*><\/a>/i);
+    if (!match) {
+        return "";
+    }
+    const anchor = match[1].trim();
+    if (!anchor || /^docs-internal-/i.test(anchor)) {
+        return "";
+    }
+    return anchor;
 }
 
 function slugifyHeading(text) {
@@ -123,32 +105,15 @@ function slugifyHeading(text) {
 }
 
 function headingsFromMarkdown(markdown) {
-    const headings = [];
-    const re = /^#{2,3}\s+(.+)$/gm;
-    let match;
-    while ((match = re.exec(markdown)) !== null) {
-        const text = cleanHeading(match[1]);
-        if (text && headings.length < 20) {
-            headings.push(text);
-        }
-    }
-    return headings;
-}
-
-function stripFrontmatter(markdown) {
-    if (!markdown.startsWith("---\n")) {
-        return markdown;
-    }
-    const end = markdown.indexOf("\n---", 4);
-    if (end === -1) {
-        return markdown;
-    }
-    return markdown.slice(end + 4);
+    return markdownHeadings(markdown)
+        .map((heading) => cleanHeading(heading.raw))
+        .filter(Boolean);
 }
 
 function contentPreview(markdown) {
     return markdown
-        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/```[^\n\r]*(?:\r?\n)([\s\S]*?)```/g, " $1 ")
+        .replace(/~~~[^\n\r]*(?:\r?\n)([\s\S]*?)~~~/g, " $1 ")
         .replace(/\{%\s*(hint|tabs|tab|stepper|step|endhint|endtabs|endtab|endstepper|endstep)[^%]*%\}/g, " ")
         .replace(/<[^>]+>/g, " ")
         .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
@@ -160,18 +125,13 @@ function contentPreview(markdown) {
 }
 
 function sectionRecords(markdown, pageRecord) {
-    const body = stripFrontmatter(markdown);
-    const headingRe = /^(#{2,3})\s+(.+)$/gm;
-    const headings = [];
-    let match;
-    while ((match = headingRe.exec(body)) !== null) {
-        headings.push({
-            depth: match[1].length,
-            raw: match[2],
-            title: cleanHeading(match[2]),
-            start: match.index,
-            contentStart: headingRe.lastIndex,
-        });
+    const { body, headings } = markdownHeadings(markdown, true);
+    const explicitAnchorCounts = new Map();
+    for (const heading of headings) {
+        const explicitAnchor = explicitAnchorFromHeading(heading.raw);
+        if (explicitAnchor) {
+            explicitAnchorCounts.set(explicitAnchor, (explicitAnchorCounts.get(explicitAnchor) || 0) + 1);
+        }
     }
 
     const records = [];
@@ -191,7 +151,10 @@ function sectionRecords(markdown, pageRecord) {
         }
         pathStack.push({ depth: heading.depth, title: heading.title });
 
-        const baseAnchor = slugifyHeading(heading.raw) || `section-${i + 1}`;
+        const explicitAnchor = explicitAnchorFromHeading(heading.raw);
+        const baseAnchor = explicitAnchor && explicitAnchorCounts.get(explicitAnchor) === 1
+            ? explicitAnchor
+            : slugifyHeading(heading.raw) || `section-${i + 1}`;
         const previousCount = usedAnchors.get(baseAnchor) || 0;
         usedAnchors.set(baseAnchor, previousCount + 1);
         const anchor = previousCount === 0 ? baseAnchor : `${baseAnchor}-${previousCount}`;
@@ -218,6 +181,52 @@ function sectionRecords(markdown, pageRecord) {
     }
 
     return records;
+}
+
+function markdownHeadings(markdown, includeOffsets = false) {
+    const body = stripFrontmatter(markdown);
+    const lines = body.split(/\n/);
+    const headings = [];
+    let offset = 0;
+    let inFence = false;
+    let fenceMarker = "";
+
+    for (const rawLine of lines) {
+        const line = rawLine.replace(/\r$/, "");
+        const fence = line.match(/^(```+|~~~+)/);
+        if (fence) {
+            const marker = fence[1][0];
+            if (!inFence) {
+                inFence = true;
+                fenceMarker = marker;
+            } else if (marker === fenceMarker) {
+                inFence = false;
+                fenceMarker = "";
+            }
+            offset += rawLine.length + 1;
+            continue;
+        }
+
+        if (!inFence) {
+            const match = line.match(/^(#{2,3})\s+(.+)$/);
+            if (match) {
+                const heading = {
+                    depth: match[1].length,
+                    raw: match[2],
+                    title: cleanHeading(match[2]),
+                };
+                if (includeOffsets) {
+                    heading.start = offset;
+                    heading.contentStart = offset + rawLine.length + 1;
+                }
+                headings.push(heading);
+            }
+        }
+
+        offset += rawLine.length + 1;
+    }
+
+    return includeOffsets ? { body, headings } : headings;
 }
 
 function buildIndex() {
