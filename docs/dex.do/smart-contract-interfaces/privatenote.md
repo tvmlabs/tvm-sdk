@@ -8,15 +8,15 @@ description: (Work in progress) PrivateNote Contract Interface Documentation
 
 ## Overview
 
-**PrivateNote** is a non-custodial wallet contract bound to a single deposit identifier.\
-It allows users to deploy and interact with **Pari Mutuel Pool (PMP)** contracts, manage stakes, claim rewards, and withdraw tokens — all while preserving privacy guarantees.
+**PrivateNote** is a non-custodial wallet contract that stores balances, manages stakes, and interacts with **Pari Mutuel Pool (PMP)** contracts (deployment, staking, cancellation, claiming).\
+It also supports coupons and withdrawals via `RootPN`     contract — all while preserving privacy guarantees.<br>
 
 Each `PrivateNote`:
 
-* is deterministically deployed by `RootPN`
-* is controlled by an **public key**
-* maintains internal token balances
-* enforces single-operation-at-a-time semantics via a “busy” lock
+* **Owner-authorized** actions are controlled by an **ephemeral public key** (`_ethemeral_pubkey`).
+* The contract uses a **busy state** (`_busy`) to prevent concurrent PMP interactions.
+* Stakes are processed in **two phases**: _candidate_ → confirmed/reverted via PMP callbacks.
+* Some operations require **`debt == 0`** and **no active stakes**.
 
 ***
 
@@ -40,12 +40,21 @@ event OwnerChanged(uint256 oldPubkey, uint256 newPubkey);
 Emitted after a stake is successfully accepted by a PMP.
 
 ```solidity
-event StakeConfirmed(address stakeController, uint32 outcome, uint128 amount);
+event StakeConfirmed(
+    address stakeController,
+    uint32 outcome,
+    uint128 amount,
+    uint8 bet_type
+);
 ```
 
 * `stakeController` - Address of the PMP contract that accepted the stake
 * `outcome` - Outcome identifier the stake was placed on
 * `amount` - Amount of tokens added to the stake
+* `bet_type`  — bet type
+  * `0` — clean bet (from balance)
+  * `1` — debt bet
+  * `2` — coupon bet
 
 ***
 
@@ -54,12 +63,37 @@ event StakeConfirmed(address stakeController, uint32 outcome, uint128 amount);
 Emitted after a stake is cancelled and refunded.
 
 ```solidity
-event StakeCancelled(address stakeController, uint32 outcome, uint128 amount);
+event StakeCancelled(address stakeController, uint128 value);
 ```
 
 * `stakeController` - Address of the PMP contract that cancelled the stake
-* `outcome` - Outcome identifier of the cancelled stake
 * `amount` - Amount of tokens returned
+
+***
+
+### FullSetStakeConfirmed
+
+Emitted when a **full-set stake** is confirmed by PMP
+
+```solidity
+event FullSetStakeConfirmed(address stakeController, uint128[] amount);
+```
+
+* `stakeController`  — PMP address
+* `amount`  — Confirmed stake amounts per outcome
+
+***
+
+### FullSetStakeCancelled
+
+Emitted when a full-set stake is cancelled and funds returned
+
+```solidity
+event FullSetStakeCancelled(address stakeController, uint128 value);
+```
+
+* `stakeController`  — PMP address
+* `value`  — Total returned token value to balance
 
 ***
 
@@ -83,7 +117,7 @@ Emitted when a new PMP contract is deployed.
 
 ```solidity
 event PMPDeployed(
-    string name,
+    uint256 event_id,
     uint32 token_type,
     address pmpAddress,
     address[] oracleEventLists,
@@ -91,7 +125,7 @@ event PMPDeployed(
 );
 ```
 
-* `name` - Name of the PMP event
+* `event_id` - Identifier of the PMP event
 * `token_type` - Token type used for staking
 * `pmpAddress` - Address of the deployed PMP contract
 * `oracleEventLists` - Oracle event list contract addresses
@@ -103,7 +137,7 @@ event PMPDeployed(
 
 ### **`changeOwner`**
 
-Changes the public key controlling the wallet.
+Changes the (ephemeral) public key controlling the wallet.
 
 ```solidity
 function changeOwner(uint256 new_pubkey) external;
@@ -130,49 +164,53 @@ Deploys a new PMP contract associated with this wallet
 
 ```solidity
 function deployPMP(
-    string name,
+    uint256 event_id,
     uint128[] oracleFee,
     uint32 token_type,
     string[] names,
     uint128[] index
-)
-```
-
-**Parameters:**
-
-* `name` — unique PMP name
-* `oracleFee` — oracle fees per oracle
-* `token_type` — token used for staking
-* `names` — oracle names
-* `index` — oracle event list indices
-
-**Behavior:**
-
-* Computes oracle list hash
-* Calculates required oracle fees
-* Deploys PMP deterministically
-* Emits `PMPDeployed`
-
-***
-
-### **`setStake`**
-
-Places or increases a stake on a PMP
-
-```solidity
-function setStake(
-    string name,
-    uint256 oracle_list_hash,
-    uint32 token_type,
-    uint32 outcome,
-    uint128 amount
 ) public;
 ```
 
 **Parameters:**
 
-* `name` - Name of the `PMP` event.\
-  Used to derive the unique event identifier and the target `PMP` contract address.
+* `event_id` — Identifier of the PMP event
+* `oracleFee` — Array of additional fees (in shell tokens) for each oracle. \
+  &#xNAN;_&#x4D;ust match the length of `names` and `index`._
+* `token_type` — Token type used by the PMP contract
+* `names` — Array of oracle names used to compute oracle addresses.
+* `index` — Array of oracle indexes used to compute OracleEventList addresses.
+
+**Deployment flow:**&#x20;
+
+1\. Validate input array lengths. \
+2\. Compute oracle addresses from `names`. \
+3\. Compute `OracleEventList` addresses using oracle code and indexes. \
+4\. Aggregate oracle fees and include network fee. \
+5\. Build PMP StateInit and compute deterministic PMP address. \
+6\. Emit `PMPDeployed` event. \
+7\. Deploy PMP contract with required currencies.
+
+***
+
+### **`setStake`**
+
+Places a single-outcome stake on a PMP
+
+```solidity
+function setStake(
+    uint256 event_id,
+    uint256 oracle_list_hash,
+    uint32 token_type,
+    uint32 outcome,
+    uint128 amount,
+    bool use_coupon
+) public;
+```
+
+**Parameters:**
+
+* `event_id` - PMP event identifier
 * `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
   Must match the oracle list used when the `PMP` contract was deployed.
 * `token_type` - Token type used for staking.\
@@ -181,74 +219,129 @@ function setStake(
   The meaning of the outcome is defined by the `PMP` contract logic.
 * `amount` - Amount of tokens to stake.\
   Must be greater than zero and less than or equal to the available balance for the specified token type.
+* `use_coupon` - Whether to use coupon for this stake \
+  If true, amount will be taken from available coupons instead of balance
 
-**Rules:**
+**Requirements**
 
-* Wallet must not be busy
-* Balance must be sufficient
-* Stake is first stored as `candidate_amount`
-* `PMP` confirmation is required
+* `amount > 0`
+* If `use_coupon == true` → sufficient coupons
+* Else → sufficient token balance
+* Wallet is **not busy**
+
+**Effects**
+
+* Writes candidate stake
+* Deducts balance or coupons
+* Sets `_busy` and `_lastHash`
+* Calls `PMP.acceptStake(...)`
+
+***
+
+### `setFullSetStake`
+
+Places a full-set stake (amount per outcome)
+
+```solidity
+function setFullSetStake(
+        uint256 event_id,
+        uint256 oracle_list_hash,
+        uint32 token_type,
+        uint128[] amount
+    ) public;
+```
+
+**Parameters:**
+
+* `event_id` - PMP event identifier
+* `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
+  Must match the oracle list used when the `PMP` contract was deployed
+* `token_type` - Token type used for staking.\
+  Must correspond to a token balance available in the wallet
+* `amount` - Array of stake amounts per outcome
+
+**Requirements**
+
+* Wallet is **not busy**
+* `amount.length > 0`
+* `debt == 0`
+* Sufficient balance
+* If stake exists → lengths must match
+* Owner authorization
+
+**Effects**
+
+* Sets `candidate_amount = sum(amount)`
+* Deducts balance
+* Sets `_busy` and `_lastHash`
+* Calls `PMP.acceptFullSetStake(...)`
 
 ***
 
 ### **`cancelStake`**
 
-Cancels an existing stake.
+Cancels an existing stake in `PMP`.
 
 ```solidity
 function cancelStake(
-string name,
-uint256 oracle_list_hash,
-uint32 token_type,
-uint32 outcome
+    uint256 event_id,
+    uint256 oracle_list_hash,
+    uint32 token_type,
 ) public;
 ```
 
 **Parameters**
 
-* `name` - Name of the `PMP` event.\
-  Used to derive the event identifier and the address of the target `PMP` contract.
+* `event_id` — Identifier of the PMP event
 * `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
   Must match the oracle list hash of the existing stake.
 * `token_type` - Token type used for the stake being cancelled.\
   Must correspond to the token type of the existing stake entry.
-* `outcome` - Identifier of the outcome for which the stake was placed.\
-  Specifies which stake position should be cancelled.
 
-**Behavior:**
+**Requirements**
 
-* Calls `PMP` to cancel stake
-* Locks wallet until response
+* Wallet is **not busy**
+* Stake record exists
+* Owner authorization
+
+**Flow**
+
+1. Computes stake hash and PMP address
+2. Sets `_busy` and `_lastHash`
+3. Calls `PMP.cancelStake(...)`
 
 ***
 
 ### **`deleteStake`**
 
-Deletes a local stake record without interacting with PMP.
+Deletes a local stake record (does not call PMP)
 
 ```solidity
 function deleteStake(
-string name,
-uint256 oracle_list_hash,
-uint32 token_type,
-uint32 outcome
+    uint256 event_id,
+    uint256 oracle_list_hash,
+    uint32 token_type,
 ) public;
 ```
 
 **Parameters:**
 
-* `name` - Name of the `PMP` event.\
-  Used to derive the internal stake identifier stored in the wallet.
+* `event_id` - PMP event identifier
 * `oracle_list_hash` - Hash of the oracle list configuration associated with the stake.\
   Must match the oracle list hash used when the stake entry was created.
 * `token_type` - Token type of the stake being deleted.\
   Used to identify the correct local stake record.
-* `outcome` - Identifier of the outcome associated with the stake.\
-  Specifies which stake record should be removed.
 
-**Use case:**
+**Requirements**
 
-* Cleanup after expiration or full resolution
+* Wallet is **not busy**
+* Owner authorization
+
+**Effects**
+
+* Removes the local stake record
+
+
 
 ***
 
@@ -258,29 +351,95 @@ Claims winnings from a resolved `PMP`.
 
 ```solidity
 function claim(
-    string name,
+    uint256 event_id,
     uint256 oracle_list_hash,
     uint32 token_type,
-    uint32 outcome
 ) public;
 ```
 
 **Parameters**
 
-* `name` - Name of the `PMP` event.\
+* `event_id` - PMP event identifier.\
   Used to derive the event identifier and the address of the target `PMP` contract.
 * `oracle_list_hash` - Hash of the oracle list configuration associated with the `PMP` event.\
   Must match the oracle list hash of the existing stake.
 * `token_type` - Token type used for the stake.\
   Determines which internal balance will receive the payout.
-* `outcome` - Outcome identifier originally selected by the user when placing the stake.\
-  Used to identify the stake position being claimed.
+
+**Requirements**
+
+* Wallet is **not busy**
+* No pending candidate amount
+* Owner authorization
+
+**Effects**
+
+* Sets `_busy` and `_lastHash`
+* Calls `PMP.claim(...)`
 
 ***
 
+### `generateCoupon`
+
+Generates a free coupon for a specified token type.
+
+The function allows the wallet owner to receive a one-time free coupon.\
+The coupon value depends on the provided `token_type` and is internally determined by the contract.
+
+Coupons can later be used to place stakes instead of using wallet balance.
+
+```solidity
+function generateCoupon(uint32 token_type) public;
+```
+
+**Parameters**
+
+* `token_type` - Token type for which the coupon should be generated
+
+**Requirements**
+
+* `debt == 0`
+* No active stakes
+* All balances are zero
+* No existing coupon
+
+***
+
+### `withdrawFullSet`
+
+Withdraws or cancels part of a full-set stake.
+
+```solidity
+function withdrawFullSet(
+        uint256 event_id,
+        uint256 oracle_list_hash,
+        uint32 token_type,
+        uint128[] amount
+    ) public
+```
+
+**Parameters**
+
+* `event_id` - PMP event ID
+* `oracle_list_hash` - Hash of Oracles
+* `token_type` - Token type
+* `amount` - Array of amounts per outcome to withdraw
+
+**Requirements**
+
+* Wallet is **not busy**
+* Debt must be zero.
+* Stake record must exist
+* Array length must match existing stake
+
+**Effects**
+
+* Sets `_busy` and `_lastHash`
+* Calls `PMP.withdrawFullSet(...)`
+
 ### **`withdrawTokens`**
 
-Withdraws tokens from the wallet via the `Vault`.
+Withdraws tokens from the wallet via the `RootPN`.
 
 ```solidity
 function withdrawTokens(
@@ -292,11 +451,17 @@ function withdrawTokens(
 
 **Parameters**
 
-* `flags` - Transfer flags passed to the Vault contract.\
+* `flags` - Transfer flags passed to the `RootPN` contract.\
   Control message delivery behavior during the token transfer.
 * `dest_wallet_addr` - Destination wallet address that will receive the withdrawn tokens.
 * `token_type` - Type of token to withdraw.\
   All available balance for this token type will be withdrawn.
+
+**Requirements**
+
+* No active stakes
+* `debt == 0`
+* Owner authorization
 
 **Behavior:**
 
@@ -305,46 +470,53 @@ function withdrawTokens(
 
 ***
 
-### Bounce Handling
-
-#### onBounce
-
-Handles bounced PMP calls.
-
-**Behavior:**
-
-* Clears busy state
-* Restores candidate stake amount
-* Ensures balance consistency
-
-***
-
 ## View Functions
 
-### **`getPMPCode()`**
+### **`getPMPCode`**
 
 Returns salted PMP code and its hash.
 
+```solidity
+function getPMPCode() external view returns(TvmCell pmpCode, uint256 pmpCodeHash)
+```
+
 ***
 
-### **`getDetails()`**
+### **`getDetails`**
 
 Returns current wallet state:
 
-* deposit identifier hash
-* public key
-* token balances
-* PMP code hash
-* PrivateNote code hash
-* busy PMP address (if any)
+```solidity
+function getDetails() external view returns (
+        uint256 depositIdentifierHash,
+        uint256 etherealPubkey,
+        mapping(uint32 => uint128) balance,
+        uint256 pmpCodeHash,
+        uint256 privateNoteCodeHash,
+        optional(address) busyAddress
+    )
+```
+
+**Returns:**
+
+* `depositIdentifierHash` - deposit identifier hash
+* `etherealPubkey` - public key
+* `balance` - token balances&#x20;
+* `pmpCodeHash` - `PMP` code hash
+* `privateNoteCodeHash` - `PrivateNote` code hash
+* `busyAddress` - busy PMP address (if any)
 
 ***
 
-### **`getVersion()`**
+### **`getVersion`**
 
 Returns version and contract identifier.
 
 ```solidity
-("1.0.0", "PrivateNote")
+function getVersion() external pure returns (string, string)
 ```
 
+**Returns:**
+
+* semantic version string
+* Contract name: `"PrivetNote"`

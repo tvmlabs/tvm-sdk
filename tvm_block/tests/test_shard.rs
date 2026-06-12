@@ -39,6 +39,11 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     ss.read_accounts()
         .unwrap()
         .iterate_accounts(|_, sh_account_ref| {
+            if sh_account_ref.is_redirect() {
+                println!("account: redirect");
+                return Ok(true);
+            }
+
             let account = sh_account_ref.read_account().unwrap().as_struct().unwrap();
             println!("account: {}", account.get_id().unwrap());
             println!("  balance: {}", account.get_balance().unwrap());
@@ -69,7 +74,6 @@ fn parse_shard_state_unsplit(ss: ShardStateUnsplit) {
     }
 }
 
-#[ignore]
 #[test]
 fn test_real_tvm_shardstate() {
     // getstate (-1,8000000000000000,0)

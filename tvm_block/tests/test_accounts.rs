@@ -636,10 +636,9 @@ fn get_real_tvm_state(filename: &str) -> (ShardStateUnsplit, Cell) {
 }
 
 #[test]
-#[ignore]
 fn test_real_account_serde() {
-    let state_files = ["tests/data/
-7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
+    let state_files =
+        ["tests/data/7992DD77CEB677577A7D5A8B6F388CDA76B4D0DDE16FF5004C87215E6ADF84DD.boc"];
 
     for state_file in state_files {
         println!("state file: {}", state_file);
@@ -650,6 +649,10 @@ fn test_real_account_serde() {
             .read_accounts()
             .unwrap()
             .iterate_accounts(|_, sa| {
+                if sa.is_redirect() {
+                    return Ok(true);
+                }
+
                 let acc_cell = sa.account_cell().unwrap();
                 let acc = sa.read_account().unwrap().as_struct().unwrap();
 
