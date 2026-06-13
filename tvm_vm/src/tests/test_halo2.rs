@@ -290,8 +290,10 @@ fn deposit_proof_path(i: usize) -> String {
 }
 
 /// Parse a producer-side `VkBlob` (`VKBLOB\x00\x00` header) into
-/// `(config_json, vk_bytes)` — the two chunks that feed a v2 RLC
-/// `Halo2TvmBundle`.
+/// `(config_json, vk_bytes)` — only needed when assembling a VkBlob from
+/// separate config + vk fixture files (the committed `deposit_vk_blob.bin`
+/// is already a complete VkBlob).
+#[allow(dead_code)]
 fn parse_vk_blob_chunks(vk_blob: &[u8]) -> (Vec<u8>, Vec<u8>) {
     const VK_MAGIC: &[u8; 8] = b"VKBLOB\x00\x00";
     const HEADER_LEN: usize = 16;
@@ -311,34 +313,22 @@ fn parse_vk_blob_chunks(vk_blob: &[u8]) -> (Vec<u8>, Vec<u8>) {
     (cfg, vk)
 }
 
-/// Build a v2 RLC `Halo2TvmBundle` (single opcode operand) from the
-/// deposit fixture triple.
-fn build_deposit_bundle(config: &[u8], vk: &[u8], instances: &[u8], proof: &[u8]) -> Vec<u8> {
-    let mut out = Vec::new();
-    out.extend_from_slice(b"HALO2TVM");
-    out.push(2); // BUNDLE_VERSION_V2
-    out.push(0); // TRANSCRIPT_BLAKE2B
-    out.push(1); // CIRCUIT_SHAPE_RLC
-    out.extend_from_slice(&[0u8; 5]);
-    for chunk in [config, vk, instances, proof] {
-        out.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
-        out.extend_from_slice(chunk);
-    }
-    out
-}
-
+/// Run `ZKHALO2VERIFYWITHVK` with the three-operand ABI (vk_blob cell,
+/// public_inputs cell, proof cell).
 fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -> bool {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
     let vk_blob = std::fs::read(vk_blob_path).expect("read vk_blob");
-    let (cfg, vk) = parse_vk_blob_chunks(&vk_blob);
     let instances = std::fs::read(pubin_path).expect("read public_inputs");
     let proof = std::fs::read(proof_path).expect("read proof");
-    let bundle = build_deposit_bundle(&cfg, &vk, &instances, &proof);
 
-    let bundle_cell = pack_data_to_cell(&bundle, &mut 0).unwrap();
-    engine.cc.stack.push(StackItem::cell(bundle_cell));
+    let vk_cell = pack_data_to_cell(&vk_blob, &mut 0).unwrap();
+    let pi_cell = pack_data_to_cell(&instances, &mut 0).unwrap();
+    let pf_cell = pack_data_to_cell(&proof, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(vk_cell));
+    engine.cc.stack.push(StackItem::cell(pi_cell));
+    engine.cc.stack.push(StackItem::cell(pf_cell));
 
     execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     engine.cc.stack.get(0).as_bool().unwrap()
@@ -363,15 +353,19 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
-    let (cfg, vk) =
-        parse_vk_blob_chunks(&std::fs::read(deposit_vk_blob_path()).expect("read vk_blob"));
+    let vk_blob = std::fs::read(deposit_vk_blob_path()).expect("read vk_blob");
     let instances = std::fs::read(deposit_pubin_path(0)).expect("read public_inputs");
     let mut proof = std::fs::read(deposit_proof_path(0)).expect("read proof");
     let idx = proof.len() / 2;
     proof[idx] ^= 0xFF;
-    let bundle = build_deposit_bundle(&cfg, &vk, &instances, &proof);
 
-    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&bundle, &mut 0).unwrap()));
+    let vk_cell = pack_data_to_cell(&vk_blob, &mut 0).unwrap();
+    let pi_cell = pack_data_to_cell(&instances, &mut 0).unwrap();
+    let pf_cell = pack_data_to_cell(&proof, &mut 0).unwrap();
+    engine.cc.stack.push(StackItem::cell(vk_cell));
+    engine.cc.stack.push(StackItem::cell(pi_cell));
+    engine.cc.stack.push(StackItem::cell(pf_cell));
+
     execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     let verdict = engine.cc.stack.get(0).as_bool().unwrap();
     println!("ZKHALO2VERIFYWITHVK corrupt proof: verdict={}", verdict);

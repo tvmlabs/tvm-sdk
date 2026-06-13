@@ -1,19 +1,32 @@
 // Copyright (C) 2026 Pruvendo (bridge integration team).
 //
-// Wire-format decoder for `Halo2TvmBundle` — the byte payload of the
-// `ZKHALO2VERIFYWITHVK` opcode's single stack operand.
+// Wire-format decoders for the `ZKHALO2VERIFYWITHVK` opcode.
 //
-// The format is defined and frozen by the bridge integration team in
+// ## `VkBlob` — payload of the `vk_cell` operand (Variant A, frozen 2026-05-25)
+//
+// The opcode takes THREE stack operands (proof, public_inputs, vk). This
+// module parses the `vk_cell` payload. See
 // `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.rs`
-// (commit on `main` at the time of writing). This module is the **consumer
-// side** of that format: deserialise the bundle bytes back into
-// `(BaseCircuitParams, vk_bytes, instances_bytes, proof_bytes)` so the
-// opcode handler can run `verify_proof::<KZG, SHPLONK, Blake2bRead,
-// SingleStrategy>` against it.
+// for the producer-side layout.
 //
-// Frozen contract (2026-05-22, Q-WIRE-1..5 — see
-// `docs/zkhalo2verifywithvk_design.md`; `circuit_shape` byte + v2 added
-// 2026-05-29 for the deposit / RLC integration):
+// ```text
+//   off  size  field
+//   ───  ────  ─────────────────────────────────────────────────────────
+//     0     8  magic           = b"VKBLOB\x00\x00"
+//     8     1  version         = 0x01 (Base) | 0x02 (shape-tagged)
+//     9     1  transcript_kind = 0x00 (Blake2b)
+//    10     1  circuit_shape   = 0 Base | 1 Rlc  (v1: reserved 0)
+//    11     5  reserved        = 0 × 5
+//    16     4  config_len      (u32 LE)
+//    20  cl    config_json     Base: `BaseCircuitParams` | Rlc: `EthCircuitParams`
+//   ...     4  vk_len          (u32 LE)
+//   ...  vl    vk_bytes
+// ```
+//
+// ## `Halo2TvmBundle` — legacy single-operand format (producer tests only)
+//
+// The opcode handler does NOT consume `Halo2TvmBundle`; it remains here for
+// round-trip tests against the producer crate. Frozen contract (2026-05-22):
 //
 // ```text
 //   off  size  field
@@ -45,6 +58,218 @@ use halo2_base::gates::circuit::BaseCircuitParams;
 use tvm_types::Result;
 use tvm_types::fail;
 
+// ---------------------------------------------------------------------------
+// VkBlob — `vk_cell` operand (3-operand ABI)
+// ---------------------------------------------------------------------------
+
+/// 8-byte ASCII magic at offset 0 of every `vk_cell` payload.
+pub const VK_BLOB_MAGIC: &[u8; 8] = b"VKBLOB\x00\x00";
+
+/// Legacy (Base-only) `VkBlob` layout version.
+pub const VK_BLOB_VERSION: u8 = 1;
+
+/// Shape-tagged `VkBlob` layout version (deposit / RLC circuits).
+pub const VK_BLOB_VERSION_V2: u8 = 2;
+
+/// `circuit_shape` byte values (offset 10).
+pub const VK_CIRCUIT_SHAPE_BASE: u8 = 0;
+pub const VK_CIRCUIT_SHAPE_RLC: u8 = 1;
+
+/// Transcript discriminator. Only `Blake2b = 0` is accepted by the opcode
+/// today; `0x01 = Keccak` is reserved for a future format version.
+pub const TRANSCRIPT_KIND_BLAKE2B: u8 = 0;
+
+/// Header size in bytes: magic (8) + version (1) + transcript_kind (1) +
+/// circuit_shape (1) + reserved (5).
+const VK_HEADER_LEN: usize = 16;
+
+/// Maximum `vk_cell` payload size accepted by the consumer.
+const MAX_VK_BLOB_BYTES: usize = 1 * 1024 * 1024;
+
+/// Maximum `public_inputs_cell` payload size. 256 KiB = 8192 distinct
+/// 32-byte field elements.
+pub(crate) const MAX_PUBLIC_INPUTS_BYTES: usize = 256 * 1024;
+
+/// Maximum `proof_cell` payload size.
+pub(crate) const MAX_PROOF_BYTES: usize = 1 * 1024 * 1024;
+
+/// Length prefix size in bytes.
+const LEN_PREFIX_BYTES: usize = 4;
+
+/// Circuit configuration carried inline in a `VkBlob`.
+#[derive(Clone, Debug)]
+pub enum VkBlobConfig {
+    /// `BaseCircuitParams` — VK read with `BaseCircuitBuilder<Fr>`.
+    Base(BaseCircuitParams),
+    /// Raw `EthCircuitParams` JSON bytes — VK read with `EthCircuitImpl<Fr, Noop>`.
+    Rlc(Vec<u8>),
+}
+
+/// Owned, validated view into a `vk_cell` payload.
+#[derive(Clone, Debug)]
+pub struct VkBlob {
+    pub config: VkBlobConfig,
+    pub vk_bytes: Vec<u8>,
+}
+
+impl VkBlob {
+    /// Parse a `VkBlob` from the byte payload of the `vk_cell` operand.
+    pub fn parse(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() > MAX_VK_BLOB_BYTES {
+            fail!(
+                "VkBlob: vk_cell payload length {} exceeds MAX_VK_BLOB_BYTES ({})",
+                bytes.len(),
+                MAX_VK_BLOB_BYTES
+            );
+        }
+        if bytes.len() < VK_HEADER_LEN {
+            fail!(
+                "VkBlob: vk_cell payload length {} is shorter than the 16-byte header",
+                bytes.len()
+            );
+        }
+        if &bytes[0..8] != VK_BLOB_MAGIC {
+            fail!(
+                "VkBlob: magic mismatch (expected b\"VKBLOB\\x00\\x00\", got {:02x?})",
+                &bytes[0..8]
+            );
+        }
+        let version = bytes[8];
+        let circuit_shape = match version {
+            VK_BLOB_VERSION => {
+                if bytes[10] != 0 {
+                    fail!(
+                        "VkBlob: v1 has non-zero circuit_shape byte {} (v1 is Base-only; did you \
+                         mean v2?)",
+                        bytes[10]
+                    );
+                }
+                VK_CIRCUIT_SHAPE_BASE
+            }
+            VK_BLOB_VERSION_V2 => {
+                let shape = bytes[10];
+                if shape != VK_CIRCUIT_SHAPE_BASE && shape != VK_CIRCUIT_SHAPE_RLC {
+                    fail!(
+                        "VkBlob: unsupported circuit_shape byte {shape} (only 0 = Base and 1 = \
+                         Rlc are currently defined)"
+                    );
+                }
+                shape
+            }
+            _other => {
+                fail!(
+                    "VkBlob: version mismatch (expected {} or {}, got {})",
+                    VK_BLOB_VERSION,
+                    VK_BLOB_VERSION_V2,
+                    _other
+                );
+            }
+        };
+        if bytes[9] != TRANSCRIPT_KIND_BLAKE2B {
+            fail!(
+                "VkBlob: unsupported transcript_kind byte {} (only 0 = Blake2b is currently \
+                 defined)",
+                bytes[9]
+            );
+        }
+        // bytes[11..16] reserved; ignored.
+
+        let mut cursor = VK_HEADER_LEN;
+        let config_bytes = vk_read_chunk(bytes, &mut cursor, "config_json")?;
+        let vk_bytes = vk_read_chunk(bytes, &mut cursor, "vk_bytes")?;
+
+        if cursor != bytes.len() {
+            fail!(
+                "VkBlob: trailing garbage after vk_bytes chunk (cursor = {}, len = {})",
+                cursor,
+                bytes.len()
+            );
+        }
+
+        let config = match circuit_shape {
+            VK_CIRCUIT_SHAPE_BASE => {
+                let params: BaseCircuitParams = match serde_json::from_slice(&config_bytes) {
+                    Ok(c) => c,
+                    Err(e) => {
+                        fail!(
+                            "VkBlob: malformed config_json (cannot parse as BaseCircuitParams): {}",
+                            e
+                        )
+                    }
+                };
+                VkBlobConfig::Base(params)
+            }
+            VK_CIRCUIT_SHAPE_RLC => {
+                if config_bytes.is_empty() {
+                    fail!("VkBlob: Rlc blob carries an empty config_json chunk");
+                }
+                VkBlobConfig::Rlc(config_bytes)
+            }
+            _ => unreachable!("circuit_shape validated above"),
+        };
+
+        Ok(Self { config, vk_bytes })
+    }
+}
+
+/// Validate the size of the `public_inputs_cell` payload BEFORE handing
+/// it to `decode_instances_strict`.
+pub(crate) fn validate_public_inputs_size(bytes: &[u8]) -> Result<()> {
+    if bytes.len() > MAX_PUBLIC_INPUTS_BYTES {
+        fail!(
+            "ZKHALO2VERIFYWITHVK: public_inputs_cell payload length {} exceeds \
+             MAX_PUBLIC_INPUTS_BYTES ({})",
+            bytes.len(),
+            MAX_PUBLIC_INPUTS_BYTES
+        );
+    }
+    Ok(())
+}
+
+/// Validate the size of the `proof_cell` payload.
+pub(crate) fn validate_proof_size(bytes: &[u8]) -> Result<()> {
+    if bytes.len() > MAX_PROOF_BYTES {
+        fail!(
+            "ZKHALO2VERIFYWITHVK: proof_cell payload length {} exceeds MAX_PROOF_BYTES ({})",
+            bytes.len(),
+            MAX_PROOF_BYTES
+        );
+    }
+    Ok(())
+}
+
+fn vk_read_chunk(bytes: &[u8], cursor: &mut usize, field: &'static str) -> Result<Vec<u8>> {
+    if bytes.len() < *cursor + LEN_PREFIX_BYTES {
+        fail!(
+            "VkBlob: ran out of bytes reading length prefix for chunk `{}` (cursor = {}, len = {})",
+            field,
+            *cursor,
+            bytes.len()
+        );
+    }
+    let len_bytes: [u8; 4] = bytes[*cursor..*cursor + LEN_PREFIX_BYTES]
+        .try_into()
+        .expect("4-byte slice always converts to [u8; 4]");
+    let len = u32::from_le_bytes(len_bytes) as usize;
+    *cursor += LEN_PREFIX_BYTES;
+    if bytes.len() < *cursor + len {
+        fail!(
+            "VkBlob: chunk `{}` length {} overruns payload (cursor = {}, len = {})",
+            field,
+            len,
+            *cursor,
+            bytes.len()
+        );
+    }
+    let chunk = bytes[*cursor..*cursor + len].to_vec();
+    *cursor += len;
+    Ok(chunk)
+}
+
+// ---------------------------------------------------------------------------
+// Halo2TvmBundle — legacy single-operand format (tests / producer round-trip)
+// ---------------------------------------------------------------------------
+
 /// 8-byte ASCII magic at offset 0 of every bundle.
 pub const BUNDLE_MAGIC: &[u8; 8] = b"HALO2TVM";
 
@@ -70,10 +295,6 @@ pub const BUNDLE_VERSION_V2: u8 = 2;
 pub const CIRCUIT_SHAPE_BASE: u8 = 0;
 pub const CIRCUIT_SHAPE_RLC: u8 = 1;
 
-/// Transcript discriminator. Only `Blake2b = 0` is accepted by the opcode
-/// today; `0x01 = Keccak` is reserved for a future format version.
-pub const TRANSCRIPT_KIND_BLAKE2B: u8 = 0;
-
 /// Header size in bytes: magic (8) + version (1) + transcript_kind (1) +
 /// reserved (6).
 const HEADER_LEN: usize = 16;
@@ -82,9 +303,6 @@ const HEADER_LEN: usize = 16;
 /// ~21 KB; this cap is two orders of magnitude above that and is the only
 /// guard against a DoS through pathologically-large length prefixes.
 const MAX_BUNDLE_BYTES: usize = 16 * 1024 * 1024;
-
-/// Length prefix size in bytes.
-const LEN_PREFIX_BYTES: usize = 4;
 
 /// Circuit configuration carried inline in the bundle (Q-WIRE-4 / Option B —
 /// self-describing bundle). The variant is selected by the `circuit_shape`

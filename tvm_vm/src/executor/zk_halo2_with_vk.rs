@@ -1,21 +1,41 @@
 // Copyright (C) 2026 Pruvendo (bridge integration team).
 //
-// `ZKHALO2VERIFYWITHVK` opcode handler — the sibling of `ZKHALO2VERIFY` that
-// takes the verifying key (and circuit config) as a caller-supplied operand
-// instead of a hard-coded chain-wide constant.
+// `ZKHALO2VERIFYWITHVK` opcode handler — native Halo2 SHPLONK verification
+// in TVM with a caller-supplied verifying key, public inputs, and proof.
 //
-// Designed for the Acki Nacki ↔ Ethereum bridge: each `TokenBridge` deploys
-// with its own immutable Halo2 SHPLONK verifier key, so a single opcode covers
-// every bridge / app circuit anyone ever deploys to AN without growing the
-// per-circuit-variant `match` in `ZKHALO2VERIFY`.
+// Designed for the Acki Nacki ↔ Ethereum bridge: each `TokenBridge`
+// deploys with its own immutable Halo2 SHPLONK verifier key, so a single
+// opcode covers every bridge / app circuit anyone ever deploys to AN
+// without growing the node code for each new circuit variant.
 //
-// Wire-format contract for the single stack operand is the
-// [`Halo2TvmBundle`](`super::zk_halo2_with_vk_bundle::Halo2TvmBundle`) byte
-// layout, frozen 2026-05-22 (Q-WIRE-1..5 + Q-NAME-1; see
-// `docs/zkhalo2verifywithvk_design.md`). The format is also implemented on
-// the producer side in
-// `acki-nacki-bridge/crates/bridge-prover-orchestrator/src/halo2_tvm_bundle.
-// rs`, where it is round-trip-tested against real Circuit 1B fallback proofs.
+// ## Stack ABI (frozen 2026-05-25 — Variant A)
+//
+// Three `Cell` operands, top → bottom:
+//
+// ```text
+//   top      proof_cell           raw SHPLONK proof bytes (no header)
+//   ↑        public_inputs_cell   raw Fr × N (strict 32-byte LE, no header)
+//   bottom   vk_cell              VkBlob (magic + version + transcript
+//                                  + config_json + vk_bytes)
+// ```
+//
+// Assembly:
+//
+// ```text
+//   PUSHREF vk_cell
+//   PUSHREF public_inputs_cell
+//   PUSHREF proof_cell
+//   ZKHALO2VERIFYWITHVK
+// ```
+//
+// The opcode pops three cells in order (proof, public_inputs, vk) and
+// pushes a boolean (`true` = proof verifies, `false` = cryptographic
+// rejection). Structural errors (bad magic / version / instances not a
+// multiple of 32 / VK doesn't deserialise / public input ≥ Fr modulus)
+// throw `FatalError`, mirroring `VERGRTH16`'s contract.
+//
+// See `super::zk_halo2_with_vk_bundle` for the `VkBlob` wire format and
+// `docs/zkhalo2verifywithvk_design.md` for the frozen ABI memo.
 
 use std::collections::HashMap;
 use std::collections::VecDeque;
@@ -28,7 +48,6 @@ use axiom_eth::rlc::circuit::builder::RlcCircuitBuilder;
 use axiom_eth::utils::eth_circuit::EthCircuitImpl;
 use axiom_eth::utils::eth_circuit::EthCircuitInstructions;
 use axiom_eth::utils::eth_circuit::EthCircuitParams;
-use gosh_zk_snark_halo2_utils::proof::Proof;
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
 use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
@@ -36,50 +55,76 @@ use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
+use halo2_base::halo2_proofs::plonk::verify_proof;
+use halo2_base::halo2_proofs::poly::commitment::ParamsProver;
+use halo2_base::halo2_proofs::poly::kzg::commitment::KZGCommitmentScheme;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
+use halo2_base::halo2_proofs::poly::kzg::multiopen::VerifierSHPLONK;
+use halo2_base::halo2_proofs::poly::kzg::strategy::SingleStrategy;
+use halo2_base::halo2_proofs::transcript::Blake2bRead;
+use halo2_base::halo2_proofs::transcript::Challenge255;
+use halo2_base::halo2_proofs::transcript::TranscriptReadBuffer;
 use tvm_types::SliceData;
 use tvm_types::fail;
 
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
-use crate::executor::zk_halo2_with_vk_bundle::BundleConfig;
-use crate::executor::zk_halo2_with_vk_bundle::Halo2TvmBundle;
+use crate::executor::zk_halo2_with_vk_bundle::VkBlob;
+use crate::executor::zk_halo2_with_vk_bundle::VkBlobConfig;
+use crate::executor::zk_halo2_with_vk_bundle::validate_proof_size;
+use crate::executor::zk_halo2_with_vk_bundle::validate_public_inputs_size;
 use crate::stack::StackItem;
 use crate::stack::integer::IntegerData;
 use crate::types::Status;
 use crate::utils::unpack_data_from_cell;
 
-/// Placeholder gas price. Halo2 SHPLONK verification with a warm VK cache is
-/// ~milliseconds; the additional cost over `ZKHALO2VERIFY` covers
-/// bundle deserialisation + VK reconstruction + per-VK cache lookup.
+/// Placeholder gas price. Halo2 SHPLONK verification with a warm VK cache
+/// is in the millisecond range; the cold path additionally pays for VK
+/// curve-checking and `EvaluationDomain` construction (which scales with
+/// `k` — at `k = 20` it is on the order of seconds).
 ///
-/// **Re-benchmark before mainnet**: this number is a structural guess
-/// scaled up for the bigger VK (kilobytes vs 192 B). Once we have a
-/// stable end-to-end node
-/// integration we'll measure wall-clock for warm and cold paths and tune
-/// this constant. The cold-cache path (~3 s `EvaluationDomain` build for
-/// `K=20`) is intentionally **not** charged here — operators are
-/// expected to pre-warm cached VKs at node startup the way
-/// `warmup_halo2()` does for the DarkDex W=8 VK.
+/// **MUST re-benchmark before mainnet.** Treat the current value as a
+/// structural placeholder modelled on `VERGRTH16_GAS_PRICE`, scaled up
+/// for the bigger VK (kilobytes vs 192 B). Operators are expected to
+/// pre-warm the per-VK cache at node startup so the hot path dominates
+/// production load; the cold path is intentionally *not* scaled out to
+/// its true wall-clock cost. See `docs/zkhalo2verifywithvk_design.md`
+/// Q-GAS-1 for the open re-benchmark task.
 pub const ZKHALO2_VERIFY_WITH_VK_GAS_PRICE: i64 = 5_000;
 
 /// Maximum number of distinct VKs the per-VK cache holds. A typical AN
-/// chain runs a handful of bridge / NFT / zkLogin VKs concurrently; 8 is a
-/// generous upper bound. Eviction is FIFO (oldest insert first); for
-/// strictly-LRU eviction we'd need to track per-entry access timestamps,
-/// which costs more than it saves at this cache size.
+/// chain runs a handful of bridge / NFT / zkLogin VKs concurrently; 8
+/// is a generous upper bound. Eviction is FIFO (oldest insert first);
+/// for strictly-LRU eviction we'd need to track per-entry access
+/// timestamps, which costs more than it saves at this cache size.
 const VK_CACHE_CAPACITY: usize = 8;
 
-/// One slot in the per-VK cache. `Arc` so handler invocations on different
-/// threads don't block each other on the `Mutex` past the lookup.
+/// Best-effort extraction of a panic payload's message — pulls out a
+/// `&str` / `String` payload as plain text, falling back to a generic
+/// label so callers always get *something* to log. Used to turn a
+/// halo2-base panic from a malicious VK bundle into a structured
+/// `FatalError`.
+fn panic_payload_to_str(payload: &Box<dyn std::any::Any + Send>) -> String {
+    if let Some(s) = payload.downcast_ref::<&'static str>() {
+        (*s).to_string()
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "<non-string panic payload>".to_string()
+    }
+}
+
+/// One slot in the per-VK cache. `Arc` so handler invocations on
+/// different threads don't block each other on the `Mutex` past the
+/// lookup.
 #[derive(Clone)]
 struct CachedVk {
     vk: VerifyingKey<G1Affine>,
     params: ParamsKZG<Bn256>,
 }
 
-/// Bounded FIFO map keyed by the bundle's `vk_bytes`.
+/// Bounded FIFO map keyed by the `VkBlob`'s `vk_bytes` chunk.
 struct VkCache {
     entries: HashMap<Vec<u8>, std::sync::Arc<CachedVk>>,
     insertion_order: VecDeque<Vec<u8>>,
@@ -122,14 +167,15 @@ fn vk_cache() -> &'static Mutex<VkCache> {
 /// Build `ParamsKZG<Bn256>` for an arbitrary `k` using the chain-wide
 /// shared trusted-setup G1/G2 points (Q-WIRE-2: "globally shared per `k`").
 ///
-/// Mirrors the technique in `zk_halo2_utils::build_kzg_verifier_params`
-/// (DarkDex W=8 at `k=19`) but parameterised by `k`. SHPLONK verification
-/// only needs `g[0]`, `g2`, and `s_g2` from the SRS, so we don't need the
-/// full 64 MB blob — three embedded points (~320 bytes) are enough.
+/// SHPLONK verification only needs `g[0]`, `g2`, and `s_g2` from the SRS,
+/// so we don't need the full 64 MB blob — three embedded points
+/// (`KZG_G0_BYTES` + `KZG_G2_BYTES` + `KZG_S_G2_BYTES`, ~320 bytes) are
+/// enough. We bootstrap a `ParamsKZG` at `k=0` from a synthetic blob
+/// containing those three points and then re-base it via `from_parts`
+/// to the actual `k` the VK was generated for.
 fn build_shared_kzg_params(k: u32) -> ParamsKZG<Bn256> {
     use halo2_base::halo2_proofs::halo2curves::serde::SerdeObject;
 
-    // Build a minimal K=0 binary blob containing the real g[0], g2, s_g2.
     let mut blob = Vec::with_capacity(388);
     blob.extend_from_slice(&0u32.to_le_bytes());
     blob.extend_from_slice(&crate::executor::zk_halo2_utils::KZG_G0_BYTES);
@@ -165,22 +211,31 @@ fn read_base_vk(
     vk_bytes: &[u8],
     params: halo2_base::gates::circuit::BaseCircuitParams,
 ) -> tvm_types::Result<VerifyingKey<G1Affine>> {
-    let mut slice: &[u8] = vk_bytes;
-    // RawBytes — DOES validate curve membership on every group element on
-    // read. This is the soundness-critical setting for caller-supplied VKs
-    // (vs RawBytesUnchecked which skips the check and is only safe for
-    // trusted, pre-vetted VKs at compile/build time).
-    match VerifyingKey::<G1Affine>::read::<_, BaseCircuitBuilder<Fr>>(
-        &mut slice,
-        SerdeFormat::RawBytes,
-        params.clone(),
-    ) {
-        Ok(vk) => Ok(vk),
-        Err(e) => fail!(
+    let config_for_read = params.clone();
+    let mut vk_slice: &[u8] = vk_bytes;
+    let read_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        VerifyingKey::<G1Affine>::read::<_, BaseCircuitBuilder<Fr>>(
+            &mut vk_slice,
+            SerdeFormat::RawBytes,
+            config_for_read,
+        )
+    }));
+    match read_result {
+        Ok(Ok(vk)) => Ok(vk),
+        Ok(Err(e)) => fail!(
             "ZKHALO2VERIFYWITHVK: Base VerifyingKey::read failed (config = {:?}): {}",
             params,
             e
         ),
+        Err(payload) => {
+            let panic_msg = panic_payload_to_str(&payload);
+            fail!(
+                "ZKHALO2VERIFYWITHVK: Base VK deserialisation panicked (likely adversarial \
+                 config = {:?}): {}",
+                params,
+                panic_msg
+            );
+        }
     }
 }
 
@@ -205,22 +260,46 @@ fn read_rlc_vk(vk_bytes: &[u8], config_json: &[u8]) -> tvm_types::Result<Verifyi
     }
 }
 
-/// Look up `(vk, params)` for the given bundle, deserialising and caching
-/// on miss. Returns an `Arc` so the lock can be released before
+/// Look up `(vk, params)` for the given `VkBlob`, deserialising and
+/// caching on miss. Returns an `Arc` so the lock can be released before
 /// verification runs.
-fn get_or_insert_vk(bundle: &Halo2TvmBundle) -> tvm_types::Result<std::sync::Arc<CachedVk>> {
-    // Fast path: lock-and-clone.
+///
+/// **Cache key:** `blob.vk_bytes` only — *not* `(vk_bytes, config)`.
+/// This is safe because `VerifyingKey::read` fails deserialisation before
+/// we cache on shape/config mismatch, and the on-disk VK byte representation
+/// is fully determined by the circuit shape.
+fn get_or_insert_vk(blob: &VkBlob) -> tvm_types::Result<std::sync::Arc<CachedVk>> {
     {
         let cache = vk_cache().lock().expect("VK cache mutex poisoned");
-        if let Some(hit) = cache.get(&bundle.vk_bytes) {
+        if let Some(hit) = cache.get(&blob.vk_bytes) {
+            if let VkBlobConfig::Base(params) = &blob.config {
+                let cached_k = hit.vk.get_domain().k();
+                if params.k as u32 != cached_k {
+                    fail!(
+                        "ZKHALO2VERIFYWITHVK: VkBlob config.k = {} but cached VK domain.k = {}",
+                        params.k,
+                        cached_k
+                    );
+                }
+            }
             return Ok(hit);
         }
     }
 
-    // Cold path: deserialise outside the lock, branching on circuit shape.
-    let vk = match &bundle.config {
-        BundleConfig::Base(params) => read_base_vk(&bundle.vk_bytes, params.clone())?,
-        BundleConfig::Rlc(config_json) => read_rlc_vk(&bundle.vk_bytes, config_json)?,
+    let vk = match &blob.config {
+        VkBlobConfig::Base(params) => {
+            let vk = read_base_vk(&blob.vk_bytes, params.clone())?;
+            let k = vk.get_domain().k();
+            if params.k as u32 != k {
+                fail!(
+                    "ZKHALO2VERIFYWITHVK: VkBlob config.k = {} disagrees with VK domain.k = {}",
+                    params.k,
+                    k
+                );
+            }
+            vk
+        }
+        VkBlobConfig::Rlc(config_json) => read_rlc_vk(&blob.vk_bytes, config_json)?,
     };
 
     let k = vk.get_domain().k();
@@ -229,18 +308,18 @@ fn get_or_insert_vk(bundle: &Halo2TvmBundle) -> tvm_types::Result<std::sync::Arc
     let entry = std::sync::Arc::new(CachedVk { vk, params });
 
     let mut cache = vk_cache().lock().expect("VK cache mutex poisoned");
-    cache.insert(bundle.vk_bytes.clone(), entry.clone());
+    cache.insert(blob.vk_bytes.clone(), entry.clone());
     Ok(entry)
 }
 
-/// Decode the bundle's `instances_bytes` into `Vec<Fr>` using **strict**
-/// 32-byte little-endian `Fr::from_repr` (Q-WIRE-3: no u64 shortcut).
-/// `Fr::from_repr` returns `None` for byte sequences that are `>= modulus`;
-/// we surface that as a structural `FatalError`.
+/// Decode the `public_inputs_cell` payload into `Vec<Fr>` using
+/// **strict** 32-byte little-endian `Fr::from_repr` (Q-WIRE-3: no u64
+/// shortcut). `Fr::from_repr` returns `None` for byte sequences that
+/// are `>= modulus`; we surface that as a structural `FatalError`.
 fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>> {
     if !instances_bytes.len().is_multiple_of(32) {
         fail!(
-            "ZKHALO2VERIFYWITHVK: instances byte length {} is not a multiple of 32",
+            "ZKHALO2VERIFYWITHVK: public_inputs_cell length {} is not a multiple of 32",
             instances_bytes.len()
         );
     }
@@ -251,8 +330,8 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
         let fr = Fr::from_repr(repr);
         if fr.is_none().into() {
             fail!(
-                "ZKHALO2VERIFYWITHVK: instances[{}] is >= modulus (Fr::from_repr rejected): \
-                 {:02x?}",
+                "ZKHALO2VERIFYWITHVK: public_inputs[{}] is >= modulus (Fr::from_repr \
+                 rejected): {:02x?}",
                 i,
                 chunk
             );
@@ -265,45 +344,71 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
 /// `ZKHALO2VERIFYWITHVK` handler.
 ///
 /// **Stack** (top → bottom):
-/// - `bundle_cell` — `Cell` whose payload is a [`Halo2TvmBundle`] (single
-///   self-describing byte stream carrying a `circuit_shape` byte + circuit
-///   params (`BaseCircuitParams` for `circuit_shape = 0`, `EthCircuitParams`
-///   for `circuit_shape = 1`) + `VerifyingKey<G1Affine>` bytes + public-input
-///   bytes + SHPLONK proof bytes, in that order, behind length prefixes). The
-///   VK is rebuilt with `BaseCircuitBuilder<Fr>` for the Base shape and
-///   `EthCircuitImpl<Fr, Noop>` for the Rlc shape. See
-///   `super::zk_halo2_with_vk_bundle` for the format and
-///   `docs/zkhalo2verifywithvk_design.md` for the frozen wire-format contract.
+/// 1. `proof_cell` — `Cell` whose payload is the raw SHPLONK proof byte stream
+///    produced by `Blake2bWrite::finalize()`. No header, no framing.
+/// 2. `public_inputs_cell` — `Cell` whose payload is `N × 32` flat
+///    little-endian `Fr::to_repr()` (strict). No header, length must be a
+///    multiple of 32.
+/// 3. `vk_cell` — `Cell` whose payload is a [`VkBlob`] (magic + version +
+///    transcript discriminator + circuit shape + `config_json` +
+///    `VerifyingKey<G1Affine>` bytes). See `super::zk_halo2_with_vk_bundle` for
+///    the format and `docs/zkhalo2verifywithvk_design.md` for the frozen
+///    wire-format contract.
 ///
 /// **Pushes** a boolean: `true` on a cryptographically valid proof,
 /// `false` on a well-formed-but-invalid proof.
 ///
 /// **Throws `FatalError`** on structural input errors only:
-/// - Bundle bytes don't deserialise (bad magic / version / transcript /
-///   chunk-length overrun / trailing garbage / malformed `BaseCircuitParams`).
+/// - `vk_cell` doesn't parse as `VkBlob` (bad magic / version / transcript /
+///   chunk-length overrun / trailing garbage / malformed config JSON).
+/// - `public_inputs_cell` length is not a multiple of 32, exceeds
+///   `MAX_PUBLIC_INPUTS_BYTES`, or any 32-byte chunk is `≥ Fr modulus`.
+/// - `proof_cell` exceeds `MAX_PROOF_BYTES`.
 /// - `VerifyingKey<G1Affine>::read` rejects the VK bytes (curve membership
 ///   failure with `SerdeFormat::RawBytes`, or shape doesn't match the inline
-///   `BaseCircuitParams`).
-/// - Any 32-byte chunk in `instances_bytes` is `>= modulus` (strict
-///   `Fr::from_repr`).
+///   config).
 ///
-/// Cryptographic rejection (well-formed proof that just doesn't satisfy
-/// the relation) is a normal `false` return, not an exception.
+/// Cryptographic rejection (well-formed proof that just doesn't
+/// satisfy the relation) is a normal `false` return, not an exception,
+/// matching `VERGRTH16`'s contract.
 pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
     engine.load_instruction(crate::executor::types::Instruction::new("ZKHALO2VERIFYWITHVK"))?;
     engine.try_use_gas(Gas::zkhalo2_verify_with_vk_price())?;
-    fetch_stack(engine, 1)?;
+    fetch_stack(engine, 3)?;
 
-    let bundle_cell = engine.cmd.var(0).as_cell()?;
-    let bundle_slice = SliceData::load_cell_ref(bundle_cell)?;
-    let bundle_bytes = unpack_data_from_cell(bundle_slice, engine)?;
+    // Top of stack = var(0) = proof_cell (most recently pushed).
+    let proof_cell = engine.cmd.var(0).as_cell()?;
+    let proof_slice = SliceData::load_cell_ref(proof_cell)?;
+    let proof_bytes = unpack_data_from_cell(proof_slice, engine)?;
+    validate_proof_size(&proof_bytes)?;
 
-    let bundle = Halo2TvmBundle::parse(&bundle_bytes)?;
-    let cached = get_or_insert_vk(&bundle)?;
-    let instances = decode_instances_strict(&bundle.instances_bytes)?;
+    // var(1) = public_inputs_cell.
+    let public_inputs_cell = engine.cmd.var(1).as_cell()?;
+    let public_inputs_slice = SliceData::load_cell_ref(public_inputs_cell)?;
+    let public_inputs_bytes = unpack_data_from_cell(public_inputs_slice, engine)?;
+    validate_public_inputs_size(&public_inputs_bytes)?;
 
-    let proof = Proof::new(bundle.proof_bytes.clone());
-    let res = proof.verify_with_vk(&cached.vk, &cached.params, &[&instances]);
+    // Bottom = var(2) = vk_cell (pushed first).
+    let vk_cell = engine.cmd.var(2).as_cell()?;
+    let vk_slice = SliceData::load_cell_ref(vk_cell)?;
+    let vk_payload = unpack_data_from_cell(vk_slice, engine)?;
+    let vk_blob = VkBlob::parse(&vk_payload)?;
+
+    let cached = get_or_insert_vk(&vk_blob)?;
+    let instances = decode_instances_strict(&public_inputs_bytes)?;
+
+    let verifier_params = cached.params.verifier_params();
+    let strategy = SingleStrategy::new(&cached.params);
+    let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(proof_bytes.as_slice());
+    let instance_refs: &[&[Fr]] = &[&instances];
+    let res = verify_proof::<
+        KZGCommitmentScheme<Bn256>,
+        VerifierSHPLONK<'_, Bn256>,
+        Challenge255<G1Affine>,
+        Blake2bRead<&[u8], G1Affine, Challenge255<G1Affine>>,
+        SingleStrategy<'_, Bn256>,
+    >(verifier_params, &cached.vk, strategy, &[instance_refs], &mut transcript)
+    .is_ok();
 
     engine.cc.stack.push(boolean!(res));
     Ok(())
@@ -375,28 +480,13 @@ mod rlc_branch_tests {
         let (vk_bytes, cfg_json) = keygen_rlc_vk();
         let vk = read_rlc_vk(&vk_bytes, &cfg_json)
             .expect("Rlc branch must reconstruct an EthCircuitImpl VK from its own bytes");
-        // The shared-KZG path must accept the VK's domain k (sanity: build params).
         let _params = build_shared_kzg_params(vk.get_domain().k());
-        // Full round-trip fidelity: re-serialising the reconstructed VK must
-        // reproduce the original bytes byte-for-byte. This is the strong proof
-        // that the Rlc reader rebuilt the *exact* EthCircuitImpl constraint
-        // system (a wrong CS would read a different number of commitments and
-        // round-trip to different bytes).
         let reser = vk.to_bytes(SerdeFormat::RawBytes);
         assert_eq!(reser, vk_bytes, "Rlc VK must round-trip byte-for-byte");
     }
 
     #[test]
     fn base_branch_reads_fewer_points_than_rlc_vk() {
-        // NB: `VerifyingKey::read` is NOT strictly shape-validating — it reads
-        // exactly the commitment count the supplied config dictates and ignores
-        // any trailing bytes (it does not check EOF). So reading RLC bytes with
-        // a *smaller* Base config does not error; instead it consumes only a
-        // prefix and yields a structurally-valid-but-semantically-wrong VK.
-        // The discriminator's real job is to pick the reader whose CS matches
-        // the proof, so verification *succeeds* for valid proofs and *fails*
-        // for shape-mismatched ones. We assert the observable consequence: the
-        // Base reader produces a VK that does NOT round-trip to the RLC bytes.
         let (vk_bytes, _cfg_json) = keygen_rlc_vk();
         let base = BaseCircuitParams {
             k: 14,
@@ -414,8 +504,6 @@ mod rlc_branch_tests {
                     "Base reader must not faithfully round-trip an RLC-shaped VK"
                 );
             }
-            // An error is equally acceptable (config dictates more points than
-            // the stream carries → unexpected EOF).
             Err(_) => {}
         }
     }
