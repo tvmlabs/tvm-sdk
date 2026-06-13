@@ -101,7 +101,8 @@ const LEN_PREFIX_BYTES: usize = 4;
 pub enum VkBlobConfig {
     /// `BaseCircuitParams` — VK read with `BaseCircuitBuilder<Fr>`.
     Base(BaseCircuitParams),
-    /// Raw `EthCircuitParams` JSON bytes — VK read with `EthCircuitImpl<Fr, Noop>`.
+    /// Raw `EthCircuitParams` JSON bytes — VK read with `EthCircuitImpl<Fr,
+    /// Noop>`.
     Rlc(Vec<u8>),
 }
 

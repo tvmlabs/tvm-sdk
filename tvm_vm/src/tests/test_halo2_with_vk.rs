@@ -443,10 +443,9 @@ fn round_trip_deposit_rlc_real_proof_returns_true() {
         .expect("deposit_vk_blob.bin must exist");
     let instances = std::fs::read(format!("{}/proof_00/public_inputs.bin", DEPOSIT_SET_DIR))
         .expect("deposit public_inputs");
-    let proof = std::fs::read(format!("{}/proof_00/proof.bin", DEPOSIT_SET_DIR))
-        .expect("deposit proof");
-    run_with_operands(&vk_blob, &instances, &proof)
-        .expect("deposit RLC triple must verify true");
+    let proof =
+        std::fs::read(format!("{}/proof_00/proof.bin", DEPOSIT_SET_DIR)).expect("deposit proof");
+    run_with_operands(&vk_blob, &instances, &proof).expect("deposit RLC triple must verify true");
 }
 
 #[test]
