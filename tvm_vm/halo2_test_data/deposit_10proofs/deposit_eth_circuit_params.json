@@ -1,1 +1,0 @@
-{"rlc":{"base":{"k":18,"num_advice_per_phase":[10,10],"num_fixed":1,"num_lookup_advice_per_phase":[1,1,0],"lookup_bits":8,"num_instance_columns":1},"num_rlc_columns":1},"keccak":{"comp_loader_params":{"max_height":0,"shard_caps":[0]}}}
