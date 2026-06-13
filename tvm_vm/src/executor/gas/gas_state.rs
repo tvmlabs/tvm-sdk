@@ -21,6 +21,8 @@ use crate::error::TvmError;
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
+#[cfg(feature = "gosh")]
+use crate::executor::zk_halo2_with_vk::ZKHALO2_VERIFY_WITH_VK_GAS_PRICE;
 use crate::types::Exception;
 
 // Gas state
@@ -217,6 +219,19 @@ impl Gas {
     #[cfg(feature = "gosh")]
     pub fn consume_vergrth16(&mut self) -> i64 {
         self.use_gas(VERGRTH16_GAS_PRICE)
+    }
+
+    /// Compute `ZKHALO2VERIFYWITHVK` usage cost. Placeholder value, to be
+    /// re-benchmarked at real-impl follow-up time (see
+    /// `tvm_vm/src/executor/zk_halo2_with_vk.rs`).
+    #[cfg(feature = "gosh")]
+    pub const fn zkhalo2_verify_with_vk_price() -> i64 {
+        ZKHALO2_VERIFY_WITH_VK_GAS_PRICE
+    }
+
+    #[cfg(feature = "gosh")]
+    pub fn consume_zkhalo2_verify_with_vk(&mut self) -> i64 {
+        self.use_gas(ZKHALO2_VERIFY_WITH_VK_GAS_PRICE)
     }
 
     #[cfg(feature = "gosh")]

@@ -20,54 +20,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      # Pinned nightly (not floating @nightly) for reproducible lint: this is the
+      # rustc 1.98.0-nightly (57d06900f 2026-05-27) the RLC gosh stack is verified
+      # against and matches rust-toolchain.toml. Bump deliberately, in lockstep.
       - uses: dtolnay/rust-toolchain@nightly
         with:
+          toolchain: nightly-2026-05-28
           components: clippy, rustfmt
       - run: |
-          cargo +nightly fmt --all -- --check
+          cargo +nightly-2026-05-28 fmt --all -- --check
           # Check formatting for each example
           for manifest in $(find examples -name Cargo.toml); do
-            cargo +nightly fmt --manifest-path "$manifest" -- --check
+            cargo +nightly-2026-05-28 fmt --manifest-path "$manifest" -- --check
           done
 
       ## clippy is currently broken, require big refactor
       # - run: cargo clippy -- -D warnings
 
   test:
-    name: Test / ${{ matrix.name }}
+    name: Test / Priority Units
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Core Libs
-            command: |
-              cargo test -r --lib --no-fail-fast \
-                -p tvm_abi \
-                -p tvm_types \
-                -p tvm_block_json \
-                -p tvm_sdk \
-                -p tvm_vm \
-                --features tvm_vm/gosh,tvm_vm/signature_with_id
-
-          - name: tvm_block / default
-            command: |
-              cargo test -r --tests --no-fail-fast \
-                -p tvm_block
-
-          - name: tvm_block / signature_with_id
-            command: |
-              cargo test -r --lib --no-fail-fast \
-                -p tvm_block \
-                --features tvm_block/signature_with_id
-
-          - name: tvm_executor
-            command: |
-              cargo test -r --no-fail-fast \
-                -p tvm_executor \
-                --lib \
-                --test node_executor_gosh \
-                --features tvm_executor/gosh,tvm_executor/signature_with_id,tvm_executor/wasmtime
     env:
       CARGO_TERM_COLOR: always
       SCCACHE_GHA_ENABLED: "true"
@@ -75,7 +47,13 @@ jobs:
       RUSTC_WRAPPER: sccache
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      # Pinned nightly (matches rust-toolchain.toml): this job builds
+      # `--features tvm_vm/gosh`, which pulls axiom-eth / snark-verifier-sdk —
+      # those require nightly (`trait_alias`). Bump deliberately, in lockstep.
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly-2026-05-28
+          components: clippy, rustfmt
       - uses: rui314/setup-mold@v1
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Setup cargo cache
@@ -88,8 +66,20 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
-      - name: Run ${{ matrix.name }} tests
-        run: ${{ matrix.command }}
+      - name: Run priority unit tests
+        run: |
+          cargo test -r --lib --no-fail-fast \
+            -p tvm_abi \
+            -p tvm_block \
+            -p tvm_types \
+            -p tvm_block_json \
+            -p tvm_sdk \
+            -p tvm_vm \
+            -p tvm_executor \
+            --features tvm_vm/gosh,tvm_executor/signature_with_id
+
+          cargo test -r --tests --no-fail-fast \
+            -p tvm_block
 
   test-client:
     name: Test / tvm_client

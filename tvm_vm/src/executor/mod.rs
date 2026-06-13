@@ -38,6 +38,11 @@ mod types;
 #[cfg(feature = "wasmtime")]
 pub mod wasm;
 #[cfg(feature = "gosh")]
+pub mod zk_halo2_with_vk;
+
+#[cfg(feature = "gosh")]
+pub mod zk_halo2_with_vk_bundle;
+#[cfg(feature = "gosh")]
 pub mod zk_stuff;
 
 pub use engine::*;
@@ -49,6 +54,14 @@ use tvm_types::Result;
 #[cfg(all(test, feature = "wasmtime"))]
 #[path = "../tests/test_multifactor_tls_wasm_execution.rs"]
 mod test_multifactor_tls_wasm_execution;
+
+#[cfg(all(test, feature = "gosh"))]
+#[path = "../tests/test_halo2.rs"]
+mod test_halo2;
+
+#[cfg(all(test, feature = "gosh"))]
+#[path = "../tests/test_halo2_with_vk.rs"]
+mod test_halo2_with_vk;
 
 #[cfg(all(test, feature = "gosh"))]
 #[path = "../tests/test_vergrth_poseidon_execution.rs"]
@@ -75,6 +88,11 @@ mod test_helper;
 
 #[cfg(feature = "gosh")]
 pub mod zk;
+#[cfg(feature = "gosh")]
+pub mod zk_halo2_utils;
+
+#[cfg(feature = "gosh")]
+pub mod zk_halo2;
 
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;
