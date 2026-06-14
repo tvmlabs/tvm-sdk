@@ -455,3 +455,36 @@ pub fn compile_code_debuggable(
         Err(_) => Err(CompileError::unknown(0, 0, "failure while convert BuilderData to cell")),
     }
 }
+
+#[cfg(test)]
+mod gosh_zk_opcode_tests {
+    use super::*;
+
+    /// Sanity check: every gosh-feature ZK opcode mnemonic compiles to the
+    /// expected dispatch bytes. These constants must stay in lock-step with
+    /// `tvm_vm/src/executor/engine/handlers.rs` and the assembler table in
+    /// `tvm_assembler/src/simple.rs`. Failures here usually mean someone moved
+    /// the opcode byte without updating one of the two tables.
+    #[cfg(feature = "gosh")]
+    #[test]
+    fn zk_opcode_bytes_round_trip() {
+        for (mnemonic, expected) in [
+            ("VERGRTH16", [0xC7u8, 0x31u8]),
+            ("POSEIDONZKLOGIN", [0xC7, 0x32]),
+            ("ZKHALO2VERIFY", [0xC7, 0x49]),
+            ("ZKHALO2VERIFYWITHVK", [0xC7, 0x4A]),
+            ("POSEIDON", [0xC7, 0x50]),
+        ] {
+            let compiled =
+                compile_code(mnemonic).expect("mnemonic should compile under feature 'gosh'");
+            let bytes = compiled.get_bytestring(0);
+            assert_eq!(
+                &bytes[..2],
+                &expected[..],
+                "{} should compile to {:02X?}",
+                mnemonic,
+                expected
+            );
+        }
+    }
+}

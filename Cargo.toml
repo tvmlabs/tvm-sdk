@@ -127,3 +127,44 @@ pretty_assertions = "1"
 
 [workspace.dependencies.tokio-tungstenite]
 version = "0.28"
+
+# --- Halo2 backend unification (ZKHALO2VERIFYWITHVK + VkBlob-v2 "Rlc" shape) ---
+#
+# The whole graph must share ONE halo2-base / halo2-ecc / zkevm-hashes / halo2-axiom
+# instance, otherwise the `VerifyingKey<G1Affine>` produced by axiom-eth's
+# EthCircuitImpl is a *different type* from the one the opcode handler reconstructs
+# and nothing type-checks.
+#
+# halo2-base reaches the graph through THREE original sources — gosh-zk-snark-halo2-utils
+# and tvm_vm pull it from the gosh fork git, while axiom-eth + snark-verifier-sdk pull
+# it (and halo2-ecc / zkevm-hashes) from axiom's halo2-lib git. Patching all of them to
+# the SAME git url+rev makes cargo dedup them into one package (a shared local *path*
+# cannot patch multiple sources — cargo then keeps the original for the loser, yielding
+# two halo2-base copies).
+#
+# The fork is hosted at `github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381`
+# on branch `bump-halo2-lib-v0.4.1` (halo2-base 0.4.1 / zkevm-hashes 0.2.1 — the version
+# axiom-eth v0.4.3 builds against, kept stable-Rust-compatible). The branch sits one
+# commit ahead of `main` (commit `26b3224`, "Bump fork to axiom halo2-lib v0.4.1 /
+# zkevm-hashes 0.2.1"); `main` lacks the v0.4.1 API surface axiom-eth needs.
+# NOTE: editing the fork requires a commit + `cargo update` to refetch.
+[patch.crates-io]
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+
+halo2-axiom = { git = "https://github.com/gosh-sh/halo2-axiom", branch = "main" }
+
+# tvm_vm and gosh-zk-snark-halo2-utils already declare halo2-base at the bump branch
+# directly in their own manifests, so no [patch."gosh-sh/halo2-lib..."] block is needed
+# here — cargo would in any case reject one because the source URL and target URL would
+# be identical ("patches must point to different sources").
+
+# axiom-eth + snark-verifier-sdk pull halo2-base / halo2-ecc / zkevm-hashes from here.
+[patch."https://github.com/axiom-crypto/halo2-lib.git"]
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+halo2-ecc = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+zkevm-hashes = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+
+# axiom-eth: gosh fork (`gosh-stable-rlcmanager-assignment`, commit `687a6da`)
+# with `type Assignment = ()` on RlcManager.
+[patch."https://github.com/axiom-crypto/axiom-eth"]
+axiom-eth = { git = "https://github.com/gosh-sh/axiom-eth", branch = "gosh-stable-rlcmanager-assignment" }

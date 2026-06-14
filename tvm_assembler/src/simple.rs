@@ -860,7 +860,10 @@ impl Engine {
         CALCMBK                              => 0xC7, 0x46
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
+        ZKHALO2VERIFY                        => 0xC7, 0x49
+        ZKHALO2VERIFYWITHVK                  => 0xC7, 0x4A
         POSEIDON                             => 0xC7, 0x50
+        CHKHISTPROOF                         => 0xC7, 0x51
     }
 
     fn add_commands<'a>(
