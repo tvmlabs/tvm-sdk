@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 
+## [3.0.2] - 2026-06-15
+
+### Fixed
+- `tvm_abi`: fixed an off-by-32 error when decoding values spanning multiple cells, which produced `WrongDataLayout` when the last field spilled into a reference cell.
+
+
 ## [3.0.1] - 2026-06-08
 
 ### Fixed
