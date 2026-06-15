@@ -684,4 +684,157 @@ mod test {
 
         handle.abort();
     }
+
+    // ------------------------------------------------------------------
+    // Regression: a REST-only node that returns 404 on `/graphql` must
+    // still be sendable. `send_message` must not hard-fail on the GraphQL
+    // version probe (the old behavior surfaced as `code 11: Server
+    // responded with code 404`); it falls back to inferring the wire
+    // format from the caller-supplied dapp_id, mirroring `get_account`.
+    // ------------------------------------------------------------------
+
+    /// A `/graphql` handler that always returns HTTP 404 with a salvo-style
+    /// HTML body, simulating a node that exposes no GraphQL endpoint.
+    fn graphql_404_handler() -> axum::routing::MethodRouter {
+        get(|| async {
+            (
+                axum::http::StatusCode::NOT_FOUND,
+                "<!DOCTYPE html><html><head><title>404: Not Found</title></head>\
+                 <body><h1>404: Not Found</h1></body></html>",
+            )
+                .into_response()
+        })
+    }
+
+    /// Like `start_capturing_mock`, but `/graphql` returns 404 so GraphQL
+    /// endpoint resolution fails — exercising the REST-only fallback path.
+    async fn start_capturing_mock_no_graphql(
+        port: u16,
+        response: serde_json::Value,
+    ) -> (JoinHandle<()>, Arc<Mutex<Option<serde_json::Value>>>) {
+        let captured: Arc<Mutex<Option<serde_json::Value>>> = Arc::new(Mutex::new(None));
+        let captured_handle = captured.clone();
+        let response = Arc::new(response);
+        let app = Router::new().route("/graphql", graphql_404_handler()).route(
+            "/v2/messages",
+            post(move |body: Body| {
+                let captured = captured_handle.clone();
+                let response = response.clone();
+                async move {
+                    let bytes = to_bytes(body, usize::MAX).await.unwrap();
+                    let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+                    *captured.lock().await = Some(v);
+                    Json((*response).clone()).into_response()
+                }
+            }),
+        );
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", port)).await.unwrap();
+        let handle = tokio::spawn(async move {
+            axum::serve(listener, app).await.unwrap();
+        });
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        (handle, captured)
+    }
+
+    #[tokio::test]
+    async fn send_message_uses_v3_when_graphql_unavailable_and_dapp_id_present() {
+        let (handle, captured) = start_capturing_mock_no_graphql(
+            18624,
+            json!({
+                "result": {
+                    "message_hash": "deadbeef",
+                    "thread_id": null,
+                    "producers": [],
+                    "account_id": "aaaa",
+                    "dapp_id": "bbbb"
+                },
+                "error": null,
+                "ext_message_token": null
+            }),
+        )
+        .await;
+
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:18624".to_string()]),
+                api_token: Some("secret".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let client = Arc::new(ClientContext::new(config).unwrap());
+
+        let dapp_hex = "2".repeat(64);
+        let res = public_send_message(
+            client,
+            ParamsOfSendMessage {
+                message: TEST_MSG_BOC.to_string(),
+                abi: None,
+                thread_id: None,
+                send_events: false,
+                dapp_id: dapp_hex.clone(),
+            },
+            |_| async {},
+        )
+        .await
+        .expect("send must succeed even though /graphql returns 404");
+
+        // GraphQL is unavailable, so the send defaults to the v3 wire format
+        // (not a hard 404 failure): dapp_id + account_id present, no legacy
+        // dst_dapp_id.
+        let body = captured.lock().await.clone().expect("body captured");
+        let item = &body[0];
+        assert_eq!(item["dapp_id"], serde_json::Value::String(dapp_hex));
+        assert!(!item["account_id"].as_str().unwrap_or("").is_empty());
+        assert!(item.get("dst_dapp_id").is_none());
+
+        assert_eq!(res.account_id, "aaaa");
+        assert_eq!(res.dapp_id, "bbbb");
+
+        handle.abort();
+    }
+
+    #[tokio::test]
+    async fn send_message_defaults_to_v3_and_requires_dapp_id_when_graphql_unavailable() {
+        let (handle, _captured) = start_capturing_mock_no_graphql(
+            18625,
+            json!({ "result": null, "error": null, "ext_message_token": null }),
+        )
+        .await;
+
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:18625".to_string()]),
+                api_token: Some("secret".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let client = Arc::new(ClientContext::new(config).unwrap());
+
+        // With GraphQL unavailable the wire format defaults to v3 (it is *not*
+        // inferred from the request payload, since the SDK accepts only the new
+        // dapp_id::account_id address form). An empty dapp_id is therefore
+        // rejected with the dapp_id requirement — not the old
+        // `code 11: Server responded with code 404`, and not a silent v2
+        // downgrade.
+        let err = public_send_message(
+            client,
+            ParamsOfSendMessage {
+                message: TEST_MSG_BOC.to_string(),
+                abi: None,
+                thread_id: None,
+                send_events: false,
+                dapp_id: String::new(),
+            },
+            |_| async {},
+        )
+        .await
+        .unwrap_err();
+
+        assert!(err.message().contains("dapp_id"), "expected dapp_id requirement, got: {err}");
+        assert!(!err.message().contains("404"), "must not be the GraphQL 404 failure: {err}");
+
+        handle.abort();
+    }
 }
