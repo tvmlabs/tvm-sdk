@@ -174,22 +174,24 @@ struct AccountParamsV2 {
     address: String,
 }
 
+#[derive(Deserialize)]
+struct AccountParamsV3 {
+    account_id: String,
+    dapp_id: String,
+}
+
 async fn account(
     headers: HeaderMap,
     query: axum::extract::Query<serde_json::Value>,
 ) -> axum::response::Response {
     let auth = headers.get("Authorization").and_then(|value| value.to_str().ok());
+    let query = query.0;
 
-    // Check for v3 format (account_id + dapp_id)
-    if let (Some(account_id), Some(dapp_id)) = (
-        query.get("account_id").and_then(|v| v.as_str()),
-        query.get("dapp_id").and_then(|v| v.as_str()),
-    ) {
-        return handle_account_v3(account_id, dapp_id, auth);
+    if let Ok(params) = serde_json::from_value::<AccountParamsV3>(query.clone()) {
+        return handle_account_v3(&params.account_id, &params.dapp_id, auth);
     }
 
-    // Fall back to v2 format (address)
-    let params = match serde_json::from_value::<AccountParamsV2>(query.0) {
+    let params = match serde_json::from_value::<AccountParamsV2>(query) {
         Ok(p) => p,
         Err(_) => return (StatusCode::BAD_REQUEST, "Invalid parameters").into_response(),
     };
