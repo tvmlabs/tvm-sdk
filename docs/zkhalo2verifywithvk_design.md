@@ -126,23 +126,16 @@ expected to pre-warm cached VKs at node startup (mirroring
 ## 6. Drive-by fixes applied on this branch
 
 The parent branch (`serhii/node-3406-vergrth16-with-vk`) does not compile
-with `--features gosh` as it stands. Two pre-existing breaks were fixed
-inline so this PR's CI can pass:
+with `--features gosh` as it stands. The following pre-existing break was
+fixed inline so this PR's CI can pass:
 
 1. **Stray identifier in `gas_state.rs`** — `consume_chkhistproof`
    contained a bare `full_dex_test_with_final_halo2_circuit` token
    (looks like a branch-name accidentally pasted into source during a
    merge). Removed.
-2. **Missing `execute_poseidon` in `zk.rs`** — the dispatch table
-   references `execute_poseidon` at `0xC7 0x50` but the function was
-   dropped during the merge from `full_dex_test_with_final_halo2_circuit`.
-   Restored from `origin/main` verbatim.
-3. **Missing `IntegerData::from_unsigned_bytes_le`** — same merge dropped
-   this method. Restored from `origin/main` verbatim. Needed by
-   `execute_poseidon`.
 
-These are intentionally **separate, narrow** fixes and easy to drop into
-Serhii's branch before merge if preferred. They are listed at the top of
+This is intentionally a **separate, narrow** fix and easy to drop into
+Serhii's branch before merge if preferred. It is listed at the top of
 the PR's commits.
 
 ## 7. Re-benchmark TODO before mainnet

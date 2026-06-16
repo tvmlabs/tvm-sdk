@@ -470,10 +470,10 @@ mod gosh_zk_opcode_tests {
     fn zk_opcode_bytes_round_trip() {
         for (mnemonic, expected) in [
             ("VERGRTH16", [0xC7u8, 0x31u8]),
-            ("POSEIDONZKLOGIN", [0xC7, 0x32]),
+            ("POSEIDON", [0xC7, 0x32]),
             ("ZKHALO2VERIFY", [0xC7, 0x49]),
             ("ZKHALO2VERIFYWITHVK", [0xC7, 0x4A]),
-            ("POSEIDON", [0xC7, 0x50]),
+            ("CHKHISTPROOF", [0xC7, 0x50]),
         ] {
             let compiled =
                 compile_code(mnemonic).expect("mnemonic should compile under feature 'gosh'");
