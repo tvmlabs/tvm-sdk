@@ -1,6 +1,5 @@
 use axum::Json;
 use axum::Router;
-use axum::extract::Query;
 use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::http::StatusCode;
@@ -10,6 +9,9 @@ use serde::Deserialize;
 use serde_json::Value;
 use serde_json::json;
 use tokio::task::JoinHandle;
+
+const TEST_ACCOUNT_ID: &str = "1111111111111111111111111111111111111111111111111111111111111111";
+const TEST_DAPP_ID: &str = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
 
 #[derive(Clone)]
 struct MockState {
@@ -168,17 +170,35 @@ async fn graphql(
 }
 
 #[derive(Deserialize)]
-struct AccountParams {
+struct AccountParamsV2 {
     address: String,
 }
 
 async fn account(
     headers: HeaderMap,
-    Query(params): Query<AccountParams>,
+    query: axum::extract::Query<serde_json::Value>,
 ) -> axum::response::Response {
     let auth = headers.get("Authorization").and_then(|value| value.to_str().ok());
 
-    match (params.address.as_str(), auth) {
+    // Check for v3 format (account_id + dapp_id)
+    if let (Some(account_id), Some(dapp_id)) = (
+        query.get("account_id").and_then(|v| v.as_str()),
+        query.get("dapp_id").and_then(|v| v.as_str()),
+    ) {
+        return handle_account_v3(account_id, dapp_id, auth);
+    }
+
+    // Fall back to v2 format (address)
+    let params = match serde_json::from_value::<AccountParamsV2>(query.0) {
+        Ok(p) => p,
+        Err(_) => return (StatusCode::BAD_REQUEST, "Invalid parameters").into_response(),
+    };
+
+    handle_account_v2(params.address, auth)
+}
+
+fn handle_account_v2(address: String, auth: Option<&str>) -> axum::response::Response {
+    match (address.as_str(), auth) {
         ("0:11111", Some("Bearer secret")) => Json(json!({
             "boc": "te6ccAAS",
             "dapp_id": "mock-dapp",
@@ -194,6 +214,48 @@ async fn account(
         ("0:not-json", Some("Bearer secret")) => (StatusCode::OK, "not-json").into_response(),
         (_, Some("Bearer secret")) => (StatusCode::NOT_FOUND, "not found").into_response(),
         (_, _) => (StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
+    }
+}
+
+fn handle_account_v3(
+    account_id: &str,
+    dapp_id: &str,
+    auth: Option<&str>,
+) -> axum::response::Response {
+    match (account_id, dapp_id, auth) {
+        (a, d, Some("Bearer secret")) if a == TEST_ACCOUNT_ID && d == TEST_DAPP_ID => Json(json!({
+            "boc": "te6ccAAS",
+            "dapp_id": TEST_DAPP_ID,
+            "state_timestamp": 1_700_000_001_u64,
+            "account_id": TEST_ACCOUNT_ID
+        }))
+        .into_response(),
+        // Test case: not found - return 404
+        (
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            _,
+            Some("Bearer secret"),
+        ) => (StatusCode::NOT_FOUND, "not found").into_response(),
+        // Test case: invalid response - return 500
+        (
+            "5555555555555555555555555555555555555555555555555555555555555555",
+            _,
+            Some("Bearer secret"),
+        ) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
+        // Test case: invalid shape - return 200 with unexpected JSON
+        (
+            "badjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjson",
+            _,
+            Some("Bearer secret"),
+        ) => Json(json!({ "unexpected": true })).into_response(),
+        // Test case: invalid json - return 200 with plain text
+        (
+            "notjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjson",
+            _,
+            Some("Bearer secret"),
+        ) => (StatusCode::OK, "not-json").into_response(),
+        (_, _, Some("Bearer secret")) => (StatusCode::NOT_FOUND, "not found").into_response(),
+        (_, _, _) => (StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
     }
 }
 
