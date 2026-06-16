@@ -20,18 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # Pinned nightly (not floating @nightly) for reproducible lint: this is the
-      # rustc 1.98.0-nightly (57d06900f 2026-05-27) the RLC gosh stack is verified
-      # against and matches rust-toolchain.toml. Bump deliberately, in lockstep.
       - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly-2026-05-28
           components: clippy, rustfmt
       - run: |
-          cargo +nightly-2026-05-28 fmt --all -- --check
+          cargo +nightly fmt --all -- --check
           # Check formatting for each example
           for manifest in $(find examples -name Cargo.toml); do
-            cargo +nightly-2026-05-28 fmt --manifest-path "$manifest" -- --check
+            cargo +nightly fmt --manifest-path "$manifest" -- --check
           done
 
       ## clippy is currently broken, require big refactor
@@ -47,13 +43,7 @@ jobs:
       RUSTC_WRAPPER: sccache
     steps:
       - uses: actions/checkout@v6
-      # Pinned nightly (matches rust-toolchain.toml): this job builds
-      # `--features tvm_vm/gosh`, which pulls axiom-eth / snark-verifier-sdk —
-      # those require nightly (`trait_alias`). Bump deliberately, in lockstep.
-      - uses: dtolnay/rust-toolchain@nightly
-        with:
-          toolchain: nightly-2026-05-28
-          components: clippy, rustfmt
+      - uses: dtolnay/rust-toolchain@stable
       - uses: rui314/setup-mold@v1
       - uses: mozilla-actions/sccache-action@v0.0.10
       - name: Setup cargo cache
