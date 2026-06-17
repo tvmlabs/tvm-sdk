@@ -2124,13 +2124,6 @@ fn action_type(action: &OutAction) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use std::sync::Mutex;
-    use std::sync::atomic::AtomicU64;
-    use std::sync::atomic::Ordering;
-    use std::time::Duration;
-    use std::time::Instant;
-
     use tvm_block::AccStatusChange;
     use tvm_block::Account;
     use tvm_block::AccountStatus;
@@ -2141,8 +2134,6 @@ mod tests {
     use tvm_block::ConfigParamEnum;
     use tvm_block::ConfigParams;
     use tvm_block::CurrencyCollection;
-    use tvm_block::Deserializable;
-    use tvm_block::GasLimitsPrices;
     use tvm_block::GlobalVersion;
     use tvm_block::HashUpdate;
     use tvm_block::InternalMessageHeader;
@@ -2165,6 +2156,7 @@ mod tests {
     use tvm_types::Result;
     use tvm_types::SliceData;
     use tvm_types::UInt256;
+    use tvm_vm::executor::MVConfig;
     use tvm_vm::stack::Stack;
     use tvm_vm::stack::StackItem;
 
