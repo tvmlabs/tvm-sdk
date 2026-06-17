@@ -22,10 +22,13 @@ tvm_vm.workspace = true
 wasmtime = { workspace = true, optional = true }
 
 [dev-dependencies]
+sha2.workspace = true
+tvm_abi.workspace = true
 tvm_assembler.workspace = true
 
 [features]
 default = ["wasmtime"]
+gosh = ["tvm_vm/gosh"]
 signature_with_id = ["tvm_block/signature_with_id", "tvm_vm/signature_with_id"]
 ci_run = []
 timings = []
