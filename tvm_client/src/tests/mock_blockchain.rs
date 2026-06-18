@@ -3,6 +3,10 @@ use std::sync::Arc;
 use serde_json::json;
 
 use super::mock_blockchain_support::MockBlockchain;
+use super::mock_blockchain_support::TEST_ACCOUNT_ID;
+use super::mock_blockchain_support::TEST_BAD_JSON_ACCOUNT_ID;
+use super::mock_blockchain_support::TEST_DAPP_ID;
+use super::mock_blockchain_support::TEST_NOT_JSON_ACCOUNT_ID;
 use crate::ClientConfig;
 use crate::ClientContext;
 use crate::account;
@@ -19,7 +23,6 @@ use crate::net::ParamsOfQuery;
 use crate::net::ParamsOfQueryCollection;
 use crate::net::ParamsOfQueryCounterparties;
 use crate::net::ParamsOfWaitForCollection;
-use crate::processing::ErrorCode as ProcessingErrorCode;
 
 fn client_for(endpoint: String) -> Arc<ClientContext> {
     client_for_with_token(endpoint, None)
@@ -200,23 +203,38 @@ async fn get_account_uses_mock_blockchain_rest_endpoint() {
     let blockchain = MockBlockchain::start().await;
     let client = client_for_with_token(blockchain.endpoint(), Some("secret"));
 
-    let test_account_id = "1111111111111111111111111111111111111111111111111111111111111111";
-    let test_dapp_id = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-
     let account = account::get_account(
         client,
         ParamsOfGetAccount {
-            account_id: test_account_id.to_owned(),
-            dapp_id: test_dapp_id.to_owned(),
+            account_id: TEST_ACCOUNT_ID.to_owned(),
+            dapp_id: TEST_DAPP_ID.to_owned(),
         },
     )
     .await
     .unwrap();
 
     assert_eq!(account.boc, "te6ccAAS");
-    assert_eq!(account.dapp_id, test_dapp_id);
+    assert_eq!(account.dapp_id, TEST_DAPP_ID);
     assert_eq!(account.state_timestamp, Some(1_700_000_001));
-    assert_eq!(account.account_id, test_account_id);
+    assert_eq!(account.account_id, TEST_ACCOUNT_ID);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn get_account_uses_legacy_v2_rest_shape_for_old_mock_blockchain() {
+    let blockchain = MockBlockchain::start_legacy().await;
+    let client = client_for_with_token(blockchain.endpoint(), Some("secret"));
+
+    let account = account::get_account(
+        client,
+        ParamsOfGetAccount { account_id: TEST_ACCOUNT_ID.to_owned(), dapp_id: String::new() },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(account.boc, "te6ccAAS");
+    assert_eq!(account.dapp_id, "mock-dapp");
+    assert_eq!(account.state_timestamp, Some(1_700_000_001));
+    assert_eq!(account.account_id, TEST_ACCOUNT_ID);
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -224,15 +242,12 @@ async fn get_account_maps_mock_blockchain_rest_errors() {
     let blockchain = MockBlockchain::start().await;
     let authorized = client_for_with_token(blockchain.endpoint(), Some("secret"));
 
-    let test_account_id = "1111111111111111111111111111111111111111111111111111111111111111";
-    let test_dapp_id = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
-
     let not_found = account::get_account(
         authorized.clone(),
         ParamsOfGetAccount {
             account_id: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                 .to_owned(),
-            dapp_id: test_dapp_id.to_owned(),
+            dapp_id: TEST_DAPP_ID.to_owned(),
         },
     )
     .await;
@@ -244,7 +259,7 @@ async fn get_account_maps_mock_blockchain_rest_errors() {
         ParamsOfGetAccount {
             account_id: "5555555555555555555555555555555555555555555555555555555555555555"
                 .to_owned(),
-            dapp_id: test_dapp_id.to_owned(),
+            dapp_id: TEST_DAPP_ID.to_owned(),
         },
     )
     .await;
@@ -254,21 +269,19 @@ async fn get_account_maps_mock_blockchain_rest_errors() {
     let invalid_shape = account::get_account(
         authorized.clone(),
         ParamsOfGetAccount {
-            account_id: "badjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjson"
-                .to_owned(),
-            dapp_id: test_dapp_id.to_owned(),
+            account_id: TEST_BAD_JSON_ACCOUNT_ID.to_owned(),
+            dapp_id: TEST_DAPP_ID.to_owned(),
         },
     )
     .await;
     let invalid_shape = expect_client_err(invalid_shape);
-    assert_eq!(invalid_shape.code(), ProcessingErrorCode::InvalidData as u32);
+    assert_eq!(invalid_shape.code(), ErrorCode::InvalidServerResponse as u32);
 
     let invalid_json = account::get_account(
         authorized,
         ParamsOfGetAccount {
-            account_id: "notjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjson"
-                .to_owned(),
-            dapp_id: test_dapp_id.to_owned(),
+            account_id: TEST_NOT_JSON_ACCOUNT_ID.to_owned(),
+            dapp_id: TEST_DAPP_ID.to_owned(),
         },
     )
     .await;
@@ -277,9 +290,56 @@ async fn get_account_maps_mock_blockchain_rest_errors() {
     let unauthorized = account::get_account(
         client_for_with_token(blockchain.endpoint(), Some("wrong")),
         ParamsOfGetAccount {
-            account_id: test_account_id.to_owned(),
-            dapp_id: test_dapp_id.to_owned(),
+            account_id: TEST_ACCOUNT_ID.to_owned(),
+            dapp_id: TEST_DAPP_ID.to_owned(),
         },
+    )
+    .await;
+    let unauthorized = expect_client_err(unauthorized);
+    assert_eq!(unauthorized.code(), ErrorCode::Unauthorized as u32);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn get_account_maps_legacy_v2_mock_blockchain_rest_errors() {
+    let blockchain = MockBlockchain::start_legacy().await;
+    let authorized = client_for_with_token(blockchain.endpoint(), Some("secret"));
+
+    let internal_error = account::get_account(
+        authorized.clone(),
+        ParamsOfGetAccount {
+            account_id: "5555555555555555555555555555555555555555555555555555555555555555"
+                .to_owned(),
+            dapp_id: String::new(),
+        },
+    )
+    .await;
+    let internal_error = expect_client_err(internal_error);
+    assert_eq!(internal_error.code(), ErrorCode::InvalidServerResponse as u32);
+
+    let invalid_shape = account::get_account(
+        authorized.clone(),
+        ParamsOfGetAccount {
+            account_id: TEST_BAD_JSON_ACCOUNT_ID.to_owned(),
+            dapp_id: String::new(),
+        },
+    )
+    .await;
+    let invalid_shape = expect_client_err(invalid_shape);
+    assert_eq!(invalid_shape.code(), ErrorCode::InvalidServerResponse as u32);
+
+    let invalid_json = account::get_account(
+        authorized.clone(),
+        ParamsOfGetAccount {
+            account_id: TEST_NOT_JSON_ACCOUNT_ID.to_owned(),
+            dapp_id: String::new(),
+        },
+    )
+    .await;
+    let _invalid_json = expect_client_err(invalid_json);
+
+    let unauthorized = account::get_account(
+        client_for_with_token(blockchain.endpoint(), Some("wrong")),
+        ParamsOfGetAccount { account_id: TEST_ACCOUNT_ID.to_owned(), dapp_id: String::new() },
     )
     .await;
     let unauthorized = expect_client_err(unauthorized);

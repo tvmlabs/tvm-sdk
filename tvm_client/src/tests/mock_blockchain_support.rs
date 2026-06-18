@@ -10,8 +10,14 @@ use serde_json::Value;
 use serde_json::json;
 use tokio::task::JoinHandle;
 
-const TEST_ACCOUNT_ID: &str = "1111111111111111111111111111111111111111111111111111111111111111";
-const TEST_DAPP_ID: &str = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+pub(super) const TEST_ACCOUNT_ID: &str =
+    "1111111111111111111111111111111111111111111111111111111111111111";
+pub(super) const TEST_DAPP_ID: &str =
+    "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+pub(super) const TEST_BAD_JSON_ACCOUNT_ID: &str =
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+pub(super) const TEST_NOT_JSON_ACCOUNT_ID: &str =
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 #[derive(Clone)]
 struct MockState {
@@ -25,7 +31,15 @@ pub struct MockBlockchain {
 
 impl MockBlockchain {
     pub async fn start() -> Self {
-        let state = MockState { version: "1.2.3".to_owned() };
+        Self::start_with_version("1.2.3").await
+    }
+
+    pub async fn start_legacy() -> Self {
+        Self::start_with_version("0.9.9").await
+    }
+
+    async fn start_with_version(version: &str) -> Self {
+        let state = MockState { version: version.to_owned() };
         let app = Router::new()
             .route("/graphql", get(info).post(graphql))
             .route("/v2/account", get(account))
@@ -201,22 +215,31 @@ async fn account(
 
 fn handle_account_v2(address: String, auth: Option<&str>) -> axum::response::Response {
     match (address.as_str(), auth) {
-        ("0:11111", Some("Bearer secret")) => Json(json!({
-            "boc": "te6ccAAS",
-            "dapp_id": "mock-dapp",
-            "state_timestamp": 1_700_000_001_u64
-        }))
-        .into_response(),
-        ("0:55555", Some("Bearer secret")) => {
-            (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response()
+        (address, Some("Bearer secret")) if is_v2_address(address, TEST_ACCOUNT_ID) => {
+            Json(json!({
+                "boc": "te6ccAAS",
+                "dapp_id": "mock-dapp",
+                "state_timestamp": 1_700_000_001_u64
+            }))
+            .into_response()
         }
-        ("0:bad-json", Some("Bearer secret")) => {
+        (
+            "0:5555555555555555555555555555555555555555555555555555555555555555",
+            Some("Bearer secret"),
+        ) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
+        (address, Some("Bearer secret")) if is_v2_address(address, TEST_BAD_JSON_ACCOUNT_ID) => {
             Json(json!({ "unexpected": true })).into_response()
         }
-        ("0:not-json", Some("Bearer secret")) => (StatusCode::OK, "not-json").into_response(),
+        (address, Some("Bearer secret")) if is_v2_address(address, TEST_NOT_JSON_ACCOUNT_ID) => {
+            (StatusCode::OK, "not-json").into_response()
+        }
         (_, Some("Bearer secret")) => (StatusCode::NOT_FOUND, "not found").into_response(),
         (_, _) => (StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
     }
+}
+
+fn is_v2_address(address: &str, account_id: &str) -> bool {
+    address.strip_prefix("0:") == Some(account_id)
 }
 
 fn handle_account_v3(
@@ -245,17 +268,13 @@ fn handle_account_v3(
             Some("Bearer secret"),
         ) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
         // Test case: invalid shape - return 200 with unexpected JSON
-        (
-            "badjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjsonbadjson",
-            _,
-            Some("Bearer secret"),
-        ) => Json(json!({ "unexpected": true })).into_response(),
+        (TEST_BAD_JSON_ACCOUNT_ID, _, Some("Bearer secret")) => {
+            Json(json!({ "unexpected": true })).into_response()
+        }
         // Test case: invalid json - return 200 with plain text
-        (
-            "notjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjsonnotjson",
-            _,
-            Some("Bearer secret"),
-        ) => (StatusCode::OK, "not-json").into_response(),
+        (TEST_NOT_JSON_ACCOUNT_ID, _, Some("Bearer secret")) => {
+            (StatusCode::OK, "not-json").into_response()
+        }
         (_, _, Some("Bearer secret")) => (StatusCode::NOT_FOUND, "not found").into_response(),
         (_, _, _) => (StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
     }

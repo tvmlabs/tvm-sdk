@@ -1137,6 +1137,8 @@ pub(super) fn execute_calculate_miner_reward(engine: &mut Engine) -> Status {
 
 #[cfg(test)]
 mod tests {
+    use tvm_abi::Token;
+    use tvm_abi::Uint;
     use tvm_types::SliceData;
 
     use super::*;
@@ -1147,12 +1149,30 @@ mod tests {
         Engine::with_capabilities(0).setup(SliceData::default(), None, Some(stack), None)
     }
 
+    fn engine_with_stack_and_mbn_lst(stack: Stack, mbn_lst: Vec<u64>) -> Engine {
+        let mut engine = engine_with_stack(stack);
+        let mut mv_config = crate::executor::MVConfig::default();
+        mv_config.set_config(mbn_lst);
+        engine.set_mv_config(mv_config);
+        engine
+    }
+
     fn stack_uint(stack: &Stack, index: usize) -> u128 {
         stack.get(index).as_integer().unwrap().into(0..=u128::MAX).unwrap()
     }
 
     fn empty_cell_item() -> StackItem {
         StackItem::Cell(BuilderData::new().into_cell().unwrap())
+    }
+
+    fn tap_list_cell_item(values: &[u64]) -> StackItem {
+        let items =
+            values.iter().map(|value| TokenValue::Uint(Uint::new(*value as u128, 64))).collect();
+        let token = Token::new("a", TokenValue::Array(ParamType::Uint(64), items));
+        let builder =
+            TokenValue::pack_values_into_chain(&[token], vec![], &ABI_VERSION_2_2).unwrap();
+
+        StackItem::Cell(builder.into_cell().unwrap())
     }
 
     #[test]
@@ -1358,5 +1378,68 @@ mod tests {
         assert_eq!(fixed_ln_q40(0), 0);
         assert!(fixed_exp_q40(11_i128 << SHIFT_Q40) > 0);
         assert!(fixed_exp_q40(-(11_i128 << SHIFT_Q40)) > 0);
+    }
+
+    #[test]
+    fn miner_reward_wrapper_decodes_tap_list_and_pushes_reward() {
+        let mbn_lst = vec![1, 1];
+        let tap_lst = [1, 1];
+        let expected =
+            compute_rmv(100, 3, &build_bclst(&to_umbnlst(&mbn_lst)), 1, &tap_lst) as u128;
+        assert!(expected > 0);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(1_u128));
+        stack.push(tap_list_cell_item(&tap_lst));
+        stack.push(StackItem::int(3_u128));
+        stack.push(StackItem::int(100_u128));
+        let mut engine = engine_with_stack_and_mbn_lst(stack, mbn_lst);
+
+        execute_calculate_miner_reward(&mut engine).unwrap();
+
+        assert_eq!(stack_uint(&engine.cc.stack, 0), expected);
+    }
+
+    #[test]
+    fn mobile_verifiers_reward_wrapper_decodes_tap_list_and_pushes_reward() {
+        let mbn_lst = vec![1, 1];
+        let tap_lst = [1, 1];
+        let expected =
+            compute_rmv(100, 3, &build_bclst(&to_umbnlst(&mbn_lst)), 1, &tap_lst) as u128;
+        assert!(expected > 0);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(1_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(tap_list_cell_item(&tap_lst));
+        stack.push(StackItem::int(3_u128));
+        stack.push(StackItem::int(100_u128));
+        let mut engine = engine_with_stack_and_mbn_lst(stack, mbn_lst);
+
+        execute_calculate_mobile_verifiers_reward(&mut engine).unwrap();
+
+        assert_eq!(stack_uint(&engine.cc.stack, 0), expected);
+    }
+
+    #[test]
+    fn miner_tap_coef_wrapper_pushes_all_updated_counters() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(5_u128));
+        stack.push(StackItem::int(12_u128));
+        stack.push(StackItem::int(0_u128));
+        stack.push(StackItem::int(7_u128));
+        stack.push(StackItem::int(11_u128));
+        stack.push(StackItem::int(3_u128));
+        let mut engine = engine_with_stack(stack);
+
+        execute_calculate_miner_tap_coef(&mut engine).unwrap();
+
+        assert_eq!(stack_uint(&engine.cc.stack, 5), 303);
+        assert_eq!(stack_uint(&engine.cc.stack, 4), 70_075_481_960_600);
+        assert_eq!(stack_uint(&engine.cc.stack, 3), 19);
+        assert_eq!(stack_uint(&engine.cc.stack, 2), 20);
+        assert_eq!(stack_uint(&engine.cc.stack, 1), 8);
+        assert_eq!(stack_uint(&engine.cc.stack, 0), 5);
     }
 }
