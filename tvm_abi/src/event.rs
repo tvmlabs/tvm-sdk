@@ -155,4 +155,32 @@ mod tests {
         let err = event.decode_input(slice_with_u32(8), false).unwrap_err();
         assert!(err.to_string().contains("Wrong function ID"));
     }
+
+    // Real OrderPlaced (9 fields, 1033 bits → 2 cells) from shellnet.
+    // Reproduces the off-by-32 layout bug: the 32-bit event-id consumed in
+    // decode_input is not counted in Cursor.used_bits, so check_layout
+    // wrongly rejects the legit ref-spill of the last field (opNonce).
+    #[test]
+    fn orderplaced_2cell_real_body() {
+        use tvm_types::SliceData;
+        use tvm_types::base64_decode;
+        use tvm_types::read_single_root_boc;
+
+        use crate::contract::Contract;
+        let abi =
+            std::fs::read_to_string("/home/sehor/work/dexdo/contracts/abi/dex/OrderBook.abi.json")
+                .unwrap();
+        let contract = Contract::load(abi.as_bytes()).unwrap();
+        let body = base64_decode(
+            "te6ccgEBAgEAhwAB8xucaVcAAAAAAAAAAAAAAAAAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJxAAAAAAAAAAAAAAAA34R1gAAAAAAAAAAADUWAPOAAAfQ5a/DxBF+SmrdO5oXyLM+jKFg9ytsUGhHlk2qac6wCgvAAQAQAAAAAAAAAAE=",
+        )
+        .unwrap();
+        let cell = read_single_root_boc(body).unwrap();
+        let slice = SliceData::load_cell(cell).unwrap();
+        let event = contract.event("OrderPlaced").unwrap();
+        match event.decode_input(slice, true) {
+            Ok(toks) => eprintln!("DECODED OK: {} tokens", toks.len()),
+            Err(e) => eprintln!("DECODE FAILED: {e}"),
+        }
+    }
 }

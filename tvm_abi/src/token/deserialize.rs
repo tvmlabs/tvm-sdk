@@ -48,7 +48,12 @@ pub struct Cursor {
 
 impl From<SliceData> for Cursor {
     fn from(slice: SliceData) -> Self {
-        Self { used_bits: 0, used_refs: 0, slice }
+        // Account for bits already consumed from the first cell (e.g. the
+        // 4-byte function/event id read before decode_params). Starting at 0
+        // under-counts the first cell and makes check_layout wrongly reject a
+        // legit ref-spill of the last field (off-by-32 → WrongDataLayout).
+        let used_bits = slice.pos();
+        Self { used_bits, used_refs: 0, slice }
     }
 }
 

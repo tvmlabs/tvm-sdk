@@ -1056,6 +1056,9 @@ pub trait TransactionExecutor {
             if let Some(header) = out_msg.int_header_mut() {
                 header.set_src_dapp_id(message_src_dapp_id.clone());
             }
+            if let Some(header) = out_msg.ext_out_header_mut() {
+                header.set_src_dapp_id(message_src_dapp_id.clone());
+            }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
                 continue;

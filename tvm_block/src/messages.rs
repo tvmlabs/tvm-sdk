@@ -832,6 +832,7 @@ pub struct ExtOutMessageHeader {
     pub dst: MsgAddressExt,
     pub created_lt: u64,
     pub created_at: UnixTime32,
+    pub src_dapp_id: Option<UInt256>,
 }
 
 impl ExtOutMessageHeader {
@@ -841,6 +842,7 @@ impl ExtOutMessageHeader {
             dst,
             created_lt: 0, // Logical Time will be set on block builder
             created_at: UnixTime32::default(), // UNIX time too
+            src_dapp_id: None,
         }
     }
 
@@ -854,6 +856,14 @@ impl ExtOutMessageHeader {
     pub fn set_src(&mut self, src: MsgAddressInt) {
         self.src = MsgAddressIntOrNone::Some(src);
     }
+
+    pub fn src_dapp_id(&self) -> &Option<UInt256> {
+        &self.src_dapp_id
+    }
+
+    pub fn set_src_dapp_id(&mut self, src_dapp_id: Option<UInt256>) {
+        self.src_dapp_id = src_dapp_id;
+    }
 }
 
 impl Serializable for ExtOutMessageHeader {
@@ -864,6 +874,7 @@ impl Serializable for ExtOutMessageHeader {
         self.dst.write_to(cell)?; // addr dst
         self.created_lt.write_to(cell)?; // created_lt
         self.created_at.write_to(cell)?; // created_at
+        self.src_dapp_id.write_maybe_to(cell)?;
 
         Ok(())
     }
@@ -876,6 +887,9 @@ impl Deserializable for ExtOutMessageHeader {
         self.dst.read_from(cell)?; // addr dst
         self.created_lt.read_from(cell)?; // created_lt
         self.created_at.read_from(cell)?; // created_at
+        if cell.get_next_bit()? {
+            self.src_dapp_id = Some(UInt256::construct_from(cell)?);
+        }
         Ok(())
     }
 }
@@ -1076,6 +1090,13 @@ impl Message {
     pub fn ext_in_header_mut(&mut self) -> Option<&mut ExternalInboundMessageHeader> {
         match self.header {
             CommonMsgInfo::ExtInMsgInfo(ref mut header) => Some(header),
+            _ => None,
+        }
+    }
+
+    pub fn ext_out_header_mut(&mut self) -> Option<&mut ExtOutMessageHeader> {
+        match self.header {
+            CommonMsgInfo::ExtOutMsgInfo(ref mut header) => Some(header),
             _ => None,
         }
     }
