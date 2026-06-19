@@ -779,11 +779,15 @@ pub trait TransactionExecutor {
                 );
                 // Here you can select only one of 2 error codes:
                 // RESULT_CODE_UNKNOWN_OR_INVALID_ACTION or RESULT_CODE_ACTIONLIST_INVALID
+                eprintln!("ACTIONDBG: construct_from_cell FAILED (code 34): {err}");
                 phase.result_code = RESULT_CODE_UNKNOWN_OR_INVALID_ACTION;
                 return Ok(ActionPhaseResult::from_phase(phase));
             }
             Ok(actions) => actions,
         };
+        if !actions.is_empty() {
+            eprintln!("ACTIONDBG: parsed {} actions OK: {:?}", actions.len(), actions);
+        }
 
         if actions.len() > MAX_ACTIONS {
             log::debug!(target: "executor", "too many actions: {}", actions.len());
@@ -1042,6 +1046,9 @@ pub trait TransactionExecutor {
                 balance_to_string(&acc_remaining_balance),
                 balance_to_string(&init_balance)
             );
+            if err_code != 0 {
+                eprintln!("ACTIONDBG: action[{i}] FAILED err_code={err_code}");
+            }
             if process_err_code(err_code, i, &mut phase)? {
                 return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
