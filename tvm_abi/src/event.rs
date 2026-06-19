@@ -156,10 +156,6 @@ mod tests {
         assert!(err.to_string().contains("Wrong function ID"));
     }
 
-    // Real OrderPlaced (9 fields, 1033 bits → 2 cells) from shellnet.
-    // Reproduces the off-by-32 layout bug: the 32-bit event-id consumed in
-    // decode_input is not counted in Cursor.used_bits, so check_layout
-    // wrongly rejects the legit ref-spill of the last field (opNonce).
     #[test]
     fn orderplaced_2cell_real_body() {
         use tvm_types::SliceData;
