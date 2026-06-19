@@ -832,7 +832,6 @@ pub struct ExtOutMessageHeader {
     pub dst: MsgAddressExt,
     pub created_lt: u64,
     pub created_at: UnixTime32,
-    pub src_dapp_id: Option<UInt256>,
 }
 
 impl ExtOutMessageHeader {
@@ -842,6 +841,61 @@ impl ExtOutMessageHeader {
             dst,
             created_lt: 0, // Logical Time will be set on block builder
             created_at: UnixTime32::default(), // UNIX time too
+        }
+    }
+
+    pub fn src(&self) -> Option<&MsgAddressInt> {
+        match self.src {
+            MsgAddressIntOrNone::Some(ref src) => Some(src),
+            MsgAddressIntOrNone::None => None,
+        }
+    }
+
+    pub fn set_src(&mut self, src: MsgAddressInt) {
+        self.src = MsgAddressIntOrNone::Some(src);
+    }
+}
+
+impl Serializable for ExtOutMessageHeader {
+    fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        cell.append_bit_one()?.append_bit_one()?;
+
+        self.src.write_to(cell)?; // addr src
+        self.dst.write_to(cell)?; // addr dst
+        self.created_lt.write_to(cell)?; // created_lt
+        self.created_at.write_to(cell)?; // created_at
+
+        Ok(())
+    }
+}
+
+impl Deserializable for ExtOutMessageHeader {
+    fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
+        // constructor tag will be readed in Message
+        self.src.read_from(cell)?; // addr src
+        self.dst.read_from(cell)?; // addr dst
+        self.created_lt.read_from(cell)?; // created_lt
+        self.created_at.read_from(cell)?; // created_at
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ExtOutMessageHeaderV2 {
+    pub src: MsgAddressIntOrNone,
+    pub dst: MsgAddressExt,
+    pub created_lt: u64,
+    pub created_at: UnixTime32,
+    pub src_dapp_id: Option<UInt256>,
+}
+
+impl ExtOutMessageHeaderV2 {
+    pub fn with_addresses(src: MsgAddressInt, dst: MsgAddressExt) -> ExtOutMessageHeaderV2 {
+        ExtOutMessageHeaderV2 {
+            src: MsgAddressIntOrNone::Some(src),
+            dst,
+            created_lt: 0,
+            created_at: UnixTime32::default(),
             src_dapp_id: None,
         }
     }
@@ -866,27 +920,24 @@ impl ExtOutMessageHeader {
     }
 }
 
-impl Serializable for ExtOutMessageHeader {
+impl Serializable for ExtOutMessageHeaderV2 {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_one()?.append_bit_one()?;
-
-        self.src.write_to(cell)?; // addr src
-        self.dst.write_to(cell)?; // addr dst
-        self.created_lt.write_to(cell)?; // created_lt
-        self.created_at.write_to(cell)?; // created_at
+        cell.append_bits(0b110110, 6)?;
+        self.src.write_to(cell)?;
+        self.dst.write_to(cell)?;
+        self.created_lt.write_to(cell)?;
+        self.created_at.write_to(cell)?;
         self.src_dapp_id.write_maybe_to(cell)?;
-
         Ok(())
     }
 }
 
-impl Deserializable for ExtOutMessageHeader {
+impl Deserializable for ExtOutMessageHeaderV2 {
     fn read_from(&mut self, cell: &mut SliceData) -> Result<()> {
-        // constructor tag will be readed in Message
-        self.src.read_from(cell)?; // addr src
-        self.dst.read_from(cell)?; // addr dst
-        self.created_lt.read_from(cell)?; // created_lt
-        self.created_at.read_from(cell)?; // created_at
+        self.src.read_from(cell)?;
+        self.dst.read_from(cell)?;
+        self.created_lt.read_from(cell)?;
+        self.created_at.read_from(cell)?;
         if cell.get_next_bit()? {
             self.src_dapp_id = Some(UInt256::construct_from(cell)?);
         }
@@ -909,6 +960,13 @@ impl fmt::Display for CommonMsgInfo {
             CommonMsgInfo::IntMsgInfo(hdr) => write!(f, "{}", hdr),
             CommonMsgInfo::ExtInMsgInfo(hdr) => write!(f, "{}", hdr),
             CommonMsgInfo::ExtOutMsgInfo(hdr) => write!(f, "{}", hdr),
+            CommonMsgInfo::ExtOutMsgInfoV2(hdr) => {
+                write!(
+                    f,
+                    "External Outbound V2 {{src: {}, dst: {}, lt: {}, at: {}, src_dapp_id: {:?}}}",
+                    hdr.src, hdr.dst, hdr.created_lt, hdr.created_at, hdr.src_dapp_id
+                )
+            }
         }
     }
 }
@@ -919,6 +977,7 @@ pub enum CommonMsgInfo {
     IntMsgInfo(InternalMessageHeader),
     ExtInMsgInfo(ExternalInboundMessageHeader),
     ExtOutMsgInfo(ExtOutMessageHeader),
+    ExtOutMsgInfoV2(ExtOutMessageHeaderV2),
 }
 
 impl CommonMsgInfo {
@@ -995,6 +1054,7 @@ impl Serializable for CommonMsgInfo {
             CommonMsgInfo::IntMsgInfo(header) => header.write_to(cell)?,
             CommonMsgInfo::ExtInMsgInfo(header) => header.write_to(cell)?,
             CommonMsgInfo::ExtOutMsgInfo(header) => header.write_to(cell)?,
+            CommonMsgInfo::ExtOutMsgInfoV2(header) => header.write_to(cell)?,
         }
         Ok(())
     }
@@ -1008,13 +1068,24 @@ impl Deserializable for CommonMsgInfo {
             int_msg.read_from(cell)?;
             CommonMsgInfo::IntMsgInfo(int_msg)
         } else if !cell.get_next_bit()? {
+            // tag $10 — ExtInMsgInfo
             let mut ext_in_msg = ExternalInboundMessageHeader::default();
             ext_in_msg.read_from(cell)?;
             CommonMsgInfo::ExtInMsgInfo(ext_in_msg)
-        } else {
+        } else if cell.get_bits(0, 2)? != 0b01 {
             let mut ext_out_ms = ExtOutMessageHeader::default();
             ext_out_ms.read_from(cell)?;
             CommonMsgInfo::ExtOutMsgInfo(ext_out_ms)
+        } else {
+            cell.move_by(2)?;
+            match cell.get_next_int(2)? {
+                0b10 => {
+                    let mut ext_out_v2 = ExtOutMessageHeaderV2::default();
+                    ext_out_v2.read_from(cell)?;
+                    CommonMsgInfo::ExtOutMsgInfoV2(ext_out_v2)
+                }
+                other => fail!("Unsupported CommonMsgInfo extension tag $1101 {:02b}", other),
+            }
         };
 
         Ok(())
@@ -1098,6 +1169,31 @@ impl Message {
         match self.header {
             CommonMsgInfo::ExtOutMsgInfo(ref mut header) => Some(header),
             _ => None,
+        }
+    }
+
+    pub fn ext_out_header_v2(&self) -> Option<&ExtOutMessageHeaderV2> {
+        match self.header() {
+            CommonMsgInfo::ExtOutMsgInfoV2(header) => Some(header),
+            _ => None,
+        }
+    }
+
+    pub fn ext_out_header_v2_mut(&mut self) -> Option<&mut ExtOutMessageHeaderV2> {
+        match self.header {
+            CommonMsgInfo::ExtOutMsgInfoV2(ref mut header) => Some(header),
+            _ => None,
+        }
+    }
+
+    /// Create new instance ext-out V2 Message with V2 header
+    pub fn with_ext_out_header_v2(h: ExtOutMessageHeaderV2) -> Message {
+        Message {
+            header: CommonMsgInfo::ExtOutMsgInfoV2(h),
+            init: None,
+            body: None,
+            body_to_ref: None,
+            init_to_ref: None,
         }
     }
 
@@ -1245,6 +1341,7 @@ impl Message {
         let addr1 = match self.header() {
             CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
             CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
+            CommonMsgInfo::ExtOutMsgInfoV2(ref eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
         };
         match addr1 {
@@ -1275,6 +1372,10 @@ impl Message {
                 header.created_at = UnixTime32::new(at);
                 header.created_lt = lt;
             }
+            CommonMsgInfo::ExtOutMsgInfoV2(ref mut header) => {
+                header.created_at = UnixTime32::new(at);
+                header.created_lt = lt;
+            }
             _ => (),
         };
     }
@@ -1287,6 +1388,9 @@ impl Message {
             CommonMsgInfo::ExtOutMsgInfo(ref mut header) => {
                 header.src = address;
             }
+            CommonMsgInfo::ExtOutMsgInfoV2(ref mut header) => {
+                header.src = address;
+            }
             _ => (),
         };
     }
@@ -1297,6 +1401,9 @@ impl Message {
                 header.src = MsgAddressIntOrNone::Some(src);
             }
             CommonMsgInfo::ExtOutMsgInfo(header) => {
+                header.src = MsgAddressIntOrNone::Some(src);
+            }
+            CommonMsgInfo::ExtOutMsgInfoV2(header) => {
                 header.src = MsgAddressIntOrNone::Some(src);
             }
             _ => (),
@@ -1313,6 +1420,9 @@ impl Message {
             CommonMsgInfo::ExtOutMsgInfo(header) => {
                 Some((header.created_at.as_u32(), header.created_lt))
             }
+            CommonMsgInfo::ExtOutMsgInfoV2(header) => {
+                Some((header.created_at.as_u32(), header.created_lt))
+            }
             _ => None,
         }
     }
@@ -1321,6 +1431,7 @@ impl Message {
         match self.header {
             CommonMsgInfo::IntMsgInfo(ref header) => Some(header.created_lt),
             CommonMsgInfo::ExtOutMsgInfo(ref header) => Some(header.created_lt),
+            CommonMsgInfo::ExtOutMsgInfoV2(ref header) => Some(header.created_lt),
             _ => None,
         }
     }
@@ -1367,7 +1478,7 @@ impl Message {
 
     /// Is message an external outbound?
     pub fn is_outbound_external(&self) -> bool {
-        matches!(self.header, CommonMsgInfo::ExtOutMsgInfo(_))
+        matches!(self.header, CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_))
     }
 
     /// is message have state init.
@@ -1381,6 +1492,7 @@ impl Message {
             CommonMsgInfo::IntMsgInfo(ref imi) => Some(imi.dst.get_workchain_id()),
             CommonMsgInfo::ExtInMsgInfo(ref eimi) => Some(eimi.dst.get_workchain_id()),
             CommonMsgInfo::ExtOutMsgInfo(_) => None,
+            CommonMsgInfo::ExtOutMsgInfoV2(_) => None,
         }
     }
 
@@ -1394,6 +1506,7 @@ impl Message {
         let addr1 = match self.header() {
             CommonMsgInfo::IntMsgInfo(ref imi) => &imi.src,
             CommonMsgInfo::ExtOutMsgInfo(ref eimi) => &eimi.src,
+            CommonMsgInfo::ExtOutMsgInfoV2(ref eimi) => &eimi.src,
             CommonMsgInfo::ExtInMsgInfo(_) => &MsgAddressIntOrNone::None,
         };
         match addr1 {
