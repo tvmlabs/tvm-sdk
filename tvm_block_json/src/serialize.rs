@@ -1548,7 +1548,7 @@ pub fn serialize_config_param(config: &ConfigParams, config_number: u32) -> Resu
         if let Some(cp) =
             serialize_known_config_param(config_number, param, SerializationMode::Standart)?
         {
-            master_map.insert(format!("p{}", &config_number), cp);
+            master_map.insert(format!("p{}", config_number), cp);
         }
     }
     let json = serde_json::to_string_pretty(&master_map)?;
