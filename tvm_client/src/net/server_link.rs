@@ -1029,13 +1029,25 @@ impl ServerLink {
             }
         }
 
-        // Force GraphQL endpoint resolution so server_version is populated
-        // before we choose v2 vs v3 wire format. Sample version once for
-        // the whole send attempt (including retries). All retries here go
-        // to nodes in the same cluster, so a mid-attempt version flip is
-        // not expected; we deliberately don't re-probe.
-        self.state.get_query_endpoint().await?;
-        let is_v3 = self.supports_dapp_id().await;
+        // Best-effort, fail-fast GraphQL version probe to choose the v2 vs v3
+        // wire format. Mirrors `get_account`: a REST-only node that exposes no
+        // GraphQL endpoint must still be sendable, so we never hard-fail here
+        // (the old `get_query_endpoint().await?` surfaced a missing `/graphql`
+        // as `code 11: Server responded with code 404`).
+        //
+        // When GraphQL is reachable we trust its `info.version`. When it is
+        // unavailable we cannot use the request payload to disambiguate the
+        // node — the SDK accepts only the new `dapp_id::account_id` address
+        // form, so a dapp_id is present regardless of node version. Instead we
+        // assume the modern v3 wire format: a node serving no GraphQL is a
+        // REST-only v3 node, whereas legacy v<1.0.0 nodes always expose GraphQL
+        // and are detected above. Sampled once for the whole send attempt
+        // (including retries): all retries go to nodes in the same cluster, so
+        // a mid-attempt version flip is not expected and we don't re-probe.
+        let is_v3 = match self.state.try_resolve_query_endpoint().await {
+            Ok(_) => self.supports_dapp_id().await,
+            Err(_) => true,
+        };
         let network_state = self.state();
 
         if is_v3 && dapp_id.is_empty() {

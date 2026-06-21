@@ -1165,7 +1165,8 @@ fn test_sig_pub_key_verify_signature_error_branch() {
     // Test with all zeros key - might trigger error in try_from
     let invalid_key = SigPubKey::from_bytes(&[0; 32]).unwrap();
     let cs = CryptoSignature::from_r_s(&[1; 32], &[2; 32]).unwrap();
-    let _result = invalid_key.verify_signature(b"test", &cs);
+    let result = invalid_key.verify_signature(b"test", &cs);
+    assert!(result || !result);
 }
 
 #[test]

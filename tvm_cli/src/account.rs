@@ -84,16 +84,6 @@ async fn query_accounts(
     Ok(res)
 }
 
-/// Extracts the `account_id` portion of an address in any supported input form
-/// (`hex64`, `wc:hex64`, `dapp_hex64:hex64`, `dapp_hex64::hex64`). The unique
-/// account key is everything after the last `:`; a leading `:` left over from
-/// the `::` form is stripped defensively. This deliberately avoids re-parsing
-/// via `SdkAddress` so `MsgAddressInt` validation stays out of this comparison.
-fn account_id_of(address: &str) -> &str {
-    let id = address.rsplit_once(':').map_or(address, |(_, id)| id);
-    id.strip_prefix(':').unwrap_or(id)
-}
-
 pub async fn get_account(
     config: &Config,
     addresses: Vec<String>,
