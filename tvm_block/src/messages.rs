@@ -880,6 +880,16 @@ impl Deserializable for ExtOutMessageHeader {
     }
 }
 
+impl fmt::Display for ExtOutMessageHeaderV2 {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "External Outbound V2 {{src: {}, dst: {}, lt: {}, at: {}, src_dapp_id: {:?}}}",
+            self.src, self.dst, self.created_lt, self.created_at, self.src_dapp_id
+        )
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExtOutMessageHeaderV2 {
     pub src: MsgAddressIntOrNone,
@@ -960,13 +970,7 @@ impl fmt::Display for CommonMsgInfo {
             CommonMsgInfo::IntMsgInfo(hdr) => write!(f, "{}", hdr),
             CommonMsgInfo::ExtInMsgInfo(hdr) => write!(f, "{}", hdr),
             CommonMsgInfo::ExtOutMsgInfo(hdr) => write!(f, "{}", hdr),
-            CommonMsgInfo::ExtOutMsgInfoV2(hdr) => {
-                write!(
-                    f,
-                    "External Outbound V2 {{src: {}, dst: {}, lt: {}, at: {}, src_dapp_id: {:?}}}",
-                    hdr.src, hdr.dst, hdr.created_lt, hdr.created_at, hdr.src_dapp_id
-                )
-            }
+            CommonMsgInfo::ExtOutMsgInfoV2(hdr) => write!(f, "{}", hdr),
         }
     }
 }
