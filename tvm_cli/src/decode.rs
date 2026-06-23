@@ -738,7 +738,11 @@ mod tests {
     async fn test_decode_body_json() {
         let body = "te6ccgEBAQEARAAAgwAAALqUCTqWL8OX7JivfJrAAzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMQAAAAAAAAAAAAAAAEeGjADA==";
         let config = Config::default();
-        decode_body(body, "tests/samples/wallet.abi.json", true, &config).await.unwrap();
+        let abi_path = format!(
+            "{}/../tvm_client/src/tests/contracts/abi_v2/Wallet.abi.json",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        decode_body(body, &abi_path, true, &config).await.unwrap();
     }
 
     #[tokio::test]

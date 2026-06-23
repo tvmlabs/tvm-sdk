@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.2] - 2026-06-15
+
+### Fixed
+- `call`/`callx` and other message-sending commands no longer fail with `code 11: Server responded with code 404` when targeting a node that serves only the REST message API and returns 404 on `/graphql`. The GraphQL server-version probe is now best-effort: when GraphQL is reachable its `info.version` is trusted as before; when it is unavailable the send proceeds using the current v3 wire format instead of aborting.
+- Decoding return values and bodies that span multiple cells no longer produces `WrongDataLayout` when the last field spills into a reference cell (off-by-32 fix in `tvm_abi`).
+
+## [3.0.1] - 2026-06-08
+
+### Fixed
+- Fixed `decode::tests::test_decode_body_json` to use an existing manifest-relative wallet ABI fixture instead of a missing `tests/samples/wallet.abi.json` path.
+
 ## [3.0.0] - 2026-06-05
 
 ### Changed (breaking)
