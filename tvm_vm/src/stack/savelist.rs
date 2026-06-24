@@ -167,3 +167,79 @@ impl fmt::Display for SaveList {
         writeln!(f, "{:-<40}", "")
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::stack::continuation::ContinuationData;
+
+    fn continuation_item() -> StackItem {
+        StackItem::continuation(ContinuationData::with_code(SliceData::new(vec![0x80])))
+    }
+
+    #[test]
+    fn can_put_matches_register_contract() {
+        let cont = continuation_item();
+        let cell = StackItem::cell(Default::default());
+        let tuple = StackItem::tuple(vec![StackItem::int(1)]);
+
+        assert!(SaveList::can_put(0, &cont));
+        assert!(SaveList::can_put(1, &cont));
+        assert!(SaveList::can_put(2, &cont));
+        assert!(SaveList::can_put(2, &StackItem::None));
+        assert!(SaveList::can_put(4, &cell));
+        assert!(SaveList::can_put(5, &cell));
+        assert!(SaveList::can_put(7, &tuple));
+
+        assert!(!SaveList::can_put(0, &cell));
+        assert!(!SaveList::can_put(4, &tuple));
+        assert!(!SaveList::can_put(6, &cont));
+    }
+
+    #[test]
+    fn put_remove_apply_and_empty_work_as_expected() {
+        let mut first = SaveList::new();
+        let mut second = SaveList::new();
+        let mut cont = continuation_item();
+        let mut tuple = StackItem::tuple(vec![StackItem::int(1), StackItem::int(2)]);
+
+        assert!(first.is_empty());
+        first.put(0, &mut cont).unwrap();
+        second.put(7, &mut tuple).unwrap();
+        assert!(!first.is_empty());
+        assert!(first.get(0).unwrap().as_continuation().is_ok());
+
+        first.apply(&mut second);
+        assert!(first.get(7).unwrap().as_tuple().is_ok());
+        assert!(second.is_empty());
+
+        let removed = first.remove(7).unwrap();
+        assert!(removed.as_tuple().is_ok());
+        assert!(first.get(7).is_none());
+    }
+
+    #[test]
+    fn serialize_old_roundtrips_empty_and_populated_lists() {
+        let (builder, gas) = SaveList::new().serialize_old().unwrap();
+        assert_eq!(gas, 0);
+        let mut slice = SliceData::load_builder(builder).unwrap();
+        let (decoded, gas) = SaveList::deserialize_old(&mut slice).unwrap();
+        assert_eq!(decoded, SaveList::new());
+        assert_eq!(gas, 0);
+
+        let mut savelist = SaveList::new();
+        let mut cont = continuation_item();
+        let mut cell = StackItem::cell(Default::default());
+        let mut tuple = StackItem::tuple(vec![StackItem::int(7)]);
+        savelist.put(0, &mut cont).unwrap();
+        savelist.put(4, &mut cell).unwrap();
+        savelist.put(7, &mut tuple).unwrap();
+
+        let (builder, _) = savelist.serialize_old().unwrap();
+        let mut slice = SliceData::load_builder(builder).unwrap();
+        let (decoded, _) = SaveList::deserialize_old(&mut slice).unwrap();
+        assert_eq!(decoded, savelist);
+    }
+}
