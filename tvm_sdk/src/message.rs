@@ -54,6 +54,7 @@ impl Message {
             CommonMsgInfo::IntMsgInfo(_) => MessageType::Internal,
             CommonMsgInfo::ExtInMsgInfo(_) => MessageType::ExternalInbound,
             CommonMsgInfo::ExtOutMsgInfo(_) => MessageType::ExternalOutbound,
+            CommonMsgInfo::ExtOutMsgInfoV2(_) => MessageType::ExternalOutbound,
         };
 
         Ok(Self { id, body, msg_type, value })

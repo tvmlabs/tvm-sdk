@@ -1067,6 +1067,9 @@ pub trait TransactionExecutor {
             if let Some(header) = out_msg.int_header_mut() {
                 header.set_src_dapp_id(message_src_dapp_id.clone());
             }
+            if let Some(header) = out_msg.ext_out_header_v2_mut() {
+                header.set_src_dapp_id(message_src_dapp_id.clone());
+            }
             if (mode & SENDMSG_ALL_BALANCE) == 0 {
                 out_msgs.push(out_msg);
                 continue;
@@ -1800,7 +1803,7 @@ fn outmsg_action_handler(
 
         // set evaluated fees and value back to msg
         int_header.fwd_fee = fwd_remain_fee;
-    } else if msg.ext_out_header().is_some() {
+    } else if msg.ext_out_header().is_some() || msg.ext_out_header_v2().is_some() {
         fwd_mine_fee = compute_fwd_fee;
         total_fwd_fees = compute_fwd_fee;
         result_value = CurrencyCollection::from_grams(compute_fwd_fee);
