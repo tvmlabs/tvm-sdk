@@ -348,27 +348,32 @@ mod tests {
 
     #[test]
     fn try_from_maps_vm_storage_action_and_message_ids() {
-        let mut ordinary = TransactionDescrOrdinary::default();
-        ordinary.aborted = true;
-        ordinary.storage_ph =
-            Some(TrStoragePhase::with_params(11u64.into(), None, AccStatusChange::Frozen));
-        ordinary.compute_ph = TrComputePhase::Vm(TrComputePhaseVm {
-            success: true,
-            gas_fees: 13u64.into(),
-            gas_used: VarUInteger7::from(21),
-            exit_code: 17,
-            exit_arg: Some(-3),
+        let ordinary = TransactionDescrOrdinary {
+            aborted: true,
+            storage_ph: Some(TrStoragePhase::with_params(
+                11u64.into(),
+                None,
+                AccStatusChange::Frozen,
+            )),
+            compute_ph: TrComputePhase::Vm(TrComputePhaseVm {
+                success: true,
+                gas_fees: 13u64.into(),
+                gas_used: VarUInteger7::from(21),
+                exit_code: 17,
+                exit_arg: Some(-3),
+                ..Default::default()
+            }),
+            action: Some(TrActionPhase {
+                success: true,
+                valid: false,
+                no_funds: true,
+                result_code: -9,
+                total_fwd_fees: Some(5u64.into()),
+                total_action_fees: Some(7u64.into()),
+                ..Default::default()
+            }),
             ..Default::default()
-        });
-        ordinary.action = Some(TrActionPhase {
-            success: true,
-            valid: false,
-            no_funds: true,
-            result_code: -9,
-            total_fwd_fees: Some(5u64.into()),
-            total_action_fees: Some(7u64.into()),
-            ..Default::default()
-        });
+        };
 
         let mut tx = build_transaction(TransactionDescr::Ordinary(ordinary));
         let out_ext = TvmMessage::with_ext_out_header(ExtOutMessageHeader::with_addresses(
@@ -388,9 +393,9 @@ mod tests {
         assert_eq!(transaction.compute.success, Some(true));
         assert_eq!(transaction.compute.gas_fees, 13);
         assert_eq!(transaction.compute.gas_used, 21);
-        assert_eq!(transaction.action.as_ref().unwrap().success, true);
-        assert_eq!(transaction.action.as_ref().unwrap().valid, false);
-        assert_eq!(transaction.action.as_ref().unwrap().no_funds, true);
+        assert!(transaction.action.as_ref().unwrap().success);
+        assert!(!transaction.action.as_ref().unwrap().valid);
+        assert!(transaction.action.as_ref().unwrap().no_funds);
         assert_eq!(transaction.action.as_ref().unwrap().result_code, -9);
         assert_eq!(transaction.action.as_ref().unwrap().total_fwd_fees, 5);
         assert_eq!(transaction.action.as_ref().unwrap().total_action_fees, 7);

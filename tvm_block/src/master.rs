@@ -2361,7 +2361,7 @@ mod tests {
         let (left, right) = ShardIdent::full(1).split().unwrap();
         let left_id = block_id(left.clone(), 2, 0x02);
         let right_id = block_id(right.clone(), 3, 0x03);
-        let ids = vec![(full.clone(), 10), (left_id.clone(), 20), (right_id.clone(), 30)];
+        let ids = [(full.clone(), 10), (left_id.clone(), 20), (right_id.clone(), 30)];
 
         let refs = RefShardBlocks::with_ids(ids.iter()).unwrap();
         assert_eq!(refs.ref_shard_block(full.shard()).unwrap().unwrap().seq_no, 1);
