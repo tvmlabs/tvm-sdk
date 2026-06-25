@@ -212,6 +212,20 @@ If the Miner contract does not reject the message:
 * **A separate mining key pair for each application**
 * **Secure authorization without sharing the user’s private wallet keys with the application**
 
+{% hint style="warning" %}
+#### AN Wallet Authorization Scope
+
+Authorization through AN Wallet is limited to the wallet scenarios and Mobile Verifiers system (`mvsystem`) processes required by Bee Engine.
+
+Acki Nacki Wallet is not intended for calling arbitrary methods of user contracts, because it operates under the system DAPP ID.
+
+If your application requires users to interact with your smart contracts, deploy your own DAPP and implement that interaction there.\
+[DAPP development prerequisites](https://dev.ackinacki.com/#prerequisites)
+
+If you need to call contract methods through a wallet, use Multisig Wallet, which supports sending an ABI-encoded payload as part of a transaction. \
+[Deployment guide](https://dev.ackinacki.com/how-to-deploy-a-multisig-wallet)
+{% endhint %}
+
 #### Flow 2 — User Does NOT Have AN Wallet _**(in progress)**_
 
 #### General Description
