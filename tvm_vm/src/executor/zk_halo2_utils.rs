@@ -9,23 +9,27 @@
 // instances fixture from `tvm_vm/halo2_test_data/fallback_*.bin` at
 // runtime; nothing test-only is embedded into this file.
 //
-// ## Provenance (production-grade, BN254)
+// ## Provenance (BN254) — CORRECTED 2026-06-26
 //
-// All three points are sourced from the **Hermez Perpetual Powers of Tau**
-// ceremony output (`powersOfTau28_hez_final.ptau`, K=20 slice). That is
-// the standard multi-party BN254 KZG trusted setup with 80+ public
-// contributions — the same SRS used by snarkjs, iden3 and Polygon zkEVM.
+// `KZG_G0_BYTES` and `KZG_G2_BYTES` are the BN254 G1/G2 curve generators —
+// identical across every well-formed BN254 KZG SRS (test or production), so
+// they carry no ceremony information.
 //
-// Conversion path: `powersOfTau28_hez_final_20.ptau` (Polygon zkEVM
-// mirror, SHA-256 `159d3f93…`) → `han0110/halo2-kzg-srs` raw halo2
-// canonical SRS (SHA-256 `80394564…`, `same_ratio` validated) → bytes
-// extracted at the canonical offsets `[4..68]`, `[134217732..860]`,
-// `[134217860..988]`.
+// `KZG_S_G2_BYTES` (= `[s] · G2`, the toxic-waste-scaled G2) is the ONLY
+// ceremony-specific point, and it is **NOT** from the Hermez Perpetual Powers
+// of Tau. It is the trapdoor commitment of the **Acki Nacki chain's own KZG
+// ceremony** — the same `[s] · G2` carried by the chain's `kzg_bn254_19.srs`
+// and by the bridge `deposit-prover`'s `params/kzg_bn254_{k}.srs` files (which
+// are downsized from it, tau-preserving). Deposit / bridge proofs only verify
+// here if they were keyed on that chain ceremony.
 //
-// `KZG_G0_BYTES` and `KZG_G2_BYTES` are the curve generators G1/G2 —
-// these match the values from any well-formed BN254 SRS (test or
-// production). Only `KZG_S_G2_BYTES` (= `[s] · G2`, where `s` is the
-// ceremony's shared trapdoor) is ceremony-specific.
+// An earlier version of this comment claimed these points came from the Hermez
+// `powersOfTau28_hez_final_20.ptau` (halo2 raw SRS SHA-256 `80394564…`). That
+// is empirically false: the last 128 bytes of that exact file (= `[s]·G2`) are
+// `928fafb3 d0cc … b3be 595c 6900`, whereas `KZG_S_G2_BYTES` below begins
+// `c6028acf 4420 …` and ends `… 7397 d666 4515`. Same g1/g2 generators,
+// DIFFERENT tau. (Verified against the bridge repo's chain SRS, which matches
+// these bytes, and its Hermez SRS, which does not.)
 
 /// G1 generator point `g[0]` from the KZG SRS, 64 bytes (BN256 G1Affine
 /// uncompressed). Shared verifier-only material; together with `KZG_G2_BYTES`
@@ -154,14 +158,13 @@ pub fn build_dark_dex_w128_vk() -> VerifyingKey<G1Affine> {
     read_vk(&DARK_DEX_W128_VK_BYTES, &dark_dex_w128_config_params())
 }
 
-// Dark-DEX-specific KZG verifier points (K=19). The `dark_dex_w128_*` proof
-// fixtures committed under `tvm_vm/halo2_test_data/` were generated against a
-// *different* trusted setup than the Hermez ceremony used by the
-// ZKHALO2VERIFYWITHVK opcode (see the top-of-file Hermez constants). Keeping
-// the two ceremonies separate is correct: every KZG verifier needs the exact
-// `[s]·G2` point its proofs were created with, so the dark-dex tests must
-// reuse the ceremony their fixtures were produced against. The bytes are
-// embedded literally so no env var / external SRS file is needed at runtime.
+// Dark-DEX KZG verifier points (K=19). NOTE: despite the historical naming,
+// `DARK_DEX_KZG_S_G2_BYTES` below is **byte-identical** to the top-of-file
+// `KZG_S_G2_BYTES` — the `dark_dex_w128_*` fixtures and the deposit/bridge
+// proofs share the SAME ceremony (the Acki Nacki chain ceremony, NOT Hermez).
+// The duplicate constant set is kept only to keep the legacy ZKHALO2VERIFY and
+// the ZKHALO2VERIFYWITHVK code paths independent. The bytes are embedded
+// literally so no env var / external SRS file is needed at runtime.
 
 /// G1 generator point `g[0]` for the dark-dex KZG SRS (K=19), 64 bytes
 /// (BN256 G1Affine uncompressed). Curve generator — identical across all
@@ -187,9 +190,9 @@ const DARK_DEX_KZG_G2_BYTES: [u8; 128] = [
 ];
 
 /// `[s] · G2` for the dark-dex KZG SRS (toxic-waste-scaled G2), 128 bytes.
-/// **Ceremony-specific:** must match the SRS the `dark_dex_w128_*` proof
-/// fixtures were generated against. Distinct from the Hermez
-/// `KZG_S_G2_BYTES` used by the ZKHALO2VERIFYWITHVK opcode.
+/// **Ceremony-specific** (Acki Nacki chain ceremony). Byte-identical to the
+/// `KZG_S_G2_BYTES` used by the ZKHALO2VERIFYWITHVK opcode — both code paths
+/// verify proofs from the same chain ceremony (NOT Hermez).
 const DARK_DEX_KZG_S_G2_BYTES: [u8; 128] = [
     198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250, 139, 224, 102, 28, 120,
     209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4, 247, 119, 82, 189, 13, 15, 148, 115, 180, 255,
