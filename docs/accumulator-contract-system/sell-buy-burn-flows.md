@@ -4,7 +4,7 @@ description: All primary flows in the Accumulator system.
 
 # Sell/Buy/Burn Flows
 
-**Seller lifecycle: from order creation (SHELL deposit) to USDC payout:**
+**Seller lifecycle: from order creation (SHELL deposit) to eccUSDC payout:**
 
 ```mermaid
 sequenceDiagram
@@ -18,7 +18,7 @@ sequenceDiagram
 
     rect rgb(240, 255, 240)
         Note over Seller,SellOrder: 1. Seller deposits SHELL — joins the queue
-        Seller->>Accumulator: Send ECC SHELL (e.g. 1000 SHELL = 10 USDC lot)
+        Seller->>Accumulator: Send SHELL (e.g. 1000 SHELL = 10 eccUSDC lot)
         Accumulator->>Accumulator: Validate denomination and amount
         Accumulator->>Accumulator: Assign FIFO orderId, increment available[D]
         Accumulator->>SellOrder: Deploy lot contract
@@ -27,12 +27,12 @@ sequenceDiagram
     end
 
     rect rgb(235, 245, 255)
-        Note over Buyer,Accumulator: 2. Buyer pays USDC — seller's lot gets matched
+        Note over Buyer,Accumulator: 2. Buyer pays eccUSDC — seller's lot gets matched
         alt Direct buy
-            Buyer->>Accumulator: Send ECC USDC
+            Buyer->>Accumulator: Send eccUSDC
         else Buy through Exchange
             Owner->>Exchange: mintAndSendAccumulator(buyer, value, nonce)
-            Exchange->>Accumulator: buyShellFor(buyer) + ECC USDC
+            Exchange->>Accumulator: buyShellFor(buyer) + eccUSDC
         end
         Accumulator->>Accumulator: Match FIFO queues 1000 → 100 → 10 → 1
         Accumulator->>Accumulator: soldPrefix[D] += matched lots
@@ -42,11 +42,11 @@ sequenceDiagram
     end
     
     rect rgb(255, 248, 235)
-        Note over Seller,SellOrder: 3. Seller claims USDC payout
+        Note over Seller,SellOrder: 3. Seller claims eccUSDC payout
         Seller->>SellOrder: claim() — called by wallet automatically
         SellOrder->>Accumulator: claimUSDC(denom, orderId, owner)
          alt Lot is sold
-            Accumulator-->>Seller: Transfer ECC USDC directly to seller
+            Accumulator-->>Seller: Transfer eccUSDC directly to seller
             Accumulator-->>SellOrder: onReceiveUSDC(amount)
             Note over SellOrder: Lot destroyed
         else Lot not sold yet
@@ -71,7 +71,7 @@ sequenceDiagram
 
     rect rgb(240, 255, 240)
         Note over Seller,SellOrder: 1. Seller deposits SHELL — joins the queue
-        Seller->>Accumulator: Send ECC SHELL (e.g. 1000 SHELL = 10 USDC lot)
+        Seller->>Accumulator: Send ECC SHELL (e.g. 1000 SHELL = 10 eccUSDC lot)
         Accumulator->>Accumulator: Validate denomination and amount
         Accumulator->>Accumulator: Assign FIFO orderId, increment available[D]
         Accumulator->>SellOrder: Deploy lot contract
@@ -85,10 +85,10 @@ A seller creates a lot by sending ECC SHELL to the Root's `receive()`. The amoun
 
 | Denomination | SHELL required (nanoSHELL)  |
 | ------------ | --------------------------- |
-| 1 USDC       | 100,000,000,000 (100 × 10⁹) |
-| 10 USDC      | 1,000,000,000,000           |
-| 100 USDC     | 10,000,000,000,000          |
-| 1000 USDC    | 100,000,000,000,000         |
+| 1 eccUSDC    | 100,000,000,000 (100 × 10⁹) |
+| 10 eccUSDC   | 1,000,000,000,000           |
+| 100 eccUSDC  | 10,000,000,000,000          |
+| 1000 eccUSDC | 100,000,000,000,000         |
 
 **What happens on-chain:**
 
@@ -102,7 +102,7 @@ A seller creates a lot by sending ECC SHELL to the Root's `receive()`. The amoun
 
 ***
 
-## Buy Shell (deposit USDC)
+## Buy Shell (deposit eccUSDC)
 
 ```mermaid
 sequenceDiagram
@@ -114,12 +114,12 @@ sequenceDiagram
     participant SellOrder as ShellSellOrderLot
 
     rect rgb(235, 245, 255)
-        Note over Buyer,Accumulator: 2. Buyer pays USDC — seller's lot gets matched
+        Note over Buyer,Accumulator: 2. Buyer pays eccUSDC — seller's lot gets matched
         alt Direct buy
-            Buyer->>Accumulator: Send ECC USDC
+            Buyer->>Accumulator: Send eccUSDC
         else Buy through Exchange
             Owner->>Exchange: mintAndSendAccumulator(buyer, value, nonce)
-            Exchange->>Accumulator: buyShellFor(buyer) + ECC USDC
+            Exchange->>Accumulator: buyShellFor(buyer) + eccUSDC
         end
         Accumulator->>Accumulator: Match FIFO queues 1000 → 100 → 10 → 1
         Accumulator->>Accumulator: soldPrefix[D] += matched lots
@@ -129,12 +129,12 @@ sequenceDiagram
     end
 ```
 
-A buyer sends ECC USDC to the Root (directly or via Exchange). The amount must be in whole USDC units (`amount % 1_000_000 == 0`).
+A buyer sends eccUSDC to the Root (directly or via Exchange). The amount must be in whole eccUSDC units (`amount % 1_000_000 == 0`).
 
 **Matching algorithm (largest-first FIFO):**
 
 ```
-remaining = usdcAmount / USDC_DECIMALS_FACTOR   // whole USDC
+remaining = usdcAmount / USDC_DECIMALS_FACTOR   // whole eccUSDC
 
 for each D in [1000, 100, 10, 1]:
     take = min(available[D], remaining / D)
@@ -155,14 +155,14 @@ send totalShellFromSellers + mintedShell to buyer
 
 * Matching is greedy: it takes as many lots as possible from the largest denomination first.
 * If sellers partially cover the amount, the rest is minted. The buyer always gets 100% of the SHELL.
-* The USDC stays on the Root. It is tracked in `_usdcBalance` and becomes available for seller claims and NACKL redemption.
+* The eccUSDC stays on the Root. It is tracked in `_usdcBalance` and becomes available for seller claims and NACKL redemption.
 * Two events are emitted: `ShellPurchased` (to ext addr 611) and `MatchedOrders` (to ext addr 617, with current `soldPrefix` values).
 
-**Note on `buyShellFor` vs `receive`:** Both accept ECC USDC and trigger the same `_processUsdcDeposit` logic. The difference: `receive()` rejects messages carrying more than one ECC currency (`require(currencies.keys().length <= 1)`), while `buyShellFor()` only checks that USDC is present. If a multi-currency message arrives via `buyShellFor`, the non-USDC ECC will remain on the contract.
+**Note on `buyShellFor` vs `receive`:** Both accept eccUSDC and trigger the same `_processUsdcDeposit` logic. The difference: `receive()` rejects messages carrying more than one ECC currency (`require(currencies.keys().length <= 1)`), while `buyShellFor()` only checks that eccUSDC is present. If a multi-currency message arrives via `buyShellFor`, the non-USDC ECC will remain on the contract.
 
 ***
 
-## Claim — seller collects USDC
+## Claim — seller collects eccUSDC
 
 ```mermaid
 sequenceDiagram
@@ -173,11 +173,11 @@ sequenceDiagram
     participant SellOrder as ShellSellOrderLot
 
     rect rgb(255, 248, 235)
-        Note over Seller,SellOrder: 3. Seller claims USDC payout
+        Note over Seller,SellOrder: 3. Seller claims eccUSDC payout
         Seller->>SellOrder: claim() — called by wallet automatically
         SellOrder->>Accumulator: claimUSDC(denom, orderId, owner)
         alt Lot is sold
-            Accumulator-->>Seller: Transfer ECC USDC directly to seller
+            Accumulator-->>Seller: Transfer eccUSDC directly to seller
             Accumulator-->>SellOrder: onReceiveUSDC(amount)
             Note over SellOrder: Lot destroyed
         else Lot not sold yet
@@ -188,7 +188,7 @@ sequenceDiagram
     end
 ```
 
-After a lot is matched (sold), the seller calls `claim()` on their lot contract to receive the USDC payout.
+After a lot is matched (sold), the seller calls `claim()` on their lot contract to receive the eccUSDC payout.
 
 {% stepper %}
 {% step %}
@@ -202,7 +202,7 @@ Sets `_claimed = true`, then calls `Root.claimUSDC(denom, orderId, owner)`.
 
 Verifies the caller's address matches the expected lot address (recomputed deterministically), checks `orderId <= soldPrefix[D]` (lot is sold), checks `owedCount[D] > 0`, and checks `_usdcBalance >= owedTotal`. If all pass:
 
-* Sends `D × USDC_DECIMALS_FACTOR` ECC USDC **directly to the seller** (not to the lot).
+* Sends `D × USDC_DECIMALS_FACTOR` eccUSDC **directly to the seller** (not to the lot).
 * Calls `SellOrderLot.onReceiveUSDC(payout)` to confirm.
 * Decrements `owedCount[D]` and `_usdcBalance`.
 {% endstep %}
@@ -242,11 +242,11 @@ sequenceDiagram
         Note over User,Accumulator: Redeem NACKL
         User->>Accumulator: Send ECC NACKL
         Accumulator->>Accumulator: Burn NACKL, compute payout
-        Accumulator-->>User: Transfer ECC USDC
+        Accumulator-->>User: Transfer eccUSDC
     end
 ```
 
-A NACKL holder sends ECC NACKL to the Root's `receive()` to burn it and claim a share of the "free reserve" — USDC not owed to any seller.
+A NACKL holder sends ECC NACKL to the Root's `receive()` to burn it and claim a share of the "free reserve" — eccUSDC not owed to any seller.
 
 **Payout formula:**
 
@@ -260,7 +260,7 @@ payout = redeemable × burnAmount / currentSupply
 
 Where `M(t) = T_KM × (1 - exp(-u_M × t))`, capped at `NACKL_T`. `t` is seconds since `_unixstart`.
 
-**Key point:** `currentSupply` is **not** `M(t)` — it's `M(t) minus all NACKL burned to date`. As more NACKL is burned, the denominator shrinks, so each subsequent burn receives a larger share of the remaining reserve. This is by design: later redeemers get proportionally more of whatever USDC is left.
+**Key point:** `currentSupply` is **not** `M(t)` — it's `M(t) minus all NACKL burned to date`. As more NACKL is burned, the denominator shrinks, so each subsequent burn receives a larger share of the remaining reserve. This is by design: later redeemers get proportionally more of whatever eccUSDC is left.
 
 {% stepper %}
 {% step %}
@@ -296,12 +296,12 @@ Increment `_nacklBurned`, decrement `_usdcBalance`.
 {% step %}
 #### Send payout
 
-Send ECC USDC to the sender.
+Send eccUSDC to the sender.
 {% endstep %}
 {% endstepper %}
 
 ***
 
-## Exchange TIP3 to ECC USDC through Exchange
+## Exchange TIP3 to eccUSDC through Exchange
 
-The Exchange also has `onTransferReceived` — a callback from its TIP-3 USDC wallet. When someone sends TIP-3 USDC to the Exchange's wallet, it mints equivalent ECC USDC and sends it back to the depositor's address (not to the Accumulator). The depositor can then send it to the Accumulator directly.
+The Exchange also has `onTransferReceived` — a callback from its TIP-3 USDC wallet. When someone sends TIP-3 USDC to the Exchange's wallet, it mints equivalent eccUSDC and sends it back to the depositor's address (not to the Accumulator). The depositor can then send it to the Accumulator directly.

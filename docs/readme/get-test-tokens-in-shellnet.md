@@ -40,7 +40,7 @@ Right now, in enabled `DEV mode`, you will see the address of your Multifactor c
 
 Token amounts in `ecc` are specified in the smallest units.
 
-<table><thead><tr><th width="95.13330078125">Token</th><th width="123.699951171875">`ecc` key</th><th width="110.29998779296875">Decimals</th><th>Example</th></tr></thead><tbody><tr><td><code>NACKL</code></td><td>1</td><td><code>9</code></td><td><code>100 NACKL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>SHELL</code></td><td>2</td><td><code>9</code></td><td><code>100 SHELL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>USDC</code></td><td>3</td><td><code>6</code></td><td><code>100 USDC</code> = <code>100,000,000</code></td></tr></tbody></table>
+<table><thead><tr><th width="95.13330078125">Token</th><th width="123.699951171875">`ecc` key</th><th width="110.29998779296875">Decimals</th><th>Example</th></tr></thead><tbody><tr><td><code>NACKL</code></td><td>1</td><td><code>9</code></td><td><code>100 NACKL</code> = <code>100,000,000,000</code></td></tr><tr><td><code>SHELL</code></td><td>2</td><td><code>9</code></td><td><code>100 SHELL</code> = <code>100,000,000,000</code></td></tr><tr><td>ecc<code>USDC</code></td><td>3</td><td><code>6</code></td><td><code>100 eccUSDC</code> = <code>100,000,000</code></td></tr></tbody></table>
 
 {% hint style="warning" %}
 * Make sure the recipient address is correct before running the command
@@ -75,11 +75,11 @@ tvm-cli -j -u shellnet.ackinacki.org callx \
   '{"dest":"0:348c....66bf","value":1000000000,"ecc":{"1":100000000000}}'
 ```
 
-### Get USDC
+### Get eccUSDC
 
 Replace `0:348c....66bf` with the recipient address.
 
-The command below sends `5000 USDC`.
+The command below sends `5000 eccUSDC`.
 
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \
@@ -93,7 +93,7 @@ tvm-cli -j -u shellnet.ackinacki.org callx \
 
 You can request several test tokens in one command by adding multiple keys to `ecc`.
 
-The command below sends `1000 NACKL`, `50000 SHELL`, and `5000 USDC`.
+The command below sends `1000 NACKL`, `50000 SHELL`, and `5000 eccUSDC`.
 
 ```bash
 tvm-cli -j -u shellnet.ackinacki.org callx \

@@ -17,9 +17,9 @@ flowchart LR
         SellOrder[ShellSellOrderLot]
     end
 
-    User -->|Direct ECC USDC buy| Accumulator
+    User -->|Direct eccUSDC buy| Accumulator
     Owner -->|mintAndSendAccumulator + nonce| Exchange
-    Exchange -->|buyShellFor + ECC USDC| Accumulator
+    Exchange -->|buyShellFor + eccUSDC| Accumulator
     Accumulator -->|ECC SHELL| User
 
     User -->|ECC SHELL deposit| Accumulator
@@ -27,10 +27,10 @@ flowchart LR
 
     User -->|claim| SellOrder
     SellOrder -->|claimUSDC| Accumulator
-    Accumulator -->|ECC USDC payout| User
+    Accumulator -->|eccUSDC payout| User
 
     User -->|ECC NACKL| Accumulator
-    Accumulator -->|USDC from free reserve| User
+    Accumulator -->|eccUSDC from free reserve| User
 
     Backend -->|triggerTransaction| Owner
     SettlementMonitor -.->|reads queues via getters| Accumulator
@@ -47,7 +47,7 @@ flowchart LR
 
 ## Contract roles
 
-**ShellAccumulatorRootUSDC** is the central contract. It holds all ECC balances (USDC and SHELL from sellers), manages four FIFO queues (one per denomination), matches buyers against sellers, mints SHELL when sellers are insufficient, pays out USDC on claims, and handles NACKL redemption.
+**ShellAccumulatorRootUSDC** is the central contract. It holds all ECC balances (eccUSDC and SHELL from sellers), manages four FIFO queues (one per denomination), matches buyers against sellers, mints SHELL when sellers are insufficient, pays out USDC on claims, and handles NACKL redemption.
 
 **ShellSellOrderLot** is a lightweight per-order contract deployed by the Root when a seller deposits SHELL. It stores the seller's address, denomination, and order ID. Its only active function is `claim()`, which calls back into Root's `claimUSDC`. After payout confirmation, it self-destructs.
 
@@ -59,12 +59,12 @@ flowchart LR
 
 Each denomination (1, 10, 100, 1000) has four counters:
 
-| Counter      | Meaning                                      |
-| ------------ | -------------------------------------------- |
-| `nextId`     | Next order ID to assign (starts at 1)        |
-| `available`  | Number of lots waiting to be matched         |
-| `soldPrefix` | Contiguous prefix of sold lots               |
-| `owedCount`  | Sold lots whose USDC hasn't been claimed yet |
+| Counter      | Meaning                                         |
+| ------------ | ----------------------------------------------- |
+| `nextId`     | Next order ID to assign (starts at 1)           |
+| `available`  | Number of lots waiting to be matched            |
+| `soldPrefix` | Contiguous prefix of sold lots                  |
+| `owedCount`  | Sold lots whose eccUSDC hasn't been claimed yet |
 
 Order IDs are **1-based** (`nextId` starts at 1). The first lot gets `orderId = 1`, the second gets `orderId = 2`, etc. `soldPrefix = 3` means lots 1, 2, 3 are sold.
 

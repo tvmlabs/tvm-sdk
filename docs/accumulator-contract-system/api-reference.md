@@ -5,7 +5,7 @@ Complete reference for all public/external functions, events, and error codes ac
 ## ShellAccumulatorRootUSDC
 
 Source: `contracts/accumulator/ShellAccumulatorRootUSDC.sol` · Version: 1.0.2\
-&#xNAN;_&#x49;t will be available after the next node release_
+\&#xNAN;_It will be available after the next node release_
 
 ### Entry points
 
@@ -15,7 +15,7 @@ Source: `contracts/accumulator/ShellAccumulatorRootUSDC.sol` · Version: 1.0.2\
 function buyShellFor(address buyer) public
 ```
 
-Accepts ECC USDC attached to the message and processes a buy on behalf of `buyer`. Used by Exchange to forward purchases. Does **not** check for multi-currency messages — only verifies ECC USDC is present.
+Accepts eccUSDC attached to the message and processes a buy on behalf of `buyer`. Used by Exchange to forward purchases. Does **not** check for multi-currency messages — only verifies eccUSDC is present.
 
 #### `claimUSDC(uint16 D, uint64 orderId, address seller)`
 
@@ -23,7 +23,7 @@ Accepts ECC USDC attached to the message and processes a buy on behalf of `buyer
 function claimUSDC(uint16 D, uint64 orderId, address seller) public
 ```
 
-Called by a SellOrderLot to claim its USDC payout. Verifies caller address deterministically, checks the order is sold (`orderId <= soldPrefix[D]`), sends ECC USDC to `seller`, then calls `onReceiveUSDC` on the lot.
+Called by a SellOrderLot to claim its eccUSDC payout. Verifies caller address deterministically, checks the order is sold (`orderId <= soldPrefix[D]`), sends eccUSDC to `seller`, then calls `onReceiveUSDC` on the lot.
 
 ### Admin
 
@@ -60,9 +60,9 @@ function getDetails() external view
 
 Returns high-level contract state.
 
-* `sellerShellPool` — total ECC SHELL held from seller deposits (nanoSHELL)
-* `usdcBalance` — total ECC USDC tracked by the contract (microUSDC)
-* `owedTotal` — total USDC owed to sellers awaiting claim (microUSDC)
+* `sellerShellPool` — total SHELL held from seller deposits (nanoSHELL)
+* `usdcBalance` — total eccUSDC tracked by the contract (microUSDC)
+* `owedTotal` — total eccUSDC owed to sellers awaiting claim (microUSDC)
 
 #### `getSellOrderAddress(uint16 D, uint64 orderId)`
 
@@ -79,7 +79,7 @@ Computes the deterministic address of a lot contract given its denomination and 
 function owedUsdcTotal() external view returns (uint128)
 ```
 
-Returns total USDC owed to all sellers across all denominations (microUSDC).
+Returns total eccUSDC owed to all sellers across all denominations (microUSDC).
 
 #### `getSellerShellPool()`
 
@@ -95,7 +95,7 @@ Returns total ECC SHELL in the seller pool (nanoSHELL).
 function getUsdcBalance() external view returns (uint128)
 ```
 
-Returns the USDC balance tracked by the contract (microUSDC). This is the accounting balance, not necessarily the on-chain ECC balance.
+Returns the eccUSDC balance tracked by the contract (microUSDC). This is the accounting balance, not necessarily the on-chain ECC balance.
 
 #### `getNacklInfo()`
 
@@ -125,7 +125,7 @@ Returns `("1.0.2", "ShellAccumulatorRootUSDC")`.
 ## ShellSellOrderLot
 
 Source: `contracts/accumulator/ShellSellOrderLot.sol` · Version: 1.0.2\
-&#xNAN;_&#x49;t will be available after the next node release_
+\&#xNAN;_It will be available after the next node release_
 
 ### Entry points
 
@@ -135,7 +135,7 @@ Source: `contracts/accumulator/ShellSellOrderLot.sol` · Version: 1.0.2\
 function claim() public
 ```
 
-Initiates USDC payout claim. Sets `_claimed = true` and calls `Root.claimUSDC(denom, orderId, owner)`. If the root rejects (order not yet sold), the bounced message resets `_claimed = false` via `onBounce`.
+Initiates eccUSDC payout claim. Sets `_claimed = true` and calls `Root.claimUSDC(denom, orderId, owner)`. If the root rejects (order not yet sold), the bounced message resets `_claimed = false` via `onBounce`.
 
 Can be called by anyone (no `msg.sender` check), but the payout always goes to `_owner` (the original seller).
 
@@ -159,7 +159,7 @@ function getDetails() external view
 Returns all lot metadata.
 
 * `root` — parent Accumulator address
-* `owner` — seller address (receives USDC payout)
+* `owner` — seller address (receives eccUSDC payout)
 * `denom` — lot denomination (1, 10, 100, 1000)
 * `orderId` — FIFO position within the denomination queue
 * `claimed` — `true` if `claim()` was called and is pending or completed
@@ -177,7 +177,7 @@ Returns `("1.0.2", "ShellSellOrderLot")`.
 ## Exchange
 
 Source: `contracts/exchange/Exchange.sol` · Version: 1.0.4\
-&#xNAN;_&#x49;t will be available after the next node release_
+\&#xNAN;_It will be available after the next node release_
 
 ### Entry points
 
@@ -187,7 +187,7 @@ Source: `contracts/exchange/Exchange.sol` · Version: 1.0.4\
 function onTransferReceived(address from, address, uint128 value, uint128) external override
 ```
 
-ISubscriber callback from the Exchange's TIP-3 USDC wallet. Mints equivalent ECC USDC and sends it to `from` (the depositor). Only callable by `_usdcWallet`.
+ISubscriber callback from the Exchange's TIP-3 USDC wallet. Mints equivalent eccUSDC and sends it to `from` (the depositor). Only callable by `_usdcWallet`.
 
 #### `mintAndSend(address recipient, uint128 value, uint64 nonce)`
 
@@ -195,7 +195,7 @@ ISubscriber callback from the Exchange's TIP-3 USDC wallet. Mints equivalent ECC
 function mintAndSend(address recipient, uint128 value, uint64 nonce) public onlyOwnerPubkey accept
 ```
 
-Admin-only. Mints ECC USDC and sends to `recipient`. Requires `nonce == _mintNonce + 1`.
+Admin-only. Mints eccUSDC and sends to `recipient`. Requires `nonce == _mintNonce + 1`.
 
 #### `mintAndSendAccumulator(address buyer, uint128 value, uint64 nonce)`
 
@@ -203,7 +203,7 @@ Admin-only. Mints ECC USDC and sends to `recipient`. Requires `nonce == _mintNon
 function mintAndSendAccumulator(address buyer, uint128 value, uint64 nonce) public onlyOwnerPubkey accept
 ```
 
-Admin-only. Mints ECC USDC and calls `Accumulator.buyShellFor(buyer)` with the minted USDC attached. Requires whole USDC units and `nonce == _mintAccumulatorNonce + 1`. Uses separate nonce space from `mintAndSend`.
+Admin-only. Mints eccUSDC and calls `Accumulator.buyShellFor(buyer)` with the minted eccUSDC attached. Requires whole eccUSDC units and `nonce == _mintAccumulatorNonce + 1`. Uses separate nonce space from `mintAndSend`.
 
 ### Admin
 
@@ -247,7 +247,7 @@ Returns the current owner public key.
 function getTotalMinted() external view returns (uint128)
 ```
 
-Returns total ECC USDC minted by this contract across all methods (microUSDC).
+Returns total eccUSDC minted by this contract across all methods (microUSDC).
 
 #### `getNonces()`
 
@@ -270,7 +270,7 @@ Returns `("1.0.4", "Exchange")`.
 ## AccumulatorLib
 
 Source: `contracts/accumulator/libraries/AccumulatorLib.sol` · Version: 1.0.2\
-&#xNAN;_&#x49;t will be available after the next node release_
+\&#xNAN;_It will be available after the next node release_
 
 #### `calculateSellOrderAddress(TvmCell code, address root, uint16 denom, uint64 orderId)`
 
@@ -311,7 +311,7 @@ All events are emitted to **external addresses** (directed events) for off-chain
 | ------------------ | -------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
 | `SellOrderCreated` | **610** + seller's address | `(address seller, uint16 denom, uint64 orderId, uint128 shellAmount)`                | New lot created. Emitted twice: to addr 610 and to the seller's external address |
 | `ShellPurchased`   | **611**                    | `(address buyer, uint128 usdcAmount, uint128 shellFromSellers, uint128 shellMinted)` | Buy completed                                                                    |
-| `UsdcClaimed`      | **612**                    | `(uint64 orderId, uint16 denom, address seller, uint128 payout)`                     | Seller claimed USDC                                                              |
+| `UsdcClaimed`      | **612**                    | `(uint64 orderId, uint16 denom, address seller, uint128 payout)`                     | Seller claimed eccUSDC                                                           |
 | `NacklRedeemed`    | **613**                    | `(address recipient, uint128 burnAmount, uint128 payout)`                            | NACKL burned for USDC                                                            |
 | `MatchedOrders`    | **617**                    | `(uint64 lastSold1, uint64 lastSold10, uint64 lastSold100, uint64 lastSold1000)`     | Updated soldPrefix values after a buy                                            |
 
@@ -324,10 +324,10 @@ All events are emitted to **external addresses** (directed events) for off-chain
 
 ### Exchange events
 
-| Event          | Ext Addr | Fields                               | Emitted when                                                            |
-| -------------- | -------- | ------------------------------------ | ----------------------------------------------------------------------- |
-| `UsdcMigrated` | **615**  | `(address from, uint128 value)`      | TIP-3 USDC bridged to ECC                                               |
-| `UsdcMinted`   | **616**  | `(address recipient, uint128 value)` | Admin-minted ECC USDC (from `mintAndSend` and `mintAndSendAccumulator`) |
+| Event          | Ext Addr | Fields                               | Emitted when                                                           |
+| -------------- | -------- | ------------------------------------ | ---------------------------------------------------------------------- |
+| `UsdcMigrated` | **615**  | `(address from, uint128 value)`      | TIP-3 USDC bridged to ECC                                              |
+| `UsdcMinted`   | **616**  | `(address recipient, uint128 value)` | Admin-minted eccUSDC (from `mintAndSend` and `mintAndSendAccumulator`) |
 
 ***
 
@@ -335,30 +335,30 @@ All events are emitted to **external addresses** (directed events) for off-chain
 
 ### Accumulator errors (Root + SellOrderLot)
 
-| Code | Name                          | Meaning                                                  |
-| ---- | ----------------------------- | -------------------------------------------------------- |
-| 200  | `ERR_INVALID_DENOM`           | Denomination is not 1, 10, 100, or 1000                  |
-| 201  | `ERR_WRONG_SHELL_AMOUNT`      | SHELL amount doesn't divide evenly by SHELL\_PER\_USDC   |
-| 202  | `ERR_WRONG_USDC_AMOUNT`       | USDC amount mismatch in onReceiveUSDC or balance check   |
-| 203  | `ERR_NOT_WHOLE_USDC`          | USDC amount is not a whole number (not divisible by 10⁶) |
-| 204  | `ERR_ZERO_AMOUNT`             | Zero amount supplied                                     |
-| 205  | `ERR_ORDER_NOT_SOLD`          | Lot's orderId > soldPrefix (not yet matched)             |
-| 206  | `ERR_NO_OWED`                 | No owed claims remaining for this denomination           |
-| 207  | `ERR_INVALID_SENDER`          | Caller is not the expected contract                      |
-| 208  | `ERR_ALREADY_CLAIMED`         | claim() already called on this lot                       |
-| 209  | `ERR_NOT_OWNER`               | msg.pubkey() doesn't match owner                         |
-| 210  | `ERR_INSUFFICIENT_REDEEMABLE` | Not enough free reserve for NACKL redemption             |
-| 211  | `ERR_WRONG_CODE`              | (reserved)                                               |
-| 212  | `ERR_WRONG_ADDRESS`           | Caller address doesn't match deterministic lot address   |
-| 213  | `ERR_MULTIPLE_CURRENCIES`     | Message carries more than one ECC currency type          |
-| 214  | `ERR_OVERFLOW`                | Amount exceeds uint64 max                                |
+| Code | Name                          | Meaning                                                     |
+| ---- | ----------------------------- | ----------------------------------------------------------- |
+| 200  | `ERR_INVALID_DENOM`           | Denomination is not 1, 10, 100, or 1000                     |
+| 201  | `ERR_WRONG_SHELL_AMOUNT`      | SHELL amount doesn't divide evenly by SHELL\_PER\_USDC      |
+| 202  | `ERR_WRONG_USDC_AMOUNT`       | eccUSDC amount mismatch in onReceiveUSDC or balance check   |
+| 203  | `ERR_NOT_WHOLE_USDC`          | eccUSDC amount is not a whole number (not divisible by 10⁶) |
+| 204  | `ERR_ZERO_AMOUNT`             | Zero amount supplied                                        |
+| 205  | `ERR_ORDER_NOT_SOLD`          | Lot's orderId > soldPrefix (not yet matched)                |
+| 206  | `ERR_NO_OWED`                 | No owed claims remaining for this denomination              |
+| 207  | `ERR_INVALID_SENDER`          | Caller is not the expected contract                         |
+| 208  | `ERR_ALREADY_CLAIMED`         | claim() already called on this lot                          |
+| 209  | `ERR_NOT_OWNER`               | msg.pubkey() doesn't match owner                            |
+| 210  | `ERR_INSUFFICIENT_REDEEMABLE` | Not enough free reserve for NACKL redemption                |
+| 211  | `ERR_WRONG_CODE`              | (reserved)                                                  |
+| 212  | `ERR_WRONG_ADDRESS`           | Caller address doesn't match deterministic lot address      |
+| 213  | `ERR_MULTIPLE_CURRENCIES`     | Message carries more than one ECC currency type             |
+| 214  | `ERR_OVERFLOW`                | Amount exceeds uint64 max                                   |
 
 ### Exchange errors
 
 | Code | Name                 | Meaning                          |
 | ---- | -------------------- | -------------------------------- |
 | 204  | `ERR_ZERO_AMOUNT`    | Zero value                       |
-| 207  | `ERR_INVALID_SENDER` | Caller is not the USDC wallet    |
+| 207  | `ERR_INVALID_SENDER` | Caller is not the eccUSDC wallet |
 | 209  | `ERR_NOT_OWNER`      | msg.pubkey() doesn't match owner |
 | 213  | `ERR_NOT_WHOLE_USDC` | Value not divisible by 10⁶       |
 | 214  | `ERR_OVERFLOW`       | Value exceeds uint64 max         |
