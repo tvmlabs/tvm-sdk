@@ -130,6 +130,7 @@ impl NodeExecuteParamsFixture {
             wasm_component_cache: self.wasm_fixtures.component_cache,
             mvconfig: self.mvconfig,
             engine_version: self.engine_version,
+            check_history_proof_hash: None,
         }
     }
 }
