@@ -29,33 +29,49 @@ jobs:
             target: aarch64-apple-darwin
             os: macos-15
             zigbuild: false
+            binary-ext: ""
 
           # - suffix: macos-amd64
           #   target: x86_64-apple-darwin
           #   os: macos-13
           #   zigbuild: false
+          #   binary-ext: ""
 
           - suffix: linux-musl-arm64
             target: aarch64-unknown-linux-musl
             os: ubuntu-24.04-arm
             zigbuild: true
+            binary-ext: ""
 
           - suffix: linux-musl-amd64
             target: x86_64-unknown-linux-musl
             os: ubuntu-24.04
             zigbuild: true
+            binary-ext: ""
 
           - suffix: arm64
             target: aarch64-unknown-linux-gnu
             os: ubuntu-24.04-arm
             zigbuild: false
+            binary-ext: ""
 
           - suffix: x86_64
             target: x86_64-unknown-linux-gnu
             os: ubuntu-24.04
             zigbuild: false
+            binary-ext: ""
+
+          - suffix: windows-amd64
+            target: x86_64-pc-windows-msvc
+            os: windows-latest
+            zigbuild: false
+            binary-ext: ".exe"
 
     name: Build ${{ matrix.target }}
+
+    defaults:
+      run:
+        shell: bash
 
     env:
       CARGO_TERM_COLOR: always
@@ -68,11 +84,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-
-      - name: Set VERSION
-        id: version
-        run: |
-          echo "VERSION=$(cat version.json | jq -r .version)" >> "$GITHUB_OUTPUT"
 
       - name: Configure sccache
         uses: mozilla-actions/sccache-action@v0.0.9
@@ -137,7 +148,7 @@ jobs:
           mkdir artifacts-${{ matrix.suffix }}
 
           for binary in tvm-cli tvm-debugger; do
-            mv target/${{ matrix.target }}/release/$binary artifacts-${{ matrix.suffix }}/$binary
+            mv target/${{ matrix.target }}/release/$binary${{ matrix.binary-ext }} artifacts-${{ matrix.suffix }}/$binary${{ matrix.binary-ext }}
           done
           ls -lA artifacts-${{ matrix.suffix }}
 
@@ -149,16 +160,13 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-    outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-
   release:
     needs:
       - build
     runs-on: ubuntu-latest
 
     env:
-      SUFFIXES: macos-arm64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64
+      SUFFIXES: macos-arm64 linux-musl-arm64 linux-musl-amd64 arm64 x86_64 windows-amd64
 
     steps:
       - uses: actions/checkout@v4
@@ -179,7 +187,8 @@ jobs:
             chmod +x artifacts-"$suffix"/*
             cd artifacts-"$suffix"
             for file in *; do
-              tar -czvf "$file"-"$version"-"$suffix".tar.gz $file
+              archive="${file%.exe}-$version-$suffix.tar.gz"
+              tar -czvf "$archive" "$file"
             done
             cd ..
             ls -lA artifacts-"$suffix"
