@@ -682,7 +682,7 @@ dependencies = [
 [[package]]
 name = "axiom-eth"
 version = "0.4.3"
-source = "git+https://github.com/gosh-sh/axiom-eth?branch=gosh-stable-rlcmanager-assignment#f2b3caec928be1a6fef8b1185b580266c0a2195d"
+source = "git+https://github.com/gosh-sh/axiom-eth?rev=1d61be00a63ec73b3f709d74eb9e6b09b754b911#1d61be00a63ec73b3f709d74eb9e6b09b754b911"
 dependencies = [
  "anyhow",
  "bincode",
@@ -3021,7 +3021,7 @@ dependencies = [
 [[package]]
 name = "halo2-base"
 version = "0.4.1"
-source = "git+https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#21f7d97def1297caf5090d40718937601d8edbf2"
+source = "git+https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#026e176de8aff8269ab3bbb7f7192b247adab965"
 dependencies = [
  "ark-std 0.3.0",
  "getset",
@@ -3043,7 +3043,7 @@ dependencies = [
 [[package]]
 name = "halo2-ecc"
 version = "0.4.1"
-source = "git+https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#21f7d97def1297caf5090d40718937601d8edbf2"
+source = "git+https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#026e176de8aff8269ab3bbb7f7192b247adab965"
 dependencies = [
  "halo2-base",
  "itertools 0.11.0",
@@ -6108,8 +6108,8 @@ dependencies = [
 
 [[package]]
 name = "snark-verifier"
-version = "0.2.3"
-source = "git+https://github.com/gosh-sh/snark-verifier?branch=main#a773936d46dbf0ceb7f366b34259fca2d53e0c0f"
+version = "0.1.8"
+source = "git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324#164bd42e300b382239e63b16532faca539d6b324"
 dependencies = [
  "halo2-base",
  "halo2-ecc",
@@ -6126,8 +6126,8 @@ dependencies = [
 
 [[package]]
 name = "snark-verifier-sdk"
-version = "0.2.3"
-source = "git+https://github.com/gosh-sh/snark-verifier?branch=main#a773936d46dbf0ceb7f366b34259fca2d53e0c0f"
+version = "0.1.8"
+source = "git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324#164bd42e300b382239e63b16532faca539d6b324"
 dependencies = [
  "bincode",
  "getset",
@@ -8750,7 +8750,7 @@ dependencies = [
 [[package]]
 name = "zkevm-hashes"
 version = "0.2.1"
-source = "git+https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#21f7d97def1297caf5090d40718937601d8edbf2"
+source = "git+https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381?branch=bump-halo2-lib-v0.4.1#026e176de8aff8269ab3bbb7f7192b247adab965"
 dependencies = [
  "array-init",
  "ethers-core",
