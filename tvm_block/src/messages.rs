@@ -880,6 +880,8 @@ impl Deserializable for ExtOutMessageHeader {
     }
 }
 
+pub const EXT_OUT_MSG_V2_MAX_DST_BITS: usize = 320;
+
 impl fmt::Display for ExtOutMessageHeaderV2 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
@@ -932,6 +934,15 @@ impl ExtOutMessageHeaderV2 {
 
 impl Serializable for ExtOutMessageHeaderV2 {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
+        if let MsgAddressExt::AddrExtern(ref ext) = self.dst {
+            let dst_bits = ext.external_address.remaining_bits();
+            if dst_bits > EXT_OUT_MSG_V2_MAX_DST_BITS {
+                fail!(BlockError::InvalidArg(format!(
+                    "V2 ext-out dst external address is {} bits, exceeds V2 limit of {} bits",
+                    dst_bits, EXT_OUT_MSG_V2_MAX_DST_BITS
+                )))
+            }
+        }
         cell.append_bits(0b110110, 6)?;
         self.src.write_to(cell)?;
         self.dst.write_to(cell)?;
