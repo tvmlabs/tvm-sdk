@@ -2296,9 +2296,9 @@ pub fn db_serialize_message_ex(
             serialize_field(&mut map, "created_at", header.created_at.as_u32());
         }
         CommonMsgInfo::ExtOutMsgInfoV2(ref header) => {
-            serialize_field(&mut map, "msg_type", 2);
+            serialize_field(&mut map, "msg_type", 4);
             if mode.is_q_server() {
-                serialize_field(&mut map, "msg_type_name", "extOut");
+                serialize_field(&mut map, "msg_type_name", "extOutV2");
             }
             serialize_field(&mut map, "src", header.src.to_string());
             if let Some(src_addr) = header.src() {
