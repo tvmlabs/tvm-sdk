@@ -165,16 +165,22 @@ halo2-ecc = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12
 zkevm-hashes = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
 
 # axiom-eth: gosh-sh fork on branch `gosh-stable-rlcmanager-assignment`,
-# four commits ahead of upstream axiom-crypto/axiom-eth `main`:
+# seven commits ahead of upstream axiom-crypto/axiom-eth `main`:
 #   687a6da  RlcManager: name VirtualRegionManager::Assignment explicitly
 #            (required to build against the gosh halo2-base fork above)
 #   ce37a89  Redirect snark-verifier{-sdk} to gosh-sh/snark-verifier (stable-Rust fork)
 #   367d57f  Drop nightly feature gates from axiom-eth/src/lib.rs
 #   f2b3cae  Remove remaining nightly features (CoreBuilderInput / Commiter)
+#   51dec0d  Pin snark-verifier to ccdb510 (pre-rename)  <-- broken on stable
+#   4df1e7f  Spell out KeygenAggregationCircuitIntent::AggregationCircuit
+#   1d61be0  Bump snark-verifier-sdk pin to 164bd42e (stable-rust-on-ccdb510)  <-- fix
 # Together these keep the whole RLC verification path on stable Rust — without
 # them, axiom-eth and the upstream snark-verifier-sdk both need #![feature(trait_alias)]
-# and the workspace would have to pin nightly. Cargo.lock should resolve this
-# patch to `f2b3cae...` or later; after a branch tip move, run
-# `cargo update -p axiom-eth -p zkevm-hashes` to refresh.
+# and the workspace would have to pin nightly.
+#
+# NOTE: pinned by explicit `rev` (not `branch`) so the snark-verifier-sdk rev
+# transitively selected here (currently `164bd42e`, the stable-rust-on-ccdb510
+# backport) cannot drift when the branch tip moves. To bump: update the SHA
+# below AND run `cargo update -p axiom-eth`.
 [patch."https://github.com/axiom-crypto/axiom-eth"]
-axiom-eth = { git = "https://github.com/gosh-sh/axiom-eth", branch = "gosh-stable-rlcmanager-assignment" }
+axiom-eth = { git = "https://github.com/gosh-sh/axiom-eth", rev = "1d61be00a63ec73b3f709d74eb9e6b09b754b911" }

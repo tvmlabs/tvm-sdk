@@ -682,7 +682,7 @@ dependencies = [
 [[package]]
 name = "axiom-eth"
 version = "0.4.3"
-source = "git+https://github.com/gosh-sh/axiom-eth?branch=gosh-stable-rlcmanager-assignment#51dec0d38c37c292ac8939ab263ee3c0b842337e"
+source = "git+https://github.com/gosh-sh/axiom-eth?rev=1d61be00a63ec73b3f709d74eb9e6b09b754b911#1d61be00a63ec73b3f709d74eb9e6b09b754b911"
 dependencies = [
  "anyhow",
  "bincode",
@@ -704,8 +704,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sha3",
- "snark-verifier",
- "snark-verifier-sdk",
+ "snark-verifier 0.1.8 (git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324)",
+ "snark-verifier-sdk 0.1.8 (git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324)",
  "static_assertions",
  "thiserror 1.0.69",
  "type-map",
@@ -6094,6 +6094,24 @@ dependencies = [
 [[package]]
 name = "snark-verifier"
 version = "0.1.8"
+source = "git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324#164bd42e300b382239e63b16532faca539d6b324"
+dependencies = [
+ "halo2-base",
+ "halo2-ecc",
+ "hex",
+ "itertools 0.11.0",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+ "pairing",
+ "rand 0.8.6",
+ "serde",
+]
+
+[[package]]
+name = "snark-verifier"
+version = "0.1.8"
 source = "git+https://github.com/gosh-sh/snark-verifier?rev=ccdb510f60c577f2b683e1f77e1faa91a95f8c5c#ccdb510f60c577f2b683e1f77e1faa91a95f8c5c"
 dependencies = [
  "halo2-base",
@@ -6107,6 +6125,27 @@ dependencies = [
  "pairing",
  "rand 0.8.6",
  "serde",
+]
+
+[[package]]
+name = "snark-verifier-sdk"
+version = "0.1.8"
+source = "git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324#164bd42e300b382239e63b16532faca539d6b324"
+dependencies = [
+ "bincode",
+ "getset",
+ "halo2-base",
+ "hex",
+ "itertools 0.11.0",
+ "lazy_static",
+ "num-bigint 0.4.6",
+ "num-integer",
+ "num-traits",
+ "rand 0.8.6",
+ "rand_chacha 0.3.1",
+ "serde",
+ "serde_json",
+ "snark-verifier 0.1.8 (git+https://github.com/gosh-sh/snark-verifier?rev=164bd42e300b382239e63b16532faca539d6b324)",
 ]
 
 [[package]]
@@ -6127,7 +6166,7 @@ dependencies = [
  "rand_chacha 0.3.1",
  "serde",
  "serde_json",
- "snark-verifier",
+ "snark-verifier 0.1.8 (git+https://github.com/gosh-sh/snark-verifier?rev=ccdb510f60c577f2b683e1f77e1faa91a95f8c5c)",
 ]
 
 [[package]]
@@ -8618,7 +8657,7 @@ dependencies = [
  "serde",
  "sha2 0.10.9",
  "sha3",
- "snark-verifier-sdk",
+ "snark-verifier-sdk 0.1.8 (git+https://github.com/gosh-sh/snark-verifier?rev=ccdb510f60c577f2b683e1f77e1faa91a95f8c5c)",
  "type-map",
 ]
 
