@@ -216,7 +216,7 @@ pub fn poseidon_bytes_axiom(
 pub fn poseidon_bytes_axiom(
     inputs: &Vec<Vec<u8>>,
 ) -> Result<[u8; FIELD_ELEMENT_SIZE_IN_BYTES], ZkCryptoError> {
-    GLOBAL_SPONGE.hash_bytes_axiom(inputs)
+    Err(ZkCryptoError::UnsupportedPlatform)
 }
 
 /// Convenience free function using cached round constants.
