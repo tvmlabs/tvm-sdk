@@ -2,12 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## Version 3.0.4
-
-- Add ZK Halo2 verification insns: `ZKHALO2VERIFY` (C749), `ZKHALO2VERIFYWITHVK` (C74A);
-  extending prior `VERGRTH16` / Poseidon ZK support with a Halo2/KZG backend.
-- Add `CHKHISTPROOF` (C750) for TVM block history Merkle proof checks.
-
 ## Version 2.7.0
 
 Added VM execution time control parameters:
