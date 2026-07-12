@@ -11,13 +11,16 @@ use crate::stack::savelist::SaveList;
 use crate::utils::pack_data_to_cell;
 
 // W=128 (historical window size 128) test data paths.
-// L0 = 0 chain steps, L1 = 1 chain step, L2 = 2 chain steps.
+// L0 = 0 chain steps, L1 = 1 chain step, L2 = 2 chain steps,
+// L11 = MAX_CHAIN_LEN (11) chain steps — exercises the deepest dense chain.
 const W128_L0_PROOF_PATH: &str = "halo2_test_data/dark_dex_w128_L0_proof.bin";
 const W128_L0_INSTANCES_PATH: &str = "halo2_test_data/dark_dex_w128_L0_instances.bin";
 const W128_L1_PROOF_PATH: &str = "halo2_test_data/dark_dex_w128_L1_proof.bin";
 const W128_L1_INSTANCES_PATH: &str = "halo2_test_data/dark_dex_w128_L1_instances.bin";
 const W128_L2_PROOF_PATH: &str = "halo2_test_data/dark_dex_w128_L2_proof.bin";
 const W128_L2_INSTANCES_PATH: &str = "halo2_test_data/dark_dex_w128_L2_instances.bin";
+const W128_L11_PROOF_PATH: &str = "halo2_test_data/dark_dex_w128_L11_proof.bin";
+const W128_L11_INSTANCES_PATH: &str = "halo2_test_data/dark_dex_w128_L11_instances.bin";
 
 fn setup_engine() -> Engine {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -98,6 +101,17 @@ fn test_verify_w128_l1_one_chain_step() {
 fn test_verify_w128_l2_two_chain_steps() {
     let (res, elapsed) = verify_proof(W128_L2_PROOF_PATH, W128_L2_INSTANCES_PATH);
     println!("W128L2 (2 chain steps): result={}, elapsed={}ms", res, elapsed);
+    assert!(res);
+}
+
+#[test]
+fn test_verify_w128_l11_max_chain_steps() {
+    // L11 exercises MAX_CHAIN_LEN (11) chain steps — the deepest dense
+    // chain the DarkDex circuit accepts. Same VK and KZG params as
+    // L0/L1/L2; the number of chain steps is a witness-only degree of
+    // freedom.
+    let (res, elapsed) = verify_proof(W128_L11_PROOF_PATH, W128_L11_INSTANCES_PATH);
+    println!("W128L11 (11 chain steps, MAX_CHAIN_LEN): result={}, elapsed={}ms", res, elapsed);
     assert!(res);
 }
 
@@ -335,6 +349,7 @@ fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -
 }
 
 #[test]
+#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
     for i in 0..DEPOSIT_PROOF_COUNT {
         let res = run_zkhalo2_with_vk(
@@ -349,6 +364,7 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
 }
 
 #[test]
+#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
@@ -373,6 +389,7 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
 }
 
 #[test]
+#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn test_zkhalo2_with_vk_mismatched_public_inputs_reject() {
     // proof_00's proof paired with proof_01's public inputs must REJECT: each
     // proof is bound to its own public inputs, so a cross-proof pairing fails.

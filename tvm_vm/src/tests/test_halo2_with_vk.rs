@@ -438,6 +438,7 @@ fn fifo_cache_reused_across_two_invocations() {
 const DEPOSIT_SET_DIR: &str = "halo2_test_data/deposit_10proofs";
 
 #[test]
+#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn round_trip_deposit_rlc_real_proof_returns_true() {
     let vk_blob = std::fs::read(format!("{}/deposit_vk_blob.bin", DEPOSIT_SET_DIR))
         .expect("deposit_vk_blob.bin must exist");
@@ -449,6 +450,7 @@ fn round_trip_deposit_rlc_real_proof_returns_true() {
 }
 
 #[test]
+#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn deposit_rlc_flipped_proof_byte_rejected_as_false() {
     let vk_blob = std::fs::read(format!("{}/deposit_vk_blob.bin", DEPOSIT_SET_DIR)).unwrap();
     let instances =
@@ -467,6 +469,7 @@ fn deposit_rlc_flipped_proof_byte_rejected_as_false() {
 }
 
 #[test]
+#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn deposit_rlc_cache_reused_across_two_invocations() {
     let vk_blob = std::fs::read(format!("{}/deposit_vk_blob.bin", DEPOSIT_SET_DIR)).unwrap();
     let instances =
