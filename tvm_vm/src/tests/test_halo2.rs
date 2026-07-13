@@ -349,7 +349,6 @@ fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -
 }
 
 #[test]
-#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
     for i in 0..DEPOSIT_PROOF_COUNT {
         let res = run_zkhalo2_with_vk(
@@ -364,7 +363,6 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
 }
 
 #[test]
-#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
     use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
@@ -389,7 +387,6 @@ fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
 }
 
 #[test]
-#[ignore = "deposit_10proofs/* keyed against old dark-dex gen_srs(19) SRS; regenerate against Hermez per doc/HERMEZ_KZG_MIGRATION_FOR_SERGEY.md"]
 fn test_zkhalo2_with_vk_mismatched_public_inputs_reject() {
     // proof_00's proof paired with proof_01's public inputs must REJECT: each
     // proof is bound to its own public inputs, so a cross-proof pairing fails.
