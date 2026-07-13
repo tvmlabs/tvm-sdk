@@ -153,10 +153,11 @@ halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls1
 
 halo2-axiom = { git = "https://github.com/gosh-sh/halo2-axiom", branch = "main" }
 
-# tvm_vm and gosh-zk-snark-halo2-utils already declare halo2-base at the bump branch
-# directly in their own manifests, so no [patch."gosh-sh/halo2-lib..."] block is needed
-# here — cargo would in any case reject one because the source URL and target URL would
-# be identical ("patches must point to different sources").
+# tvm_vm declares halo2-base at the bump branch directly in its manifest, and
+# gosh-zk-snark-halo2-utils (pulled at `main`, which is in lock-step with the bump branch)
+# declares halo2-base on the same bump branch too, so no [patch."gosh-sh/halo2-lib..."]
+# block is needed here — cargo would in any case reject one because the source URL and
+# target URL would be identical ("patches must point to different sources").
 
 # axiom-eth + snark-verifier-sdk pull halo2-base / halo2-ecc / zkevm-hashes from here.
 [patch."https://github.com/axiom-crypto/halo2-lib.git"]

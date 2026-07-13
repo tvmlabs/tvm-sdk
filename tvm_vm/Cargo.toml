@@ -64,7 +64,7 @@ ark-r1cs-std = { version = "0.4.0", optional = true }
 ark-std = { version = "0.4.0", optional = true }
 
 halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1", default-features = false, features = ["halo2-axiom"], optional = true }
-gosh-zk-snark-halo2-utils = { git = "https://github.com/gosh-sh/gosh-zk-snark-halo2-utils", branch = "bump-halo2-lib-v0.4.1", optional = true }
+gosh-zk-snark-halo2-utils = { git = "https://github.com/gosh-sh/gosh-zk-snark-halo2-utils", branch = "main", optional = true }
 # RLC / EthCircuitImpl reader for the VkBlob-v2 "Rlc" circuit shape (deposit-prover
 # class circuits). axiom-eth's halo2-lib deps are redirected to the gosh fork by the
 # workspace-root [patch] tables so the whole graph shares ONE halo2-base backend.
