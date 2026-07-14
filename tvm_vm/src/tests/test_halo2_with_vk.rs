@@ -125,7 +125,6 @@ fn run_with_operands(vk_blob: &[u8], public_inputs: &[u8], proof: &[u8]) -> tvm_
 }
 
 #[test]
-#[ignore = "fallback Hermez fixtures fail verify with embedded 3-point KZG after gosh halo2-lib bump; regen via bridge-prover EXPORT_HALO2_FIXTURE_DIR"]
 fn round_trip_fallback_circuit_valid_proof_returns_true() {
     // Reconstructs the `vk_cell` payload from the raw VK + config JSON
     // fixture (rather than reading the pre-packed `fallback_vk_blob.bin`)
@@ -382,15 +381,13 @@ fn config_k_mismatch_returns_fatal_error() {
 }
 
 #[test]
-#[ignore = "fallback Hermez fixtures fail verify with embedded 3-point KZG after gosh halo2-lib bump; regen via bridge-prover EXPORT_HALO2_FIXTURE_DIR"]
 fn bridge_circuit_1b_fallback_real_proof_verifies() {
     // End-to-end with the real Acki Nacki ↔ Ethereum bridge **Circuit
     // 1B** (Fallback BLS attestation verifier) fixture produced by
     // `bridge-prover-orchestrator::halo2_tvm_bundle` and dumped via
     // `EXPORT_HALO2_FIXTURE_DIR=… cargo test --test
-    // halo2_tvm_bundle_round_trip`. The fixture exercises a real
-    // K=20 SHPLONK proof (~14.8 KiB) with a real K=20 VK (~6 KiB) and
-    // 4 public inputs.
+    // halo2_tvm_bundle_round_trip`. Hermez SRS; K=21 SHPLONK
+    // (vk_blob 3364 B, proof 7616 B, 4 public inputs).
     //
     // The three operand byte streams are stored exactly as they
     // appear on the TVM stack — no extra framing. The handler must
@@ -414,7 +411,6 @@ fn bridge_circuit_1b_fallback_real_proof_verifies() {
 }
 
 #[test]
-#[ignore = "depends on round_trip_fallback positive path (same KZG/fixture drift)"]
 fn fifo_cache_reused_across_two_invocations() {
     // Same VK twice in a row → second invocation should hit the
     // per-VK cache. We can't directly observe cache state, but we can
