@@ -164,32 +164,6 @@ fn vk_cache() -> &'static Mutex<VkCache> {
     VK_CACHE.get_or_init(|| Mutex::new(VkCache::new(VK_CACHE_CAPACITY)))
 }
 
-/// Build `ParamsKZG<Bn256>` for an arbitrary `k` using the chain-wide
-/// shared trusted-setup G1/G2 points (Q-WIRE-2: "globally shared per `k`").
-///
-/// SHPLONK verification only needs `g[0]`, `g2`, and `s_g2` from the SRS,
-/// so we don't need the full 64 MB blob — three embedded points
-/// (`KZG_G0_BYTES` + `KZG_G2_BYTES` + `KZG_S_G2_BYTES`, ~320 bytes) are
-/// enough. We bootstrap a `ParamsKZG` at `k=0` from a synthetic blob
-/// containing those three points and then re-base it via `from_parts`
-/// to the actual `k` the VK was generated for.
-fn build_shared_kzg_params(k: u32) -> ParamsKZG<Bn256> {
-    use halo2_base::halo2_proofs::halo2curves::serde::SerdeObject;
-
-    let mut blob = Vec::with_capacity(388);
-    blob.extend_from_slice(&0u32.to_le_bytes());
-    blob.extend_from_slice(&crate::executor::zk_halo2_utils::KZG_G0_BYTES);
-    blob.extend_from_slice(&crate::executor::zk_halo2_utils::KZG_G0_BYTES);
-    blob.extend_from_slice(&crate::executor::zk_halo2_utils::KZG_G2_BYTES);
-    blob.extend_from_slice(&crate::executor::zk_halo2_utils::KZG_S_G2_BYTES);
-    let mut cursor: &[u8] = &blob;
-    let dummy = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked)
-        .expect("Parsing embedded KZG verifier blob should not fail");
-
-    let g0 = G1Affine::from_raw_bytes_unchecked(&crate::executor::zk_halo2_utils::KZG_G0_BYTES);
-    dummy.from_parts(k, vec![g0], Some(vec![]), dummy.g2(), dummy.s_g2())
-}
-
 /// Empty RLC circuit used purely as the `Circuit` *type* for deserialising
 /// an `EthCircuitImpl`-shaped VK. `VerifyingKey::read` rebuilds the
 /// constraint system via `Circuit::configure_with_params(EthCircuitParams)`,
@@ -303,7 +277,7 @@ fn get_or_insert_vk(blob: &VkBlob) -> tvm_types::Result<std::sync::Arc<CachedVk>
     };
 
     let k = vk.get_domain().k();
-    let params = build_shared_kzg_params(k);
+    let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params(k);
 
     let entry = std::sync::Arc::new(CachedVk { vk, params });
 
@@ -480,7 +454,8 @@ mod rlc_branch_tests {
         let (vk_bytes, cfg_json) = keygen_rlc_vk();
         let vk = read_rlc_vk(&vk_bytes, &cfg_json)
             .expect("Rlc branch must reconstruct an EthCircuitImpl VK from its own bytes");
-        let _params = build_shared_kzg_params(vk.get_domain().k());
+        let _params =
+            crate::executor::zk_halo2_utils::build_kzg_verifier_params(vk.get_domain().k());
         let reser = vk.to_bytes(SerdeFormat::RawBytes);
         assert_eq!(reser, vk_bytes, "Rlc VK must round-trip byte-for-byte");
     }

@@ -1,93 +1,116 @@
 // Copyright (C) 2026 Pruvendo (bridge integration team).
 //
-// Constants shared by the `ZKHALO2VERIFYWITHVK` opcode. Only the three
-// KZG points the SHPLONK verifier actually consumes are embedded here —
-// the full SRS blob is never needed for verification.
+// Constants shared by the legacy `ZKHALO2VERIFY` opcode and by the
+// `ZKHALO2VERIFYWITHVK` opcode. Only the three KZG points the SHPLONK
+// verifier actually consumes are embedded here — the full SRS blob is
+// never needed for verification.
 //
-// The opcode integration tests
-// (`tvm_vm/src/tests/test_halo2_with_vk.rs`) load the proof / VK /
-// instances fixture from `tvm_vm/halo2_test_data/fallback_*.bin` at
-// runtime; nothing test-only is embedded into this file.
+// # KZG provenance — Hermez Perpetual Powers of Tau
 //
-// ## Provenance (BN254) — CORRECTED 2026-06-26
+// The three `KZG_*_BYTES` constants below are anchored in the public
+// Hermez Perpetual Powers of Tau ceremony:
 //
-// `KZG_G0_BYTES` and `KZG_G2_BYTES` are the BN254 G1/G2 curve generators —
-// identical across every well-formed BN254 KZG SRS (test or production), so
-// they carry no ceremony information.
+//   * source file: `powersOfTau28_hez_final_20.ptau`
+//   * halo2 raw SRS (converted via `han0110/halo2-kzg-srs`):
+//     `kzg_bn254_20.srs`, SHA-256
+//     `80394564e2598883dbb5d7d61630287f34e29cdd806d7ef74f68acc6bffeb608`
+//   * bootstrap script: `bridge/scripts/bootstrap_hermez_srs.sh`
 //
-// `KZG_S_G2_BYTES` (= `[s] · G2`, the toxic-waste-scaled G2) is the ONLY
-// ceremony-specific point, and it is **NOT** from the Hermez Perpetual Powers
-// of Tau. It is the trapdoor commitment of the **Acki Nacki chain's own KZG
-// ceremony** — the same `[s] · G2` carried by the chain's `kzg_bn254_19.srs`
-// and by the bridge `deposit-prover`'s `params/kzg_bn254_{k}.srs` files (which
-// are downsized from it, tau-preserving). Deposit / bridge proofs only verify
-// here if they were keyed on that chain ceremony.
+// `KZG_G0_BYTES` (BN254 G1 generator) and `KZG_G2_BYTES` (BN254 G2
+// generator) are curve constants — identical across every well-formed
+// BN254 KZG SRS.
 //
-// An earlier version of this comment claimed these points came from the Hermez
-// `powersOfTau28_hez_final_20.ptau` (halo2 raw SRS SHA-256 `80394564…`). That
-// is empirically false: the last 128 bytes of that exact file (= `[s]·G2`) are
-// `928fafb3 d0cc … b3be 595c 6900`, whereas `KZG_S_G2_BYTES` below begins
-// `c6028acf 4420 …` and ends `… 7397 d666 4515`. Same g1/g2 generators,
-// DIFFERENT tau. (Verified against the bridge repo's chain SRS, which matches
-// these bytes, and its Hermez SRS, which does not.)
-
-/// G1 generator point `g[0]` from the KZG SRS, 64 bytes (BN256 G1Affine
-/// uncompressed). Shared verifier-only material; together with `KZG_G2_BYTES`
-/// and `KZG_S_G2_BYTES` it is enough for `verify_proof::<…, VerifierSHPLONK,
-/// …>(…)` at any `k`.
-///
-/// Curve constant (G1 generator), identical across all BN254 KZG SRS.
-/// SHA-256: `35c3fc84f9f41294e5a54237f24a94f76fcc8608689981ea2ca7152d8e394332`.
-pub(crate) const KZG_G0_BYTES: [u8; 64] = [
-    157, 13, 143, 197, 141, 67, 93, 211, 61, 11, 199, 245, 40, 235, 120, 10, 44, 70, 121, 120, 111,
-    163, 110, 102, 47, 223, 7, 154, 193, 119, 10, 14, 58, 27, 30, 139, 27, 135, 186, 166, 123, 22,
-    142, 235, 81, 214, 241, 20, 88, 140, 242, 240, 222, 70, 221, 204, 94, 190, 15, 52, 131, 239,
-    20, 28,
-];
-
-/// G2 generator from the KZG SRS, 128 bytes (BN256 G2Affine uncompressed).
-///
-/// Curve constant (G2 generator), identical across all BN254 KZG SRS.
-/// SHA-256: `4835edb12ea98bcbbbfaefe1ce63453167b3f1dc66e23fb8c7e5c4ed288966a9`.
-pub(crate) const KZG_G2_BYTES: [u8; 128] = [
-    38, 32, 188, 2, 209, 181, 131, 142, 114, 1, 123, 73, 53, 25, 235, 220, 223, 26, 129, 151, 71,
-    38, 184, 251, 59, 80, 150, 175, 65, 56, 87, 25, 64, 97, 76, 168, 125, 115, 180, 175, 196, 216,
-    2, 88, 90, 221, 67, 96, 134, 47, 160, 82, 252, 80, 233, 9, 107, 123, 234, 58, 131, 240, 254,
-    20, 246, 233, 107, 136, 157, 250, 157, 97, 120, 155, 158, 245, 151, 210, 127, 254, 254, 125,
-    27, 35, 98, 26, 158, 255, 6, 66, 158, 174, 235, 126, 253, 40, 238, 86, 24, 199, 86, 91, 9, 100,
-    187, 60, 125, 50, 34, 249, 87, 220, 118, 16, 53, 51, 190, 53, 249, 85, 130, 100, 253, 147, 230,
-    160, 164, 13,
-];
-
-/// `[s] · G2` from the KZG SRS (toxic-waste-scaled G2), 128 bytes.
-///
-/// **Ceremony-specific.** Matches the `halo2-kzg-srs` params the
-/// `deposit-prover` fixtures and the legacy Dark DEX `ZKHALO2VERIFY` proofs
-/// were generated against (see `DARK_DEX_KZG_S_G2_BYTES` below — same bytes).
-pub(crate) const KZG_S_G2_BYTES: [u8; 128] = [
-    198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250, 139, 224, 102, 28, 120,
-    209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4, 247, 119, 82, 189, 13, 15, 148, 115, 180, 255,
-    211, 139, 77, 173, 84, 51, 12, 6, 85, 171, 152, 202, 243, 42, 190, 151, 134, 220, 160, 12, 159,
-    38, 45, 111, 242, 166, 81, 163, 42, 141, 88, 61, 242, 122, 139, 118, 253, 115, 4, 61, 229, 102,
-    162, 17, 57, 112, 221, 213, 115, 157, 229, 203, 21, 22, 124, 133, 139, 91, 90, 14, 242, 86,
-    211, 197, 224, 251, 73, 198, 176, 240, 176, 131, 18, 138, 95, 92, 74, 66, 227, 79, 115, 151,
-    214, 102, 69, 21,
-];
-
-// ============================================================================
-// Legacy ZKHALO2VERIFY (0xC7 0x49) support
-// ----------------------------------------------------------------------------
-// The OLD opcode runs against a built-in Dark DEX W=8 verifying key and a
-// K=19 KZG verifier-params instance, both reconstructed from the embedded
-// constants above (the Hermez `KZG_S_G2_BYTES` is valid for any K ≤ 28).
-// ============================================================================
+// `KZG_S_G2_BYTES` (`[s] · G2`) is the ONLY ceremony-specific point.
+// It commits to the Hermez ceremony's trapdoor `s`; proofs verify here
+// only if they were produced against the matching Hermez SRS.
+//
+// # Reproducing these bytes
+//
+// The bytes below were emitted by
+// `dex-halo2-circuit::gen_hermez_kzg_and_dark_dex_keys`
+// (source lives in the `dexdo-halo2-kit` repo). To regenerate:
+//
+//   cd dexdo-halo2-kit/dex-halo2-circuit
+//   cargo run --release --bin gen_hermez_kzg_and_dark_dex_keys
+//
+// The command emits `generated/kzg_bytes.rs` and
+// `generated/dark_dex_w128_vk_bytes.rs`, whose contents are copied
+// verbatim into this file.
 
 use gosh_zk_snark_halo2_utils::io::read_vk;
+use gosh_zk_snark_halo2_utils::kzg_helper::build_kzg_verifier_params_from_points;
 use halo2_base::gates::circuit::BaseCircuitParams;
 use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
 use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
+
+/// G1 generator point `g[0]` from the Hermez KZG SRS, 64 bytes
+/// (BN256 G1Affine uncompressed). Curve constant.
+pub(crate) const KZG_G0_BYTES: [u8; 64] = [
+    0x9d, 0x0d, 0x8f, 0xc5, 0x8d, 0x43, 0x5d, 0xd3, 0x3d, 0x0b, 0xc7, 0xf5, 0x28, 0xeb, 0x78, 0x0a,
+    0x2c, 0x46, 0x79, 0x78, 0x6f, 0xa3, 0x6e, 0x66, 0x2f, 0xdf, 0x07, 0x9a, 0xc1, 0x77, 0x0a, 0x0e,
+    0x3a, 0x1b, 0x1e, 0x8b, 0x1b, 0x87, 0xba, 0xa6, 0x7b, 0x16, 0x8e, 0xeb, 0x51, 0xd6, 0xf1, 0x14,
+    0x58, 0x8c, 0xf2, 0xf0, 0xde, 0x46, 0xdd, 0xcc, 0x5e, 0xbe, 0x0f, 0x34, 0x83, 0xef, 0x14, 0x1c,
+];
+
+/// G2 generator from the Hermez KZG SRS, 128 bytes (BN256 G2Affine
+/// uncompressed). Curve constant.
+pub(crate) const KZG_G2_BYTES: [u8; 128] = [
+    0x26, 0x20, 0xbc, 0x02, 0xd1, 0xb5, 0x83, 0x8e, 0x72, 0x01, 0x7b, 0x49, 0x35, 0x19, 0xeb, 0xdc,
+    0xdf, 0x1a, 0x81, 0x97, 0x47, 0x26, 0xb8, 0xfb, 0x3b, 0x50, 0x96, 0xaf, 0x41, 0x38, 0x57, 0x19,
+    0x40, 0x61, 0x4c, 0xa8, 0x7d, 0x73, 0xb4, 0xaf, 0xc4, 0xd8, 0x02, 0x58, 0x5a, 0xdd, 0x43, 0x60,
+    0x86, 0x2f, 0xa0, 0x52, 0xfc, 0x50, 0xe9, 0x09, 0x6b, 0x7b, 0xea, 0x3a, 0x83, 0xf0, 0xfe, 0x14,
+    0xf6, 0xe9, 0x6b, 0x88, 0x9d, 0xfa, 0x9d, 0x61, 0x78, 0x9b, 0x9e, 0xf5, 0x97, 0xd2, 0x7f, 0xfe,
+    0xfe, 0x7d, 0x1b, 0x23, 0x62, 0x1a, 0x9e, 0xff, 0x06, 0x42, 0x9e, 0xae, 0xeb, 0x7e, 0xfd, 0x28,
+    0xee, 0x56, 0x18, 0xc7, 0x56, 0x5b, 0x09, 0x64, 0xbb, 0x3c, 0x7d, 0x32, 0x22, 0xf9, 0x57, 0xdc,
+    0x76, 0x10, 0x35, 0x33, 0xbe, 0x35, 0xf9, 0x55, 0x82, 0x64, 0xfd, 0x93, 0xe6, 0xa0, 0xa4, 0x0d,
+];
+
+/// `[s] · G2` from the Hermez KZG SRS (toxic-waste-scaled G2), 128 bytes.
+///
+/// **Ceremony-specific.** Encodes the Hermez trapdoor `s`; verification
+/// only succeeds against proofs generated from the matching Hermez K=20
+/// raw SRS (or a K ≤ 20 downsized, tau-preserving derivative). Valid for
+/// any `k` up to 28 in the Hermez ceremony's range.
+pub(crate) const KZG_S_G2_BYTES: [u8; 128] = [
+    0x92, 0x8f, 0xaf, 0xb3, 0xd0, 0xcc, 0x3d, 0xd7, 0x16, 0xc7, 0xfe, 0x5a, 0x36, 0xb9, 0x8d, 0x0a,
+    0xdb, 0x6c, 0x67, 0x02, 0xfb, 0xe7, 0x95, 0x37, 0x7d, 0x7e, 0x0e, 0xfb, 0x9f, 0x1f, 0x21, 0x06,
+    0x36, 0xd8, 0x95, 0x6b, 0x2b, 0x84, 0x31, 0x8d, 0xdd, 0x63, 0x9b, 0x26, 0x7e, 0xb4, 0x32, 0x95,
+    0xef, 0xdc, 0x0b, 0x10, 0x0f, 0xba, 0xc6, 0x6a, 0x52, 0x69, 0x97, 0x95, 0xb7, 0x2d, 0x20, 0x09,
+    0x69, 0xaa, 0xca, 0xb4, 0x58, 0x25, 0x1d, 0x04, 0x80, 0x01, 0xbe, 0x96, 0xaf, 0xed, 0xf2, 0x78,
+    0x4e, 0x3c, 0x8d, 0x7f, 0x00, 0x0f, 0xc4, 0xec, 0x66, 0x8b, 0xed, 0xbb, 0xbe, 0xe5, 0x11, 0x01,
+    0x2d, 0x53, 0x8d, 0xf8, 0xe9, 0xe3, 0xb9, 0x4e, 0x07, 0x69, 0xb1, 0x93, 0x07, 0x0f, 0x1b, 0x8b,
+    0x7e, 0x3b, 0xfe, 0xad, 0xcc, 0x85, 0x88, 0x0f, 0xd3, 0x56, 0xb3, 0xbe, 0x59, 0x5c, 0x69, 0x00,
+];
+
+/// Build verifier-only KZG params (any `k` ≤ 20) from the 3 embedded
+/// Hermez points (~320 bytes) instead of loading the full 64 MiB SRS
+/// file. Only `g[0]`, `g2`, and `s_g2` are needed for SHPLONK
+/// verification. Called on each verification — reconstruction is
+/// sub-millisecond.
+///
+/// Delegates to the shared implementation in
+/// `gosh_zk_snark_halo2_utils::kzg_helper` so the wire format stays in
+/// lockstep with the bridge prover.
+pub fn build_kzg_verifier_params(k: u32) -> ParamsKZG<Bn256> {
+    build_kzg_verifier_params_from_points(k, &KZG_G0_BYTES, &KZG_G2_BYTES, &KZG_S_G2_BYTES)
+}
+
+// ============================================================================
+// ZKHALO2VERIFY (0xC7 0x49) — hardcoded-VK path
+// ----------------------------------------------------------------------------
+// This opcode takes only `(instances, proof)` from the stack; the VK is
+// baked into the executor (`DARK_DEX_W128_VK_BYTES` +
+// `dark_dex_w128_config_params` below), generated at K=19 against the Hermez
+// KZG SRS above. Used by the live Dark DEX poseidon_dex chain (W=128 historical
+// window).
+//
+// The sister opcode `ZKHALO2VERIFYWITHVK` (0xC7 0x4A), handled in
+// `zk_halo2_with_vk.rs`, takes the VK from the stack at call time and is
+// used by the bridge / deposit path. Both opcodes are live and share the
+// Hermez KZG points above; they differ only in *where the VK comes from*.
+// ============================================================================
 
 /// Circuit configuration parameters for the Dark DEX circuit (K=19, W=128
 /// historical window).
@@ -105,50 +128,64 @@ pub fn dark_dex_w128_config_params() -> BaseCircuitParams {
 // TODO: we need VK per each desired historical window; this is the W=128 build
 // used by the live poseidon_dex chain and the bridge.
 
-/// Serialized VK bytes (842 bytes) for the Dark DEX circuit (W=128 historical
-/// window).
+/// Serialized `VerifyingKey<G1Affine>` (842 bytes,
+/// `SerdeFormat::RawBytesUnchecked`) for the Dark DEX circuit (W=128 historical
+/// window) at k=19, generated against the Hermez-anchored KZG SRS above. See
+/// `dexdo-halo2-kit/generated/dark_dex_w128_vk_bytes.rs`.
 pub const DARK_DEX_W128_VK_BYTES: [u8; 842] = [
-    2, 19, 0, 0, 0, 0, 6, 0, 0, 0, 1, 81, 59, 105, 210, 179, 105, 21, 30, 54, 133, 156, 189, 102,
-    218, 159, 14, 51, 121, 60, 177, 5, 105, 87, 86, 206, 166, 225, 211, 193, 7, 14, 61, 151, 135,
-    83, 117, 78, 158, 199, 115, 22, 130, 253, 19, 9, 47, 101, 203, 59, 42, 240, 244, 1, 255, 64,
-    150, 22, 43, 74, 98, 253, 59, 9, 6, 8, 83, 246, 136, 239, 208, 196, 214, 106, 106, 159, 50,
-    131, 189, 147, 233, 92, 56, 45, 46, 132, 194, 242, 110, 104, 109, 40, 223, 152, 130, 8, 233,
-    32, 179, 216, 27, 115, 204, 207, 207, 142, 24, 4, 244, 18, 240, 245, 158, 225, 235, 163, 185,
-    120, 79, 197, 233, 120, 64, 202, 146, 253, 201, 25, 107, 79, 194, 80, 70, 146, 104, 230, 99,
-    46, 219, 49, 252, 158, 135, 51, 69, 36, 79, 2, 41, 201, 173, 195, 50, 11, 97, 163, 92, 191,
-    162, 0, 209, 126, 21, 208, 68, 142, 116, 199, 219, 208, 203, 111, 183, 245, 158, 248, 162, 170,
-    254, 191, 114, 81, 59, 56, 23, 239, 217, 210, 150, 28, 206, 31, 1, 220, 119, 107, 65, 255, 62,
-    196, 195, 167, 157, 238, 130, 31, 184, 185, 109, 168, 97, 125, 82, 16, 88, 144, 241, 54, 228,
-    74, 120, 210, 1, 40, 106, 43, 117, 198, 140, 18, 21, 254, 182, 160, 167, 219, 122, 93, 147, 18,
-    41, 69, 12, 12, 246, 147, 130, 33, 74, 145, 32, 30, 212, 217, 233, 25, 43, 86, 2, 21, 205, 208,
-    245, 87, 138, 106, 12, 9, 208, 31, 69, 245, 219, 142, 67, 131, 89, 135, 116, 120, 94, 89, 153,
-    95, 76, 166, 52, 47, 103, 251, 157, 115, 196, 167, 57, 122, 167, 121, 70, 65, 211, 195, 49,
-    140, 44, 10, 49, 175, 26, 128, 146, 206, 130, 246, 103, 124, 18, 101, 14, 43, 28, 223, 201, 66,
-    33, 34, 167, 171, 175, 38, 221, 254, 142, 225, 179, 234, 228, 110, 98, 215, 108, 209, 54, 109,
-    35, 171, 241, 231, 9, 242, 152, 39, 156, 194, 140, 179, 84, 60, 31, 230, 59, 149, 107, 77, 129,
-    230, 100, 112, 244, 118, 217, 255, 249, 95, 67, 149, 112, 143, 202, 25, 248, 241, 3, 1, 128,
-    115, 56, 116, 170, 197, 120, 171, 84, 24, 156, 74, 84, 13, 160, 237, 52, 61, 188, 22, 115, 143,
-    10, 117, 222, 25, 33, 160, 59, 228, 106, 20, 168, 120, 44, 9, 154, 250, 89, 60, 138, 86, 78,
-    166, 205, 64, 202, 62, 190, 2, 87, 159, 91, 250, 250, 129, 140, 143, 61, 144, 218, 206, 30, 2,
-    61, 20, 195, 86, 12, 56, 205, 82, 21, 153, 251, 220, 144, 26, 231, 173, 22, 83, 112, 152, 30,
-    67, 83, 78, 22, 12, 214, 237, 72, 162, 208, 25, 221, 46, 7, 94, 119, 123, 21, 13, 241, 161, 91,
-    104, 65, 7, 219, 115, 179, 23, 183, 254, 137, 211, 205, 232, 25, 89, 141, 98, 76, 21, 201, 30,
-    187, 144, 246, 217, 108, 55, 140, 140, 25, 83, 251, 191, 59, 156, 253, 23, 120, 114, 230, 170,
-    179, 144, 250, 55, 160, 19, 45, 108, 194, 123, 122, 30, 76, 81, 226, 25, 134, 101, 133, 191,
-    92, 104, 184, 7, 10, 194, 50, 224, 128, 226, 203, 242, 80, 36, 137, 203, 18, 81, 217, 102, 179,
-    83, 148, 28, 50, 121, 74, 83, 111, 76, 147, 129, 0, 75, 220, 135, 52, 18, 169, 215, 66, 230,
-    99, 52, 36, 204, 33, 143, 214, 11, 90, 241, 54, 246, 91, 8, 41, 227, 156, 4, 10, 233, 181, 186,
-    9, 7, 59, 15, 128, 177, 182, 160, 224, 22, 239, 122, 3, 199, 138, 42, 189, 235, 245, 251, 249,
-    185, 150, 4, 28, 105, 164, 93, 160, 153, 51, 22, 59, 193, 23, 116, 215, 107, 104, 130, 77, 141,
-    140, 151, 20, 72, 168, 50, 154, 97, 241, 238, 74, 83, 161, 3, 243, 178, 86, 149, 52, 124, 250,
-    165, 198, 226, 107, 53, 148, 189, 102, 213, 38, 87, 5, 236, 239, 101, 77, 159, 176, 192, 121,
-    196, 241, 164, 22, 1, 224, 42, 151, 61, 243, 86, 238, 156, 14, 0, 96, 94, 32, 86, 89, 113, 192,
-    238, 10, 83, 21, 175, 0, 117, 221, 205, 219, 63, 28, 89, 194, 1, 169, 203, 120, 153, 128, 241,
-    14, 225, 202, 54, 3, 91, 181, 85, 195, 228, 249, 12, 68, 219, 145, 105, 208, 188, 121, 150, 98,
-    99, 215, 36, 152, 45, 216, 44, 88, 162, 213, 28, 48, 147, 112, 69, 171, 68, 143, 245, 191, 230,
-    27, 195, 211, 246, 200, 108, 134, 212, 206, 211, 222, 152, 20, 234, 79, 3, 227, 6, 78, 162, 81,
-    48, 42, 232, 65, 233, 136, 112, 26, 195, 212, 30, 7, 181, 221, 251, 94, 203, 4, 132, 108, 157,
-    94, 123, 37, 212, 234, 41,
+    0x02, 0x13, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x09, 0xc4, 0x13, 0x6f, 0xeb, 0x03,
+    0x7d, 0x5e, 0x5b, 0xd0, 0xbe, 0xea, 0xdc, 0x28, 0x41, 0x61, 0xb2, 0x16, 0x1d, 0x91, 0xf9, 0xd7,
+    0x51, 0x62, 0xeb, 0x00, 0x7d, 0x60, 0x68, 0xc2, 0xd1, 0x20, 0x21, 0xf5, 0xb3, 0xc0, 0xe1, 0x25,
+    0xf6, 0xb3, 0xc0, 0x33, 0xdd, 0x30, 0xa9, 0xab, 0xab, 0xad, 0xdd, 0x12, 0x6d, 0x35, 0x80, 0xe7,
+    0x90, 0x61, 0x2a, 0x7f, 0x34, 0xf9, 0x79, 0x5c, 0x05, 0x23, 0x29, 0x66, 0xff, 0x69, 0x5b, 0x3e,
+    0x71, 0x68, 0xbc, 0x62, 0xfe, 0x7a, 0xff, 0xa1, 0x17, 0x4a, 0x18, 0xd8, 0x8b, 0x33, 0xa6, 0x0d,
+    0xb4, 0x61, 0x8f, 0x5f, 0x92, 0x3d, 0xaf, 0x6f, 0x87, 0x05, 0x64, 0xa7, 0x19, 0xf3, 0xc9, 0xf5,
+    0x71, 0x44, 0x8d, 0xbd, 0x85, 0xb5, 0x3b, 0x8a, 0x5b, 0x3d, 0x81, 0x0d, 0x3d, 0x0f, 0xc7, 0x62,
+    0x4e, 0x26, 0x43, 0x5c, 0x62, 0xa3, 0x28, 0xc0, 0xab, 0x28, 0x37, 0xb1, 0xff, 0x69, 0x6b, 0x8f,
+    0x93, 0x8c, 0xd4, 0x10, 0x4b, 0xbe, 0x84, 0xd7, 0xf0, 0x17, 0x49, 0x11, 0x03, 0x14, 0xaf, 0xcf,
+    0x46, 0xef, 0x22, 0x99, 0x89, 0x84, 0xf9, 0x02, 0xbd, 0x11, 0x73, 0xb1, 0x41, 0x65, 0xa3, 0xba,
+    0xfc, 0x8a, 0xa9, 0xcc, 0x3a, 0xf5, 0x6a, 0xe8, 0xa3, 0x8a, 0x50, 0xfb, 0xd2, 0xd8, 0x10, 0x34,
+    0xbc, 0x7d, 0x59, 0xef, 0x7e, 0x8c, 0x16, 0xb4, 0x6a, 0x0b, 0x08, 0x1d, 0x01, 0x40, 0x25, 0xf1,
+    0x21, 0x03, 0x04, 0xac, 0xac, 0x44, 0xb4, 0x30, 0xad, 0x02, 0x4b, 0xcf, 0x17, 0xb8, 0xf5, 0x0e,
+    0xe1, 0xd7, 0xa2, 0x76, 0x50, 0xa1, 0x1c, 0x6e, 0xd4, 0x25, 0xa0, 0xe3, 0x31, 0x51, 0x68, 0xba,
+    0x9b, 0xe2, 0x9e, 0x72, 0x7e, 0x85, 0x3d, 0xf0, 0x8f, 0x2a, 0xc0, 0xd2, 0x09, 0xcc, 0xbb, 0x7f,
+    0x41, 0x42, 0xf4, 0x78, 0x5e, 0x47, 0x94, 0x1c, 0xe7, 0x2f, 0xa8, 0x94, 0x68, 0x02, 0x14, 0x2c,
+    0x6c, 0x9b, 0x09, 0x10, 0x3e, 0x72, 0x1b, 0x0b, 0xa8, 0x10, 0x3c, 0x1f, 0x21, 0xab, 0x5d, 0x43,
+    0xf6, 0x9b, 0xb0, 0x21, 0x61, 0x84, 0x0e, 0xbe, 0xc0, 0x2f, 0x9a, 0x7e, 0x0b, 0x1f, 0x45, 0x7d,
+    0x51, 0x6b, 0x20, 0x22, 0xea, 0x80, 0x93, 0x85, 0x9f, 0xa0, 0x74, 0x3f, 0xe5, 0xaf, 0x60, 0xc5,
+    0xe5, 0x06, 0x50, 0x55, 0xb1, 0xdc, 0x56, 0x8e, 0x22, 0x03, 0x59, 0x12, 0x70, 0x27, 0x8f, 0xee,
+    0x02, 0x40, 0xbc, 0xd7, 0xa2, 0x2f, 0xb7, 0x76, 0xe5, 0x89, 0xda, 0x9b, 0x1c, 0x77, 0x9a, 0xa3,
+    0xa2, 0x4d, 0xab, 0x9b, 0x1a, 0x38, 0x8b, 0x62, 0xe9, 0x14, 0xa5, 0xf3, 0x7c, 0xae, 0xf9, 0x21,
+    0xd3, 0x9c, 0x55, 0x0f, 0x8a, 0x53, 0xf0, 0xa2, 0x43, 0x0d, 0xce, 0xa3, 0xf6, 0x2e, 0xa6, 0xf9,
+    0x94, 0x21, 0x64, 0x11, 0x27, 0x32, 0x51, 0xe9, 0xb6, 0x29, 0xc9, 0xb5, 0xad, 0x0f, 0xc3, 0x70,
+    0x0a, 0x53, 0x28, 0xf3, 0x91, 0xd6, 0x81, 0x98, 0xe3, 0x24, 0x05, 0xda, 0x59, 0x68, 0x81, 0xcd,
+    0xf9, 0xea, 0x40, 0xaf, 0x81, 0x03, 0xbf, 0x48, 0x6c, 0x17, 0x68, 0xcb, 0x11, 0x72, 0x35, 0x9c,
+    0xf9, 0xc0, 0xc2, 0xb9, 0x36, 0x95, 0xc4, 0x6b, 0x13, 0xc4, 0xd4, 0xd7, 0x37, 0x66, 0x28, 0xad,
+    0x3f, 0x34, 0x4c, 0x76, 0x30, 0x38, 0x1a, 0x6f, 0x60, 0x07, 0x1e, 0xa2, 0xc6, 0x46, 0x82, 0xfa,
+    0xbd, 0x0c, 0x4b, 0xf9, 0xff, 0x27, 0x52, 0x10, 0x30, 0x71, 0x05, 0x1b, 0x10, 0xd7, 0xf9, 0x6b,
+    0xde, 0x29, 0x0f, 0x04, 0x2e, 0x59, 0x43, 0xe4, 0xb7, 0x18, 0x28, 0x1a, 0xb9, 0x24, 0x7e, 0x84,
+    0x20, 0x4a, 0x23, 0xca, 0x45, 0x5b, 0x2b, 0x54, 0xc4, 0xc6, 0xaa, 0x98, 0x45, 0x8e, 0x0b, 0xce,
+    0x82, 0x25, 0xee, 0xa7, 0x8a, 0x92, 0xc7, 0x58, 0xc0, 0x07, 0x2f, 0x93, 0x62, 0xb5, 0x46, 0x2d,
+    0xde, 0xe0, 0x1e, 0x60, 0x80, 0x5c, 0x99, 0x1b, 0xcc, 0x6a, 0xbc, 0x19, 0xee, 0x61, 0xe8, 0x7f,
+    0x5a, 0xa8, 0x54, 0x09, 0xb1, 0x9a, 0x6f, 0x35, 0xff, 0x13, 0x22, 0x44, 0xa6, 0x69, 0x8a, 0x2e,
+    0x25, 0xc2, 0x91, 0x1c, 0x95, 0x03, 0xfc, 0x3a, 0xa0, 0xb4, 0x41, 0x5b, 0xdc, 0x4f, 0x7d, 0xb6,
+    0x1f, 0xe0, 0xf9, 0xc3, 0xde, 0xab, 0xfa, 0xbb, 0xa0, 0x07, 0x56, 0xe3, 0x24, 0x4a, 0xae, 0x46,
+    0xc4, 0x32, 0x8e, 0xe5, 0x23, 0xa8, 0x89, 0x2c, 0x11, 0x93, 0x0c, 0x5e, 0x0e, 0x45, 0x2e, 0x76,
+    0xa1, 0x4b, 0xfe, 0xe6, 0x52, 0x4e, 0x1f, 0xa4, 0x50, 0x20, 0x48, 0x54, 0x79, 0xf6, 0x27, 0x71,
+    0x2e, 0xf3, 0xfb, 0xf5, 0x60, 0x42, 0xd8, 0xcf, 0x52, 0x6a, 0x65, 0xfa, 0xfd, 0x46, 0x65, 0xd9,
+    0x75, 0x3a, 0xbe, 0x30, 0x77, 0x8c, 0x7c, 0xa9, 0xf8, 0x27, 0x02, 0xb3, 0x4d, 0x5a, 0x54, 0x36,
+    0xeb, 0x48, 0x87, 0x31, 0x3f, 0x17, 0xf9, 0xb1, 0x8a, 0xc8, 0xf8, 0x1c, 0x5b, 0x47, 0x84, 0xac,
+    0x45, 0x63, 0xa3, 0xdd, 0xfe, 0x31, 0x37, 0x90, 0xea, 0x0f, 0xcf, 0xb8, 0x06, 0x03, 0xdf, 0x1f,
+    0x72, 0x9a, 0x6e, 0xa6, 0x21, 0xff, 0xe3, 0xd1, 0x5e, 0xdb, 0x8d, 0x9f, 0x94, 0xf5, 0xf5, 0xee,
+    0xad, 0x6a, 0xb6, 0xd6, 0x72, 0x02, 0x2c, 0x4d, 0xfd, 0x22, 0xd7, 0xaa, 0xed, 0x26, 0x8a, 0xa0,
+    0x6c, 0x93, 0xbb, 0xed, 0x5a, 0x41, 0x9a, 0x10, 0x20, 0xab, 0x41, 0x12, 0x67, 0x4c, 0x70, 0x32,
+    0xe1, 0xb6, 0xf1, 0xbc, 0x81, 0x67, 0xbf, 0x54, 0x60, 0x01, 0x81, 0x81, 0x90, 0x95, 0x4f, 0x0a,
+    0x9f, 0x49, 0x4f, 0xd1, 0x34, 0x2d, 0xaa, 0xa6, 0xf8, 0x60, 0x63, 0x26, 0xce, 0x8b, 0x9e, 0x15,
+    0xce, 0x73, 0x21, 0xbd, 0x73, 0x75, 0x02, 0x55, 0x56, 0x0e, 0xed, 0x41, 0x18, 0x81, 0xda, 0xf4,
+    0x56, 0xb7, 0x7d, 0xb7, 0xaf, 0xde, 0xf5, 0x9a, 0x86, 0xf8, 0x54, 0x21, 0xef, 0xc5, 0x9c, 0x7a,
+    0xc4, 0xde, 0x84, 0xda, 0x7d, 0x0f, 0xf9, 0x38, 0x16, 0x12, 0x88, 0x8a, 0x17, 0xff, 0x79, 0x45,
+    0xd7, 0x39, 0x34, 0x59, 0xa5, 0xab, 0x65, 0x75, 0x06, 0x94, 0x70, 0xa6, 0x71, 0x1f, 0x41, 0xee,
+    0x9c, 0x52, 0xab, 0xb5, 0x0e, 0xf8, 0xb2, 0x76, 0xbc, 0x0f,
 ];
 
 /// Deserialize VK from the embedded bytes. Called on each verification — the
@@ -156,74 +193,4 @@ pub const DARK_DEX_W128_VK_BYTES: [u8; 842] = [
 /// verification.
 pub fn build_dark_dex_w128_vk() -> VerifyingKey<G1Affine> {
     read_vk(&DARK_DEX_W128_VK_BYTES, &dark_dex_w128_config_params())
-}
-
-// Dark-DEX KZG verifier points (K=19). NOTE: despite the historical naming,
-// `DARK_DEX_KZG_S_G2_BYTES` below is **byte-identical** to the top-of-file
-// `KZG_S_G2_BYTES` — the `dark_dex_w128_*` fixtures and the deposit/bridge
-// proofs share the SAME ceremony (the Acki Nacki chain ceremony, NOT Hermez).
-// The duplicate constant set is kept only to keep the legacy ZKHALO2VERIFY and
-// the ZKHALO2VERIFYWITHVK code paths independent. The bytes are embedded
-// literally so no env var / external SRS file is needed at runtime.
-
-/// G1 generator point `g[0]` for the dark-dex KZG SRS (K=19), 64 bytes
-/// (BN256 G1Affine uncompressed). Curve generator — identical across all
-/// well-formed BN254 SRSes.
-const DARK_DEX_KZG_G0_BYTES: [u8; 64] = [
-    157, 13, 143, 197, 141, 67, 93, 211, 61, 11, 199, 245, 40, 235, 120, 10, 44, 70, 121, 120, 111,
-    163, 110, 102, 47, 223, 7, 154, 193, 119, 10, 14, 58, 27, 30, 139, 27, 135, 186, 166, 123, 22,
-    142, 235, 81, 214, 241, 20, 88, 140, 242, 240, 222, 70, 221, 204, 94, 190, 15, 52, 131, 239,
-    20, 28,
-];
-
-/// G2 generator for the dark-dex KZG SRS, 128 bytes (BN256 G2Affine
-/// uncompressed). Curve generator — identical across all well-formed BN254
-/// SRSes.
-const DARK_DEX_KZG_G2_BYTES: [u8; 128] = [
-    38, 32, 188, 2, 209, 181, 131, 142, 114, 1, 123, 73, 53, 25, 235, 220, 223, 26, 129, 151, 71,
-    38, 184, 251, 59, 80, 150, 175, 65, 56, 87, 25, 64, 97, 76, 168, 125, 115, 180, 175, 196, 216,
-    2, 88, 90, 221, 67, 96, 134, 47, 160, 82, 252, 80, 233, 9, 107, 123, 234, 58, 131, 240, 254,
-    20, 246, 233, 107, 136, 157, 250, 157, 97, 120, 155, 158, 245, 151, 210, 127, 254, 254, 125,
-    27, 35, 98, 26, 158, 255, 6, 66, 158, 174, 235, 126, 253, 40, 238, 86, 24, 199, 86, 91, 9, 100,
-    187, 60, 125, 50, 34, 249, 87, 220, 118, 16, 53, 51, 190, 53, 249, 85, 130, 100, 253, 147, 230,
-    160, 164, 13,
-];
-
-/// `[s] · G2` for the dark-dex KZG SRS (toxic-waste-scaled G2), 128 bytes.
-/// **Ceremony-specific** (Acki Nacki chain ceremony). Byte-identical to the
-/// `KZG_S_G2_BYTES` used by the ZKHALO2VERIFYWITHVK opcode — both code paths
-/// verify proofs from the same chain ceremony (NOT Hermez).
-const DARK_DEX_KZG_S_G2_BYTES: [u8; 128] = [
-    198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250, 139, 224, 102, 28, 120,
-    209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4, 247, 119, 82, 189, 13, 15, 148, 115, 180, 255,
-    211, 139, 77, 173, 84, 51, 12, 6, 85, 171, 152, 202, 243, 42, 190, 151, 134, 220, 160, 12, 159,
-    38, 45, 111, 242, 166, 81, 163, 42, 141, 88, 61, 242, 122, 139, 118, 253, 115, 4, 61, 229, 102,
-    162, 17, 57, 112, 221, 213, 115, 157, 229, 203, 21, 22, 124, 133, 139, 91, 90, 14, 242, 86,
-    211, 197, 224, 251, 73, 198, 176, 240, 176, 131, 18, 138, 95, 92, 74, 66, 227, 79, 115, 151,
-    214, 102, 69, 21,
-];
-
-/// Build verifier-only KZG params (K=19) from 3 embedded points (~320 bytes)
-/// instead of loading the full 64MB SRS file. Only `g[0]`, `g2`, and `s_g2` are
-/// needed for SHPLONK verification. Called on each verification —
-/// reconstruction is sub-millisecond.
-pub fn build_kzg_verifier_params() -> ParamsKZG<Bn256> {
-    use halo2_base::halo2_proofs::SerdeFormat;
-    use halo2_base::halo2_proofs::halo2curves::serde::SerdeObject;
-
-    // Build a minimal K=0 binary blob (388 bytes) containing the real g[0], g2,
-    // s_g2. read_custom with K=0 reads exactly 1 G1 point for g and 1 for
-    // g_lagrange.
-    let mut blob = Vec::with_capacity(388);
-    blob.extend_from_slice(&0u32.to_le_bytes()); // k = 0 → n = 1
-    blob.extend_from_slice(&DARK_DEX_KZG_G0_BYTES); // g[0]
-    blob.extend_from_slice(&DARK_DEX_KZG_G0_BYTES); // g_lagrange[0] (placeholder)
-    blob.extend_from_slice(&DARK_DEX_KZG_G2_BYTES); // g2
-    blob.extend_from_slice(&DARK_DEX_KZG_S_G2_BYTES); // s_g2
-    let mut cursor: &[u8] = &blob;
-    let dummy = ParamsKZG::<Bn256>::read_custom(&mut cursor, SerdeFormat::RawBytesUnchecked)
-        .expect("Parsing embedded KZG verifier blob should not fail");
-
-    let g0 = G1Affine::from_raw_bytes_unchecked(&DARK_DEX_KZG_G0_BYTES);
-    dummy.from_parts(19, vec![g0], Some(vec![]), dummy.g2(), dummy.s_g2())
 }
