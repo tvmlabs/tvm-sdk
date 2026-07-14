@@ -454,7 +454,8 @@ mod rlc_branch_tests {
         let (vk_bytes, cfg_json) = keygen_rlc_vk();
         let vk = read_rlc_vk(&vk_bytes, &cfg_json)
             .expect("Rlc branch must reconstruct an EthCircuitImpl VK from its own bytes");
-        let _params = crate::executor::zk_halo2_utils::build_kzg_verifier_params(vk.get_domain().k());
+        let _params =
+            crate::executor::zk_halo2_utils::build_kzg_verifier_params(vk.get_domain().k());
         let reser = vk.to_bytes(SerdeFormat::RawBytes);
         assert_eq!(reser, vk_bytes, "Rlc VK must round-trip byte-for-byte");
     }

@@ -101,9 +101,10 @@ pub fn build_kzg_verifier_params(k: u32) -> ParamsKZG<Bn256> {
 // ZKHALO2VERIFY (0xC7 0x49) — hardcoded-VK path
 // ----------------------------------------------------------------------------
 // This opcode takes only `(instances, proof)` from the stack; the VK is
-// baked into the executor (`DARK_DEX_W128_VK_BYTES` + `dark_dex_w128_config_params`
-// below), generated at K=19 against the Hermez KZG SRS above. Used by the
-// live Dark DEX poseidon_dex chain (W=128 historical window).
+// baked into the executor (`DARK_DEX_W128_VK_BYTES` +
+// `dark_dex_w128_config_params` below), generated at K=19 against the Hermez
+// KZG SRS above. Used by the live Dark DEX poseidon_dex chain (W=128 historical
+// window).
 //
 // The sister opcode `ZKHALO2VERIFYWITHVK` (0xC7 0x4A), handled in
 // `zk_halo2_with_vk.rs`, takes the VK from the stack at call time and is
@@ -127,9 +128,9 @@ pub fn dark_dex_w128_config_params() -> BaseCircuitParams {
 // TODO: we need VK per each desired historical window; this is the W=128 build
 // used by the live poseidon_dex chain and the bridge.
 
-/// Serialized `VerifyingKey<G1Affine>` (842 bytes, `SerdeFormat::RawBytesUnchecked`)
-/// for the Dark DEX circuit (W=128 historical window) at k=19, generated
-/// against the Hermez-anchored KZG SRS above. See
+/// Serialized `VerifyingKey<G1Affine>` (842 bytes,
+/// `SerdeFormat::RawBytesUnchecked`) for the Dark DEX circuit (W=128 historical
+/// window) at k=19, generated against the Hermez-anchored KZG SRS above. See
 /// `dexdo-halo2-kit/generated/dark_dex_w128_vk_bytes.rs`.
 pub const DARK_DEX_W128_VK_BYTES: [u8; 842] = [
     0x02, 0x13, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x09, 0xc4, 0x13, 0x6f, 0xeb, 0x03,
