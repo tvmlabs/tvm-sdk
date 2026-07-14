@@ -47,30 +47,41 @@ reqwest = { workspace = true, features = [
 
 bls12_381 = { version = "0.8", optional = true }
 
-ark-bls12-381 = { version = "0.4", optional = true }
-ark-bn254 = { version = "0.4", optional = true }
-ark-ec = { version = "0.4", optional = true }
-ark-ff = { version = "0.4", optional = true }
-ark-groth16 = { version = "0.4", default-features = false, optional = true }
-ark-relations = { version = "0.4", optional = true }
-ark-serialize = { version = "0.4", optional = true }
-ark-snark = { version = "0.4", optional = true }
-byte-slice-cast = { version = "1", optional = true }
-ark-crypto-primitives = { version = "0.4", features = [
+ark-bls12-381 = { version = "0.4.0", optional = true }
+ark-bn254 = { version = "0.4.0", optional = true }
+ark-ec = { version = "0.4.1", optional = true }
+ark-ff = { version = "0.4.1", features = ["asm"], optional = true }
+ark-groth16 = { version = "0.4.0", default-features = false, optional = true }
+ark-relations = { version = "0.4.0", optional = true }
+ark-serialize = { version = "0.4.1", optional = true }
+ark-snark = { version = "0.4.0", optional = true }
+byte-slice-cast = { version = "1.2.2", optional = true }
+ark-crypto-primitives = { version = "0.4.0", features = [
   "r1cs",
   "prf",
 ], optional = true }
-ark-r1cs-std = { version = "0.4", optional = true }
-ark-std = { version = "0.4", optional = true }
+ark-r1cs-std = { version = "0.4.0", optional = true }
+ark-std = { version = "0.4.0", optional = true }
 
-fastcrypto = { version = "0.1", optional = true }
-neptune = { version = "13", default-features = false, optional = true }
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1", default-features = false, features = [
+  "halo2-axiom",
+], optional = true }
+gosh-zk-snark-halo2-utils = { git = "https://github.com/gosh-sh/gosh-zk-snark-halo2-utils", branch = "main", optional = true }
+# RLC / EthCircuitImpl reader for the VkBlob-v2 "Rlc" circuit shape (deposit-prover
+# class circuits). axiom-eth's halo2-lib deps are redirected to the gosh fork by the
+# workspace-root [patch] tables so the whole graph shares ONE halo2-base backend.
+axiom-eth = { git = "https://github.com/axiom-crypto/axiom-eth", default-features = false, features = [
+  "halo2-axiom",
+], optional = true }
 
-once_cell = { version = "1", optional = true }
-halo2-base = { version = "0.5.1", optional = true }
+fastcrypto = { version = "0.1.8", optional = true }
+neptune = { version = "13.0.0", default-features = false, optional = true }
+
+once_cell = { version = "1.16", optional = true }
+
 pse-poseidon = { git = "https://github.com/axiom-crypto/pse-poseidon.git", optional = true }
 
-schemars = { version = "0.8", optional = true }
+schemars = { version = "0.8.10", optional = true }
 
 derive_more = { version = "0.99", optional = true }
 base64ct = { version = "1", features = ["alloc"], optional = true }
@@ -83,10 +94,10 @@ ff = { version = "0.13", features = ["derive"], optional = true }
 
 rand_chacha = { version = "0.2", optional = true }
 
-
 [dev-dependencies]
 base64.workspace = true
 criterion.workspace = true
+rand = "0.8"
 libloading = "0.8"
 log4rs.workspace = true
 pprof = { features = ["criterion", "flamegraph"], version = "0.14" }
@@ -134,6 +145,8 @@ gosh = [
   "dep:itertools",
   "dep:typenum",
   "dep:halo2-base",
+  "dep:gosh-zk-snark-halo2-utils",
+  "dep:axiom-eth",
   "dep:pse-poseidon",
 ]
 log_file = []

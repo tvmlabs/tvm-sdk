@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.4] - 2026-07-10
+
+### Added
+- Add ZK Halo2 verification insns: `ZKHALO2VERIFY` (C749), `ZKHALO2VERIFYWITHVK` (C74A);
+  extending prior `VERGRTH16` / Poseidon ZK support with a Halo2/KZG backend.
+- Add `CHKHISTPROOF` (C750) for TVM block history Merkle proof checks.
+
 ## [3.0.3] - 2026-07-01
 
 ### Changed
