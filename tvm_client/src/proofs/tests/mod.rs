@@ -243,7 +243,6 @@ async fn test_query_current_network_zerostate_root_hash() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_get_current_network_zerostate_root_hash() -> Result<()> {
     let client = TestClient::new_with_config(mainnet_config());
@@ -270,7 +269,6 @@ async fn test_get_current_network_zerostate_root_hash() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_resolve_initial_trusted_key_block_main() -> Result<()> {
     let client = TestClient::new_with_config(mainnet_config());
@@ -352,7 +350,6 @@ async fn test_special_metadata_storage() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_query_zerostate_boc() -> Result<()> {
     let engine = create_engine_mainnet();
@@ -364,7 +361,6 @@ async fn test_query_zerostate_boc() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_query_file_hash() -> Result<()> {
     let engine = create_engine_mainnet();
@@ -386,7 +382,6 @@ async fn test_query_file_hash() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_query_mc_proof() -> Result<()> {
     let engine = create_engine_mainnet();
@@ -462,7 +457,6 @@ async fn test_mc_proofs() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_extract_top_shard_block() -> Result<()> {
     let engine = create_engine_mainnet();
@@ -512,7 +506,6 @@ async fn test_extract_top_shard_block() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_query_closest_mc_block_for_shard_block() -> Result<()> {
     let engine = create_engine_mainnet();
@@ -566,7 +559,6 @@ const SHARD_BLOCK_0_A000000000000000_101_BOC: &str = "te6ccuECEQEAArkAABwAxADeAX
     kZk4I51Eika4V6VydXnae1GVLMbE0Owu1LHoigAa7BQAAAAAAAAAAAAACqAAAAAA3UCgf//////////////////\
     ////////////////////////wAADACAAAQLlB2As";
 
-#[ignore]
 #[tokio::test]
 async fn test_query_shard_block_bocs() -> Result<()> {
     let engine = create_engine_mainnet();
@@ -992,7 +984,6 @@ async fn test_proof_block_data() -> Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_transaction_get_required_data() -> Result<()> {
     const ID: &str = "5b532e2ec17ac84b4efa92703192368dd4ed8a2729f2be2b0ee4e0665368f7c0";
