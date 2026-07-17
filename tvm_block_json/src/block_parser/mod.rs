@@ -26,7 +26,7 @@ use tvm_types::UInt256;
 
 #[derive(Debug, Error)]
 pub enum BlockParsingError {
-    #[error("Invalid data: {}", 0)]
+    #[error("Invalid data: {0}")]
     InvalidData(String),
 }
 

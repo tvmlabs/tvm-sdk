@@ -58,7 +58,7 @@ pub(crate) fn decode_actions(
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
-                    if out_msg.is_internal() {
+                    if out_msg.is_internal() || out_msg.is_cross_dapp() {
                         out_msg.set_src_address(address.clone());
                         out_msg.set_at_and_lt(0, created_lt);
                         created_lt += 1;
@@ -68,8 +68,14 @@ pub(crate) fn decode_actions(
                     if let (Some(b), Some(abi_file), Some(function_name)) =
                         (out_msg.body(), abi_file, function_name)
                     {
-                        if !out_msg.is_internal() {
-                            decode_body(abi_file, function_name, b, out_msg.is_internal(), res)?;
+                        if !(out_msg.is_internal() || out_msg.is_cross_dapp()) {
+                            decode_body(
+                                abi_file,
+                                function_name,
+                                b,
+                                out_msg.is_internal() || out_msg.is_cross_dapp(),
+                                res,
+                            )?;
                         }
                     }
                 }
@@ -193,6 +199,19 @@ fn print_msg_header(header: &CommonMsgInfo) -> String {
                 + &format!("   bounced     : {}\n", header.bounced)
                 + &format!("   source      : {}\n", &header.src)
                 + &format!("   destination : {}\n", &header.dst)
+                + &format!("   value       : {}\n", print_cc(&header.value))
+                + &format!("   ihr_fee     : {}\n", print_grams(&header.ihr_fee))
+                + &format!("   fwd_fee     : {}\n", print_grams(&header.fwd_fee))
+                + &format!("   created_lt  : {}\n", header.created_lt)
+                + &format!("   created_at  : {}\n", header.created_at)
+        }
+        CommonMsgInfo::CrossDappMessageInfo(header) => {
+            format!("   bounce      : {}\n", header.bounce)
+                + &format!("   bounced     : {}\n", header.bounced)
+                + &format!("   source      : {}\n", &header.src)
+                + &format!("   source_dapp : {}\n", &header.src_dapp_id)
+                + &format!("   destination : {}\n", &header.dst)
+                + &format!("   dest_dapp   : {}\n", &header.dst_dapp_id)
                 + &format!("   value       : {}\n", print_cc(&header.value))
                 + &format!("   ihr_fee     : {}\n", print_grams(&header.ihr_fee))
                 + &format!("   fwd_fee     : {}\n", print_grams(&header.fwd_fee))
