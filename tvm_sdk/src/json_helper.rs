@@ -248,6 +248,7 @@ where
         0 => Ok(MessageType::Internal),
         1 => Ok(MessageType::ExternalInbound),
         2 => Ok(MessageType::ExternalOutbound),
+        4 => Ok(MessageType::ExternalOutboundV2),
         num => Err(D::Error::custom(format!("Invalid message type: {}", num))),
     }
 }

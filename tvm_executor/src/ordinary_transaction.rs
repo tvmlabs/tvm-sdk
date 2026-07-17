@@ -106,7 +106,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             in_msg_cell.repr_hash()
         );
         let (bounce, is_ext_msg) = match in_msg.header() {
-            CommonMsgInfo::ExtOutMsgInfo(_) => fail!(ExecutorError::InvalidExtMessage),
+            CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) => {
+                fail!(ExecutorError::InvalidExtMessage)
+            }
             CommonMsgInfo::IntMsgInfo(ref hdr) => (hdr.bounce, false),
             CommonMsgInfo::CrossDappMessageInfo(ref hdr) => (hdr.bounce, false),
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),

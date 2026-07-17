@@ -2,10 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.25.0] - 2026-XX-XX
+## [3.1.0] - 2026-XX-XX
 ## New
-- Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapp id.
+- Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapps.
 
+## [3.0.4] - 2026-07-10
+
+### Added
+- Add ZK Halo2 verification insns: `ZKHALO2VERIFY` (C749), `ZKHALO2VERIFYWITHVK` (C74A);
+  extending prior `VERGRTH16` / Poseidon ZK support with a Halo2/KZG backend.
+- Add `CHKHISTPROOF` (C750) for TVM block history Merkle proof checks.
+
+## [3.0.3] - 2026-07-01
+
+### Changed
+- Improve Poseidon hash implementation 
 
 
 ## [3.0.2] - 2026-06-15

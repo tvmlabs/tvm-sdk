@@ -585,7 +585,8 @@ pub mod msg_printer {
                 CommonMsgInfo::IntMsgInfo(_) => "internal",
                 CommonMsgInfo::CrossDappMessageInfo(_) => "cross dapp",
                 CommonMsgInfo::ExtInMsgInfo(_) => "external inbound",
-                CommonMsgInfo::ExtOutMsgInfo(_) => "external outbound",
+                CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) =>
+                    "external outbound",
             }
             .to_owned()
                 + " message"
@@ -658,6 +659,15 @@ pub mod msg_printer {
                     "destination" : &header.dst.to_string(),
                     "created_lt" : &header.created_lt.to_string(),
                     "created_at" : &header.created_at.to_string(),
+                })
+            }
+            CommonMsgInfo::ExtOutMsgInfoV2(header) => {
+                json!({
+                    "source" : &header.src.to_string(),
+                    "destination" : &header.dst.to_string(),
+                    "created_lt" : &header.created_lt.to_string(),
+                    "created_at" : &header.created_at.to_string(),
+                    "src_dapp_id" : header.src_dapp_id.as_ref().map(|v| v.as_hex_string()),
                 })
             }
         }

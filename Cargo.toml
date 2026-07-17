@@ -24,7 +24,7 @@ members = [
   "tvm_vm",
 ]
 [workspace.package]
-version = "3.0.2"
+version = "3.0.4"
 
 rust-version = "1.76.0"
 
@@ -128,3 +128,61 @@ pretty_assertions = "1"
 
 [workspace.dependencies.tokio-tungstenite]
 version = "0.28"
+
+# --- Halo2 backend unification (ZKHALO2VERIFYWITHVK + VkBlob-v2 "Rlc" shape) ---
+#
+# The whole graph must share ONE halo2-base / halo2-ecc / zkevm-hashes / halo2-axiom
+# instance, otherwise the `VerifyingKey<G1Affine>` produced by axiom-eth's
+# EthCircuitImpl is a *different type* from the one the opcode handler reconstructs
+# and nothing type-checks.
+#
+# halo2-base reaches the graph through THREE original sources — gosh-zk-snark-halo2-utils
+# and tvm_vm pull it from the gosh fork git, while axiom-eth + snark-verifier-sdk pull
+# it (and halo2-ecc / zkevm-hashes) from axiom's halo2-lib git. Patching all of them to
+# the SAME git url+rev makes cargo dedup them into one package (a shared local *path*
+# cannot patch multiple sources — cargo then keeps the original for the loser, yielding
+# two halo2-base copies).
+#
+# The fork is hosted at `github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381`
+# on branch `bump-halo2-lib-v0.4.1` (halo2-base 0.4.1 / zkevm-hashes 0.2.1 — the version
+# axiom-eth v0.4.3 builds against, kept stable-Rust-compatible). The branch sits one
+# commit ahead of `main` (commit `26b3224`, "Bump fork to axiom halo2-lib v0.4.1 /
+# zkevm-hashes 0.2.1"); `main` lacks the v0.4.1 API surface axiom-eth needs.
+# NOTE: editing the fork requires a commit + `cargo update` to refetch.
+[patch.crates-io]
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+
+halo2-axiom = { git = "https://github.com/gosh-sh/halo2-axiom", branch = "main" }
+
+# tvm_vm declares halo2-base at the bump branch directly in its manifest, and
+# gosh-zk-snark-halo2-utils (pulled at `main`, which is in lock-step with the bump branch)
+# declares halo2-base on the same bump branch too, so no [patch."gosh-sh/halo2-lib..."]
+# block is needed here — cargo would in any case reject one because the source URL and
+# target URL would be identical ("patches must point to different sources").
+
+# axiom-eth + snark-verifier-sdk pull halo2-base / halo2-ecc / zkevm-hashes from here.
+[patch."https://github.com/axiom-crypto/halo2-lib.git"]
+halo2-base = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+halo2-ecc = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+zkevm-hashes = { git = "https://github.com/gosh-sh/halo2-lib-zkevm-sha256-and-bls12-381", branch = "bump-halo2-lib-v0.4.1" }
+
+# axiom-eth: gosh-sh fork on branch `gosh-stable-rlcmanager-assignment`,
+# seven commits ahead of upstream axiom-crypto/axiom-eth `main`:
+#   687a6da  RlcManager: name VirtualRegionManager::Assignment explicitly
+#            (required to build against the gosh halo2-base fork above)
+#   ce37a89  Redirect snark-verifier{-sdk} to gosh-sh/snark-verifier (stable-Rust fork)
+#   367d57f  Drop nightly feature gates from axiom-eth/src/lib.rs
+#   f2b3cae  Remove remaining nightly features (CoreBuilderInput / Commiter)
+#   51dec0d  Pin snark-verifier to ccdb510 (pre-rename)  <-- broken on stable
+#   4df1e7f  Spell out KeygenAggregationCircuitIntent::AggregationCircuit
+#   1d61be0  Bump snark-verifier-sdk pin to 164bd42e (stable-rust-on-ccdb510)  <-- fix
+# Together these keep the whole RLC verification path on stable Rust — without
+# them, axiom-eth and the upstream snark-verifier-sdk both need #![feature(trait_alias)]
+# and the workspace would have to pin nightly.
+#
+# NOTE: pinned by explicit `rev` (not `branch`) so the snark-verifier-sdk rev
+# transitively selected here (currently `164bd42e`, the stable-rust-on-ccdb510
+# backport) cannot drift when the branch tip moves. To bump: update the SHA
+# below AND run `cargo update -p axiom-eth`.
+[patch."https://github.com/axiom-crypto/axiom-eth"]
+axiom-eth = { git = "https://github.com/gosh-sh/axiom-eth", rev = "1d61be00a63ec73b3f709d74eb9e6b09b754b911" }
