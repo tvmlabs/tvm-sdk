@@ -253,3 +253,105 @@ pub(super) fn execute_trykeep(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("TRYKEEP"))?;
     init_try_catch(engine, true)
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::GlobalCapabilities;
+    use tvm_types::ExceptionCode;
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+    use crate::error::tvm_exception_full;
+    use crate::stack::Stack;
+
+    fn engine_with_stack(capabilities: u64, stack: Stack) -> Engine {
+        Engine::with_capabilities(capabilities).setup(SliceData::default(), None, Some(stack), None)
+    }
+
+    #[test]
+    fn throw_variants_report_custom_codes_and_values() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(777));
+        let mut engine = engine_with_stack(0, stack);
+
+        let err = execute_throwany(&mut engine).unwrap_err();
+        let exc = tvm_exception_full(&err).unwrap();
+        assert_eq!(exc.custom_code(), Some(777));
+        assert_eq!(exc.value, StackItem::int(0));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(42));
+        stack.push(StackItem::int(31337));
+        let mut engine = engine_with_stack(0, stack);
+
+        let err = execute_throwargany(&mut engine).unwrap_err();
+        let exc = tvm_exception_full(&err).unwrap();
+        assert_eq!(exc.custom_code(), Some(31337));
+        assert_eq!(exc.value, StackItem::int(42));
+    }
+
+    #[test]
+    fn conditional_throw_variants_respect_predicates() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0));
+        let mut engine = engine_with_stack(0, stack);
+        execute_throwif_short(&mut engine).unwrap();
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(1));
+        let mut engine = engine_with_stack(0, stack);
+        let err = execute_throwif_short(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_full(&err).unwrap().custom_code(), Some(0));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(0));
+        let mut engine = engine_with_stack(0, stack);
+        let err = execute_throwifnot_short(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_full(&err).unwrap().custom_code(), Some(0));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(1));
+        let mut engine = engine_with_stack(0, stack);
+        execute_throwifnot_short(&mut engine).unwrap();
+    }
+
+    #[test]
+    fn throwarg_and_throwanyif_variants_use_stack_values() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(99));
+        let mut engine = engine_with_stack(0, stack);
+        let err = execute_throwarg(&mut engine).unwrap_err();
+        let exc = tvm_exception_full(&err).unwrap();
+        assert_eq!(exc.exception_or_custom_code(), 6);
+        assert_eq!(exc.value, StackItem::int(0));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(55));
+        stack.push(StackItem::int(1));
+        let mut engine = engine_with_stack(0, stack);
+        let err = execute_throwanyif(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_full(&err).unwrap().custom_code(), Some(55));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(55));
+        stack.push(StackItem::int(0));
+        let mut engine = engine_with_stack(0, stack);
+        execute_throwanyif(&mut engine).unwrap();
+    }
+
+    #[test]
+    fn trykeep_requires_bugfix_capability() {
+        let mut engine = Engine::with_capabilities(0).setup(SliceData::default(), None, None, None);
+        let err = execute_trykeep(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::InvalidOpcode));
+
+        let try_cont = StackItem::continuation(ContinuationData::new_empty());
+        let catch_cont = StackItem::continuation(ContinuationData::new_empty());
+        let mut stack = Stack::new();
+        stack.push(try_cont);
+        stack.push(catch_cont);
+        let mut engine = engine_with_stack(GlobalCapabilities::CapsTvmBugfixes2022 as u64, stack);
+        let _ = execute_trykeep(&mut engine);
+    }
+}

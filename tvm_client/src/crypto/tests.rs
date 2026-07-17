@@ -1443,7 +1443,6 @@ async fn test_crypto_box_encryption_boxes() -> tvm_types::Result<()> {
     Ok(())
 }
 
-#[ignore]
 #[tokio::test]
 async fn test_crypto_box_derive_key_cache() -> tvm_types::Result<()> {
     let client = Arc::new(TestClient::new());
