@@ -129,8 +129,8 @@ pub(crate) fn call_tvm_msg(
         CommonMsgInfo::ExtInMsgInfo(_) => tvm_vm::int!(-1),
         CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) => {
             return Err(Error::invalid_message_type());
-        CommonMsgInfo::CrossDappMessageInfo(_) => tvm_vm::int!(-3),
         }
+        CommonMsgInfo::CrossDappMessageInfo(_) => tvm_vm::int!(-3),
     };
     stack
         .push(tvm_vm::int!(balance)) // token balance of contract

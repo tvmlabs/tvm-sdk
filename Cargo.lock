@@ -167,7 +167,7 @@ checksum = "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
 
 [[package]]
 name = "api_derive"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "api_info",
  "proc-macro2",
@@ -178,7 +178,7 @@ dependencies = [
 
 [[package]]
 name = "api_info"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "serde",
  "serde_derive",
@@ -187,7 +187,7 @@ dependencies = [
 
 [[package]]
 name = "api_test"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "api_derive",
  "api_info",
@@ -6768,7 +6768,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tl_code_gen"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "serde_json",
  "tvm_tl_codegen",
@@ -7078,7 +7078,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_abi"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -7094,7 +7094,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_api"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -7112,7 +7112,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_assembler"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "clap 4.6.1",
@@ -7133,7 +7133,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -7155,7 +7155,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_block_json"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -7176,7 +7176,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_cli"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -7218,7 +7218,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "aes",
  "anyhow",
@@ -7293,7 +7293,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_client_processing"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "api_derive",
  "api_info",
@@ -7312,7 +7312,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_common"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "log",
  "log4rs",
@@ -7323,7 +7323,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_debugger"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -7341,7 +7341,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_executor"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "lazy_static",
@@ -7359,7 +7359,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_sdk"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "api_derive",
@@ -7383,7 +7383,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_struct"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "thiserror 2.0.18",
  "tvm_block",
@@ -7392,7 +7392,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_tl_codegen"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "crc",
  "pom",
@@ -7405,7 +7405,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_types"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "aes",
  "anyhow",
@@ -7437,7 +7437,7 @@ dependencies = [
 
 [[package]]
 name = "tvm_vm"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "ark-bls12-381",
@@ -7510,6 +7510,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb30dbbd9036155e74adad6812e9898d03ec374946234fbcebd5dfc7b9187b90"
 dependencies = [
  "rustc-hash 2.1.3",
+]
+
+[[package]]
+name = "typed-builder"
+version = "0.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31aa81521b70f94402501d848ccc0ecaa8f93c8eb6999eb9747e72287757ffda"
+dependencies = [
+ "typed-builder-macro",
+]
+
+[[package]]
+name = "typed-builder-macro"
+version = "0.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "076a02dc54dd46795c2e9c8282ed40bcfb1e22747e955de9389a1de28190fb26"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.118",
 ]
 
 [[package]]
@@ -7617,7 +7637,7 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "update_trusted_blocks"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "bincode",
  "serde",

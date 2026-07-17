@@ -330,7 +330,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         );
         let mut stack = Stack::new();
         let msg_type = int!(match in_msg.header() {
-            CommonMsgInfo::ExtOutMsgInfo(_) => fail!(ExecutorError::InvalidExtMessage),
+            CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) => fail!(ExecutorError::InvalidExtMessage),
             CommonMsgInfo::IntMsgInfo(_) => 0,
             CommonMsgInfo::CrossDappMessageInfo(_) => -3,
             CommonMsgInfo::ExtInMsgInfo(_) => -1,
