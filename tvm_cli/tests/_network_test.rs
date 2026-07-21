@@ -6,6 +6,7 @@ use common::GIVER_V2_ADDR;
 use common::GIVER_V2_KEY;
 use common::NETWORK;
 
+#[ignore = "requires live network"]
 #[test]
 fn test_network() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;

@@ -68,6 +68,10 @@ jobs:
                 --lib \
                 --test node_executor_gosh \
                 --features tvm_executor/gosh,tvm_executor/signature_with_id,tvm_executor/wasmtime
+
+          - name: tvm_cli
+            command: |
+              cargo test --release --no-fail-fast -p tvm_cli --tests
     env:
       CARGO_TERM_COLOR: always
       SCCACHE_GHA_ENABLED: "true"
