@@ -1,0 +1,10 @@
+{
+  "data": {
+    "info": {
+      "version": "1.0.0",
+      "time": 1234567890,
+      "latency": 0,
+      "rempEnabled": false
+    }
+  }
+}

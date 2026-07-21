@@ -1,0 +1,15 @@
+{
+  "data": {
+    "blocks": [
+      {
+        "id": "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        "seq_no": 42,
+        "gen_utime": 1760103403,
+        "workchain_id": 0,
+        "shard": "8000000000000000",
+        "after_split": false,
+        "before_split": false
+      }
+    ]
+  }
+}

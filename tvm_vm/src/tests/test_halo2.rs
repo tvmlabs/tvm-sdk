@@ -330,7 +330,7 @@ fn parse_vk_blob_chunks(vk_blob: &[u8]) -> (Vec<u8>, Vec<u8>) {
 /// Run `ZKHALO2VERIFYWITHVK` with the three-operand ABI (vk_blob cell,
 /// public_inputs cell, proof cell).
 fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -> bool {
-    use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
+    use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
     let vk_blob = std::fs::read(vk_blob_path).expect("read vk_blob");
@@ -364,7 +364,7 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
 
 #[test]
 fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
-    use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
+    use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
     let vk_blob = std::fs::read(deposit_vk_blob_path()).expect("read vk_blob");
