@@ -1,5 +1,3 @@
-use std::fs;
-
 use predicates::prelude::*;
 
 mod common;
@@ -123,7 +121,7 @@ fn test_deployx_json_with_mock() {
     let abi = format!("{}/boc/contract.abi.json", FIXTURES_DIR);
     let keys = format!("{}/boc/contract.keys.json", FIXTURES_DIR);
 
-    with_mock_server(|url| {
+    with_mock_server(move |url| {
         let mut cmd = cargo_bin_smart();
         cmd.arg("-j")
             .arg("--url")
