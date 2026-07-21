@@ -81,7 +81,7 @@ fn account_requests_can_still_use_the_mock_after_an_error_case() {
         cmd.arg("--url")
             .arg(url)
             .arg("account")
-            .arg("0:06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1");
+            .arg("0000000000000000000000000000000000000000000000000000000000000000::06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1");
         cmd.assert().success();
     });
 }

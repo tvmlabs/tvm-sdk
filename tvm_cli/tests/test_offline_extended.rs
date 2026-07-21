@@ -32,7 +32,7 @@ fn test_message_raw_generation() {
     let output = std::env::temp_dir().join("tvm_cli_message_raw_test.boc");
     let _ = fs::remove_file(&output);
 
-    let addr = "0:06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1";
+    let addr = "0000000000000000000000000000000000000000000000000000000000000000::06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1";
 
     let mut cmd = cargo_bin_smart();
     cmd.arg("message")
@@ -59,7 +59,7 @@ fn test_message_raw_json() {
     let output = std::env::temp_dir().join("tvm_cli_message_raw_json_test.boc");
     let _ = fs::remove_file(&output);
 
-    let addr = "0:06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1";
+    let addr = "0000000000000000000000000000000000000000000000000000000000000000::06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1";
 
     let mut cmd = cargo_bin_smart();
     cmd.arg("-j")
@@ -105,7 +105,7 @@ fn test_decode_body() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("add"))
-        .stdout(predicate::str::contains("Method"));
+        .stdout(predicate::str::contains("FunctionId:"));
 }
 
 #[test]
@@ -122,7 +122,8 @@ fn test_decode_msg() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stdout.contains("Method")
+        stdout.contains("BodyCall")
+            || stdout.contains("Method")
             || stdout.contains("Error")
             || stderr.contains("Error")
             || stderr.contains("decode"),
@@ -140,8 +141,8 @@ fn test_decode_stateinit_tvc() {
     cmd.arg("decode").arg("stateinit").arg("--tvc").arg(&tvc);
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("code:"))
-        .stdout(predicate::str::contains("data:"));
+        .stdout(predicate::str::contains("\"code\":"))
+        .stdout(predicate::str::contains("\"data\":"));
 }
 
 #[test]
