@@ -265,7 +265,7 @@ async function getVersion(context: number): Promise<string> {
 
 ### Application objects
 
-SDK has some features that require interaction with client applications. Such features are for example, external signing interface - so-called "signing box", and debot. We call them `Application objects`. Such an object can be represented as a set of functions which either return execution result (requests) or not (notifications).
+SDK has features that require interaction with client applications, such as the external signing interface, also called a "signing box". We call them `Application objects`. Such an object can be represented as a set of functions which either return execution result (requests) or not (notifications).
 
 Application object is implemented using a callback passed into `tc_request`. For such case two response types are used: `APP_REQUEST = 3` for requests that require some response from application and `APP_NOTIFY = 4` for notifications with no response needed. When response type is `3`, `params_json` parameter contains serialized structure `ParamsOfAppRequest`
 

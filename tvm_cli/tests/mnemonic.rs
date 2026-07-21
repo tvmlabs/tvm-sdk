@@ -214,7 +214,6 @@ fn test_has_mnemonic_checks() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--sign")
         .arg(WRONG_SEED);
     cmd.assert().failure().stdout(predicate::str::contains(WRONG_SEED_ERROR_TEXT));
-    // TODO debot
     // TODO proposal
     Ok(())
 }

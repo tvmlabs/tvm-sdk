@@ -45,7 +45,6 @@ use crate::crypto::boxes::crypto_box::CryptoBox;
 use crate::crypto::boxes::crypto_box::DerivedKeys;
 use crate::crypto::boxes::encryption_box::EncryptionBox;
 use crate::crypto::boxes::signing_box::SigningBox;
-use crate::debot::DEngine;
 use crate::error::ClientResult;
 use crate::json_interface::interop::ResponseType;
 use crate::json_interface::request::Request;
@@ -93,9 +92,6 @@ pub struct ClientContext {
 
     // proofs module
     pub(crate) proofs_storage: RwLock<Option<Arc<dyn KeyValueStorage>>>,
-
-    // debot module
-    pub(crate) debots: LockfreeMap<u32, Mutex<DEngine>>,
 }
 
 impl std::fmt::Debug for ClientContext {
@@ -150,7 +146,6 @@ impl ClientContext {
             message_monitor,
             config,
             env: env.clone(),
-            debots: LockfreeMap::new(),
             boxes: Default::default(),
             bocs,
             app_requests: Mutex::new(HashMap::new()),
@@ -265,9 +260,5 @@ where
 
     pub async fn call(&self, params: P) -> ClientResult<R> {
         self.context.app_request(&self.object_handler, params).await
-    }
-
-    pub fn notify(&self, params: P) {
-        self.object_handler.response(params, ResponseType::AppNotify as u32)
     }
 }

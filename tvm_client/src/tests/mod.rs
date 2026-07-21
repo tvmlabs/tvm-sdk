@@ -137,8 +137,6 @@ pub const HELLO: &str = "Hello";
 pub const EVENTS_OLD: &str = "EventsOld";
 pub const EVENTS: &str = "Events";
 pub const T24_INIT_DATA: &str = "t24_initdata";
-pub const TEST_DEBOT: &str = "testDebot";
-pub const TEST_DEBOT_TARGET: &str = "testDebotTarget";
 pub const EXCEPTION: &str = "Exception";
 
 struct RequestData {
@@ -396,13 +394,6 @@ impl TestClient {
         Some(base64_encode(
             std::fs::read(format!("{}{}.tvc", Self::contracts_path(abi_version), name)).unwrap(),
         ))
-    }
-
-    pub fn icon(name: &str, abi_version: Option<u8>) -> String {
-        let image_base64 = base64_encode(
-            std::fs::read(format!("{}{}.png", Self::contracts_path(abi_version), name)).unwrap(),
-        );
-        format!("data:image/png;base64,{}", image_base64)
     }
 
     pub fn package(name: &str, abi_version: Option<u8>) -> (Abi, Option<String>) {
