@@ -7,7 +7,6 @@ use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::poly::kzg::commitment::ParamsKZG;
-use halo2_base::utils::ScalarField;
 use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 use tvm_types::error;
@@ -146,4 +145,5 @@ pub(crate) fn execute_halo2_proof_verification(engine: &mut Engine) -> Status {
 // paths). Re-exported here for legacy callers (e.g.
 // `tvm_vm/src/tests/test_halo2.rs`).
 // ---------------------------------------------------------------------------
+#[allow(unused_imports)] // Retained for legacy callers.
 pub(crate) use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
