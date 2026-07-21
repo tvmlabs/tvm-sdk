@@ -39,7 +39,6 @@
   * [Module boc](acki-nacki-sdk/types-and-methods/mod_boc.md)
   * [Module client](acki-nacki-sdk/types-and-methods/mod_client.md)
   * [Module crypto](acki-nacki-sdk/types-and-methods/mod_crypto.md)
-  * [Module debot](acki-nacki-sdk/types-and-methods/mod_debot.md)
   * [Module net](acki-nacki-sdk/types-and-methods/mod_net.md)
   * [Module processing](acki-nacki-sdk/types-and-methods/mod_processing.md)
   * [Module proofs](acki-nacki-sdk/types-and-methods/mod_proofs.md)

@@ -248,7 +248,6 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">boc</span>::{<span class="ident">BocConfig</span>, <span class="ident">cache</span>::<span class="ident">Bocs</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">CryptoConfig</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">crypto</span>::<span class="ident">boxes</span>::{<span class="ident">SigningBox</span>, <span class="ident">EncryptionBox</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">DEngine</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">error</span>::<span class="ident">ClientResult</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">json_interface</span>::<span class="ident">interop</span>::<span class="ident">ResponseType</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">json_interface</span>::<span class="ident">request</span>::<span class="ident">Request</span>;
@@ -277,7 +276,6 @@
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">net</span>: <span class="ident">NetworkContext</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">config</span>: <span class="ident">ClientConfig</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">env</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ClientEnv</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">debots</span>: <span class="ident">LockfreeMap</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">DEngine</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">boxes</span>: <span class="ident">Boxes</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">bocs</span>: <span class="ident">Bocs</span>,
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">blockchain_config</span>: <span class="ident">RwLock</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">ton_executor</span>::<span class="ident">BlockchainConfig</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
@@ -325,7 +323,6 @@ Note that default values are used if parameters are omitted in config&quot;#</sp
                 <span class="ident">iterators</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
             },
             <span class="ident">env</span>,
-            <span class="ident">debots</span>: <span class="ident">LockfreeMap</span>::<span class="ident">new</span>(),
             <span class="ident">boxes</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
             <span class="ident">bocs</span>: <span class="ident">Bocs</span>::<span class="ident">new</span>(<span class="ident">config</span>.<span class="ident">boc</span>.<span class="ident">cache_max_size</span>),
             <span class="ident">app_requests</span>: <span class="ident">Mutex</span>::<span class="ident">new</span>(<span class="ident">HashMap</span>::<span class="ident">new</span>()),

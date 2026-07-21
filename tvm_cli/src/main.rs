@@ -23,7 +23,6 @@ mod call;
 mod config;
 mod convert;
 mod crypto;
-mod debot;
 mod debug;
 mod decode;
 mod deploy;
@@ -58,8 +57,6 @@ use config::set_config;
 use crypto::extract_pubkey;
 use crypto::generate_keypair;
 use crypto::generate_mnemonic;
-use debot::create_debot_command;
-use debot::debot_command;
 use debug::create_debug_command;
 use debug::debug_command;
 use decode::create_decode_command;
@@ -518,7 +515,7 @@ async fn main_internal() -> Result<(), String> {
             .help("Multisig wallet address."))
         .arg(Arg::new("PUBKEY")
             .long("--pubkey")
-            .help("User public key. Used by DeBot Browser."))
+            .help("User public key."))
         .arg(Arg::new("WC")
             .long("--wc")
             .help("Workchain id."))
@@ -646,7 +643,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::new("PUBKEY")
             .long("--pubkey")
             .takes_value(true)
-            .help("User public key. Used by DeBot Browser."))
+            .help("User public key."))
         .arg(Arg::new("WC")
             .long("--wc")
             .takes_value(true)
@@ -989,7 +986,6 @@ async fn main_internal() -> Result<(), String> {
         .subcommand(create_multisig_command())
         .subcommand(create_depool_command())
         .subcommand(create_decode_command())
-        .subcommand(create_debot_command())
         .subcommand(create_debug_command())
         .subcommand(create_test_command())
         .subcommand(getconfig_cmd)
@@ -1182,9 +1178,6 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
     }
     if let Some(m) = matches.subcommand_matches("debug") {
         return debug_command(m, &full_config).await;
-    }
-    if let Some(m) = matches.subcommand_matches("debot") {
-        return debot_command(m, config.to_owned()).await;
     }
     if let Some(m) = matches.subcommand_matches("fetch-block") {
         return fetch_block_command(m, config).await;

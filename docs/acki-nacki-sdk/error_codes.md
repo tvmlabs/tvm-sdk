@@ -23,7 +23,6 @@ You can find error codes with descriptions on this page
 
 [Net Error Codes (600-699)](https://dev.ackinacki.com/reference/types-and-methods/mod_net#neterrorcode)
 
-[DeBot Error Codes (800-899)](https://dev.ackinacki.com/reference/types-and-methods/mod_debot#deboterrorcode)
 
 ## Solidity Runtime Errors
 
