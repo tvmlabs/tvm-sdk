@@ -17,15 +17,15 @@
 //
 // `KZG_S_G2_BYTES` (= `[s] · G2`, the toxic-waste-scaled G2) is the ONLY
 // ceremony-specific point. The deposit (`ZKHALO2VERIFYWITHVK`) path is keyed on
-// the **Hermez Perpetual Powers of Tau** ceremony (2026-07-23): `deposit-prover`
-// proves against `data/kzg_params_{k}.srs` (Hermez), so `KZG_S_G2_BYTES` below
-// is the matching Hermez `[s]·G2` (begins `92 8f af b3 …`, ends `… 5c 69 00`).
-// The Acki Nacki chain ceremony (`kzg_bn254_19.srs`, `c6 02 8a cf …`) is NO
-// LONGER used for deposit/bridge proofs.
+// the **Hermez Perpetual Powers of Tau** ceremony (2026-07-23):
+// `deposit-prover` proves against `data/kzg_params_{k}.srs` (Hermez), so
+// `KZG_S_G2_BYTES` below is the matching Hermez `[s]·G2` (begins `92 8f af b3
+// …`, ends `… 5c 69 00`). The Acki Nacki chain ceremony (`kzg_bn254_19.srs`,
+// `c6 02 8a cf …`) is NO LONGER used for deposit/bridge proofs.
 //
 // The legacy Dark DEX `ZKHALO2VERIFY` (0xC7 0x49) path is unchanged: it still
-// verifies chain-ceremony proofs via `DARK_DEX_KZG_S_G2_BYTES` (`c6 02 8a cf …`),
-// so the two constants now DIFFER by design (Hermez for deposit, chain for
+// verifies chain-ceremony proofs via `DARK_DEX_KZG_S_G2_BYTES` (`c6 02 8a cf
+// …`), so the two constants now DIFFER by design (Hermez for deposit, chain for
 // Dark DEX). Same g1/g2 generators, different tau.
 
 /// G1 generator point `g[0]` from the KZG SRS, 64 bytes (BN256 G1Affine
@@ -67,8 +67,9 @@ pub(crate) const KZG_G2_BYTES: [u8; 128] = [
 ///
 /// NOTE: this now DIFFERS from `DARK_DEX_KZG_S_G2_BYTES` below (still the chain
 /// ceremony `c6 02 8a cf …`). The legacy Dark DEX `ZKHALO2VERIFY` fixtures were
-/// keyed on the chain ceremony and are verified via `build_kzg_verifier_params`,
-/// which reads `DARK_DEX_KZG_S_G2_BYTES` — untouched by this deposit-side swap.
+/// keyed on the chain ceremony and are verified via
+/// `build_kzg_verifier_params`, which reads `DARK_DEX_KZG_S_G2_BYTES` —
+/// untouched by this deposit-side swap.
 pub(crate) const KZG_S_G2_BYTES: [u8; 128] = [
     146, 143, 175, 179, 208, 204, 61, 215, 22, 199, 254, 90, 54, 185, 141, 10, 219, 108, 103, 2,
     251, 231, 149, 55, 125, 126, 14, 251, 159, 31, 33, 6, 54, 216, 149, 107, 43, 132, 49, 141, 221,
