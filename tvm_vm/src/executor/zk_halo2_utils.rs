@@ -16,20 +16,17 @@
 // they carry no ceremony information.
 //
 // `KZG_S_G2_BYTES` (= `[s] · G2`, the toxic-waste-scaled G2) is the ONLY
-// ceremony-specific point, and it is **NOT** from the Hermez Perpetual Powers
-// of Tau. It is the trapdoor commitment of the **Acki Nacki chain's own KZG
-// ceremony** — the same `[s] · G2` carried by the chain's `kzg_bn254_19.srs`
-// and by the bridge `deposit-prover`'s `params/kzg_bn254_{k}.srs` files (which
-// are downsized from it, tau-preserving). Deposit / bridge proofs only verify
-// here if they were keyed on that chain ceremony.
+// ceremony-specific point. The deposit (`ZKHALO2VERIFYWITHVK`) path is keyed on
+// the **Hermez Perpetual Powers of Tau** ceremony (2026-07-23):
+// `deposit-prover` proves against `data/kzg_params_{k}.srs` (Hermez), so
+// `KZG_S_G2_BYTES` below is the matching Hermez `[s]·G2` (begins `92 8f af b3
+// …`, ends `… 5c 69 00`). The Acki Nacki chain ceremony (`kzg_bn254_19.srs`,
+// `c6 02 8a cf …`) is NO LONGER used for deposit/bridge proofs.
 //
-// An earlier version of this comment claimed these points came from the Hermez
-// `powersOfTau28_hez_final_20.ptau` (halo2 raw SRS SHA-256 `80394564…`). That
-// is empirically false: the last 128 bytes of that exact file (= `[s]·G2`) are
-// `928fafb3 d0cc … b3be 595c 6900`, whereas `KZG_S_G2_BYTES` below begins
-// `c6028acf 4420 …` and ends `… 7397 d666 4515`. Same g1/g2 generators,
-// DIFFERENT tau. (Verified against the bridge repo's chain SRS, which matches
-// these bytes, and its Hermez SRS, which does not.)
+// The legacy Dark DEX `ZKHALO2VERIFY` (0xC7 0x49) path is unchanged: it still
+// verifies chain-ceremony proofs via `DARK_DEX_KZG_S_G2_BYTES` (`c6 02 8a cf
+// …`), so the two constants now DIFFER by design (Hermez for deposit, chain for
+// Dark DEX). Same g1/g2 generators, different tau.
 
 /// G1 generator point `g[0]` from the KZG SRS, 64 bytes (BN256 G1Affine
 /// uncompressed). Shared verifier-only material; together with `KZG_G2_BYTES`
@@ -61,17 +58,26 @@ pub(crate) const KZG_G2_BYTES: [u8; 128] = [
 
 /// `[s] · G2` from the KZG SRS (toxic-waste-scaled G2), 128 bytes.
 ///
-/// **Ceremony-specific.** Matches the `halo2-kzg-srs` params the
-/// `deposit-prover` fixtures and the legacy Dark DEX `ZKHALO2VERIFY` proofs
-/// were generated against (see `DARK_DEX_KZG_S_G2_BYTES` below — same bytes).
+/// **Ceremony-specific — Hermez Perpetual Powers of Tau** (2026-07-23). The
+/// deposit (`ZKHALO2VERIFYWITHVK`) path is keyed on the **Hermez** ceremony:
+/// `deposit-prover` produces proofs against `data/kzg_params_{k}.srs` (Hermez),
+/// and this constant is the matching `[s]·G2` (begins `92 8f af b3 …`, ends
+/// `… 5c 69 00`). The Acki Nacki chain ceremony SRS is **no longer used** for
+/// deposit/bridge proofs.
+///
+/// NOTE: this now DIFFERS from `DARK_DEX_KZG_S_G2_BYTES` below (still the chain
+/// ceremony `c6 02 8a cf …`). The legacy Dark DEX `ZKHALO2VERIFY` fixtures were
+/// keyed on the chain ceremony and are verified via
+/// `build_kzg_verifier_params`, which reads `DARK_DEX_KZG_S_G2_BYTES` —
+/// untouched by this deposit-side swap.
 pub(crate) const KZG_S_G2_BYTES: [u8; 128] = [
-    198, 2, 138, 207, 68, 32, 0, 219, 25, 59, 202, 251, 98, 69, 141, 250, 139, 224, 102, 28, 120,
-    209, 190, 56, 39, 184, 110, 173, 16, 37, 246, 4, 247, 119, 82, 189, 13, 15, 148, 115, 180, 255,
-    211, 139, 77, 173, 84, 51, 12, 6, 85, 171, 152, 202, 243, 42, 190, 151, 134, 220, 160, 12, 159,
-    38, 45, 111, 242, 166, 81, 163, 42, 141, 88, 61, 242, 122, 139, 118, 253, 115, 4, 61, 229, 102,
-    162, 17, 57, 112, 221, 213, 115, 157, 229, 203, 21, 22, 124, 133, 139, 91, 90, 14, 242, 86,
-    211, 197, 224, 251, 73, 198, 176, 240, 176, 131, 18, 138, 95, 92, 74, 66, 227, 79, 115, 151,
-    214, 102, 69, 21,
+    146, 143, 175, 179, 208, 204, 61, 215, 22, 199, 254, 90, 54, 185, 141, 10, 219, 108, 103, 2,
+    251, 231, 149, 55, 125, 126, 14, 251, 159, 31, 33, 6, 54, 216, 149, 107, 43, 132, 49, 141, 221,
+    99, 155, 38, 126, 180, 50, 149, 239, 220, 11, 16, 15, 186, 198, 106, 82, 105, 151, 149, 183,
+    45, 32, 9, 105, 170, 202, 180, 88, 37, 29, 4, 128, 1, 190, 150, 175, 237, 242, 120, 78, 60,
+    141, 127, 0, 15, 196, 236, 102, 139, 237, 187, 190, 229, 17, 1, 45, 83, 141, 248, 233, 227,
+    185, 78, 7, 105, 177, 147, 7, 15, 27, 139, 126, 59, 254, 173, 204, 133, 136, 15, 211, 86, 179,
+    190, 89, 92, 105, 0,
 ];
 
 // ============================================================================
