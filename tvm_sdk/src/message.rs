@@ -26,6 +26,7 @@ pub enum MessageType {
     ExternalInbound,
     ExternalOutbound,
     ExternalOutboundV2,
+    CrossDappMessage,
     #[default]
     Unknown,
 }
@@ -56,6 +57,7 @@ impl Message {
             CommonMsgInfo::ExtInMsgInfo(_) => MessageType::ExternalInbound,
             CommonMsgInfo::ExtOutMsgInfo(_) => MessageType::ExternalOutbound,
             CommonMsgInfo::ExtOutMsgInfoV2(_) => MessageType::ExternalOutboundV2,
+            CommonMsgInfo::CrossDappMessageInfo(_) => MessageType::CrossDappMessage,
         };
 
         Ok(Self { id, body, msg_type, value })

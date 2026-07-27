@@ -13,6 +13,7 @@
 use std::str::FromStr;
 
 use tvm_block::Deserializable;
+use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_types::UInt256;
 use tvm_types::base64_decode;
@@ -41,6 +42,16 @@ pub fn deserialize_cell_from_base64(
     })?;
 
     Ok((bytes, cell))
+}
+
+pub fn deserialize_message_from_cell(cell: tvm_types::Cell, name: &str) -> ClientResult<Message> {
+    let res = Message::construct_from_cell(cell);
+    res.map_err(|err| {
+        let tip =
+            "Please check that you have specified the message's BOC, not body, as a parameter.";
+        let tip_full = format!(".\nTip: {}", tip);
+        Error::invalid_boc(format!("cannot deserialize {} from BOC: {}{}", name, err, tip_full))
+    })
 }
 
 pub fn deserialize_object_from_cell<S: Deserializable>(

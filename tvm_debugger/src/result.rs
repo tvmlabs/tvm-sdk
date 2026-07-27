@@ -69,7 +69,7 @@ impl ExecutionResult {
 
     pub fn add_out_message(&mut self, message: Message) {
         match message.header() {
-            CommonMsgInfo::IntMsgInfo(_) => {
+            CommonMsgInfo::IntMsgInfo(_) | CommonMsgInfo::CrossDappMessageInfo(_) => {
                 let state_init = message
                     .state_init()
                     .map(|state_init| base64_encode(state_init.write_to_bytes().unwrap()));

@@ -462,29 +462,58 @@ pub trait TransactionExecutor {
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
         let libs_disabled = !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
         let is_external = if let Some(ref msg) = msg {
-            if let Some(header) = msg.int_header() {
-                log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
-                if result_acc.is_none() {
-                    if let Some(new_acc) =
-                        account_from_message(msg, msg_balance, true, init_code_hash, libs_disabled)
-                    {
-                        result_acc = new_acc;
-                        result_acc.set_last_paid(if !is_special {
-                            smc_info.unix_time()
-                        } else {
-                            0
-                        });
+            match msg.header() {
+                CommonMsgInfo::IntMsgInfo(header) => {
+                    log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
+                    if result_acc.is_none() {
+                        if let Some(new_acc) = account_from_message(
+                            msg,
+                            msg_balance,
+                            true,
+                            init_code_hash,
+                            libs_disabled,
+                        ) {
+                            result_acc = new_acc;
+                            result_acc.set_last_paid(if !is_special {
+                                smc_info.unix_time()
+                            } else {
+                                0
+                            });
 
-                        // if there was a balance in message (not bounce), then account state at
-                        // least become uninit
-                        result_acc.uninit_account();
-                        *acc = result_acc.clone();
+                            // if there was a balance in message (not bounce), then account state at
+                            // least become uninit
+                            result_acc.uninit_account();
+                            *acc = result_acc.clone();
+                        }
                     }
+                    false
                 }
-                false
-            } else {
-                log::debug!(target: "executor", "msg external");
-                true
+                CommonMsgInfo::CrossDappMessageInfo(header) => {
+                    log::debug!(target: "executor", "msg cross-dapp, bounce: {}, bounced: {}", header.bounce, header.bounced);
+                    if result_acc.is_none() {
+                        if let Some(new_acc) = account_from_cross_dapp_message(
+                            msg,
+                            msg_balance,
+                        ) {
+                            result_acc = new_acc;
+                            result_acc.set_last_paid(if !is_special {
+                                smc_info.unix_time()
+                            } else {
+                                0
+                            });
+
+                            // if there was a balance in message (not bounce), then account state at
+                            // least become uninit
+                            result_acc.uninit_account();
+                            *acc = result_acc.clone();
+                        }
+                    }
+                    false
+                }
+                _ => {
+                    log::debug!(target: "executor", "msg external");
+                    true
+                }
             }
         } else {
             debug_assert!(!result_acc.is_none());
@@ -1067,8 +1096,12 @@ pub trait TransactionExecutor {
             }
         }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
-            if let Some(header) = out_msg.int_header_mut() {
-                header.set_src_dapp_id(message_src_dapp_id.clone());
+            if let Err(err_code) =
+                normalize_and_validate_out_msg_dapp_ids(&mut out_msg, &message_src_dapp_id)
+            {
+                if process_err_code(err_code, i, &mut phase)? {
+                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                }
             }
             if let Some(header) = out_msg.ext_out_header_v2_mut() {
                 header.set_src_dapp_id(message_src_dapp_id.clone());
@@ -1113,10 +1146,8 @@ pub trait TransactionExecutor {
                 if process_err_code(err_code, i, &mut phase)? {
                     return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
                 }
-            } else {
-                if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
-                }
+            } else if process_err_code(RESULT_CODE_NOT_ENOUGH_GRAMS, i, &mut phase)? {
+                return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
             }
         }
 
@@ -1175,34 +1206,65 @@ pub trait TransactionExecutor {
         tr: &mut Transaction,
         my_addr: &MsgAddressInt,
     ) -> Result<(TrBouncePhase, Option<Message>)> {
-        let header = msg.int_header().ok_or_else(|| error!("Not found msg internal header"))?;
-        if !header.bounce {
-            fail!("Bounce flag not set")
-        }
-        // create bounced message and swap src and dst addresses
-        let mut header = header.clone();
-        header.set_exchange(false);
-        let msg_src =
-            header.src_ref().ok_or_else(|| error!("Not found src in message header"))?.clone();
-        let msg_dst = std::mem::replace(&mut header.dst, msg_src);
-        header.set_src(msg_dst);
-        match check_rewrite_dest_addr(&header.dst, self.config(), my_addr) {
-            Ok(new_dst) => header.dst = new_dst,
-            Err(_) => {
-                log::warn!(target: "executor", "Incorrect destination address in a bounced message {}", header.dst);
-                fail!("Incorrect destination address in a bounced message {}", header.dst)
+        let mut bounce_msg = match msg.header() {
+            CommonMsgInfo::IntMsgInfo(header) => {
+                if !header.bounce {
+                    fail!("Bounce flag not set")
+                }
+                let mut header = header.clone();
+                header.set_exchange(false);
+                let msg_src = header
+                    .src_ref()
+                    .ok_or_else(|| error!("Not found src in message header"))?
+                    .clone();
+                let msg_dst = std::mem::replace(&mut header.dst, msg_src);
+                header.set_src(msg_dst);
+                match check_rewrite_dest_addr(&header.dst, self.config(), my_addr) {
+                    Ok(new_dst) => header.dst = new_dst,
+                    Err(_) => {
+                        log::warn!(target: "executor", "Incorrect destination address in a bounced message {}", header.dst);
+                        fail!("Incorrect destination address in a bounced message {}", header.dst)
+                    }
+                }
+                header.ihr_disabled = true;
+                header.bounce = false;
+                header.bounced = true;
+                header.ihr_fee = Grams::zero();
+                Message::with_int_header(header)
             }
-        }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
+                if !header.bounce {
+                    fail!("Bounce flag not set")
+                }
+                let mut header = header.clone();
+                header.set_exchange(false);
+                let msg_src = header
+                    .src_ref()
+                    .ok_or_else(|| error!("Not found src in cross-dapp message header"))?
+                    .clone();
+                let msg_dst = std::mem::replace(&mut header.dst, msg_src);
+                header.set_src(msg_dst);
+                std::mem::swap(&mut header.src_dapp_id, &mut header.dst_dapp_id);
+                match check_rewrite_dest_addr(&header.dst, self.config(), my_addr) {
+                    Ok(new_dst) => header.dst = new_dst,
+                    Err(_) => {
+                        log::warn!(target: "executor", "Incorrect destination address in a bounced cross-dapp message {}", header.dst);
+                        fail!(
+                            "Incorrect destination address in a bounced cross-dapp message {}",
+                            header.dst
+                        )
+                    }
+                }
+                header.ihr_disabled = true;
+                header.bounce = false;
+                header.bounced = true;
+                header.ihr_fee = Grams::zero();
+                Message::with_cross_dapp_header(header)
+            }
+            _ => fail!("Not found internal or cross-dapp message header"),
+        };
 
         let is_masterchain = msg.is_masterchain();
-
-        // create header for new bounced message and swap src and dst addresses
-        header.ihr_disabled = true;
-        header.bounce = false;
-        header.bounced = true;
-        header.ihr_fee = Grams::zero();
-
-        let mut bounce_msg = Message::with_int_header(header);
         if self.config().has_capability(GlobalCapabilities::CapBounceMsgBody) {
             let mut builder = (-1i32).write_to_new_cell()?;
             if let Some(body) = msg.body() {
@@ -1249,6 +1311,10 @@ pub trait TransactionExecutor {
         remaining_msg_balance.grams.sub(compute_phase_fees)?;
         match bounce_msg.header_mut() {
             CommonMsgInfo::IntMsgInfo(header) => {
+                header.value = remaining_msg_balance.clone();
+                header.fwd_fee = fwd_fees;
+            }
+            CommonMsgInfo::CrossDappMessageInfo(header) => {
                 header.value = remaining_msg_balance.clone();
                 header.fwd_fee = fwd_fees;
             }
@@ -1385,6 +1451,9 @@ fn compute_new_state(
             if let Some(state_init) = in_msg.state_init() {
                 match in_msg.body() {
                     Some(mut data) => {
+                        if in_msg.is_cross_dapp() {
+                            return Ok(Some(ComputeSkipReason::BadState));
+                        }
                         if in_msg.is_internal() {
                             if let Ok(function_id) = data.get_next_u32() {
                                 log::trace!(target: "executor", "{} function_id", function_id);
@@ -1800,7 +1869,7 @@ fn outmsg_action_handler(
             );
             return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
         } else {
-            // reciever will pay the fees
+            // receiver will pay the fees
             int_header.value.grams -= total_fwd_fees;
         }
 
@@ -1810,6 +1879,103 @@ fn outmsg_action_handler(
         fwd_mine_fee = compute_fwd_fee;
         total_fwd_fees = compute_fwd_fee;
         result_value = CurrencyCollection::from_grams(compute_fwd_fee);
+    } else if let Some(int_header) = msg.cross_dapp_header_mut() {
+        let fwd_prices = fwd_prices_basic.clone();
+        match check_rewrite_dest_addr(&int_header.dst, config, my_addr) {
+            Ok(new_dst) => int_header.dst = new_dst,
+            Err(type_error) => {
+                if type_error == IncorrectCheckRewrite::Anycast {
+                    log::warn!(target: "executor", "Incorrect destination anycast address {}", int_header.dst);
+                    return Err(skip.map(|_| RESULT_CODE_ANYCAST).unwrap_or_default());
+                } else {
+                    log::warn!(target: "executor", "Incorrect destination address {}", int_header.dst);
+                    return Err(skip
+                        .map(|_| RESULT_CODE_INCORRECT_DST_ADDRESS)
+                        .unwrap_or_default());
+                }
+            }
+        }
+
+        int_header.bounced = false;
+        result_value = int_header.value.clone();
+
+        if cfg!(feature = "ihr_disabled") {
+            int_header.ihr_disabled = true;
+        }
+        if !int_header.ihr_disabled {
+            let compute_ihr_fee = fwd_prices
+                .ihr_fee_checked(&compute_fwd_fee)
+                .map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+            if int_header.ihr_fee < compute_ihr_fee {
+                int_header.ihr_fee = compute_ihr_fee
+            }
+        } else {
+            int_header.ihr_fee = Grams::zero();
+        }
+        let fwd_fee = *std::cmp::max(&int_header.fwd_fee, &compute_fwd_fee);
+        fwd_mine_fee =
+            fwd_prices.mine_fee_checked(&fwd_fee).map_err(|_| RESULT_CODE_UNSUPPORTED)?;
+        total_fwd_fees = fwd_fee + int_header.ihr_fee;
+
+        let fwd_remain_fee = fwd_fee - fwd_mine_fee;
+
+        if (mode & SENDMSG_EXCHANGE_ECC) != 0 {
+            int_header.set_exchange(true);
+        } else {
+            int_header.set_exchange(false);
+            log::debug!(target: "executor", "Sanitizing is_exchange flag: forcing to false");
+        }
+
+        if (mode & SENDMSG_ALL_BALANCE) != 0 {
+            // send all remaining account balance
+            result_value = acc_balance.clone();
+            //    if need_to_reserve != 0 {
+            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
+            // Ok(true) => (),
+            // Ok(false) => {
+            // result_value.grams = Grams::zero();
+            // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+            // }
+            // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
+            // }
+            // }
+            int_header.value = result_value.clone();
+
+            mode &= !SENDMSG_PAY_FEE_SEPARATELY;
+        }
+        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+                    // send all remainig balance of inbound message
+                    result_value.add(msg_balance).ok();
+                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                        if &result_value.grams < compute_phase_fees {
+                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+                        }
+                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                            RESULT_CODE_ACTIONLIST_INVALID
+                        })?;
+                    }
+                    int_header.value = result_value.clone();
+                }
+        */
+        if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
+            // we must pay the fees, sum them with msg value
+            result_value.grams += total_fwd_fees;
+        } else if int_header.value.grams < total_fwd_fees {
+            // msg value is too small, reciever cannot pay the fees
+            log::warn!(
+                target: "executor",
+                "msg balance {} is too small, cannot pay fwd+ihr fees: {}",
+                int_header.value.grams, total_fwd_fees
+            );
+            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
+        } else {
+            // receiver will pay the fees
+            int_header.value.grams -= total_fwd_fees;
+        }
+
+        // set evaluated fees and value back to msg
+        int_header.fwd_fee = fwd_remain_fee;
     } else {
         return Err(-1);
     }
@@ -2052,6 +2218,34 @@ fn check_libraries(init: &StateInit, disable_set_lib: bool, text: &str, msg: &Me
     }
 }
 
+fn normalize_and_validate_out_msg_dapp_ids(
+    msg: &mut Message,
+    effective_src_dapp_id: &Option<UInt256>,
+) -> std::result::Result<(), i32> {
+    if let Some(header) = msg.int_header_mut() {
+        header.set_src_dapp_id(effective_src_dapp_id.clone());
+        if let Some(dst_dapp_id) = header.dst_dapp_id() {
+            if effective_src_dapp_id.as_ref() != Some(dst_dapp_id) {
+                log::warn!(
+                    target: "executor",
+                    "Incorrect internal out message dst dapp id {:?}, effective src dapp id {:?}",
+                    dst_dapp_id,
+                    effective_src_dapp_id
+                );
+                return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
+            }
+        }
+    } else if let Some(header) = msg.cross_dapp_header_mut() {
+        let Some(effective_src_dapp_id) = effective_src_dapp_id else {
+            log::warn!(target: "executor", "Cross-dapp out message produced without effective src dapp id");
+            return Err(RESULT_CODE_INCORRECT_DST_ADDRESS);
+        };
+        header.set_src_dapp_id(effective_src_dapp_id.clone());
+    }
+
+    Ok(())
+}
+
 /// Calculate new account according to inbound message.
 /// If message has no value, account will not created.
 /// If hash of state_init is equal to account address (or flag check address is
@@ -2102,6 +2296,31 @@ fn account_from_message(
     }
 }
 
+
+/// Calculate new account according to inbound message.
+/// If message has no value, account will not created.
+fn account_from_cross_dapp_message(
+    msg: &Message,
+    msg_remaining_balance: &CurrencyCollection,
+) -> Option<Account> {
+    let hdr = msg.cross_dapp_header()?;
+    if msg.state_init().is_some() {
+        log::error!("Cross-dapp message should not be able to deploy account");
+        return None;
+    }
+    if hdr.bounce {
+        log::trace!(
+            target: "executor",
+            "Account will not be created. Value of {:x} message will be returned",
+            msg.hash().unwrap_or_default()
+        );
+        None
+    } else {
+        Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
+    }
+}
+
+
 fn balance_to_string(balance: &CurrencyCollection) -> String {
     let value = balance.grams.as_u128();
     format!(
@@ -2130,6 +2349,114 @@ fn action_type(action: &OutAction) -> String {
 
 #[cfg(test)]
 mod tests {
+    use tvm_block::CrossDappMessageHeader;
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::InternalMessageHeader;
+    use tvm_block::MsgAddressExt;
+    use tvm_block::SENDMSG_ALL_BALANCE;
+
+    use super::*;
+
+    fn dapp_id(value: u8) -> UInt256 {
+        UInt256::from([value; 32])
+    }
+
+    fn internal_message(dst_dapp_id: Option<UInt256>) -> Message {
+        let mut header = InternalMessageHeader::default();
+        header.set_dst_dapp_id(dst_dapp_id);
+        Message::with_int_header(header)
+    }
+
+    fn cross_dapp_message(src_dapp_id: UInt256, dst_dapp_id: UInt256) -> Message {
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src_dapp_id(src_dapp_id);
+        header.set_dst_dapp_id(dst_dapp_id);
+        Message::with_cross_dapp_header(header)
+    }
+
+    #[test]
+    fn normalizes_internal_out_message_src_dapp_id() {
+        let effective_src_dapp_id = Some(dapp_id(2));
+        let mut msg = internal_message(effective_src_dapp_id.clone());
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
+
+        assert_eq!(msg.int_header().unwrap().src_dapp_id(), &effective_src_dapp_id);
+    }
+
+    #[test]
+    fn rejects_internal_out_message_to_other_dapp() {
+        let effective_src_dapp_id = Some(dapp_id(1));
+        let mut msg = internal_message(Some(dapp_id(2)));
+
+        let err =
+            normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap_err();
+
+        assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
+    }
+
+    #[test]
+    fn allows_internal_out_message_without_dst_dapp_id() {
+        let mut msg = internal_message(None);
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &Some(dapp_id(1))).unwrap();
+
+        assert_eq!(msg.int_header().unwrap().dst_dapp_id(), &None);
+    }
+
+    #[test]
+    fn normalizes_cross_dapp_out_message_src_dapp_id() {
+        let effective_src_dapp_id = Some(dapp_id(1));
+        let mut msg = cross_dapp_message(dapp_id(9), dapp_id(2));
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
+
+        let header = msg.cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), effective_src_dapp_id.as_ref().unwrap());
+        assert_eq!(header.dst_dapp_id(), &dapp_id(2));
+    }
+
+    #[test]
+    fn allows_cross_dapp_out_message_from_deploy_effective_src_dapp_id() {
+        let deploy_src_dapp_id = Some(dapp_id(7));
+        let mut msg = cross_dapp_message(dapp_id(9), dapp_id(2));
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &deploy_src_dapp_id).unwrap();
+
+        assert_eq!(
+            msg.cross_dapp_header().unwrap().src_dapp_id(),
+            deploy_src_dapp_id.as_ref().unwrap()
+        );
+    }
+
+    #[test]
+    fn allows_cross_dapp_out_message_to_same_dapp() {
+        let effective_src_dapp_id = Some(dapp_id(1));
+        let mut msg = cross_dapp_message(dapp_id(9), dapp_id(1));
+
+        normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
+
+        let header = msg.cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), effective_src_dapp_id.as_ref().unwrap());
+        assert_eq!(header.dst_dapp_id(), effective_src_dapp_id.as_ref().unwrap());
+    }
+
+    #[test]
+    fn rejects_cross_dapp_out_message_without_effective_src_dapp_id() {
+        let mut msg = cross_dapp_message(dapp_id(1), dapp_id(2));
+
+        let err = normalize_and_validate_out_msg_dapp_ids(&mut msg, &None).unwrap_err();
+
+        assert_eq!(err, RESULT_CODE_INCORRECT_DST_ADDRESS);
+    }
+
+    use std::sync::Arc;
+    use std::sync::Mutex;
+    use std::sync::atomic::AtomicU64;
+    use std::sync::atomic::Ordering;
+    use std::time::Duration;
+    use std::time::Instant;
+
     use tvm_block::AccStatusChange;
     use tvm_block::Account;
     use tvm_block::AccountStatus;
@@ -2142,7 +2469,6 @@ mod tests {
     use tvm_block::CurrencyCollection;
     use tvm_block::GlobalVersion;
     use tvm_block::HashUpdate;
-    use tvm_block::InternalMessageHeader;
     use tvm_block::Message;
     use tvm_block::MsgAddressInt;
     use tvm_block::MsgForwardPrices;
@@ -2166,7 +2492,6 @@ mod tests {
     use tvm_vm::stack::Stack;
     use tvm_vm::stack::StackItem;
 
-    use super::*;
     use crate::BlockchainConfig;
     use crate::OrdinaryTransactionExecutor;
     use crate::blockchain_config::TONDefaultConfig;
@@ -2640,6 +2965,46 @@ mod tests {
         stack.push(StackItem::int(2));
         stack.push(StackItem::int(1_000_000_000));
         stack
+    }
+
+    fn run_single_send_action(out_msg: Message, mode: u8) -> ActionPhaseResult {
+        let executor = DummyExecutor::new();
+        let mut account = active_account_with_code(8, byte_cell(0xaa));
+        let mut tx = Transaction::with_address_and_status(address(8).address(), account.status());
+        let original_balance = account.balance().cloned().unwrap();
+        let mut acc_balance = original_balance.clone();
+        let mut msg_balance = CurrencyCollection::default();
+        let mut actions = OutActions::default();
+        let mut minted_shell = 0;
+
+        actions.push_back(OutAction::new_send(mode, out_msg));
+
+        executor
+            .action_phase_with_copyleft(
+                &mut tx,
+                &mut account,
+                &original_balance,
+                &mut acc_balance,
+                &mut msg_balance,
+                &Grams::zero(),
+                actions.serialize().unwrap(),
+                None,
+                &address(8),
+                false,
+                0,
+                &mut minted_shell,
+                Grams::zero(),
+                Some(UInt256::with_array([0x31; 32])),
+            )
+            .unwrap()
+    }
+
+    fn assert_forged_src_rejected(out_msg: Message, mode: u8) {
+        let result = run_single_send_action(out_msg, mode);
+
+        assert!(!result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.result_code, RESULT_CODE_INCORRECT_SRC_ADDRESS);
+        assert!(result.messages.is_empty());
     }
 
     #[test]
@@ -3124,6 +3489,112 @@ mod tests {
         assert!(result.phase.success, "{:?}", result.phase);
         assert_eq!(result.messages.len(), 1);
         assert_eq!(result.messages[0].int_header().unwrap().src_dapp_id(), &Some(dapp_id));
+    }
+
+    #[test]
+    fn action_phase_overwrites_internal_out_message_forged_src_dapp_id() {
+        let effective_dapp_id = UInt256::with_array([0x31; 32]);
+        let forged_dapp_id = UInt256::with_array([0x99; 32]);
+        let mut header = InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        );
+        header.set_src_dapp_id(Some(forged_dapp_id));
+        let out_msg = Message::with_int_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        assert_eq!(
+            result.messages[0].int_header().unwrap().src_dapp_id(),
+            &Some(effective_dapp_id)
+        );
+    }
+
+    #[test]
+    fn action_phase_rejects_internal_out_message_to_forged_dst_dapp_id() {
+        let forged_dst_dapp_id = UInt256::with_array([0x99; 32]);
+        let mut header = InternalMessageHeader::with_addresses(
+            address(8),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        );
+        header.set_dst_dapp_id(Some(forged_dst_dapp_id));
+        let out_msg = Message::with_int_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(!result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.phase.result_code, RESULT_CODE_INCORRECT_DST_ADDRESS);
+        assert!(result.messages.is_empty());
+    }
+
+    #[test]
+    fn action_phase_overwrites_cross_dapp_out_message_forged_src_dapp_id() {
+        let effective_dapp_id = UInt256::with_array([0x31; 32]);
+        let forged_src_dapp_id = UInt256::with_array([0x99; 32]);
+        let dst_dapp_id = UInt256::with_array([0x32; 32]);
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src(address(8));
+        header.set_dst(masterchain_address(2));
+        header.set_src_dapp_id(forged_src_dapp_id);
+        header.set_dst_dapp_id(dst_dapp_id.clone());
+        header.value = CurrencyCollection::with_grams(100_000_000);
+        let out_msg = Message::with_cross_dapp_header(header);
+
+        let result = run_single_send_action(out_msg, 0);
+
+        assert!(result.phase.success, "{:?}", result.phase);
+        assert_eq!(result.messages.len(), 1);
+        let header = result.messages[0].cross_dapp_header().unwrap();
+        assert_eq!(header.src_dapp_id(), &effective_dapp_id);
+        assert_eq!(header.dst_dapp_id(), &dst_dapp_id);
+    }
+
+    #[test]
+    fn action_phase_rejects_internal_out_message_with_forged_src_address() {
+        let out_msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(9),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        ));
+
+        assert_forged_src_rejected(out_msg, 0);
+    }
+
+    #[test]
+    fn action_phase_rejects_cross_dapp_out_message_with_forged_src_address() {
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src(address(9));
+        header.set_dst(masterchain_address(2));
+        header.set_src_dapp_id(UInt256::with_array([0x31; 32]));
+        header.set_dst_dapp_id(UInt256::with_array([0x32; 32]));
+        header.value = CurrencyCollection::with_grams(100_000_000);
+        let out_msg = Message::with_cross_dapp_header(header);
+
+        assert_forged_src_rejected(out_msg, 0);
+    }
+
+    #[test]
+    fn action_phase_rejects_ext_out_message_with_forged_src_address() {
+        let ext_dst = MsgAddressExt::with_extern(SliceData::new(vec![0xaa])).unwrap();
+        let out_msg =
+            Message::with_ext_out_header(ExtOutMessageHeader::with_addresses(address(9), ext_dst));
+
+        assert_forged_src_rejected(out_msg, 0);
+    }
+
+    #[test]
+    fn action_phase_rejects_send_all_balance_message_with_forged_src_address() {
+        let out_msg = Message::with_int_header(InternalMessageHeader::with_addresses(
+            address(9),
+            masterchain_address(2),
+            CurrencyCollection::with_grams(100_000_000),
+        ));
+
+        assert_forged_src_rejected(out_msg, SENDMSG_ALL_BALANCE);
     }
 
     #[test]

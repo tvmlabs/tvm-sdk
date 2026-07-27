@@ -1377,7 +1377,7 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
 
     let mut addresses = vec![];
     let lines = std::io::BufReader::new(file).lines();
-    for line in lines.flatten() {
+    for line in lines.map_while(Result::ok) {
         if !line.is_empty() && !line.starts_with('#') {
             addresses.push(SdkAddress::validate(&line)?);
         }
@@ -1392,7 +1392,7 @@ pub async fn sequence_diagram_command(matches: &ArgMatches, config: &Config) -> 
     })
 }
 
-fn infer_address_width(input: &Vec<String>, min_width: usize) -> Result<usize, String> {
+fn infer_address_width(input: &[String], min_width: usize) -> Result<usize, String> {
     let max_width = input.iter().fold(0, |acc, item| std::cmp::max(acc, item.len()));
     let addresses =
         input.iter().map(|address| format!("{:>max_width$}", address)).collect::<Vec<_>>();

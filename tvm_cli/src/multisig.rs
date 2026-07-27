@@ -382,7 +382,7 @@ impl MultisigArgs {
             Some(self.keys.clone()),
             false,
             None,
-            self.dapp_id.as_ref().map(|x| x.as_str()),
+            self.dapp_id.as_deref(),
         )
         .await
     }

@@ -13,8 +13,17 @@
 //
 
 #![allow(clippy::from_str_radix_10)]
+#![allow(clippy::extra_unused_lifetimes)]
+#![allow(clippy::enum_variant_names)]
+#![allow(clippy::explicit_counter_loop)]
+#![allow(clippy::needless_update)]
 #![allow(clippy::or_fun_call)]
+#![allow(clippy::only_used_in_recursion)]
 #![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::unnecessary_literal_unwrap)]
+#![allow(clippy::unnecessary_unwrap)]
+#![allow(clippy::upper_case_acronyms)]
 
 use std::str::FromStr;
 

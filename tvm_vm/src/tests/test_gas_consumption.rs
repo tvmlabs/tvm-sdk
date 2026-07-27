@@ -52,10 +52,10 @@ fn test_simple_out_of_gas() {
     assert_eq!(engine.gas_remaining(), initial_gas);
 
     // engine should fail with OutOfGas
-    if let Ok(_) = engine.execute() {
+    if engine.execute().is_ok() {
         eprintln!("Gas remaining {}", engine.gas_remaining());
         eprintln!("Gas used {}", engine.gas_used());
-        assert!(false, "Should be OutOfGas");
+        panic!("Should be OutOfGas");
     }
     assert!(engine.gas_remaining() < 0, "Expected out of gas");
 }

@@ -206,8 +206,23 @@ pub async fn get_account(
                     None => "null".to_owned(),
                 };
 
+                let ecc_balance = acc
+                    .balance()
+                    .map(|balance| {
+                        let mut mapping = BTreeMap::new();
+                        balance
+                            .other
+                            .iterate_with_keys(|k: u32, v| {
+                                mapping.insert(k, v.value().to_string());
+                                Ok(true)
+                            })
+                            .unwrap();
+                        json!(mapping)
+                    })
+                    .unwrap_or(serde_json::Value::Null);
+
                 if config.is_json {
-                    json_res = json_account(
+                    let mut acc_json = json_account(
                         Some(acc_type),
                         Some(address.clone()),
                         Some(balance),
@@ -218,6 +233,9 @@ pub async fn get_account(
                         None,
                         *state_timestamp,
                     );
+                    acc_json["dapp_id"] = json!(dapp_id);
+                    acc_json["ecc_balance"] = ecc_balance;
+                    json_res = acc_json;
                 } else {
                     print_account(
                         config,
