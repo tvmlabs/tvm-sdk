@@ -432,7 +432,8 @@ fn fifo_cache_reused_across_two_invocations() {
     }
 }
 
-// Deposit RLC (v2 VkBlob, 11 public inputs) — three-operand ABI
+// Deposit RLC (v2 VkBlob, 12 public inputs — chainId added at index 4 on
+// 2026-07-22, bridge commit c0da8a3) — three-operand ABI
 // ---------------------------------------------------------------------------
 
 const DEPOSIT_SET_DIR: &str = "halo2_test_data/deposit_10proofs";

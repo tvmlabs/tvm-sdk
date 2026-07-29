@@ -84,11 +84,15 @@ and need to be rebuilt against `kzg_bn254_20.srs` (Hermez):
 
 **Deposit circuit fixtures (your circuit, your fixtures):**
 * `deposit_10proofs/*` — the 10-proof deposit-event fixture pack
-  (`EthCircuitImpl<Fr, DepositEventCircuitV2>`, 11 public inputs).
-* `deposit_rlc_*.bin` — any `deposit_rlc_proof.bin`,
-  `deposit_rlc_instances.bin`, `deposit_rlc_vk.bin`, and the packed
-  `deposit_vk_blob.bin` (the `VkBlob`-format wrapper carrying the VK
-  plus the RLC `EthCircuitParams` JSON).
+  (`EthCircuitImpl<Fr, DepositEventCircuitV2>`, 12 public inputs since
+  2026-07-22 bridge commit `c0da8a3` — `chainId` inserted at index 4).
+* ~~`deposit_rlc_*.bin`~~ — the singleton `deposit_rlc_proof.bin`,
+  `deposit_rlc_public_inputs.bin`, `deposit_rlc_vk_blob.bin`,
+  `deposit_rlc_bundle.bin` files were **removed on 2026-07-29**
+  (branch `feature/deposit_circuit_chain_id_pi`). They were unreferenced
+  by any test — the `round_trip_deposit_rlc_*` tests in
+  `test_halo2_with_vk.rs` actually load from `deposit_10proofs/proof_00/*`,
+  which supplies the same VK+proof+PI triple in the fresh 12-PI layout.
 
 **Fallback (Circuit 1B) fixtures (my circuit, but *your* tvm-sdk
 fixtures + tests):**
