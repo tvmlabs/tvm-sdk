@@ -271,7 +271,7 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // ---------------------------------------------------------------------------
 
 /// Directory (relative to the `tvm_vm` crate root) holding the committed
-/// 10-real-proof set (11-PI deposit layout).
+/// 10-real-proof set (12-PI deposit layout — `chainId` at instance 4).
 const DEPOSIT_SET_DIR: &str = "halo2_test_data/deposit_10proofs";
 
 /// Number of real proofs in the committed set.
@@ -342,7 +342,7 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
             &deposit_pubin_path(i),
             &deposit_proof_path(i),
         );
-        println!("ZKHALO2VERIFYWITHVK 11-PI deposit proof_{:02}: result={}", i, res);
+        println!("ZKHALO2VERIFYWITHVK 12-PI deposit proof_{:02}: result={}", i, res);
         assert!(res, "expected ACCEPT on real deposit proof_{:02}", i);
     }
     println!("All {} real deposit proofs ACCEPTED.", DEPOSIT_PROOF_COUNT);
