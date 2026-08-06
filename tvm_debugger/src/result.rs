@@ -86,7 +86,7 @@ impl ExecutionResult {
                 }));
             }
             CommonMsgInfo::ExtInMsgInfo(_) => {}
-            CommonMsgInfo::ExtOutMsgInfo(_) => {}
+            CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) => {}
         }
     }
 

@@ -60,6 +60,8 @@ use crate::tc_create_context;
 use crate::tc_destroy_context;
 
 mod common;
+mod mock_blockchain;
+mod mock_blockchain_support;
 
 const ROOT_CONTRACTS_PATH: &str = "src/tests/contracts/";
 const LOG_CGF_PATH: &str = "src/tests/log_cfg.yaml";

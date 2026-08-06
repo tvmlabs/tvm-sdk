@@ -2295,6 +2295,22 @@ pub fn db_serialize_message_ex(
             serialize_lt(&mut map, "created_lt", &header.created_lt, mode);
             serialize_field(&mut map, "created_at", header.created_at.as_u32());
         }
+        CommonMsgInfo::ExtOutMsgInfoV2(ref header) => {
+            serialize_field(&mut map, "msg_type", 4);
+            if mode.is_q_server() {
+                serialize_field(&mut map, "msg_type_name", "extOutV2");
+            }
+            serialize_field(&mut map, "src", header.src.to_string());
+            if let Some(src_addr) = header.src() {
+                serialize_field(&mut map, "src_workchain_id", src_addr.get_workchain_id());
+            }
+            serialize_field(&mut map, "dst", header.dst.to_string());
+            serialize_lt(&mut map, "created_lt", &header.created_lt, mode);
+            serialize_field(&mut map, "created_at", header.created_at.as_u32());
+            if let Some(dapp_id) = header.src_dapp_id.as_ref() {
+                serialize_field(&mut map, "src_dapp_id", dapp_id.as_hex_string());
+            }
+        }
     }
     Ok(map)
 }

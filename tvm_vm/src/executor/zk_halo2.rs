@@ -30,7 +30,10 @@ static VK_AND_PARAMS: OnceLock<(VerifyingKey<G1Affine>, ParamsKZG<Bn256>)> = Onc
 fn get_vk_and_params() -> &'static (VerifyingKey<G1Affine>, ParamsKZG<Bn256>) {
     VK_AND_PARAMS.get_or_init(|| {
         let vk = crate::executor::zk_halo2_utils::build_dark_dex_w128_vk();
-        let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params();
+        // k is carried by the VK's evaluation domain — same source of truth
+        // that `zk_halo2_with_vk.rs` uses (see `get_or_insert_vk`).
+        let k = vk.get_domain().k();
+        let params = crate::executor::zk_halo2_utils::build_kzg_verifier_params(k);
         (vk, params)
     })
 }

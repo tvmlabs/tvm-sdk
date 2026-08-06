@@ -901,3 +901,91 @@ impl DEngine {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use super::*;
+    use crate::crypto::SigningBoxHandle;
+    use crate::debot::DebotActivity;
+
+    struct DummyBrowser;
+
+    #[async_trait::async_trait]
+    impl BrowserCallbacks for DummyBrowser {
+        async fn log(&self, _msg: String) {}
+
+        async fn switch(&self, _ctx_id: u8) {}
+
+        async fn switch_completed(&self) {}
+
+        async fn show_action(&self, _act: DAction) {}
+
+        async fn input(&self, _prompt: &str, _value: &mut String) {}
+
+        async fn get_signing_box(&self) -> Result<SigningBoxHandle, String> {
+            Ok(SigningBoxHandle(1))
+        }
+
+        async fn invoke_debot(&self, _debot: String, _action: DAction) -> Result<(), String> {
+            Ok(())
+        }
+
+        async fn send(&self, _message: String) {}
+
+        async fn approve(&self, _activity: DebotActivity) -> ClientResult<bool> {
+            Ok(true)
+        }
+    }
+
+    #[test]
+    fn helper_loaders_validate_input() {
+        assert!(create_client("http://localhost").is_ok());
+        assert_eq!(load_tvm_address("0:abc").unwrap(), "0:abc");
+
+        let abi = load_abi(r#"{"ABI version":2,"functions":[],"data":[],"events":[]}"#)
+            .unwrap()
+            .json_string()
+            .unwrap();
+        assert!(abi.contains("\"ABI version\":2"));
+
+        let err = load_abi("{").unwrap_err();
+        assert!(err.contains("failed to parse abi"));
+    }
+
+    #[test]
+    fn new_with_client_initializes_default_engine_state() {
+        let ton = Arc::new(ClientContext::new(ClientConfig::default()).unwrap());
+        let browser: Arc<dyn BrowserCallbacks + Send + Sync> = Arc::new(DummyBrowser);
+
+        let engine = DEngine::new_with_client("0:abc".into(), None, ton.clone(), browser);
+
+        assert_eq!(engine.addr, "0:abc");
+        assert!(engine.raw_abi.is_empty());
+        assert!(engine.state.is_empty());
+        assert_eq!(engine.curr_state, STATE_EXIT);
+        assert_eq!(engine.prev_state, STATE_ZERO);
+        assert!(engine.target_addr.is_none());
+        assert!(engine.target_abi.is_none());
+        assert!(engine.state_machine.is_empty());
+        assert!(engine.info.interfaces.is_empty());
+        assert!(Arc::ptr_eq(&engine.ton, &ton));
+    }
+
+    #[tokio::test]
+    async fn handle_sdk_err_maps_encode_errors_to_invalid_parameter() {
+        let ton = Arc::new(ClientContext::new(ClientConfig::default()).unwrap());
+        let browser: Arc<dyn BrowserCallbacks + Send + Sync> = Arc::new(DummyBrowser);
+        let engine = DEngine::new_with_client("0:abc".into(), None, ton, browser);
+
+        let err = ClientError::with_code_message(
+            ErrorCode::EncodeDeployMessageFailed as u32,
+            "boom".into(),
+        );
+        assert_eq!(engine.handle_sdk_err(err).await, "Invalid parameter");
+
+        let err = ClientError::with_code_message(1, "plain".into());
+        assert_eq!(engine.handle_sdk_err(err).await, "plain");
+    }
+}

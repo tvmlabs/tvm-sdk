@@ -69,3 +69,36 @@ impl FieldElement {
         Ok(public_inputs)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::executor::zk_stuff::error::ZkCryptoError;
+
+    #[test]
+    fn field_element_deserialize_validates_length_and_content() {
+        assert!(matches!(
+            FieldElement::deserialize(&[0u8; 31]),
+            Err(ZkCryptoError::InputLengthWrong(31))
+        ));
+        assert!(matches!(
+            FieldElement::deserialize(&[0xff; SCALAR_SIZE]),
+            Err(ZkCryptoError::InvalidInput)
+        ));
+        assert!(FieldElement::deserialize(&[0u8; SCALAR_SIZE]).is_ok());
+    }
+
+    #[test]
+    fn field_element_vector_requires_scalar_aligned_input() {
+        assert!(matches!(
+            FieldElement::deserialize_vector(&[0u8; 1]),
+            Err(ZkCryptoError::InputLengthWrong(1))
+        ));
+        assert_eq!(FieldElement::deserialize_vector(&[0u8; SCALAR_SIZE * 2]).unwrap().len(), 2);
+    }
+
+    #[test]
+    fn proof_deserialize_rejects_invalid_bytes() {
+        assert!(matches!(Proof::deserialize(&[0u8; 8]), Err(ZkCryptoError::InvalidInput)));
+    }
+}

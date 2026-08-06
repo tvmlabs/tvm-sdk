@@ -98,3 +98,50 @@ impl DebotInterface for Base64Interface {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+    use crate::debot::dinterface::DebotInterface;
+
+    #[test]
+    fn get_id_and_abi_are_stable() {
+        let iface = Base64Interface::new();
+        assert_eq!(iface.get_id(), BASE64_ID);
+
+        let abi = iface.get_abi().json_string().unwrap();
+        assert!(abi.contains("\"encode\""));
+        assert!(abi.contains("\"decode\""));
+    }
+
+    #[tokio::test]
+    async fn call_encodes_and_decodes_payload() {
+        let iface = Base64Interface::new();
+
+        let (answer_id, encoded) = iface
+            .call("encode", &json!({ "answerId": "7", "data": hex::encode("hello") }))
+            .await
+            .unwrap();
+        assert_eq!(answer_id, 7);
+        assert_eq!(encoded["base64"], "aGVsbG8=");
+
+        let (answer_id, decoded) =
+            iface.call("decode", &json!({ "answerId": "8", "base64": "aGVsbG8=" })).await.unwrap();
+        assert_eq!(answer_id, 8);
+        assert_eq!(decoded["data"], hex::encode("hello"));
+    }
+
+    #[tokio::test]
+    async fn call_reports_invalid_input_and_unknown_function() {
+        let iface = Base64Interface::new();
+
+        let err =
+            iface.call("decode", &json!({ "answerId": "1", "base64": "***" })).await.unwrap_err();
+        assert!(err.contains("invalid base64"));
+
+        let err = iface.call("missing", &json!({})).await.unwrap_err();
+        assert_eq!(err, "function \"missing\" is not implemented");
+    }
+}

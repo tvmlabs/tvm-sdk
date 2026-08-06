@@ -44,6 +44,7 @@ use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::stack::savelist::SaveList;
 use crate::types::Status;
+#[cfg(feature = "wasmtime")]
 use crate::utils::pack_data_to_cell;
 
 mod test_gas_consumption;
@@ -81,6 +82,7 @@ pub(super) fn split_to_chain_of_cells(input: Vec<u8>) -> tvm_types::Result<Cell>
     Ok(cell) // return first cell
 }
 
+#[allow(dead_code)]
 pub(super) fn rejoin_chain_of_cells(input: &Cell) -> tvm_types::Result<Vec<u8>> {
     let mut data_vec = input.data().to_vec();
     let mut cur_cell: Cell = input.clone();

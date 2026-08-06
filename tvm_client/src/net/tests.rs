@@ -19,7 +19,6 @@ use crate::processing::ParamsOfProcessMessage;
 use crate::tests::HELLO;
 use crate::tests::TestClient;
 
-#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn bad_request() {
     let client = TestClient::new_with_config(json!({
@@ -111,7 +110,6 @@ async fn not_authorized_response_text() {
     }
 }
 
-#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn not_authorized() {
     let client = TestClient::new_with_config(json!({

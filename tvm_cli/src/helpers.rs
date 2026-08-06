@@ -818,7 +818,7 @@ pub fn answer_filter(src: &str, dst: &str, since: u32) -> serde_json::Value {
 pub fn events_filter(addr: &str, since: u32) -> serde_json::Value {
     json!({
         "src": { "eq": addr },
-        "msg_type": {"eq": 2 },
+        "msg_type": {"in": [2, 4] },
         "created_at": {"ge": since }
     })
 }
