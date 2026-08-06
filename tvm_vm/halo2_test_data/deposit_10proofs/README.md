@@ -13,11 +13,11 @@ proof_cell           ← proof_NN/proof.bin (Blake2b SHPLONK)
 
 Keyed on the **Hermez Perpetual Powers of Tau** SRS (`data/kzg_params_18.srs`,
 `s_g2 = 928fafb3…`), matching `KZG_S_G2_BYTES` on
-`feature/hermez-kzg-resurrection`. Regenerated 2026-07-29 via
+`feature/hermez-kzg-resurrection`. Regenerated 2026-08-07 via
 `deposit-prover` `export_deposit_proof_set` after the circuit gained a
 `chainId` public input at index 4 (bridge branch
 `pruvendo/pause-chainid-pi-multil2`, commit `c0da8a3`). VkBlob sha256
-`006cca5ddd457065bef8469fc10dd231ad8fd13c895877c9deff5c51191dec05` —
+`9dacd998af5fd03af8097cb80a571df098c925bba235af61d920cc808360fae3` —
 update this line whenever the fixtures are resynced.
 
 Public-input layout (12 × 32 B LE Fr, in order):
