@@ -89,6 +89,18 @@ All length prefixes are `u32` LE. Producer-side cap: 16 MiB
 (`zk_halo2_with_vk_bundle::MAX_BUNDLE_BYTES`); the consumer fails
 structurally above that cap as a DoS guard.
 
+> **Schema-agnosticism, validated empirically (2026-07-29).** The deposit
+> circuit added a `chainId` public input (11 → 12 PIs, bridge commit
+> `c0da8a3`). Adjusting to it required **zero** changes to
+> `zk_halo2_with_vk.rs` / `zk_halo2_with_vk_bundle.rs`; only the on-disk
+> fixtures under `tvm_vm/halo2_test_data/deposit_10proofs/` had to be
+> resynced. `decode_instances_strict` chunks `instances_bytes` into
+> 32-byte LE Fr elements without any hardcoded count, and the VK itself
+> carries `num_instance_columns` / per-column lengths — mismatches
+> surface as cryptographic `false` (see
+> `instance_count_mismatch_rejected_as_false`), not `FatalError`. This
+> is exactly the Q-WIRE-3 / Q-WIRE-4 outcome we designed for.
+
 ### Safety of VK deserialisation
 
 The consumer deserialises the VK using
