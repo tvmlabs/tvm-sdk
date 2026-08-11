@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.5] - 2026-08-11
+
+### Changed
+- Make execution fee constant for executions that failed with execution timeout
+
 ## [3.0.4] - 2026-07-10
 
 ### Added
