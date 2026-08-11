@@ -684,7 +684,6 @@ pub trait TransactionExecutor {
             } else if is_bounceable_internal && execution_timed_out {
                 log::debug!(target: "executor", "Fix bounceable timed out");
                 vm_phase.gas_used = (gas.get_gas_limit() as u64).try_into()?;
-                vm_phase.vm_steps = 0;
                 gas.get_gas_limit() as u128
             } else {
                 gas_config.calc_gas_fee(used)
@@ -700,7 +699,11 @@ pub trait TransactionExecutor {
 
         // set mode
         vm_phase.mode = 0;
-        vm_phase.vm_steps = vm.steps();
+        if !(is_bounceable_internal && execution_timed_out) {
+            vm_phase.vm_steps = vm.steps();
+        } else {
+            vm_phase.vm_steps = 0;
+        }
         // TODO: vm_final_state_hash
         log::debug!(target: "executor", "acc_balance: {}, gas fees: {}", acc_balance.grams, vm_phase.gas_fees);
         if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
