@@ -683,6 +683,7 @@ pub trait TransactionExecutor {
                 0
             } else if is_bounceable_internal && execution_timed_out {
                 vm_phase.gas_used = (gas.get_gas_limit() as u64).try_into()?;
+                vm_phase.vm_steps = 0;
                 gas.get_gas_limit() as u128
             } else {
                 gas_config.calc_gas_fee(used)
