@@ -682,7 +682,6 @@ pub trait TransactionExecutor {
             let gas_fees = if is_special {
                 0
             } else if is_bounceable_internal && execution_timed_out {
-                log::debug!(target: "executor", "Fix bounceable timed out");
                 vm_phase.gas_used = (gas.get_gas_limit() as u64).try_into()?;
                 gas.get_gas_limit() as u128
             } else {
