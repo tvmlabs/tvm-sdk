@@ -461,9 +461,11 @@ pub trait TransactionExecutor {
         let mut vm_phase = TrComputePhaseVm::default();
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
         let libs_disabled = !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
+        let mut is_bounceable_internal = false;
         let is_external = if let Some(ref msg) = msg {
             if let Some(header) = msg.int_header() {
                 log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
+                is_bounceable_internal = header.bounce;
                 if result_acc.is_none() {
                     if let Some(new_acc) =
                         account_from_message(msg, msg_balance, true, init_code_hash, libs_disabled)
@@ -668,6 +670,7 @@ pub trait TransactionExecutor {
         // for external messages gas will not be exacted if VM throws the exception and
         // gas_credit != 0
         let used = gas.get_gas_used() as u64;
+        let execution_timed_out = vm_phase.exit_code == ExceptionCode::ExecutionTimeout as i32;
         vm_phase.gas_used = used.try_into()?;
         if credit != 0 {
             if is_external {
@@ -676,7 +679,14 @@ pub trait TransactionExecutor {
             vm_phase.gas_fees = Grams::zero();
         } else {
             // credit == 0 means contract accepted
-            let gas_fees = if is_special { 0 } else { gas_config.calc_gas_fee(used) };
+            let gas_fees = if is_special {
+                0
+            } else if is_bounceable_internal && execution_timed_out {
+                vm_phase.gas_used = (gas.get_gas_limit() as u64).try_into()?;
+                gas.get_gas_limit() as u128
+            } else {
+                gas_config.calc_gas_fee(used)
+            };
             vm_phase.gas_fees = gas_fees.try_into()?;
         };
 
@@ -688,7 +698,11 @@ pub trait TransactionExecutor {
 
         // set mode
         vm_phase.mode = 0;
-        vm_phase.vm_steps = vm.steps();
+        if !(is_bounceable_internal && execution_timed_out) {
+            vm_phase.vm_steps = vm.steps();
+        } else {
+            vm_phase.vm_steps = 0;
+        }
         // TODO: vm_final_state_hash
         log::debug!(target: "executor", "acc_balance: {}, gas fees: {}", acc_balance.grams, vm_phase.gas_fees);
         if !acc_balance.grams.sub(&vm_phase.gas_fees)? {
@@ -2436,6 +2450,15 @@ mod tests {
         ))
     }
 
+    fn bounceable_internal_message(src: u8, dst: u8) -> Message {
+        Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+            address(src),
+            address(dst),
+            CurrencyCollection::with_grams(1_000_000_000),
+            true,
+        ))
+    }
+
     fn execute_node_contract(
         code: &str,
         params: ExecuteParams,
@@ -2886,6 +2909,43 @@ mod tests {
         let phase = vm_phase(&tx);
         assert!(!phase.success, "{phase:?}");
         assert_eq!(phase.exit_code, ExceptionCode::ExecutionTimeout as i32);
+    }
+
+    #[test]
+    #[allow(deprecated)]
+    fn bounceable_internal_execution_timeout_charges_gas_limit_fee() {
+        let executor = OrdinaryTransactionExecutor::new(executor_config());
+        let code = tvm_assembler::compile_code_to_cell("PUSHINT 1\n").unwrap();
+        let mut account = active_account_with_code(7, code);
+        let mut msg = bounceable_internal_message(1, 7);
+        let mut acc_balance = account.balance().cloned().unwrap();
+        let mut msg_balance = CurrencyCollection::with_grams(1_000_000_000);
+        let smc_info =
+            executor.build_contract_info(&acc_balance, &address(7), 0, 0, 0, UInt256::default());
+        let stack = executor.build_stack(Some(&msg), &account);
+        let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.execution_timeout = Some(Duration::ZERO);
+
+        let (phase, _, _) = executor
+            .compute_phase(
+                Some(&mut msg),
+                &mut account,
+                &mut acc_balance,
+                &mut msg_balance,
+                smc_info,
+                stack,
+                0,
+                false,
+                false,
+                &fixture.build(),
+            )
+            .unwrap();
+        let TrComputePhase::Vm(phase) = phase else {
+            panic!("unexpected compute phase");
+        };
+        assert!(!phase.success, "{phase:?}");
+        assert_eq!(phase.exit_code, ExceptionCode::ExecutionTimeout as i32);
+        assert_eq!(phase.gas_fees.as_u128(), phase.gas_limit.as_u64() as u128);
     }
 
     #[test]
