@@ -18,10 +18,27 @@ mkdir wallet
 cd wallet
 ```
 
-Download the [UpdateCustodianMultisigWallet.abi.json](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.abi.json) and [UpdateCustodianMultisigWallet.tvc](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.tvc) files for your wallet from the `updatecustodianmultisigwallet` [repository](https://github.com/ackinacki/ackinacki/tree/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet) and place them in this folder.
+Download the two files of the current wallet, `UpdateCustodianMultisigWallet_v2`, from the
+[`0.81.0_compiled/updatecustodianmultisigwallet_v2`](https://github.com/ackinacki/ackinacki/tree/main/contracts/0.81.0_compiled/updatecustodianmultisigwallet_v2) directory and place them in this folder:
+
+```
+curl -O https://raw.githubusercontent.com/ackinacki/ackinacki/main/contracts/0.81.0_compiled/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.abi.json
+curl -O https://raw.githubusercontent.com/ackinacki/ackinacki/main/contracts/0.81.0_compiled/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.tvc
+```
+
+Check what you downloaded before you send anything to it — the address you are about to compute is a
+function of this exact code:
+
+```
+tvm-cli decode stateinit --tvc UpdateCustodianMultisigWallet_v2.tvc
+```
+
+The `code_hash` field must read `cfcaac10d43c8dc062298cb48df097be67cddec52b9cfd558309a7549f01c1f1`,
+and the file must be 10943 bytes.
 
 {% hint style="info" %}
-The contract code can be downloaded from [here](https://github.com/ackinacki/ackinacki/blob/main/contracts/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.sol)
+The Solidity source of this contract is [here](https://github.com/ackinacki/ackinacki/blob/main/contracts/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.sol).
+
 {% endhint %}
 
 ## Configure CLI tool
@@ -41,7 +58,7 @@ You can generate everything with one command:
 
 ```
 
-tvm-cli genaddr UpdateCustodianMultisigWallet.tvc --save --genkey UpdateCustodianMultisigWallet.keys.json
+tvm-cli genaddr UpdateCustodianMultisigWallet_v2.tvc --save --genkey UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
 {% hint style="danger" %}
@@ -54,7 +71,7 @@ tvm-cli genaddr UpdateCustodianMultisigWallet.tvc --save --genkey UpdateCustodia
 After this step, the `.tvc` file will be overwritten with the specified keys.
 {% endhint %}
 
-The `Raw address` is the future Multisig wallet address. Keys are saved to `updateCustodianMultisigWallet.keys.`
+The `Raw address` is the future Multisig wallet address. Keys are saved to `UpdateCustodianMultisigWallet_v2.keys.json`
 
 Be sure to copy your seed phrase if you need it.
 
@@ -92,7 +109,7 @@ Now you are ready to deploy your Multisig wallet using the following command:
 
 ```
 
-tvm-cli deploy --abi UpdateCustodianMultisigWallet.abi.json --sign UpdateCustodianMultisigWallet.keys.json UpdateCustodianMultisigWallet.tvc '{"owners_pubkey":[<PubKeyList>], "owners_address": [], "reqConfirms":<ConfirmsNum>, "reqConfirmsData": <NumConfirms>, "value":<NumTokens>}'
+tvm-cli deploy --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json UpdateCustodianMultisigWallet_v2.tvc '{"owners_pubkey":[<PubKeyList>], "owners_address": [], "reqConfirms":<ConfirmsNum>, "reqConfirmsData": <NumConfirms>, "value":<NumTokens>}'
 ```
 
 The arguments for the constructor must be enclosed in curly brackets: `{<constructor arguments>}`
@@ -108,7 +125,7 @@ In our example, the command will be as follows:
 
 ```
 
-tvm-cli deploy --abi UpdateCustodianMultisigWallet.abi.json --sign UpdateCustodianMultisigWallet.keys.json UpdateCustodianMultisigWallet.tvc '{"owners_pubkey":["0x92658a2dee35923cc628b7f5f09e014eeeb7f492dd4dfd2f65cd304a73d2d2f4"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":10000000000}'
+tvm-cli deploy --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json UpdateCustodianMultisigWallet_v2.tvc '{"owners_pubkey":["0x92658a2dee35923cc628b7f5f09e014eeeb7f492dd4dfd2f65cd304a73d2d2f4"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":10000000000}'
 ```
 
 <figure><img src=".gitbook/assets/deploy.jpg" alt=""><figcaption></figcaption></figure>
@@ -130,8 +147,8 @@ During contract deployment, **10** **SHELL** tokens were converted into **10** *
 In the examples below:
 
 * `<MSIG_ADDR>` — Multisig Wallet address (e.g. `0:7a55...dd45`)
-* ABI file: [`UpdateCustodianMultisigWallet.abi.json`](https://raw.githubusercontent.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/updatecustodianmultisigwallet/UpdateCustodianMultisigWallet.abi.json)
-* Signer keys (one of the custodians): `UpdateCustodianMultisigWallet.keys.json` , generated in the [previous step](how-to-deploy-a-multisig-wallet.md#generate-seed-phrase-keys-and-address)
+* ABI file: [`UpdateCustodianMultisigWallet_v2.abi.json`](https://raw.githubusercontent.com/ackinacki/ackinacki/main/contracts/0.81.0_compiled/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.abi.json)
+* Signer keys (one of the custodians): `UpdateCustodianMultisigWallet_v2.keys.json` , generated in the [previous step](how-to-deploy-a-multisig-wallet.md#generate-seed-phrase-keys-and-address)
 
 {% hint style="info" %}
 The transaction **expiration time** is **1 hour**.
@@ -181,7 +198,7 @@ tvm-cli call <MSIG_ADDR> sendTransaction '{
   "bounce":false,
   "flags":1,
   "payload":""
-}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+}' --abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
 *   **If you need to fund an account that has not yet been deployed,**\
@@ -202,7 +219,7 @@ tvm-cli call <MSIG_ADDR> sendTransaction \
   "flags":16,
   "payload":""
 }' \
---abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+--abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
 As a result, the account balance will be credited with **5 VMSHELL**\
@@ -249,7 +266,7 @@ tvm-cli call <MSIG_ADDR> submitTransaction '{
   "bounce":false,
   "flags":1,
   "payload":""
-}' --abi UpdateCustodianMultisigWallet.abi.json --sign UpdateCustodianMultisigWallet.keys.json
+}' --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
 {% hint style="info" %}
@@ -276,7 +293,7 @@ If the transaction has already expired, it will be deleted.
 Example command:
 
 ```bash
-tvm-cli call <MSIG_ADDR> confirmTransaction '{"transactionId":123456789}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+tvm-cli call <MSIG_ADDR> confirmTransaction '{"transactionId":123456789}' --abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 ​
 ```
 
@@ -316,7 +333,7 @@ tvm-cli call <MSIG_ADDR> submitDataUpdate '{
   ],
   "reqConfirms":2,
   "reqConfirmsData":2
-}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+}' --abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
 ### How to confirm a request to update the Multisig data
@@ -339,6 +356,6 @@ If the request is expired, it will be removed
 Example command:
 
 ```bash
-tvm-cli call <MSIG_ADDR> confirmDataUpdate '{"dataUpdateId":987654321}' --abi UpdateCustodianMultisigWallet.abi.json  --sign UpdateCustodianMultisigWallet.keys.json
+tvm-cli call <MSIG_ADDR> confirmDataUpdate '{"dataUpdateId":987654321}' --abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 
 ```
