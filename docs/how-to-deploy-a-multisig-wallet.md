@@ -26,15 +26,14 @@ curl -O https://raw.githubusercontent.com/ackinacki/ackinacki/main/contracts/0.8
 curl -O https://raw.githubusercontent.com/ackinacki/ackinacki/main/contracts/0.81.0_compiled/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.tvc
 ```
 
-Check what you downloaded before you send anything to it — the address you are about to compute is a
-function of this exact code:
+Check what you downloaded -- the address depends on this exact code:
 
 ```
 tvm-cli decode stateinit --tvc UpdateCustodianMultisigWallet_v2.tvc
 ```
 
-The `code_hash` field must read `cfcaac10d43c8dc062298cb48df097be67cddec52b9cfd558309a7549f01c1f1`,
-and the file must be 10943 bytes.
+`code_hash` must be `cfcaac10d43c8dc062298cb48df097be67cddec52b9cfd558309a7549f01c1f1`, size 10943
+bytes.
 
 {% hint style="info" %}
 The Solidity source of this contract is [here](https://github.com/ackinacki/ackinacki/blob/main/contracts/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.sol).
@@ -50,21 +49,52 @@ We need to specify the blockchain endpoint for deployment:
 tvm-cli config -g --url shellnet.ackinacki.org
 ```
 
+For Mainnet, use `https://mainnet.ackinacki.org` the same way, or pass `--url` on each command.
+
+### Two address forms
+
+| where | form |
+|---|---|
+| the contract a command acts on | `dapp_id::account_id` |
+| an address inside ABI arguments (`dest`) | `0:<account_id>` |
+
 ## Generate seed phrase, keys and address
 
 In Acki Nacki blockchain, the Multisig wallet address depends on its binary code and initial data, which includes the owner's public key.
 
-You can generate everything with one command:
+New key -- generate everything with one command:
 
 ```
-
-tvm-cli genaddr UpdateCustodianMultisigWallet_v2.tvc --save --genkey UpdateCustodianMultisigWallet_v2.keys.json
+# --save writes the public key INTO the .tvc; --genkey creates the key file
+tvm-cli genaddr UpdateCustodianMultisigWallet_v2.tvc --save \
+  --genkey UpdateCustodianMultisigWallet_v2.keys.json
 ```
+
+Existing key or seed phrase -- same command with `--setkey`:
+
+```
+# key file
+tvm-cli genaddr UpdateCustodianMultisigWallet_v2.tvc --save \
+  --abi UpdateCustodianMultisigWallet_v2.abi.json \
+  --setkey UpdateCustodianMultisigWallet_v2.keys.json
+
+# or a seed phrase
+tvm-cli genaddr UpdateCustodianMultisigWallet_v2.tvc --save \
+  --abi UpdateCustodianMultisigWallet_v2.abi.json \
+  --setkey "$PHRASE"
+```
+
+{% hint style="danger" %}
+**`--save` is required.** It writes your public key into the `.tvc`, and that file is what you
+deploy. The address `genaddr` prints is the one to fund.
+{% endhint %}
 
 {% hint style="danger" %}
 **Write down your `seed phrase` and store it in a secure location. Never share it with anyone. Avoid storing it in plain text, screenshots, or any other insecure method. If you lose it, you lose access to your assets. Anyone who obtains it will have full access to your assets.**
 
 **Additionally, ensure the file containing the `key pair` is saved in a safe place.**
+
+**Sign with a key file** rather than a phrase where you can.
 {% endhint %}
 
 {% hint style="info" %}
@@ -83,6 +113,15 @@ Be sure to copy your seed phrase if you need it.
 On the Mainnet, SHELL tokens are purchased via a special pool and then converted into VMSHELL tokens.
 
 On the test network, you can request test tokens to be sent to your address. Please contact us on [Telegram](https://t.me/+1tWNH2okaPthMWU0) to receive them.
+
+Sending them yourself, from another wallet -- **flag 16** credits an address that has no contract on
+it yet, and the SHELL arrive as VMSHELL:
+
+```sh
+tvm-cli --url shellnet.ackinacki.org call <sender>::<sender> sendCurrencyWithFlag \
+  '{"dest":"0:<your account id>","value":"3000000000","ecc":{"2":"3000000000"},"flag":16}' \
+  --abi <sender abi> --sign <sender keys>
+```
 
 {% hint style="info" %}
 If you plan to test your smart contract systems, you can use the provided Multisig wallet to top up contract balances in order to cover gas fees.
@@ -103,23 +142,46 @@ VMSHELL tokens are transferred and stored in (_in_ [_nanotokens_](https://github
 The received **SHELL** tokens will be displayed in the `ecc` field under index **2**
 {% endhint %}
 
+**How much you need.** The deploy costs **0.153501 VMSHELL** -- measured on both networks:
+
+| network | before | after | cost |
+|---|---|---|---|
+| shellnet | 3000000000 | 2846499000 | 153501000 |
+| mainnet | 2000000000 | 1846499000 | 153501000 |
+
+The remainder stays on the wallet.
+
 <figure><img src=".gitbook/assets/Uninit.jpg" alt=""><figcaption></figcaption></figure>
 
 Now you are ready to deploy your Multisig wallet using the following command:
 
 ```
-
-tvm-cli deploy --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json UpdateCustodianMultisigWallet_v2.tvc '{"owners_pubkey":[<PubKeyList>], "owners_address": [], "reqConfirms":<ConfirmsNum>, "reqConfirmsData": <NumConfirms>, "value":<NumTokens>}'
+# --dst-dapp-id is required; for a wallet it equals its own account_id
+tvm-cli deploy --abi UpdateCustodianMultisigWallet_v2.abi.json \
+  --sign UpdateCustodianMultisigWallet_v2.keys.json \
+  --dst-dapp-id <account_id> \
+  UpdateCustodianMultisigWallet_v2.tvc \
+  '{"owners_pubkey":[<PubKeyList>],"owners_address":[],"reqConfirms":<ConfirmsNum>,"reqConfirmsData":<NumConfirms>,"value":<NumTokens>,"minBalance":<Min>,"targetBalance":<Target>}'
 ```
 
-The arguments for the constructor must be enclosed in curly brackets: `{<constructor arguments>}`
+Deploy the **same `.tvc` you ran `genaddr --save` on** -- that file carries your key.
 
-* **`owners_pubkey`** — an array of custodians’ public keys. Each key must include the **`0x` prefix**
-* **`owners_address`** — an array of custodian contract addresses.
-* **`reqConfirms`** — the number of signatures required to approve a transaction.
-* **`reqConfirmsData`** — the number of confirmations required to approve a change of custodians.
-* **`value`** — the amount (_in_ [_nanotokens_](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#tvm-units)) of **SHELL** tokens you want to exchange for **VMSHELL**.\
+
+The arguments for the constructor must be enclosed in curly brackets: `{<constructor arguments>}`.
+`UpdateCustodianMultisigWallet_v2` takes **seven** of them, all required:
+
+* **`owners_pubkey`** -- an array of custodians' public keys. Each key must include the **`0x` prefix**
+* **`owners_address`** -- an array of custodian contract addresses.
+* **`reqConfirms`** -- the number of signatures required to approve a transaction.
+* **`reqConfirmsData`** -- the number of confirmations required to approve a change of custodians.
+* **`value`** -- the amount (_in_ [_nanotokens_](https://github.com/gosh-sh/TVM-Solidity-Compiler/blob/master/API.md#tvm-units)) of **SHELL** tokens you want to exchange for **VMSHELL**.\
   If the exchange is not required, set the parameter `value` to **0**.
+* **`minBalance`** -- the balance the wallet keeps for itself; `0` unless you need a floor.
+* **`targetBalance`** -- the balance the wallet tops itself up to; `0` unless you need one.
+
+{% hint style="warning" %}
+**Paste the JSON as one line.** It is a single shell argument.
+{% endhint %}
 
 In our example, the command will be as follows:
 
