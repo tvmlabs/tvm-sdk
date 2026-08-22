@@ -2,6 +2,13 @@
 
 Shell Accumulator is an on-chain exchange system on the GOSH network that lets users trade **ECC SHELL** for **eccUSDC** at a fixed rate of **100 SHELL = 1 eccUSDC**.
 
+{% hint style="info" %}
+Buying SHELL, step by step:
+[Exchange eccUSDC for SHELL via Accumulator](https://docs.ackinacki.com/for-users/buy-sell-shell/buying-shell/exchange-eccusdc-for-shell-via-accumulator).
+
+The pages below describe how the system is built; that one is how you use it.
+{% endhint %}
+
 ## What it does
 
 Sellers deposit SHELL into fixed-size lots (denominated in 1, 10, 100, or 1000 eccUSDC). Buyers deposit eccUSDC and receive SHELL — first matched against existing seller lots in FIFO order, then minted if no sellers are available. When a buyer's eccUSDC matches a seller's lot, the seller can claim their eccUSDC payout.
