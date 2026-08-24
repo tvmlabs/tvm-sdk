@@ -477,3 +477,198 @@ fn deposit_rlc_cache_reused_across_two_invocations() {
             .expect("identical deposit RLC operands must verify on every call");
     }
 }
+
+// ETH light-client `step` (v1 Base VkBlob, 8 public inputs) — three-operand ABI
+// ---------------------------------------------------------------------------
+//
+// Real Hermez K=19 SHPLONK proof over the Ethereum beacon light-client
+// sync-step circuit (`acki-nacki-bridge/eth-light-client-prover`, M5). Unlike
+// the deposit fixtures (VkBlob v2 RLC), this is a plain
+// `BaseCircuitBuilder<Fr>` → VkBlob **v1 Base** (`circuit_shape=0`, Blake2b),
+// read by the opcode via `read_base_vk` + `VerifyingKey::read::<_,
+// BaseCircuitBuilder<Fr>>`. This is the end-to-end opcode-acceptance proof for
+// the light-client step VkBlob (the in-process self-check in
+// `export_step_vk_blob.rs` is the producer-side proxy).
+
+const STEP_SET_DIR: &str = "halo2_test_data/step_light_client";
+
+#[test]
+fn round_trip_step_light_client_real_proof_returns_true() {
+    let vk_blob = std::fs::read(format!("{}/step_vk_blob.bin", STEP_SET_DIR))
+        .expect("step_vk_blob.bin must exist");
+    let instances = std::fs::read(format!("{}/step_public_inputs.bin", STEP_SET_DIR))
+        .expect("step public_inputs");
+    let proof = std::fs::read(format!("{}/step_proof.bin", STEP_SET_DIR)).expect("step proof");
+
+    // The step circuit commits exactly 10 public inputs (see
+    // `eth-light-client-prover/src/step.rs::STEP_INSTANCE_LEN`): the M5 layout
+    // (8) plus the attested `state_root` hi/lo (indices 8|9) that binds the
+    // rotate committee branch.
+    assert_eq!(
+        instances.len(),
+        10 * 32,
+        "step fixture has exactly 10 public inputs (= 320 B), got {}",
+        instances.len()
+    );
+
+    run_with_operands(&vk_blob, &instances, &proof)
+        .expect("real light-client step proof must verify true through the opcode");
+}
+
+#[test]
+fn step_light_client_flipped_proof_byte_rejected_as_false() {
+    let vk_blob = std::fs::read(format!("{}/step_vk_blob.bin", STEP_SET_DIR)).unwrap();
+    let instances = std::fs::read(format!("{}/step_public_inputs.bin", STEP_SET_DIR)).unwrap();
+    let mut proof = std::fs::read(format!("{}/step_proof.bin", STEP_SET_DIR)).unwrap();
+    let mid = proof.len() / 2;
+    proof[mid] ^= 0xFF;
+
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &vk_blob, &instances, &proof);
+
+    execute_zkhalo2_verify_with_vk(&mut engine)
+        .expect("flipped step proof must be cryptographic reject, not FatalError");
+    let res = engine.cc.stack.get(0).as_bool().unwrap();
+    assert!(!res, "flipped step proof byte must NOT verify as true");
+}
+
+#[test]
+fn step_light_client_tweaked_instance_rejected_as_false() {
+    let vk_blob = std::fs::read(format!("{}/step_vk_blob.bin", STEP_SET_DIR)).unwrap();
+    let mut instances = std::fs::read(format!("{}/step_public_inputs.bin", STEP_SET_DIR)).unwrap();
+    let proof = std::fs::read(format!("{}/step_proof.bin", STEP_SET_DIR)).unwrap();
+
+    // Flip the low byte of the first instance Fr (stays inside the modulus,
+    // still a valid Fr, but no longer the value the proof was bound to).
+    instances[0] ^= 0x01;
+
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &vk_blob, &instances, &proof);
+
+    execute_zkhalo2_verify_with_vk(&mut engine).expect("handler must not fatal on valid Fr");
+    let res = engine.cc.stack.get(0).as_bool().unwrap();
+    assert!(!res, "tweaked step instance Fr must NOT verify as true");
+}
+
+#[test]
+fn step_light_client_cache_reused_across_two_invocations() {
+    let vk_blob = std::fs::read(format!("{}/step_vk_blob.bin", STEP_SET_DIR)).unwrap();
+    let instances = std::fs::read(format!("{}/step_public_inputs.bin", STEP_SET_DIR)).unwrap();
+    let proof = std::fs::read(format!("{}/step_proof.bin", STEP_SET_DIR)).unwrap();
+    for _ in 0..2 {
+        run_with_operands(&vk_blob, &instances, &proof)
+            .expect("identical step operands must verify on every call");
+    }
+}
+
+// ETH light-client recursive `rotate` (v1 Base VkBlob, 15 public inputs) — 3-op
+// ABI
+// ---------------------------------------------------------------------------
+//
+// Real Hermez K=21 SHPLONK proof over the recursive committee-rotation root
+// (`acki-nacki-bridge/eth-light-client-prover`, M6). The root is a 2-to-1
+// aggregation tree over 8 committee shards + a step snark, so its 15 public
+// inputs are **12 KZG accumulator limbs** followed by `[current_commit,
+// next_commit, period]`. Like `step`, it is a plain `BaseCircuitBuilder<Fr>` →
+// VkBlob **v1 Base** (`circuit_shape=0`, Blake2b), read by the opcode via
+// `read_base_vk` + `VerifyingKey::read::<_, BaseCircuitBuilder<Fr>>`.
+//
+// The blob's header sets `accumulator_limbs = 12` (byte 11).
+//
+// SOUNDNESS: because the blob flags `accumulator_limbs = 12`, the opcode runs
+// BOTH the SHPLONK `verify_proof` AND the KZG accumulation decider
+// `e(lhs, g2) == e(rhs, s_g2)` over `instances[0..12]` against the embedded
+// Hermez `[s]·G2` (see `run_accumulator_decider`). So a `true` here means the
+// folded inner shard/step proofs are cryptographically checked, not just the
+// aggregation relation. The decider itself is unit-tested (honest PASS,
+// tampered/swapped REJECT) in `zk_halo2_with_vk::decider_tests`; the native
+// reference is `eth-light-client-prover/examples/rotate_decider_check.rs`.
+
+const ROTATE_SET_DIR: &str = "halo2_test_data/rotate_light_client";
+
+#[test]
+fn round_trip_rotate_light_client_real_proof_returns_true() {
+    let vk_blob = std::fs::read(format!("{}/rotate_vk_blob.bin", ROTATE_SET_DIR))
+        .expect("rotate_vk_blob.bin must exist");
+    let instances = std::fs::read(format!("{}/rotate_public_inputs.bin", ROTATE_SET_DIR))
+        .expect("rotate public_inputs");
+    let proof =
+        std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).expect("rotate proof");
+
+    // 12 accumulator limbs + [current_commit, next_commit, period] = 15 Fr.
+    assert_eq!(
+        instances.len(),
+        15 * 32,
+        "rotate fixture has exactly 15 public inputs (= 480 B), got {}",
+        instances.len()
+    );
+
+    run_with_operands(&vk_blob, &instances, &proof)
+        .expect("real light-client rotate proof must verify true through the opcode");
+}
+
+#[test]
+fn rotate_light_client_flipped_proof_byte_rejected_as_false() {
+    let vk_blob = std::fs::read(format!("{}/rotate_vk_blob.bin", ROTATE_SET_DIR)).unwrap();
+    let instances = std::fs::read(format!("{}/rotate_public_inputs.bin", ROTATE_SET_DIR)).unwrap();
+    let mut proof = std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).unwrap();
+    let mid = proof.len() / 2;
+    proof[mid] ^= 0xFF;
+
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &vk_blob, &instances, &proof);
+
+    execute_zkhalo2_verify_with_vk(&mut engine)
+        .expect("flipped rotate proof must be cryptographic reject, not FatalError");
+    let res = engine.cc.stack.get(0).as_bool().unwrap();
+    assert!(!res, "flipped rotate proof byte must NOT verify as true");
+}
+
+#[test]
+fn rotate_light_client_tweaked_accumulator_limb_rejected_as_false() {
+    let vk_blob = std::fs::read(format!("{}/rotate_vk_blob.bin", ROTATE_SET_DIR)).unwrap();
+    let mut instances =
+        std::fs::read(format!("{}/rotate_public_inputs.bin", ROTATE_SET_DIR)).unwrap();
+    let proof = std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).unwrap();
+
+    // Flip the low byte of the first accumulator limb (instance[0]): still a
+    // valid Fr, but no longer the value the proof was bound to.
+    instances[0] ^= 0x01;
+
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &vk_blob, &instances, &proof);
+
+    execute_zkhalo2_verify_with_vk(&mut engine).expect("handler must not fatal on valid Fr");
+    let res = engine.cc.stack.get(0).as_bool().unwrap();
+    assert!(!res, "tweaked rotate accumulator limb must NOT verify as true");
+}
+
+#[test]
+fn rotate_light_client_tweaked_rotate_pi_rejected_as_false() {
+    let vk_blob = std::fs::read(format!("{}/rotate_vk_blob.bin", ROTATE_SET_DIR)).unwrap();
+    let mut instances =
+        std::fs::read(format!("{}/rotate_public_inputs.bin", ROTATE_SET_DIR)).unwrap();
+    let proof = std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).unwrap();
+
+    // Flip the low byte of `current_commit` (instance[12], the first non-
+    // accumulator public input). The bound proof must reject the altered PI.
+    instances[12 * 32] ^= 0x01;
+
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &vk_blob, &instances, &proof);
+
+    execute_zkhalo2_verify_with_vk(&mut engine).expect("handler must not fatal on valid Fr");
+    let res = engine.cc.stack.get(0).as_bool().unwrap();
+    assert!(!res, "tweaked rotate current_commit Fr must NOT verify as true");
+}
+
+#[test]
+fn rotate_light_client_cache_reused_across_two_invocations() {
+    let vk_blob = std::fs::read(format!("{}/rotate_vk_blob.bin", ROTATE_SET_DIR)).unwrap();
+    let instances = std::fs::read(format!("{}/rotate_public_inputs.bin", ROTATE_SET_DIR)).unwrap();
+    let proof = std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).unwrap();
+    for _ in 0..2 {
+        run_with_operands(&vk_blob, &instances, &proof)
+            .expect("identical rotate operands must verify on every call");
+    }
+}
