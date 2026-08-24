@@ -245,7 +245,8 @@ sendTransaction(
         mapping(uint32 => varuint32) cc,
         bool bounce,
         uint8 flags,
-        TvmCell payload)
+        TvmCell payload,
+        uint256 dapp_id)
 ```
 
 **Parameters**
@@ -255,7 +256,8 @@ sendTransaction(
 * `cc` - a mapping of ECC token types to the token amounts to be transferred;
 * `bounce` - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 * `flags`- [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
-* `payload` - [tree of cells used as the body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).
+* `payload` - [tree of cells used as the body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string);
+* `dapp_id` - the recipient's Dapp ID, `0x` followed by 64 hex characters. For a self-rooted recipient it is `0x` + its account id.
 
 {% hint style="warning" %}
 In this case, the transaction is executed immediately, without creating a request or requiring additional confirmations.
@@ -270,7 +272,8 @@ tvm-cli call <MSIG_ADDR> sendTransaction '{
   "cc":{"2":5000000000},
   "bounce":false,
   "flags":1,
-  "payload":""
+  "payload":"",
+  "dapp_id":"0x<recipient dapp id>"
 }' --abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
@@ -290,7 +293,8 @@ tvm-cli call <MSIG_ADDR> sendTransaction \
   "cc":{"2":5000000000},
   "bounce":false,
   "flags":16,
-  "payload":""
+  "payload":"",
+  "dapp_id":"0x<recipient dapp id>"
 }' \
 --abi UpdateCustodianMultisigWallet_v2.abi.json  --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
@@ -308,7 +312,8 @@ submitTransaction(
         mapping(uint32 => varuint32) cc,
         bool bounce,
         uint8 flag,
-        TvmCell payload)
+        TvmCell payload,
+        uint256 dapp_id)
 ```
 
 **Parameters**
@@ -317,8 +322,9 @@ submitTransaction(
 * `value` — the amount of funds (VMSHELL) used to pay fees (it must not be `0`);
 * `cc` — a mapping of ECC token types to the token amounts to be transferred;
 * `bounce` — [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
-* `flags` — [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (usually `1`);
-* `payload` — [tree of cells used as the body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (usually an empty string).
+* `flag` — [send message flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (usually `1`). Singular here, unlike `flags` in `sendTransaction`;
+* `payload` — [tree of cells used as the body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (usually an empty string);
+* `dapp_id` — the recipient's Dapp ID, `0x` followed by 64 hex characters.
 
 **Return value**
 
@@ -335,12 +341,15 @@ Example command:
 tvm-cli call <MSIG_ADDR> submitTransaction '{
   "dest":"0:2672bb98816f2f9088d027f99681b65e05843b19367fe690cb4b5130d04eccf1",
   "value":1000000000,
-  "cc":{"2":5000000000},   # 5 SHELL
+  "cc":{"2":5000000000},
   "bounce":false,
-  "flags":1,
-  "payload":""
+  "flag":1,
+  "payload":"",
+  "dapp_id":"0x<recipient dapp id>"
 }' --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json
 ```
+
+In `cc`, index `2` is SHELL, and `5000000000` is 5 SHELL in nanotokens.
 
 {% hint style="info" %}
 If the required number of confirmations for transactions is `1`, `submitTransaction` behaves like `sendTransaction` and executes immediately.
