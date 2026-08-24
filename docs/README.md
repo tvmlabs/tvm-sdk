@@ -227,20 +227,23 @@ To do this, we first need to determine its address. Let's start by generating a 
 Now let's generate the **contract address** using the keys obtained earlier:
 
 ```
-tvm-cli genaddr helloWorld.tvc --save --setkey helloWorld.keys.json
+tvm-cli genaddr helloWorld.tvc --save --abi helloWorld.abi.json --setkey helloWorld.keys.json
 ```
 
 {% hint style="info" %}
 After this step, the `.tvc` file will be overwritten with the specified keys.
 {% endhint %}
 
-Address of your contract in the blockchain is located after `Raw address:`
+The command prints the address of your contract twice: after `Raw address:` as `0:<account id>`, and
+after `dapp::account:` as `<account id>::<account id>`.
 
 <figure><img src=".gitbook/assets/raw_address (1).jpg" alt=""><figcaption></figcaption></figure>
 
 {% hint style="info" %}
-**Save `Raw address` value** - you will need it to deploy your contract and to work with it.\
-We will refer to it as **`<YourAddress>`** below.
+**Save both values** - you will need them to deploy your contract and to work with it.\
+We will refer to the `dapp::account` value as **`<YourAddress>`** below: that is the form every
+`tvm-cli` command takes. Inside ABI arguments, such as `dest`, the `0:<account id>` form is used
+instead.
 {% endhint %}
 
 To top up the balance (approx. 10 SHELL) of the `helloWorld` contract, [use your Multisig Wallet](how-to-deploy-a-multisig-wallet.md#how-to-use-a-sponsor-wallet)
@@ -406,7 +409,7 @@ cp helloWorld.abi.json helloUniverse.abi.json
 Now, let’s calculate the address of the `helloUniverse` contract using the existing key pair.
 
 ```
-tvm-cli genaddr helloUniverse.tvc --save --setkey helloWorld.keys.json
+tvm-cli genaddr helloUniverse.tvc --save --abi helloUniverse.abi.json --setkey helloWorld.keys.json
 ```
 
 And we get the same address as the `helloWorld` contract.
@@ -425,7 +428,7 @@ tvm-cli genphrase --dump helloUniverse.keys.json
 Let’s calculate the address and prepare the TVC file for the new contract:
 
 ```
-tvm-cli genaddr helloUniverse.tvc --save --setkey helloUniverse.keys.json
+tvm-cli genaddr helloUniverse.tvc --save --abi helloUniverse.abi.json --setkey helloUniverse.keys.json
 ```
 
 <figure><img src=".gitbook/assets/raw_address_universe.jpg" alt=""><figcaption></figcaption></figure>

@@ -71,6 +71,7 @@ New key -- generate everything with one command:
 ```
 # --save writes the public key INTO the .tvc; --genkey creates the key file
 tvm-cli genaddr UpdateCustodianMultisigWallet_v2.tvc --save \
+  --abi UpdateCustodianMultisigWallet_v2.abi.json \
   --genkey UpdateCustodianMultisigWallet_v2.keys.json
 ```
 
@@ -105,7 +106,9 @@ deploy. The address `genaddr` prints is the one to fund.
 After this step, the `.tvc` file will be overwritten with the specified keys.
 {% endhint %}
 
-The `Raw address` is the future Multisig wallet address. Keys are saved to `UpdateCustodianMultisigWallet_v2.keys.json`
+`genaddr` prints the future wallet address twice: as `Raw address: 0:<account id>`, the form for ABI
+arguments, and as `dapp::account: <account id>::<account id>`, the form every `tvm-cli` command takes.
+Keys are saved to `UpdateCustodianMultisigWallet_v2.keys.json`
 
 Be sure to copy your seed phrase if you need it.
 
