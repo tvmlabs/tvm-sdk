@@ -6,12 +6,16 @@
 
 As the API is eventually consistant before starting pagination we need to limit the pagination range by the finalized timestamp (timestamp that guarantees that there is not missed objects before it).
 
-```
+```graphql
 query{
     blockchain{
-        finalized_timestamp
+        finalizedTimestamp
     }
 }
+```
+
+```graphql
+{"data":{"blockchain":{"finalizedTimestamp":1787614141}}}
 ```
 
 
@@ -56,6 +60,10 @@ master_seq_no_range:{
 `after,before`     - specify chain\_order/cursor field here
 
 Here we continue pagination within timestamp range and ask for the next 3 blocks after the last cursor in the previous query. We see that the next page exists so we can continue paginating within the same timestamp range.
+
+The timestamps and cursors below are from the run that produced this result. Put your own range —
+ending at the `finalizedTimestamp` above — and drop `after` for the first page, otherwise the query
+answers with no edges.
 
 ```graphql
 query{

@@ -17,15 +17,23 @@ Insert this query in the left part.
 ```graphql
 query{
 blockchain{
-    account(address:"0:1111111111111111111111111111111111111111111111111111111111111111"){
+    account(
+      account_id:"1111111111111111111111111111111111111111111111111111111111111111"
+      dapp_id:"0000000000000000000000000000000000000000000000000000000000000000"
+    ){
       info{
         balance(format:DEC)
         address
+        dapp_id
       }
     }
   }
 }
 ```
+
+An account is identified by two ids: `account_id` and `dapp_id`, the two halves of the address
+`dapp_id::account_id`. Both are bare 64-character hex, without `0:` and without `0x`. For a contract
+deployed by an external message the two are the same value.
 
 Now click play button and you will see the result:
 
@@ -38,7 +46,7 @@ Click on the button "book" in the upper left corner of the screen. You will see 
 ```
 curl --location --request POST https://shellnet.ackinacki.org/graphql \
 --header 'Content-Type: application/json' \
---data-raw '{"query":"query($address: String!){\n  blockchain{\n    account(address:$address){\n      info{\n        balance(format:DEC)\n      }\n    }\n  }\n}","variables":{"address":"0:ee150cacfc7508f522dbd9bd6c705238ef316b324244843eea3e81e35ae2a962"}}'
+--data-raw '{"query":"query($account_id: String!, $dapp_id: String!){\n  blockchain{\n    account(account_id:$account_id, dapp_id:$dapp_id){\n      info{\n        balance(format:DEC)\n      }\n    }\n  }\n}","variables":{"account_id":"1111111111111111111111111111111111111111111111111111111111111111","dapp_id":"0000000000000000000000000000000000000000000000000000000000000000"}}'
 ```
 
 ## Request with SDK (JavaScript)
@@ -57,6 +65,9 @@ const client = new TvmClient({
     },
 });
 
+const account_id = "1111111111111111111111111111111111111111111111111111111111111111";
+const dapp_id = "0000000000000000000000000000000000000000000000000000000000000000";
+
 (async () => {
     try {
         // Get account balance. 
@@ -64,7 +75,8 @@ const client = new TvmClient({
             query {
               blockchain {
                 account(
-                  address: "${address}"
+                  account_id: "${account_id}"
+                  dapp_id: "${dapp_id}"
                 ) {
                    info {
                     balance(format: DEC)

@@ -1,66 +1,74 @@
 # Account queries
 
+An account is identified by two ids: `account_id` and `dapp_id`, the two halves of the address
+`dapp_id::account_id`. Both are bare 64-character hex, without `0:` and without `0x`. For a contract
+deployed by an external message the two are the same value.
+
+The examples below query the Shellnet giver, `0000000000000000000000000000000000000000000000000000000000000000::1111111111111111111111111111111111111111111111111111111111111111`, at [https://shellnet.ackinacki.org/graphql](https://shellnet.ackinacki.org/graphql), and the results are what it answered.
+
 ## Get account info
 
 To get account info **including its state (BOC), data and code**, use the following GraphQL query:
 
-<pre class="language-graphql"><code class="lang-graphql"><strong>query {
-</strong>  blockchain{
-   account(address:"0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"){
-    info{
-      address
-      acc_type
-      balance
-      last_paid
-      last_trans_lt
-      boc
-      data
-      code
-      library
-      data_hash
-      code_hash
-      library_hash
+```graphql
+query {
+  blockchain{
+    account(
+      account_id:"1111111111111111111111111111111111111111111111111111111111111111"
+      dapp_id:"0000000000000000000000000000000000000000000000000000000000000000"
+    ){
+      info{
+        address
+        dapp_id
+        acc_type
+        balance
+        last_paid
+        last_trans_lt
+        boc
+        data
+        code
+        library
+        data_hash
+        code_hash
+        library_hash
+      }
     }
   }
-  }
 }
-</code></pre>
+```
 
-Result:
+Result (`boc`, `data` and `code` are shortened here):
 
 ```graphql
 {
   "data": {
     "blockchain": {
       "account": {
-        "events": {
-          "edges": [
-            {
-              "node": {
-                "msg_id": "541be3a1be3224687158d9dcd39f313ffcb1d03d5428b2a7f51d702b177755d2",
-                "body": "te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==",
-                "created_at": 1775532241
-              },
-              "cursor": "769d478d100670000000000000000000000000000000000000000000000000000000000000000000062bc501a12102"
-            },
-            {
-              "node": {
-                "msg_id": "11ea69af1314ff8c77cb82d6bf020928a15b0bc2c1505a25b5f65b339b60e194",
-                "body": "te6ccgEBAQEAOAAAayoqI7SAFJMDNXNXk8vxpapdbJTHe2M1weAqWxceYB4zXilZqp1gAAAAAAAAAAAAAAAAADDUEA==",
-                "created_at": 1775547492
-              },
-              "cursor": "769d4b46400670000000000000000000000000000000000000000000000000000000000000000000062bcff350302"
-            }
-          ],
-          "pageInfo": {
-            "hasNextPage": false
-          }
+        "info": {
+          "address": "1111111111111111111111111111111111111111111111111111111111111111",
+          "dapp_id": "0000000000000000000000000000000000000000000000000000000000000000",
+          "acc_type": 1,
+          "balance": "0xe8d4a51000",
+          "last_paid": 0,
+          "last_trans_lt": "0x693445",
+          "boc": "te6ccgECQwEADcMAArEYACIiIiIiIiIiIiIiIiIi...",
+          "data": "te6ccgEBAwEAdQABiRKKVYYEWpo8MA+Z75WNVTar...",
+          "code": "te6ccgECPwEADPEABCSK7VMg4wMgwP/jAiDA/uMC...",
+          "library": null,
+          "data_hash": "",
+          "code_hash": "2bc3395b4d88658c7e3e591af5af55c00e44dfa9540af1f250b9f1892cdfb233",
+          "library_hash": null
         }
       }
     }
   }
 }
 ```
+
+`address` and `dapp_id` come back as bare hex ids: put them together as `dapp_id::account_id` to get
+the address `tvm-cli` takes.
+
+Ask for `balance(format: DEC)` to read the balance as a decimal string instead of hex.
 
 ## Get transactions within timestamp range
 
@@ -78,6 +86,7 @@ Result:
 You can filter account transactions by these parameters:
 
 ```graphql
+master_seq_no_range: {start: Timestamp, end: Timestamp} # Time interval for pagination
 aborted: Boolean
 min_balance_delta: String
 max_balance_delta: String
@@ -96,31 +105,30 @@ Let's paginate some account transactions from the very first one:
 ```graphql
 query {
   blockchain{
-   account(address:"0:653b9a6452c7a982c6dc92b2da9eba832ade1c467699ebb3b43dca6d77b780dd"){
-    transactions
-    {
-      edges{
-        node{
-          hash
-          in_message{
-            hash
-            value
-            body
+    account(
+      account_id:"1111111111111111111111111111111111111111111111111111111111111111"
+      dapp_id:"0000000000000000000000000000000000000000000000000000000000000000"
+    ){
+      transactions(first:2)
+      {
+        edges{
+          node{
+            id
+            tr_type_name
+            aborted
+            in_msg
+            out_msgs
+            total_fees(format:DEC)
+            balance_delta(format:DEC)
           }
-          out_messages{
-            hash
-            value
-            body
-          }
-          
+          cursor
+        }
+        pageInfo{
+          endCursor
+          hasNextPage
         }
       }
-      pageInfo{
-        endCursor
-        hasNextPage
-      }
     }
-  }
   }
 }
 ```
@@ -136,20 +144,23 @@ Result
           "edges": [
             {
               "node": {
-                "hash": "c8153cd353bf90c7c1214d8c1a50a30ea6d0d900f0f6c7242d1434644c1e49fb",
-                "hash": "c8153cd353bf90c7c1214d8c1a50a30ea6d0d900f0f6c7242d1434644c1e49fb",
-                "in_message": {
-                  "hash": "c2b064872a2ce6db65ca724a03d1be5de37abe784c658ef4d5998249b9643144",
-                  "value": "0x229bd2a5eb3ef4",
-                  "body": null
-                },
-                "out_messages": []
-              }
+                "id": "b241fe2a2cb57143ff6b4b1464a6656e421bdd20059dc24584e40aab43c4e8cb",
+                "tr_type_name": "Ordinary",
+                "aborted": false,
+                "in_msg": "cc713b7d9e474685cd4f6b32af98af42cad56900e0464eedfbd05d43c7e7e0a3",
+                "out_msgs": [
+                  "6669e01217c9e85673961bd3714d90fa7b65e2b9d1a50a4720576b1b30551f9e",
+                  "aeee9fe3f21d7abd543c21b4fc9d2d7363209b458c3c2f81092d52137b1e2530"
+                ],
+                "total_fees": "0",
+                "balance_delta": "-4503599627370496"
+              },
+              "cursor": "76a800b4c00670000000000000000000000000000000000000000000000000000000000000000000057dd7e300"
             },
             ...
           ],
           "pageInfo": {
-            "endCursor": "5286af50052a33e50104",
+            "endCursor": "76a800b5100670000000000000000000000000000000000000000000000000000000000000000000057dd7f200",
             "hasNextPage": true
           }
         }
@@ -168,8 +179,6 @@ Use-cases:
 * get transfers that some account sent or received
 * get account's events
 * get external calls of an account
-* get transfers between an account and some counterparty account
-* get account events to an external address
 * optionally filter messages by value amount
 * Pull messages for a period if your websocket subscription failed (use Message`.chain_order` field as `after` cursor ;-) )
 
@@ -181,7 +190,6 @@ You can filter messages by these parameters:
 
 ```graphql
 master_seq_no_range: {start: Timestamp, end: Timestamp} # Time interval for pagination
-counterparties: [String!]
 msg_type: [BlockchainMessageTypeFilterEnum!]
 min_value: String
 
@@ -208,17 +216,19 @@ Lets get first 2 transfers some account received or sent. So we need to get inco
 ```graphql
 query{
   blockchain{
-    account(address:"-1:99392dea1c5035feddb1bb3db9e71138d82868f7460c6da3dca26f0520798ebd"){
+    account(
+      account_id:"1111111111111111111111111111111111111111111111111111111111111111"
+      dapp_id:"0000000000000000000000000000000000000000000000000000000000000000"
+    ){
       messages(msg_type:[IntIn, IntOut],first:2){
         edges{
           node{
             src
             dst
             id
-            hash
             value(format:DEC)
-            msg_type
-            created_at_string
+            msg_type_name
+            created_at
           }
           cursor
         }
@@ -242,27 +252,25 @@ Result. We see that the next page exists, we can continue pagination.
           "edges": [
             {
               "node": {
-                "src": "0:7db5e456a7c41306c23c588fb0561fe63443a6f17d7e2a08672369636980678f",
-                "dst": "-1:99392dea1c5035feddb1bb3db9e71138d82868f7460c6da3dca26f0520798ebd",
-                "id": "message/a74d826adf7f00153e034e1ee4de4f6e5a38843ee8d14c744bfcbf3c0df9f73d",
-                "hash": "a74d826adf7f00153e034e1ee4de4f6e5a38843ee8d14c744bfcbf3c0df9f73d",
-                "value": "1090000000",
-                "msg_type": 0,
-                "created_at_string": "2021-07-17 21:08:16.000"
+                "src": "0:1111111111111111111111111111111111111111111111111111111111111111",
+                "dst": "0:20fcf0b46bc179bd6ad7ac2c3a303ec94dca9a1a2f421e2c35ebff55db35bdc4",
+                "id": "6669e01217c9e85673961bd3714d90fa7b65e2b9d1a50a4720576b1b30551f9e",
+                "value": "10000000000000",
+                "msg_type_name": "Internal",
+                "created_at": 1786776396
               },
-              "cursor": "59876bem0400"
+              "cursor": "76a800b4c00670000000000000000000000000000000000000000000000000000000000000000000057dd7e30100"
             },
             {
               "node": {
-                "src": "-1:99392dea1c5035feddb1bb3db9e71138d82868f7460c6da3dca26f0520798ebd",
-                "dst": "-1:3333333333333333333333333333333333333333333333333333333333333333",
-                "id": "message/ead06f194b988c1658215e178e68522f27cc018df1830bcfe779d9b9ce7fee93",
-                "hash": "ead06f194b988c1658215e178e68522f27cc018df1830bcfe779d9b9ce7fee93",
-                "value": "1000000000",
-                "msg_type": 0,
-                "created_at_string": "2021-07-17 21:08:24.000"
+                "src": "0:1111111111111111111111111111111111111111111111111111111111111111",
+                "dst": "0:20fcf0b46bc179bd6ad7ac2c3a303ec94dca9a1a2f421e2c35ebff55db35bdc4",
+                "id": "702aef3b6d68992336331dffe769f4ee7723bc426821e9febfd350610b7be54c",
+                "value": "10000000000000",
+                "msg_type_name": "Internal",
+                "created_at": 1786776401
               },
-              "cursor": "59876bem0401"
+              "cursor": "76a800b5100670000000000000000000000000000000000000000000000000000000000000000000057dd7f20100"
             }
           ],
           "pageInfo": {
@@ -275,6 +283,9 @@ Result. We see that the next page exists, we can continue pagination.
 }
 ```
 
+`src` and `dst` inside a message are addresses in the `0:<account_id>` form, the form ABI arguments
+take.
+
 ### Account events
 
 To get account events run this query.
@@ -283,12 +294,10 @@ To get account events run this query.
 query {
   blockchain {
     account(
-      address: "0:1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a"
+      account_id:"1111111111111111111111111111111111111111111111111111111111111111"
+      dapp_id:"0000000000000000000000000000000000000000000000000000000000000000"
     ) {
-      events(
-        dst: ":0000000000000000000000000000000000000000000000000000000000000267"
-        last: 2
-      ) {
+      events(last: 2) {
         edges {
           node {
             msg_id
@@ -306,6 +315,9 @@ query {
 }
 ```
 
+The `events` field also takes an optional `dst` argument — an external address, to keep only the
+events sent to it.
+
 Result
 
 ```graphql
@@ -317,19 +329,19 @@ Result
           "edges": [
             {
               "node": {
-                "msg_id": "541be3a1be3224687158d9dcd39f313ffcb1d03d5428b2a7f51d702b177755d2",
-                "body": "te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==",
-                "created_at": 1775532241
+                "msg_id": "817643f65d7a8116674492c0e6a91ce396b6fdc48281263bb0354cc685edcbb9",
+                "body": "te6ccgEBAgEAOgABViEI6kGACKO9XRrSp/MyNp2giu9c9UdJWECBMDSbqBUIP4txza4o7msoARABABOgAAAAAiO5rKAE",
+                "created_at": 1787602945
               },
-              "cursor": "769d478d100670000000000000000000000000000000000000000000000000000000000000000000062bc501a12102"
+              "cursor": "76a8ca8010067000000000000000000000000000000000000000000000000000000000000000000005a404cf0002"
             },
             {
               "node": {
-                "msg_id": "11ea69af1314ff8c77cb82d6bf020928a15b0bc2c1505a25b5f65b339b60e194",
-                "body": "te6ccgEBAQEAOAAAayoqI7SAFJMDNXNXk8vxpapdbJTHe2M1weAqWxceYB4zXilZqp1gAAAAAAAAAAAAAAAAADDUEA==",
-                "created_at": 1775547492
+                "msg_id": "976cc1168835aa44f730d57f1cc222ab49fe828184086e4a4fbf8ec745551342",
+                "body": "te6ccgEBAgEAOgABViEI6kGADlN+oMULTKHSGxY2dOyh/axJf+BLEmM6JF8gOxXWtycI7msoARABABOgAAAAAiO5rKAE",
+                "created_at": 1787603388
               },
-              "cursor": "769d4b46400670000000000000000000000000000000000000000000000000000000000000000000062bcff350302"
+              "cursor": "76a8ca9bc0067000000000000000000000000000000000000000000000000000000000000000000005a40a0c0002"
             }
           ],
           "pageInfo": {
@@ -342,45 +354,47 @@ Result
 }
 ```
 
-Then, by decoding the \`body\` of that message you can obtain the data attached to the event.\
-You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body) or use tvm-cli comand:\
+Then, by decoding the `body` of that message you can obtain the data attached to the event.\
+You can parse it with SDK function [`abi.decode_message_body`](../../reference/types-and-methods/mod_abi.md#decode_message_body) or use tvm-cli comand:\
 For example:
 
 ```
-tvm-cli decode body te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA== --abi ./contracts/0.79.3_compiled/exchange/Exchange.abi.json
+tvm-cli decode body te6ccgEBAgEAOgABViEI6kGADlN+oMULTKHSGxY2dOyh/axJf+BLEmM6JF8gOxXWtycI7msoARABABOgAAAAAiO5rKAE --abi GiverV3.abi.json
 ```
 
 As a result, you will get something approximately like this:
 
 ```
-Input arguments:
-    body: te6ccgEBAQEAOAAAayoqI7SAFmHd/5cK3iZgSQPbLrz9F5UkzXuik7iu9XDZGTVWJFFAAAAAAAAAAAAAAAAAAATiEA==
-     abi: ./contracts/0.79.3_compiled/exchange/Exchange.abi.json
-
-
-UsdcMigrated: {
-  "from": "0:b30eeffcb856f13302481ed975e7e8bca9266bdd149dc577ab86c8c9aab1228a",
-  "value": "10000"
+SentCurrencyWithFlag: {
+  "dst": "0:729bf506285a650e90d8b1b3a7650fed624bff02589319d122f901d8aeb5b938",
+  "value": "2000000000",
+  "value2": {
+    "2": "2000000000"
+  },
+  "flag": "16"
 }
 Signature: None
 Header: null
-FunctionId: 9981240F
+FunctionId: 43A4362C
 ```
 
 ### Account external calls
 
-If you want to collect external calls of an account, filter by msg\_type = `ExtIn`. `Body` field contains ABI-encoded information with Event data. You can parse it with SDK function [`abi.decode_message_body`](https://docs.everos.dev/ever-sdk/reference/types-and-methods/mod_abi#decode_message_body). Lets get the last external call:
+If you want to collect external calls of an account, filter by msg\_type = `ExtIn`. Lets get the last external call:
 
 ```graphql
 query{
   blockchain{
-    account(address:"0:3d10c4d6dfc5d3cf6f8ac3d7468b792b91385c087da8f59669569493c7c0e28e"){
+    account(
+      account_id:"1111111111111111111111111111111111111111111111111111111111111111"
+      dapp_id:"0000000000000000000000000000000000000000000000000000000000000000"
+    ){
       messages(msg_type:[ExtIn],last:1){
         edges{
           node{
-            hash
-            body
-            created_at_string
+            id
+            boc
+            created_at
           }
           cursor
         }
@@ -404,11 +418,11 @@ Result
           "edges": [
             {
               "node": {
-                "hash": "3ebc5a30f598825a015b99048b3f9baeb1d60818aa77ec6ceb3b84254e649723",
-                "body": "te6ccgEBAQEAewAA8cb04wBQrr+dL/xBeDVKUIHJpF+ixQ9vsl7rIu8BtyRr72MIA9l87nY/maACAjMiwTkNeYlx+Vm3AtMvU000ZYXOo+U6Dh8fZKMrMO68do6VqlWYBXM3BEnQiVL3dDmtSMAAAGABANbS2JO2i4ap0DtYk7XgW5WzcGA=",
-                "created_at_string": "2022-04-07 12:32:53.000"
+                "id": "14b88ce8e8b7279b557ad493313a7b7a02105fea38c81e1cc9dce4ef4a9fbbdf",
+                "boc": "te6ccgEBAwEArAAB5YgAIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIEjIM7yj4+Ptizf3EO+6TJSs0WGY/vtsdNIaOxLXURWrSkzb48ZzZhg1Bta4fAoh3xzpZ6lH1bQ0BvhpUXeQWkOAAABoDV3B/ZqjKnkd9KKKIBAU6ADlN+oMULTKHSGxY2dOyh/axJf+BLEmM6JF8gOxXWtycI7msoAQICABOgAAAAAiO5rKAE",
+                "created_at": 1787603389
               },
-              "cursor": "5f7bcee00615d8d7711c0000"
+              "cursor": "76a8ca9bd0067000000000000000000000000000000000000000000000000000000000000000000005a40a0f0000"
             }
           ],
           "pageInfo": {
@@ -419,4 +433,29 @@ Result
     }
   }
 }
+```
+
+The `boc` field carries the whole message. Pass it to `tvm-cli` together with the contract ABI to see
+which function was called:
+
+```
+tvm-cli decode msg te6ccgEBAwEArAAB5YgAIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIEjIM7yj4+Ptizf3EO+6TJSs0WGY/vtsdNIaOxLXURWrSkzb48ZzZhg1Bta4fAoh3xzpZ6lH1bQ0BvhpUXeQWkOAAABoDV3B/ZqjKnkd9KKKIBAU6ADlN+oMULTKHSGxY2dOyh/axJf+BLEmM6JF8gOxXWtycI7msoAQICABOgAAAAAiO5rKAE --abi GiverV3.abi.json
+```
+
+```
+  "BodyCall": {
+    "sendCurrencyWithFlag": {
+      "dest": "0:729bf506285a650e90d8b1b3a7650fed624bff02589319d122f901d8aeb5b938",
+      "value": "2000000000",
+      "ecc": {
+        "2": "2000000000"
+      },
+      "flag": "2"
+    },
+    "BodyHeader": {
+      "expire": "1787603428",
+      "time": "1787603388406",
+      "pubkey": "None"
+    }
+  }
 ```
