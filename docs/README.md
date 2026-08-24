@@ -642,7 +642,7 @@ The address of the `DappRoot` contract is: `0:9999999999999999999999999999999999
 Example command:
 
 ```
-tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json.abi.json --sign helloWorld.keys.json
+tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
 
 ```
 
