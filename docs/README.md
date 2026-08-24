@@ -251,7 +251,7 @@ To top up the balance (approx. 10 SHELL) of the `helloWorld` contract, [use your
 and apply the following method `sendTransaction`:
 
 ```
-sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bool bounce, uint8 flags, TvmCell payload)
+sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bool bounce, uint8 flags, TvmCell payload, uint256 dapp_id)
 ```
 
 * `dest` - the transfer target address;
@@ -259,11 +259,12 @@ sendTransaction(address dest, uint128 value, mapping(uint32 => varuint32) cc, bo
 * `cc` - the type of ECC token (SHELL has index 2) and amount (specified in nanotokens) to transfer;
 * `bounce` - [bounce flag](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer): (should be `false`);
 * `flags-`[sendmsg flags](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) (should be `1`);
-* `payload` - [tree of cells used as body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string).
+* `payload` - [tree of cells used as body](https://github.com/gosh-sh/TON-Solidity-Compiler/blob/master/API.md#addresstransfer) of the outbound internal message (should be an empty string);
+* `dapp_id` - the recipient's Dapp ID, `0x` followed by 64 hex characters. For a self-rooted recipient it is `0x` + its account id.
 
 For example: you can use the command:
 
-<pre><code><strong>tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+<pre><code><strong>tvm-cli call 90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430::90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e", "value":0, "bounce":false, "cc": {"2": 1000000000}, "flags": 1, "payload": "", "dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json
 </strong>
 </code></pre>
 
@@ -321,24 +322,28 @@ Go to [GraphQL playground](https://shellnet.ackinacki.org/graphql).
 
 Enter the information in the left pane and click the "Run" button (replace the contract's address with the one you obtained in the previous steps).
 
-```
+```graphql
 query {
-  accounts(
-    filter: {
-      id: {
-        eq: "<YourAddress>"
+  blockchain {
+    account(
+      account_id: "<account id>"
+      dapp_id: "<dapp id>"
+    ) {
+      info {
+        acc_type_name
+        dapp_id
+        balance
+        code
+        code_hash
+        data
       }
     }
-  ) {
-    acc_type_name
-    dapp_id
-    balance
-    code
-    code_hash
-    data
   }
 }
 ```
+
+Both arguments are bare 64-character hex ids, without `0:` and without `0x`: the two halves of
+`<YourAddress>`, which for a self-rooted contract are the same value.
 
 {% hint style="info" %}
 The `dapp_id` field will contain the identifier of your decentralized contract system on the Acki Nacki blockchain.
@@ -458,7 +463,7 @@ Now we can call `deployNewContract` function.
 In our case, the command will be as follows:
 
 ```
-tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e deployNewContract '{"stateInit":"'$HW_STATE_INIT'", "initialBalance":10000000000, "payload":"te6ccgEBAQEADgAAGHA94s8AAAACVAvkAA=="}' --abi helloWorld.abi.json 
+tvm-cli call cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e deployNewContract '{"stateInit":"'$HW_STATE_INIT'", "initialBalance":10000000000, "payload":"te6ccgEBAQEADgAAGHA94s8AAAACVAvkAA=="}' --abi helloWorld.abi.json 
 ```
 
 This way, the new contract within the DAPP ID will be deployed through an internal message.
@@ -514,7 +519,7 @@ function callExtTouch(address addr)
 In our case, the command will be as follows:
 
 ```
-tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:4d5639cd88ee726492b767db774b5a2fe8573c46fd598a75febb5525dc12f918"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
+tvm-cli call cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:4d5639cd88ee726492b767db774b5a2fe8573c46fd598a75febb5525dc12f918"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
 ```
 
 <figure><img src=".gitbook/assets/callExtTouch_HU.jpg" alt=""><figcaption></figcaption></figure>
@@ -558,7 +563,7 @@ function callExtTouch(address addr)
 In our case, the command will be as follows:
 
 ```
-tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:f2fe666ad8126ca78f8190305bdf6436971236c477699b3c34e90c5ed6b0691e"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
+tvm-cli call cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e callExtTouch '{"addr": "0:f2fe666ad8126ca78f8190305bdf6436971236c477699b3c34e90c5ed6b0691e"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
 
 ```
 
@@ -611,12 +616,12 @@ For example, our HelloWorld contract will have the following Dapp ID:
     That is, you first need to generate the message body by running the following command:<br>
 
     ```
-    tvm-cli body --abi contracts/0.79.3_compiled/dappconfig/DappConfig.abi.json deployNewConfigCustom '{"authorityAddress": null}'
+    tvm-cli body --abi contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json deployNewConfigCustom '{"authorityAddress": null}'
 
     ```
 
     \
-    \* abi [DappConfig](https://github.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/dappconfig/DappConfig.abi.json)\
+    \* abi [DappRoot](https://github.com/ackinacki/ackinacki/blob/main/contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json)\
     \
     As a result, you will get:<br>
 
@@ -636,13 +641,13 @@ For example, our HelloWorld contract will have the following Dapp ID:
 
 {% hint style="info" %}
 `DappRoot` is a system contract that manages `DappConfig` contracts, including their deployment and the calculation of the `DappConfig` address for a given Dapp ID.\
-The address of the `DappRoot` contract is: `0:9999999999999999999999999999999999999999999999999999999999999999`
+The account id of the `DappRoot` contract is `9999999999999999999999999999999999999999999999999999999999999999`. It is a system contract and lives under the Dapp ID of 64 zeros, so commands address it as `0000000000000000000000000000000000000000000000000000000000000000::9999999999999999999999999999999999999999999999999999999999999999`.
 {% endhint %}
 
 Example command:
 
 ```
-tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
+tvm-cli call cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999", "value":10000000, "bounce":false, "cc": {"2": 100000000000}, "flags": 1, "payload": "te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json --sign helloWorld.keys.json
 
 ```
 
@@ -661,7 +666,7 @@ getConfigAddr(uint256 dapp_id)
 Example command to get the address of the DappConfig contract:
 
 ```
-tvm-cli -u shellnet.ackinacki.org -j run 0:9999999999999999999999999999999999999999999999999999999999999999 getConfigAddr '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi acki-nacki/contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
+tvm-cli -u shellnet.ackinacki.org -j run 0000000000000000000000000000000000000000000000000000000000000000::9999999999999999999999999999999999999999999999999999999999999999 getConfigAddr '{"dapp_id":"0xcf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e"}' --abi acki-nacki/contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
 
 ```
 
@@ -682,7 +687,7 @@ Example command to transfer 10 SHELL from the balance of the Multisig contract t
 
 ```
 
-tvm-cli call 0:90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d","value": 1000000000,"bounce":false, "cc": {"2":10000000000}, "flags": 1, "payload": ""}' --abi multisig.abi.json --sign multisig.keys.json
+tvm-cli call 90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430::90c1fe4ab3a86a112e72a587fa14b89ecb2836da0b4ec465543dc0bb62df1430 sendTransaction '{"dest":"0:45744296d4bb46028e6693f586c6d158f02041e51ed48b62debac71a38bd415d","value": 1000000000,"bounce":false, "cc": {"2":10000000000}, "flags": 1, "payload": "", "dapp_id":"0x0000000000000000000000000000000000000000000000000000000000000000"}' --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json
 
 ```
 
@@ -715,7 +720,7 @@ Let's try:
 Check the balance of the HelloWorld contract:
 
 ```
-tvm-cli -j account 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
+tvm-cli -j account cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
 ```
 
 Result: the balance is 0.465631997 VMSHELL tokens.
@@ -724,8 +729,11 @@ Result: the balance is 0.465631997 VMSHELL tokens.
 
 Using the `getDetails()` method, you can view the available balance of the DappConfig contract.
 
+`DappConfig` is deployed by `DappRoot`, so it belongs to the same Dapp ID of 64 zeros, while its
+account id is the address `getConfigAddr` returned, without the `0:` prefix.
+
 ```
-tvm-cli -j run 0:020473650f8bf0d3df871aadf28a40315ce6ae6d7fffe63e5e557198e0c68b5d getDetails {} --abi dappConfig/DappConfig.abi.json
+tvm-cli -j run 0000000000000000000000000000000000000000000000000000000000000000::020473650f8bf0d3df871aadf28a40315ce6ae6d7fffe63e5e557198e0c68b5d getDetails {} --abi dappConfig/DappConfig.abi.json
 ```
 
 Result: the balance is 500.
@@ -739,13 +747,13 @@ Thus, when using the `touch()` method, the `getTokens()` function will be called
 Call the `touch()` function:
 
 ```
-tvm-cli call 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e touch {} --abi helloWorld.abi.json
+tvm-cli call cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e touch {} --abi helloWorld.abi.json
 ```
 
 and check the contract balance:
 
 ```
-tvm-cli -j account 0:cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
+tvm-cli -j account cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e::cf95b9366a9f02b0dcab35ba6b8ff800dc3ea9f7a1f19897f045836175f4663e
 ```
 
 As a result, we see that the balance has been replenished by 100 VMSHELL and now amounts to 100.460237956 VMSHELL.
