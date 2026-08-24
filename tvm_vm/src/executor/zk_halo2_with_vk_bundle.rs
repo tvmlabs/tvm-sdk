@@ -16,7 +16,10 @@
 //     8     1  version         = 0x01 (Base) | 0x02 (shape-tagged)
 //     9     1  transcript_kind = 0x00 (Blake2b)
 //    10     1  circuit_shape   = 0 Base | 1 Rlc  (v1: reserved 0)
-//    11     5  reserved        = 0 × 5
+//    11     1  accumulator_limbs = 0 none | 12 KZG accumulator @ instances[0..12]
+//                                (was part of the reserved region; a legacy blob
+//                                carries 0 here and skips the decider)
+//    12     4  reserved        = 0 × 4
 //    16     4  config_len      (u32 LE)
 //    20  cl    config_json     Base: `BaseCircuitParams` | Rlc: `EthCircuitParams`
 //   ...     4  vk_len          (u32 LE)
@@ -79,6 +82,17 @@ pub const VK_CIRCUIT_SHAPE_RLC: u8 = 1;
 /// today; `0x01 = Keccak` is reserved for a future format version.
 pub const TRANSCRIPT_KIND_BLAKE2B: u8 = 0;
 
+/// `accumulator_limbs` byte (offset 11). `0` = plain circuit, no accumulation
+/// decider. `12` = the instance column carries a snark-verifier KZG accumulator
+/// in `instances[0..12]` (`lhs.x ‖ lhs.y ‖ rhs.x ‖ rhs.y`, each 3 LE limbs of
+/// 88 bits); the opcode must run the pairing decider `e(lhs, g2) == e(rhs,
+/// s_g2)` after the SHPLONK verify, otherwise a recursive-aggregation proof is
+/// accepted without checking the folded inner proofs. Repurposed from the
+/// reserved region, so legacy blobs (all-zero reserved) keep meaning "no
+/// decider".
+pub const VK_ACCUMULATOR_NONE: u8 = 0;
+pub const VK_ACCUMULATOR_LIMBS_KZG: u8 = 12;
+
 /// Header size in bytes: magic (8) + version (1) + transcript_kind (1) +
 /// circuit_shape (1) + reserved (5).
 const VK_HEADER_LEN: usize = 16;
@@ -111,6 +125,10 @@ pub enum VkBlobConfig {
 pub struct VkBlob {
     pub config: VkBlobConfig,
     pub vk_bytes: Vec<u8>,
+    /// Number of leading instance elements that form a KZG accumulator the
+    /// opcode must pair-check (`0` = none, `12` = KZG). See
+    /// [`VK_ACCUMULATOR_LIMBS_KZG`].
+    pub accumulator_limbs: u8,
 }
 
 impl VkBlob {
@@ -173,7 +191,18 @@ impl VkBlob {
                 bytes[9]
             );
         }
-        // bytes[11..16] reserved; ignored.
+        // byte[11] = accumulator_limbs (repurposed from the reserved region).
+        // Only 0 (none) and 12 (KZG) are defined; any other value is a
+        // structural error rather than a silent "no decider".
+        let accumulator_limbs = bytes[11];
+        if accumulator_limbs != VK_ACCUMULATOR_NONE && accumulator_limbs != VK_ACCUMULATOR_LIMBS_KZG
+        {
+            fail!(
+                "VkBlob: unsupported accumulator_limbs byte {accumulator_limbs} (only 0 = none and \
+                 {VK_ACCUMULATOR_LIMBS_KZG} = KZG are defined)"
+            );
+        }
+        // bytes[12..16] reserved; ignored.
 
         let mut cursor = VK_HEADER_LEN;
         let config_bytes = vk_read_chunk(bytes, &mut cursor, "config_json")?;
@@ -209,7 +238,7 @@ impl VkBlob {
             _ => unreachable!("circuit_shape validated above"),
         };
 
-        Ok(Self { config, vk_bytes })
+        Ok(Self { config, vk_bytes, accumulator_limbs })
     }
 }
 
