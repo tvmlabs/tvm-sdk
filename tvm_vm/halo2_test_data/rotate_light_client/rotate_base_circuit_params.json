@@ -1,0 +1,12 @@
+{
+  "k": 21,
+  "num_advice_per_phase": [
+    21
+  ],
+  "num_fixed": 1,
+  "num_lookup_advice_per_phase": [
+    2
+  ],
+  "lookup_bits": 20,
+  "num_instance_columns": 1
+}
