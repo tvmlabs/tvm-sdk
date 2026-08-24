@@ -27,6 +27,14 @@ You create a new Dapp ID when you deploy a contract using an external message. T
 
 If your Dapp consists of multiple contracts, you need to implement your system so that all the contracts are deployed either from the root contract or its children.
 
+{% hint style="info" %}
+**A contract deployed by an external message is self-rooted: its `dapp_id` equals its `account_id`.**\
+Such a contract is addressed as `<account_id>::<account_id>`. Multisig wallets are deployed this way, so a wallet is always addressed under its own Dapp ID — not under the Dapp ID of the contracts it funds.\
+A contract deployed from the root contract by an internal message joins the Dapp ID of that root and is addressed as `<root_account_id>::<account_id>`.
+
+Every account is stored under its own Dapp ID, and a query that names a different one is answered as if the account did not exist — see [Troubleshooting](./#can-t-find-account-in-shard-state-when-reading-an-account).
+{% endhint %}
+
 In this guide, we will use the [`helloWorld`](https://github.com/tvmlabs/sdk-examples/blob/main/contracts/helloWorld/helloWorld.sol) contract to demonstrate the features of a Dapp ID.
 
 ```solidity
@@ -849,3 +857,42 @@ tvm-cli call <MSIG_ADDR> sendTransaction \
 
 As a result, the account balance will be credited with **5 VMSHELL**\
 After the transaction is confirmed, you can safely run the deploy command again.
+
+### `Can't find account in shard state` when reading an account <a href="#can-t-find-account-in-shard-state-when-reading-an-account" id="can-t-find-account-in-shard-state-when-reading-an-account"></a>
+
+#### Description
+
+A read request for an account that exists and is `Active` returns:
+
+```
+Original error: Can't find account in shard state
+```
+
+#### Cause
+
+The account was requested under a Dapp ID it does not belong to. An account is stored under its own Dapp ID, and a request naming another one is answered exactly like a request for an account that was never deployed — the response says nothing about the `dapp_id` being wrong.
+
+The same `account_id` under two different `dapp_id` values:
+
+```bash
+# a Dapp ID the account does not belong to
+curl "https://<node url>/v2/account?account_id=<account_id>&dapp_id=<other_dapp_id>"
+
+Original error: Can't find account in shard state
+```
+
+```bash
+# the account's own Dapp ID
+curl "https://<node url>/v2/account?account_id=<account_id>&dapp_id=<account_id>"
+
+{"boc":"te6ccgECsQEAK4IAA68YAELIErTqF4g16mt0LYolfPQkE0MGCoePmM0pNM5dwx1qQFALYGqM...
+```
+
+### ✅ Solution
+
+Request the account under its own Dapp ID:
+
+* a self-rooted contract — a Multisig Wallet, or any other contract deployed by an external message — has `dapp_id` equal to its `account_id`, and its canonical address is `<account_id>::<account_id>`;
+* a contract deployed by an internal message from the root contract belongs to the Dapp ID of that root, so its `dapp_id` is the root's `account_id`.
+
+The `dapp_id` of an account is also returned by the GraphQL `accounts` query shown in the [Create your first Dapp ID](./#create-your-first-dapp-id) section, and by a successful `/v2/account` response.

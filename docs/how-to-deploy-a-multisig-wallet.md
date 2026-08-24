@@ -58,6 +58,10 @@ For Mainnet, use `https://mainnet.ackinacki.org` the same way, or pass `--url` o
 | the contract a command acts on | `dapp_id::account_id` |
 | an address inside ABI arguments (`dest`) | `0:<account_id>` |
 
+A wallet is self-rooted -- it is deployed by an external message, so its `dapp_id` equals its
+`account_id` and the command acts on `<account_id>::<account_id>`. The same rule for the rest of your
+contracts is in the [Dapp ID Full Guide](README.md#create-your-first-dapp-id).
+
 ## Generate seed phrase, keys and address
 
 In Acki Nacki blockchain, the Multisig wallet address depends on its binary code and initial data, which includes the owner's public key.
@@ -123,6 +127,9 @@ tvm-cli --url shellnet.ackinacki.org call <sender>::<sender> sendCurrencyWithFla
   --abi <sender abi> --sign <sender keys>
 ```
 
+Both forms meet in this one command: the sending wallet is `<sender>::<sender>`, and `dest` inside the
+ABI arguments is `0:<account id>` -- see [Two address forms](#two-address-forms).
+
 {% hint style="info" %}
 If you plan to test your smart contract systems, you can use the provided Multisig wallet to top up contract balances in order to cover gas fees.
 {% endhint %}
@@ -187,7 +194,11 @@ In our example, the command will be as follows:
 
 ```
 
-tvm-cli deploy --abi UpdateCustodianMultisigWallet_v2.abi.json --sign UpdateCustodianMultisigWallet_v2.keys.json UpdateCustodianMultisigWallet_v2.tvc '{"owners_pubkey":["0x92658a2dee35923cc628b7f5f09e014eeeb7f492dd4dfd2f65cd304a73d2d2f4"], "owners_address": [], "reqConfirms":1, "reqConfirmsData": 1, "value":10000000000}'
+tvm-cli deploy --abi UpdateCustodianMultisigWallet_v2.abi.json \
+  --sign UpdateCustodianMultisigWallet_v2.keys.json \
+  --dst-dapp-id <account_id> \
+  UpdateCustodianMultisigWallet_v2.tvc \
+  '{"owners_pubkey":["0x92658a2dee35923cc628b7f5f09e014eeeb7f492dd4dfd2f65cd304a73d2d2f4"],"owners_address":[],"reqConfirms":1,"reqConfirmsData":1,"value":10000000000,"minBalance":0,"targetBalance":0}'
 ```
 
 <figure><img src=".gitbook/assets/deploy.jpg" alt=""><figcaption></figcaption></figure>
@@ -208,7 +219,7 @@ During contract deployment, **10** **SHELL** tokens were converted into **10** *
 
 In the examples below:
 
-* `<MSIG_ADDR>` — Multisig Wallet address (e.g. `0:7a55...dd45`)
+* `<MSIG_ADDR>` — Multisig Wallet address in the canonical form `<account_id>::<account_id>` (see [Two address forms](#two-address-forms))
 * ABI file: [`UpdateCustodianMultisigWallet_v2.abi.json`](https://raw.githubusercontent.com/ackinacki/ackinacki/main/contracts/0.81.0_compiled/updatecustodianmultisigwallet_v2/UpdateCustodianMultisigWallet_v2.abi.json)
 * Signer keys (one of the custodians): `UpdateCustodianMultisigWallet_v2.keys.json` , generated in the [previous step](how-to-deploy-a-multisig-wallet.md#generate-seed-phrase-keys-and-address)
 
