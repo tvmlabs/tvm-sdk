@@ -1,8 +1,7 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
 
-mod common;
-use common::BIN_NAME;
+const BIN_NAME: &str = "tvm-cli";
 
 /// `deploy_message` is looked up by name while dispatching, so every
 /// subcommand listed after it aborts if that name is not a registered

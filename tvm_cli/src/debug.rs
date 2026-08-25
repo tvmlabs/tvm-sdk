@@ -65,6 +65,7 @@ use crate::FullConfig;
 use crate::config::Config;
 use crate::contract_data_from_matches_or_config_alias;
 use crate::crypto::load_keypair;
+use crate::crypto::mask_key_source;
 use crate::decode::msg_printer::serialize_msg;
 use crate::deploy::prepare_deploy_message;
 use crate::helpers::SdkAddress;
@@ -714,6 +715,7 @@ async fn debug_call_command(
     );
 
     if !full_config.config.is_json {
+        let sign = sign.as_deref().map(mask_key_source);
         print_args!(input, method, params, sign, opt_abi, output);
     }
 
@@ -947,6 +949,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     );
     let wc = wc_from_matches_or_config(matches, config)?;
     if !config.is_json {
+        let sign = sign.as_deref().map(mask_key_source);
         print_args!(tvc, params, sign, opt_abi, output, debug_info);
     }
 

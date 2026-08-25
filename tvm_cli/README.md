@@ -908,7 +908,7 @@ $ tvm-cli getkeypair -o key.json -p "rule script joy unveil chaos replace fox re
 Config: /home/user/tvmlabs/tvm-cli/tvm-cli.conf.json
 Input arguments:
 key_file: key.json
-  phrase: rule script joy unveil chaos replace fox recipe hedgehog heavy surge online
+  phrase: <seed phrase>
 Keypair successfully saved to key.json.
 Succeeded.
 
