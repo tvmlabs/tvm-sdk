@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - `tvm-cli`: a seed phrase or secret key passed on the command line is no longer printed back. Values of `--keys`, `--sign`, `--setkey`, `--phrase` and `--keypair` now appear in the `Input arguments:` block as `<seed phrase>` or `<secret key>`, while a path to a keypair file is still shown in full. `genaddr` no longer repeats a phrase supplied with `--setkey`, in text or JSON output, and `config` / `config alias` no longer print a phrase held in place of a keypair path. A phrase the tool generates itself is still shown, since nothing else records it.
+- `tvm_client` / `tvm-cli`: an invalid seed phrase is no longer repeated back in the `Invalid bip39 phrase` error. A phrase with one mistyped word is still nearly the whole wallet, so the message now carries only a short stub and the length, the way invalid secret keys were already reported.
 - `tvm-cli`: `genaddr`, `getkeypair`, `genphrase`, `account`, `decode` and the other subcommands listed after `deploy_message` no longer abort immediately in debug builds. `deploy_message` was registered under the wrong internal name, which tripped an argument-parser assertion during command dispatch. Release builds were unaffected.
 
 ## [3.0.5] - 2026-08-11

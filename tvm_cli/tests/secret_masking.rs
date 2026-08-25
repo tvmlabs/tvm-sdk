@@ -92,3 +92,19 @@ fn config_alias_add_does_not_echo_the_phrase() -> Result<(), Box<dyn std::error:
         .stdout(predicate::str::contains(r#""key_path": "<seed phrase>""#));
     Ok(())
 }
+
+/// A phrase with one mistyped word is still almost the whole wallet: the BIP39
+/// checksum narrows the missing word to a trivial search. It must not appear in
+/// the error either.
+#[test]
+fn an_invalid_phrase_is_not_echoed_by_the_error() -> Result<(), Box<dyn std::error::Error>> {
+    let typo = format!("{PHRASE}X");
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("genpubkey").arg(&typo);
+    cmd.assert()
+        .failure()
+        .stdout(predicate::str::contains(&typo).not())
+        .stdout(predicate::str::contains("extra monitor fog").not())
+        .stdout(predicate::str::contains("Invalid bip39 phrase"));
+    Ok(())
+}
