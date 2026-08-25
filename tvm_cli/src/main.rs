@@ -374,21 +374,28 @@ async fn main_internal() -> Result<(), String> {
             .long("--save")
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
-    let deploy_cmd = Command::new("deploy")
-        .allow_negative_numbers(true)
-        .allow_hyphen_values(true)
-        .about("Deploys a smart contract to the blockchain.")
-        .version(version_string)
-        .author(author)
-        .arg(tvc_arg.clone())
-        .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
-            "Constructor arguments. Can be specified with a filename, which contains json data.",
-        ))
-        .arg(abi_arg.clone())
-        .arg(sign_arg.clone())
-        .arg(keys_arg.clone())
-        .arg(wc_arg.clone())
-        .arg(dst_dapp_id_arg.clone());
+    // `deploy` and `deploy_message` take the same arguments, but each has to be
+    // built from its own name: clap keeps the id assigned by `Command::new`, so
+    // a renamed clone stays addressable only under the original name and any
+    // lookup by the new one fails.
+    let deploy_args = |name: &'static str| {
+        Command::new(name)
+            .allow_negative_numbers(true)
+            .allow_hyphen_values(true)
+            .version(version_string)
+            .author(author)
+            .arg(tvc_arg.clone())
+            .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
+                "Constructor arguments. Can be specified with a filename, which contains json data.",
+            ))
+            .arg(abi_arg.clone())
+            .arg(sign_arg.clone())
+            .arg(keys_arg.clone())
+            .arg(wc_arg.clone())
+            .arg(dst_dapp_id_arg.clone())
+    };
+
+    let deploy_cmd = deploy_args("deploy").about("Deploys a smart contract to the blockchain.");
 
     let output_arg = Arg::new("OUTPUT")
         .short('o')
@@ -398,9 +405,7 @@ async fn main_internal() -> Result<(), String> {
 
     let raw_arg = Arg::new("RAW").long("--raw").help("Creates raw message boc.");
 
-    let deploy_message_cmd = deploy_cmd
-        .clone()
-        .name("deploy_message")
+    let deploy_message_cmd = deploy_args("deploy_message")
         .about("Generates a signed message to deploy a smart contract to the blockchain.")
         .arg(output_arg.clone())
         .arg(raw_arg.clone());
