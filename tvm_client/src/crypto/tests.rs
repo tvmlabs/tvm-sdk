@@ -769,6 +769,19 @@ async fn test_signing_box() {
 }
 
 #[test]
+fn bip39_invalid_phrase_error_does_not_carry_the_phrase() {
+    const PHRASE: &str =
+        "multiply extra monitor fog rocket defy attack right night jaguar hollow enlistX";
+
+    let error = crate::crypto::Error::bip39_invalid_phrase(PHRASE);
+    let message = error.message();
+
+    assert!(!message.contains(PHRASE), "the phrase reached the error: {message}");
+    assert!(!message.contains("extra monitor fog"), "phrase words reached the error: {message}");
+    assert!(message.starts_with("Invalid bip39 phrase"), "unexpected message: {message}");
+}
+
+#[test]
 fn test_strip_secret() {
     assert_eq!(strip_secret(""), r#""""#);
     assert_eq!(strip_secret("0123456"), r#""0123456""#);

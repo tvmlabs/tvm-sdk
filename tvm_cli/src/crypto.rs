@@ -37,6 +37,52 @@ pub fn load_keypair(keys: &str) -> Result<KeyPair, String> {
     }
 }
 
+/// What a `--keys` / `--sign` / `--phrase` argument turned out to hold.
+enum KeySource {
+    /// A seed phrase: words separated by spaces, the same rule `load_keypair`
+    /// uses to tell a phrase from a path.
+    Phrase,
+    /// A raw secret key in hex, optionally with the public key appended --
+    /// what `generate_keypair_from_secret` accepts.
+    SecretKey,
+    /// A path to a keypair file.
+    Path,
+}
+
+fn classify(value: &str) -> KeySource {
+    if value.contains(' ') {
+        KeySource::Phrase
+    } else if value.len() >= 64 && value.chars().all(|c| c.is_ascii_hexdigit()) {
+        KeySource::SecretKey
+    } else {
+        KeySource::Path
+    }
+}
+
+/// Renders a `--keys` / `--sign` / `--setkey` / `--keypair` argument for
+/// display. The path is useful diagnostics and is kept; an inline secret is
+/// the wallet itself and is replaced by its kind.
+///
+/// The hex test errs towards masking: mistaking a path for a key costs a line
+/// of diagnostics, mistaking a key for a path costs the wallet.
+pub fn mask_key_source(value: &str) -> &str {
+    match classify(value) {
+        KeySource::Phrase => "<seed phrase>",
+        KeySource::SecretKey => "<secret key>",
+        KeySource::Path => value,
+    }
+}
+
+/// Renders an argument that is always a secret and never a path, such as
+/// `getkeypair --phrase`, so an unrecognised shape is still withheld.
+pub fn mask_secret(value: &str) -> &str {
+    match classify(value) {
+        KeySource::Phrase => "<seed phrase>",
+        KeySource::SecretKey => "<secret key>",
+        KeySource::Path => "<secret>",
+    }
+}
+
 pub fn gen_seed_phrase() -> Result<String, String> {
     let client = create_client_local()?;
     mnemonic_from_random(
@@ -247,5 +293,39 @@ mod tests {
         for phrase in invalid_phrases {
             assert!(generate_keypair_from_mnemonic(phrase).is_err());
         }
+    }
+
+    const PHRASE: &str =
+        "multiply extra monitor fog rocket defy attack right night jaguar hollow enlist";
+    const SECRET_HEX: &str = "c4415c03aa9d824e89ff4555cd12497aef1d5123f839803b0268e27ba6052354";
+
+    #[test]
+    fn mask_key_source_hides_a_seed_phrase() {
+        assert_eq!(mask_key_source(PHRASE), "<seed phrase>");
+    }
+
+    #[test]
+    fn mask_key_source_hides_a_raw_secret_key() {
+        assert_eq!(mask_key_source(SECRET_HEX), "<secret key>");
+        // A secret concatenated with its public key, as accepted by
+        // generate_keypair_from_secret.
+        assert_eq!(mask_key_source(&format!("{SECRET_HEX}{SECRET_HEX}")), "<secret key>");
+    }
+
+    #[test]
+    fn mask_key_source_keeps_a_keypair_path() {
+        assert_eq!(mask_key_source("keys/key0"), "keys/key0");
+        assert_eq!(mask_key_source("wallet.keys.json"), "wallet.keys.json");
+        // Hex, but far too short to be a key.
+        assert_eq!(mask_key_source("deadbeef"), "deadbeef");
+    }
+
+    #[test]
+    fn mask_secret_never_echoes_its_argument() {
+        assert_eq!(mask_secret(PHRASE), "<seed phrase>");
+        assert_eq!(mask_secret(SECRET_HEX), "<secret key>");
+        // getkeypair --phrase is never a path, so an unrecognised shape is
+        // withheld rather than printed.
+        assert_eq!(mask_secret("deadbeef"), "<secret>");
     }
 }

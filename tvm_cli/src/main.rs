@@ -58,6 +58,8 @@ use config::set_config;
 use crypto::extract_pubkey;
 use crypto::generate_keypair;
 use crypto::generate_mnemonic;
+use crypto::mask_key_source;
+use crypto::mask_secret;
 use debot::create_debot_command;
 use debot::debot_command;
 use debug::create_debug_command;
@@ -374,21 +376,28 @@ async fn main_internal() -> Result<(), String> {
             .long("--save")
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
-    let deploy_cmd = Command::new("deploy")
-        .allow_negative_numbers(true)
-        .allow_hyphen_values(true)
-        .about("Deploys a smart contract to the blockchain.")
-        .version(version_string)
-        .author(author)
-        .arg(tvc_arg.clone())
-        .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
-            "Constructor arguments. Can be specified with a filename, which contains json data.",
-        ))
-        .arg(abi_arg.clone())
-        .arg(sign_arg.clone())
-        .arg(keys_arg.clone())
-        .arg(wc_arg.clone())
-        .arg(dst_dapp_id_arg.clone());
+    // `deploy` and `deploy_message` take the same arguments, but each has to be
+    // built from its own name: clap keeps the id assigned by `Command::new`, so
+    // a renamed clone stays addressable only under the original name and any
+    // lookup by the new one fails.
+    let deploy_args = |name: &'static str| {
+        Command::new(name)
+            .allow_negative_numbers(true)
+            .allow_hyphen_values(true)
+            .version(version_string)
+            .author(author)
+            .arg(tvc_arg.clone())
+            .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
+                "Constructor arguments. Can be specified with a filename, which contains json data.",
+            ))
+            .arg(abi_arg.clone())
+            .arg(sign_arg.clone())
+            .arg(keys_arg.clone())
+            .arg(wc_arg.clone())
+            .arg(dst_dapp_id_arg.clone())
+    };
+
+    let deploy_cmd = deploy_args("deploy").about("Deploys a smart contract to the blockchain.");
 
     let output_arg = Arg::new("OUTPUT")
         .short('o')
@@ -398,9 +407,7 @@ async fn main_internal() -> Result<(), String> {
 
     let raw_arg = Arg::new("RAW").long("--raw").help("Creates raw message boc.");
 
-    let deploy_message_cmd = deploy_cmd
-        .clone()
-        .name("deploy_message")
+    let deploy_message_cmd = deploy_args("deploy_message")
         .about("Generates a signed message to deploy a smart contract to the blockchain.")
         .arg(output_arg.clone())
         .arg(raw_arg.clone());
@@ -1236,6 +1243,7 @@ fn getkeypair_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
     let key_file = matches.value_of("KEY_FILE");
     let phrase = matches.value_of("PHRASE");
     if !config.is_json {
+        let phrase = phrase.map(mask_secret);
         print_args!(key_file, phrase);
     }
     generate_keypair(key_file, phrase, config)
@@ -1310,6 +1318,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
 
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(address, method, params, abi, keys, lifetime, output);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
@@ -1386,6 +1395,7 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
     let thread_id = matches.value_of("THREAD");
 
     if !config.is_json {
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(address, method, params, abi, keys);
     }
 
@@ -1454,6 +1464,7 @@ async fn deploy_command(
     let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(tvc, params, abi, keys, opt_wc, alias);
     }
     match deploy_type {
@@ -1515,6 +1526,7 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(tvc, params, abi, keys, opt_wc, alias);
     }
     deploy_contract(
@@ -1582,7 +1594,7 @@ fn config_command(
     }
     println!(
         "{}",
-        serde_json::to_string_pretty(&full_config.config)
+        serde_json::to_string_pretty(&full_config.config.masked_for_display())
             .map_err(|e| format!("failed to print config parameters: {}", e))?
     );
     result
@@ -1604,6 +1616,7 @@ async fn genaddr_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     };
     let is_update_tvc = if update_tvc { Some("true") } else { None };
     if !config.is_json {
+        let keys = keys.map(mask_key_source);
         print_args!(tvc, abi, wc, keys, init_data, is_update_tvc);
     }
     generate_address(config, tvc.unwrap(), &abi.unwrap(), wc, keys, new_keys, init_data, update_tvc)
@@ -1712,6 +1725,7 @@ async fn proposal_create_command(matches: &ArgMatches, config: &Config) -> Resul
     let lifetime = matches.value_of("LIFETIME");
     let offline = matches.is_present("OFFLINE");
     if !config.is_json {
+        let keys = keys.map(mask_key_source);
         print_args!(address, comment, keys, lifetime);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
@@ -1740,6 +1754,7 @@ async fn proposal_vote_command(matches: &ArgMatches, config: &Config) -> Result<
     let lifetime = matches.value_of("LIFETIME");
     let offline = matches.is_present("OFFLINE");
     if !config.is_json {
+        let keys = keys.map(mask_key_source);
         print_args!(address, id, keys, lifetime);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
@@ -1813,6 +1828,7 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let key = matches.value_of("KEY");
     let keypair = matches.value_of("KEY_PAIR");
     if !config.is_json {
+        let keypair = keypair.map(mask_key_source);
         print_args!(key, keypair);
     }
     let nodeid = if let Some(key) = key {
