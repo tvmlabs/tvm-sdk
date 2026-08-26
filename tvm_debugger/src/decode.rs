@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use tvm_abi::decode_function_response;
+use tvm_abi::decode_unknown_function_response;
 use tvm_block::CommonMsgInfo;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
@@ -23,17 +23,28 @@ use crate::ExecutionResult;
 use crate::RunArgs;
 use crate::helper::load_abi_as_string;
 
-pub(crate) fn decode_body(
+/// Decodes the body of an external outbound message.
+///
+/// A contract emits its events as external outbound messages, the same kind of
+/// message the response of an externally called function arrives in, so the
+/// body is dispatched by the function id it carries: only the response of the
+/// called function is reported as the response, anything else is reported as an
+/// event.
+///
+/// A body the ABI cannot account for is logged rather than raised. The debugger
+/// is not the authority on what a contract may emit, and failing here would
+/// cost the caller the resulting state over a message it only meant to look at.
+pub(crate) fn decode_ext_out_body(
     abi_file: &PathBuf,
     function: &str,
     body: SliceData,
-    internal: bool,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
-    let response =
-        decode_function_response(&load_abi_as_string(abi_file)?, function, body, internal, false)
-            .map_err(|e| anyhow::format_err!("Failed to decode function response: {e}"))?;
-    res.response(response);
+    match decode_unknown_function_response(&load_abi_as_string(abi_file)?, body, false, false) {
+        Ok(decoded) if decoded.function_name == function => res.response(decoded.params),
+        Ok(decoded) => res.log(format!("Event({}): {}", decoded.function_name, decoded.params)),
+        Err(e) => res.log(format!("Failed to decode out message body: {e}")),
+    }
     Ok(())
 }
 
@@ -69,7 +80,7 @@ pub(crate) fn decode_actions(
                         (out_msg.body(), abi_file, function_name)
                     {
                         if !out_msg.is_internal() {
-                            decode_body(abi_file, function_name, b, out_msg.is_internal(), res)?;
+                            decode_ext_out_body(abi_file, function_name, b, res)?;
                         }
                     }
                 }
