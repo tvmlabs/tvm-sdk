@@ -323,6 +323,9 @@ mod tests {
     }
 
     const EMITTER_ABI: &str = "tests/contract/emitter.abi.json";
+    /// The same contract, described by an abi whose event is named after the
+    /// function under test and pins the id the contract actually emits.
+    const EMITTER_COLLISION_ABI: &str = "tests/contract/emitter-name-collision.abi.json";
     const EMITTER_ADDRESS: &str =
         "0:1010101010101010101010101010101010101010101010101010101010101010";
     const EMITTER_SENDER: &str =
@@ -352,12 +355,28 @@ mod tests {
         json!({ "value": value.to_string() })
     }
 
+    /// An ABI header carrying an explicit logical time, `offset_ms` ahead of
+    /// now.
+    ///
+    /// The contract rejects an external message whose time does not exceed the
+    /// one it already stored, so two external calls that land in the same
+    /// millisecond would make the second fail with exit code 52. Ordering the
+    /// two by hand keeps that out of the tests.
+    fn emitter_abi_header(offset_ms: u64) -> Value {
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Failed to read the clock")
+            .as_millis() as u64;
+        json!({ "time": now_ms + offset_ms, "expire": now_ms / 1000 + 600 })
+    }
+
     /// Copies the emitter fixture into an isolated directory and runs its
     /// constructor, so that the resulting state accepts calls to its methods.
     fn deployed_emitter() -> PathBuf {
         let state = testdir::testdir!().join("emitter.tvc");
         fs::copy("tests/contract/emitter.tvc", &state).expect("Failed to copy the emitter state");
-        let args = emitter_args(state.clone(), "constructor");
+        let mut args = emitter_args(state.clone(), "constructor");
+        args.abi_header = Some(emitter_abi_header(0));
         let mut res = ExecutionResult::new(args.json);
         execute(&args, &mut res).expect("Failed to run the emitter constructor");
         assert_eq!(res.to_json()["exit_code"], 0i32);
@@ -429,7 +448,9 @@ mod tests {
         let mut res = ExecutionResult::new(bump.json);
         execute(&bump, &mut res).expect("An emitted event must not fail the run");
 
-        let read = emitter_args(state, "readAndEmit");
+        let mut read = emitter_args(state, "readAndEmit");
+        // Strictly later than the constructor's, whatever the two runs cost.
+        read.abi_header = Some(emitter_abi_header(60_000));
         let mut res = ExecutionResult::new(read.json);
         execute(&read, &mut res).expect("An emitted event must not fail the run");
 
@@ -482,6 +503,27 @@ mod tests {
         execute(&args, &mut res).expect("A sender-guarded method must stay callable");
 
         assert_eq!(res.to_json()["exit_code"], 0i32);
+        assert_eq!(emitter_counter(&state), "7");
+    }
+
+    /// Functions and events are separate ABI namespaces, so an event may carry
+    /// the called function's name. The response is the message whose id matches
+    /// the function's output id, and such an event is not it.
+    #[test]
+    fn test_event_sharing_the_function_name_is_not_the_response() {
+        let state = deployed_emitter();
+        let mut args = emitter_internal_args(state.clone(), "bump", bump_params(7));
+        args.abi_file = Some(PathBuf::from(EMITTER_COLLISION_ABI));
+        let mut res = ExecutionResult::new(false);
+        execute(&args, &mut res).expect("An emitted event must not fail the run");
+
+        // `bump` declares no outputs, so its response stays unset.
+        assert_eq!(res.to_json()["response"], json!("{}"));
+        assert!(
+            res.output().contains(r#"Event(bump): {"total":"7","value":"7"}"#),
+            "the event was not reported as an event: {}",
+            res.output()
+        );
         assert_eq!(emitter_counter(&state), "7");
     }
 

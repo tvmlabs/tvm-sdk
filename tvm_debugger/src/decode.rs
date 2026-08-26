@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
+use tvm_abi::Contract;
+use tvm_abi::Function;
 use tvm_abi::decode_unknown_function_response;
 use tvm_block::CommonMsgInfo;
 use tvm_block::CurrencyCollection;
@@ -31,6 +33,11 @@ use crate::helper::load_abi_as_string;
 /// called function is reported as the response, anything else is reported as an
 /// event.
 ///
+/// The response is recognised by that id and not by the name it decodes to.
+/// Functions and events are separate ABI namespaces and may carry the same
+/// name, and an event sharing the called function's name would otherwise be
+/// reported as its response.
+///
 /// A body the ABI cannot account for is logged rather than raised. The debugger
 /// is not the authority on what a contract may emit, and failing here would
 /// cost the caller the resulting state over a message it only meant to look at.
@@ -40,8 +47,15 @@ pub(crate) fn decode_ext_out_body(
     body: SliceData,
     res: &mut ExecutionResult,
 ) -> anyhow::Result<()> {
-    match decode_unknown_function_response(&load_abi_as_string(abi_file)?, body, false, false) {
-        Ok(decoded) if decoded.function_name == function => res.response(decoded.params),
+    let abi = load_abi_as_string(abi_file)?;
+    let response_id = Contract::load(abi.as_bytes())
+        .and_then(|contract| Ok(contract.function(function)?.get_output_id()))
+        .ok();
+    let body_id = Function::decode_output_id(body.clone()).ok();
+    let is_response = response_id.is_some() && response_id == body_id;
+
+    match decode_unknown_function_response(&abi, body, false, false) {
+        Ok(decoded) if is_response => res.response(decoded.params),
         Ok(decoded) => res.log(format!("Event({}): {}", decoded.function_name, decoded.params)),
         Err(e) => res.log(format!("Failed to decode out message body: {e}")),
     }
