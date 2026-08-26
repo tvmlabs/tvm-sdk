@@ -35,7 +35,7 @@ A contract deployed from the root contract by an internal message joins the Dapp
 Every account is stored under its own Dapp ID, and a query that names a different one is answered as if the account did not exist — see [Troubleshooting](./#can-t-find-account-in-shard-state-when-reading-an-account).
 {% endhint %}
 
-In this guide, we will use the [`helloWorld`](https://github.com/tvmlabs/sdk-examples/blob/main/contracts/helloWorld/helloWorld.sol) contract to demonstrate the features of a Dapp ID.
+In this guide, we will use the [`helloWorld`](https://github.com/tvmlabs/sdk-examples/blob/main/contracts/helloWorld/helloWorld.sol) contract to demonstrate the features of a Dapp ID. The upstream example does not provide a method that can forward an arbitrary internal message. This guide adds the `sendTransaction` method shown below to the local copy before compiling it.
 
 ```solidity
 pragma tvm-solidity >=0.76.1;
@@ -137,6 +137,22 @@ contract helloWorld {
         dest.transfer(0, true, 1, payload, cc);
     }
 
+    // Forwards an arbitrary internal message from this contract.
+    // This method does not call getTokens because it is used to deploy
+    // DappConfig before centralized replenishment is available.
+    function sendTransaction(
+        address dest,
+        uint128 value,
+        mapping(uint32 => varuint32) cc,
+        bool bounce,
+        uint8 flags,
+        TvmCell payload
+    ) public view {
+        require(msg.pubkey() == tvm.pubkey(), 102);
+        tvm.accept();
+        dest.transfer(varuint16(value), bounce, flags, payload, cc);
+    }
+
     // Deploys a new contract within its Dapp.
     // The address of the new contract is calculated as a hash of its initial state.
     // The owner's public key is part of the initial state.
@@ -191,9 +207,36 @@ cp -r sdk-examples/contracts .
 cd contracts/helloWorld
 ```
 
+#### Add an internal-message forwarding method
+
+The upstream `helloWorld` contract can transfer tokens with an empty payload and can deploy a contract from `stateInit`, but it cannot send an arbitrary payload to an arbitrary address. Add the following method inside the `helloWorld` contract in `helloWorld.sol`, for example after `sendShell`:
+
+```solidity
+function sendTransaction(
+    address dest,
+    uint128 value,
+    mapping(uint32 => varuint32) cc,
+    bool bounce,
+    uint8 flags,
+    TvmCell payload
+) public view {
+    require(msg.pubkey() == tvm.pubkey(), 102);
+    tvm.accept();
+    dest.transfer(varuint16(value), bounce, flags, payload, cc);
+}
+```
+
+The public-key check restricts forwarding to signed calls from the key embedded in this contract. The method intentionally does not call `getTokens()`: it is needed to deploy `DappConfig` before centralized replenishment is available.
+
 ### **Compile**
 
-Compile the contract `helloWorld` using [TVM Solidity compiler](https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/tag/gosh_0.79.3):
+Compile the contract `helloWorld` using [TVM Solidity compiler 0.81.0](https://github.com/gosh-sh/TVM-Solidity-Compiler/releases/tag/gosh_0.81.0):
+
+```bash
+sold --version
+```
+
+The output must start with `sold 0.81.0`.
 
 ```
 sold --tvm-version gosh helloWorld.sol
@@ -202,6 +245,14 @@ sold --tvm-version gosh helloWorld.sol
 The compiler produces `helloWorld.tvc` and `helloWorld.abi.json` to be used in the next steps.
 
 TVM binary code of your contract is stored into `helloWorld.tvc` file.
+
+Confirm that the generated ABI contains the forwarding method:
+
+```bash
+tvm-cli body sendTransaction '{"dest":"0:9999999999999999999999999999999999999999999999999999999999999999","value":10000000,"cc":{"2":100000000000},"bounce":false,"flags":1,"payload":"te6ccgEBAQEABwAACVumOBNA"}' --abi helloWorld.abi.json
+```
+
+The command must print a `Message body` value. An `Invalid name: sendTransaction` error means that `helloWorld.sol` was compiled without the forwarding method.
 
 ### **Top up with Shell**
 
@@ -595,7 +646,7 @@ To ensure the system functions correctly and resources are managed automatically
 
 #### **Step 1: Deploying the DappConfig contract**
 
-The `DappConfig` contract is an informational contract that holds data about the amount of VMSHELL available for a specific Dapp ID. It is deployed **once per Dapp ID**. `DappConfig` contracts do not have an owner, and anyone can fund them.
+The `DappConfig` contract is an informational contract that holds data about the amount of VMSHELL available for a specific Dapp ID. It is deployed **once per Dapp ID**. `DappConfig` contracts do not have an owner, and anyone can fund them. For an explanation of how `DappConfig` replenishes Dapp account balances before fees are charged, see [Fee Payment Process](https://docs.ackinacki.com/tokenomics/fee-system#fee-payment-process).
 
 **Actions to Perform:**
 
@@ -609,9 +660,9 @@ For example, our HelloWorld contract will have the following Dapp ID:
 
 <figure><img src=".gitbook/assets/dc1.jpg" alt=""><figcaption></figcaption></figure>
 
-2.  To deploy a `DappConfig` contract, you need to call the `deployNewConfigCustom` function via an internal message from a contract within the Dapp where you want to deploy the `DappConfig` contract.
+2.  To deploy a `DappConfig` contract, call the `deployNewConfigCustom` function via an internal message from a contract within the Dapp where you want to deploy the `DappConfig` contract.
 
-    The function call must be performed via a `payload` passed into a function such as `sendTransaction` (similar to how deploying a new contract in your Dapp is described [here](./#add-another-contract-to-your-dapp-id)).
+    Use the six-argument `sendTransaction` forwarding method that you [added to `helloWorld`](./#add-an-internal-message-forwarding-method) before compiling it. Do not use a Multisig wallet for this call: `DappRoot` derives the new configuration's Dapp ID from the internal message sender, so a wallet would deploy a configuration for the wallet's Dapp ID instead of the HelloWorld Dapp ID.
 
     That is, you first need to generate the message body by running the following command:<br>
 
@@ -635,7 +686,7 @@ For example, our HelloWorld contract will have the following Dapp ID:
     ```
 
     \
-    We need to place the **Message body** field value into the payload of the `sendTransaction` function in our main contract (in our case, the HelloWorld contract), and set the recipient to the [DappRoot contract](https://github.com/ackinacki/ackinacki/tree/main/contracts/dappconfig).
+    Place the **Message body** value into the `payload` argument of the HelloWorld `sendTransaction` method and set the recipient to the [DappRoot contract](https://github.com/ackinacki/ackinacki/tree/main/contracts/dappconfig).
 
     Specify the amount of SHELL tokens that will be converted into VMSHELL during deployment and credited to the DappConfig balance.
 
