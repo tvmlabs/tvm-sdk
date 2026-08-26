@@ -15,6 +15,7 @@ use regex::Regex;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::crypto::mask_key_source;
 use crate::global_config_path;
 use crate::helpers::default_config_name;
 
@@ -130,6 +131,27 @@ pub struct ContractData {
     pub abi_path: Option<String>,
     pub address: Option<String>,
     pub key_path: Option<String>,
+}
+
+/// Replaces an inline secret stored in place of a keypair path by its kind.
+/// Only the copy being printed is changed: what the config file holds is the
+/// caller's business, masking is a property of the output.
+fn masked_key_path(key_path: &Option<String>) -> Option<String> {
+    key_path.as_deref().map(|path| mask_key_source(path).to_owned())
+}
+
+impl Config {
+    /// A copy of this config safe to print.
+    pub fn masked_for_display(&self) -> Config {
+        Config { keys_path: masked_key_path(&self.keys_path), ..self.clone() }
+    }
+}
+
+impl ContractData {
+    /// A copy of this alias safe to print.
+    fn masked_for_display(&self) -> ContractData {
+        ContractData { key_path: masked_key_path(&self.key_path), ..self.clone() }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -313,9 +335,11 @@ impl FullConfig {
     }
 
     pub fn print_aliases(&self) {
+        let aliases: BTreeMap<&String, ContractData> =
+            self.aliases.iter().map(|(name, data)| (name, data.masked_for_display())).collect();
         println!(
             "{}",
-            serde_json::to_string_pretty(&self.aliases)
+            serde_json::to_string_pretty(&aliases)
                 .unwrap_or("Failed to print aliases map.".to_owned())
         );
     }
