@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- `tvm_abi`: refusing an `address` argument now says which form belongs there. A canonical `dapp_id::account_id` passed inside ABI arguments used to fail with an unrelated parser complaint; the message now states that this form names a contract for a command to act on, that ABI arguments take the on-chain `<workchain>:<account_id>` form, and what to pass instead. Every other malformed address is refused with the reason plus the expected form. Which form belongs where is documented in `docs/MIGRATION-3.0.md`.
 - Error messages no longer print `0` in place of what they were built with. Twenty error variants across `tvm_block`, `tvm_vm`, `tvm_executor`, `tvm_abi` and `tvm_block_json` interpolated an integer literal instead of their own field, so the reason an argument was invalid, the VM exception code, and the exit code a contract refused a message with were all reported as zero. They now carry the real value.
 
 ## [3.0.5] - 2026-08-11

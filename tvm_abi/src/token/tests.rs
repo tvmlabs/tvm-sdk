@@ -919,6 +919,40 @@ mod tokenize_tests {
                 .is_err(),
         );
     }
+
+    // NODE-3877: one tvm-cli command carries two address forms — the canonical
+    // `dapp_id::account_id` names the contract acted on, while an address
+    // inside ABI arguments is the on-chain form, because an address cell has
+    // no room for a Dapp ID. Getting that wrong is the common mistake, so the
+    // refusal has to say which form belongs here.
+
+    #[test]
+    fn test_tokenize_address_rejects_the_canonical_form_by_name() {
+        let dapp = "8e9b6bb5c530283becbbd8a3b24d3c5987cdddc3c8b7b33be6e4a63124906dfe";
+        let account = "ece57bcc6c530283becbbd8a3b24d3c5987cdddc3c8b7b33be6e4a6312490415";
+        let err = Tokenizer::tokenize_parameter(
+            &ParamType::Address,
+            &serde_json::json!(format!("{dapp}::{account}")),
+            "dest",
+        )
+        .unwrap_err()
+        .to_string();
+
+        assert!(err.contains("dapp_id::account_id"), "got: {err}");
+        assert!(err.contains("<workchain>:<account_id>"), "got: {err}");
+        assert!(err.contains(&format!("0:{account}")), "got: {err}");
+    }
+
+    #[test]
+    fn test_tokenize_address_error_names_the_expected_form_and_keeps_the_reason() {
+        let err =
+            Tokenizer::tokenize_parameter(&ParamType::Address, &serde_json::json!("0:aa"), "dest")
+                .unwrap_err()
+                .to_string();
+
+        assert!(err.contains("<workchain>:<account_id>"), "got: {err}");
+        assert!(err.contains("account address should be 256 bits long"), "got: {err}");
+    }
 }
 
 mod display_tests {
