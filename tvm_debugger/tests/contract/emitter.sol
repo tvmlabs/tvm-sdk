@@ -46,6 +46,15 @@ contract Emitter {
         emit Bumped(counter, value);
     }
 
+    /// Emits an event and then sends an internal message, so one run produces
+    /// both kinds of outbound message and fixes their order.
+    function bumpAndForward(address to, uint128 value) public internalMsg {
+        tvm.accept();
+        counter += value;
+        emit Bumped(counter, value);
+        to.transfer({value: 1000, bounce: false});
+    }
+
     /// Emits an event and returns a value, so both kinds of external outbound
     /// message leave the contract in one run.
     function readAndEmit() public view externalMsg returns (uint128 total) {

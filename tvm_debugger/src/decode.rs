@@ -83,8 +83,14 @@ pub(crate) fn decode_actions(
         for act in actions {
             match act {
                 OutAction::SendMsg { mode: _, mut out_msg } => {
+                    // On chain the transaction executor fills in the source of
+                    // every outbound message, events included, so the debugger
+                    // does the same before reporting one. The logical time stays
+                    // internal-only: it orders the messages a transaction sends
+                    // onward, and drawing events from the same counter would
+                    // renumber those.
+                    out_msg.set_src_address(address.clone());
                     if out_msg.is_internal() {
-                        out_msg.set_src_address(address.clone());
                         out_msg.set_at_and_lt(0, created_lt);
                         created_lt += 1;
                     }

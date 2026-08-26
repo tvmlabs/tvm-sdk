@@ -430,6 +430,19 @@ mod tests {
 
         // `ExecutionResult` starts out with the response unset, as the string
         // `{}` rather than an empty object.
+        // The source is filled in the way it is for internal sends, so the
+        // reported BOC carries the address the event really left from.
+        let boc = messages[0]["boc"].as_str().expect("the event carries no boc");
+        let event = tvm_block::Message::construct_from_bytes(
+            &tvm_types::base64_decode(boc).expect("the boc is not base64"),
+        )
+        .expect("the boc is not a message");
+        assert_eq!(
+            event.src_ref().map(ToString::to_string),
+            Some(EMITTER_ADDRESS.to_string()),
+            "the event was reported with an unfilled source"
+        );
+
         assert_eq!(res.to_json()["response"], json!("{}"), "an event is not the function response");
         assert!(
             res.output().contains("Bumped"),
@@ -461,6 +474,30 @@ mod tests {
             Some(2),
             "the event and the response are both out messages"
         );
+    }
+
+    /// An event and an internal send in one run: the event is reported next to
+    /// the internal message, and the logical time that orders internal messages
+    /// is not spent on the event.
+    #[test]
+    fn test_event_does_not_consume_the_internal_logical_time() {
+        let state = deployed_emitter();
+        let params = json!({ "to": EMITTER_SENDER, "value": "7" });
+        let args = emitter_internal_args(state, "bumpAndForward", params);
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("An emitted event must not fail the run");
+
+        let messages = res.to_json()["messages"].as_array().cloned().unwrap_or_default();
+        let kinds: Vec<_> = messages.iter().map(|m| m["type"].as_str().unwrap()).collect();
+        assert_eq!(kinds, vec!["external", "internal"], "the event is emitted before the send");
+
+        let boc = messages[1]["boc"].as_str().expect("the internal message carries no boc");
+        let sent = tvm_block::Message::construct_from_bytes(
+            &tvm_types::base64_decode(boc).expect("the boc is not base64"),
+        )
+        .expect("the boc is not a message");
+        // 1, not 2: the preceding event did not take a number from the counter.
+        assert_eq!(sent.lt(), Some(1));
     }
 
     /// A method that emits nothing keeps behaving exactly as before.

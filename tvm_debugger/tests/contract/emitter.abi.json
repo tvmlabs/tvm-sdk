@@ -44,6 +44,15 @@
 			]
 		},
 		{
+			"name": "bumpAndForward",
+			"inputs": [
+				{"name":"to","type":"address"},
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "readAndEmit",
 			"inputs": [
 			],
