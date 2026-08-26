@@ -255,7 +255,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         initial_pubkey,
         ..Default::default()
     });
-    let params = serde_json::from_str(&load_params(&params)?)
+    let params = serde_json::from_str(&params)
         .map_err(|e| format!("function arguments is not a json: {}", e))?;
     let header = Some(FunctionHeader { time: Some(now), ..Default::default() });
     let call_set =
