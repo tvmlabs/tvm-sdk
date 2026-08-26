@@ -1458,7 +1458,12 @@ fn test_run_wasm_fuel_error_from_hash() {
 
     let res_error = result.expect_err("Test didn't error on fuel use");
     println!("{:?}", res_error);
-    assert_eq!(format!("{}", res_error), "VM Exception: 0 1");
+    // This used to be pinned to the literal `VM Exception: 0 1` — what
+    // `#[error("VM Exception: {} {}", 0, 1)]` printed in place of the two
+    // fields. Assert instead on the reason this test is named for.
+    let message = res_error.to_string();
+    assert!(message.starts_with("VM Exception: "), "got: {message}");
+    assert!(message.contains("all fuel consumed by WebAssembly"), "got: {message}");
 }
 
 #[test]

@@ -54,7 +54,7 @@ pub enum AbiError {
     #[error("Invalid input data: {}", msg)]
     InvalidInputData { msg: String },
 
-    #[error("Invalid version: {}", 0)]
+    #[error("Invalid version: {0}")]
     InvalidVersion(String),
 
     #[error("Wrong function ID: {:x}", id)]
@@ -76,4 +76,18 @@ pub enum AbiError {
 
     #[error("Wrong data layout")]
     WrongDataLayout,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AbiError;
+
+    // See the note in `tvm_block::error`: a `#[error]` attribute whose trailing
+    // argument is a bare `0` interpolates that integer literal, not the
+    // variant's field.
+    #[test]
+    fn invalid_version_error_names_the_version() {
+        let error = AbiError::InvalidVersion("9.9".to_string());
+        assert_eq!(error.to_string(), "Invalid version: 9.9");
+    }
 }

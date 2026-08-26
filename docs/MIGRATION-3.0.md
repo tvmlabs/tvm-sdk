@@ -60,6 +60,33 @@ For self-rooted contracts (the common case for `tvm-cli deploy`),
 `<hex>::<hex>` (both halves identical). The `::` separator is what
 distinguishes the new form from the legacy `<wc>:<hex>` form.
 
+### Where each form belongs
+
+The extended form addresses a **contract**, not a **cell**. It is what you pass
+where a command names the account it acts on, and what the SDK takes as
+`account_id` + `dapp_id`:
+
+```sh
+tvm-cli account <dapp_id>::<account_id>
+tvm-cli call <dapp_id>::<account_id> <method> '{…}' --abi <abi>
+```
+
+An `address` **inside ABI arguments** is a different thing: it is encoded into
+an on-chain address cell, which has no room for a Dapp ID. Those keep the
+on-chain form `<workchain>:<account_id>` — in practice `0:<account_id>`:
+
+```sh
+tvm-cli call <dapp_id>::<account_id> sendTransaction \
+  '{"dest":"0:<account_id>","value":1000000000,"bounce":false}' \
+  --abi GiverV3.abi.json --sign giver.keys.json
+```
+
+Both forms therefore appear in one command line, and that is not a
+transitional state: the account address argument is strict about the extended
+form, and ABI `address` parameters are strict about the on-chain form. When a
+contract is self-rooted, the account half of its extended address is exactly
+what an ABI argument wants — take the part after `::` and prefix `0:`.
+
 ---
 
 ## Rust SDK migration
