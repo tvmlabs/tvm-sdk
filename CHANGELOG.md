@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Error messages no longer print `0` in place of what they were built with. Twenty error variants across `tvm_block`, `tvm_vm`, `tvm_executor`, `tvm_abi` and `tvm_block_json` interpolated an integer literal instead of their own field, so the reason an argument was invalid, the VM exception code, and the exit code a contract refused a message with were all reported as zero. They now carry the real value.
+
 ## [3.0.5] - 2026-08-11
 
 ### Changed

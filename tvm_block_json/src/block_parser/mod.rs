@@ -26,7 +26,7 @@ use tvm_types::UInt256;
 
 #[derive(Debug, Error)]
 pub enum BlockParsingError {
-    #[error("Invalid data: {}", 0)]
+    #[error("Invalid data: {0}")]
     InvalidData(String),
 }
 
@@ -189,5 +189,19 @@ mod tests {
         let minter = MsgAddressInt::AddrStd(MsgAddrStd::with_address(None, -1, [0; 32].into()));
         assert!(is_minter_address(&minter));
         assert!(!is_account_none(&UInt256::default()));
+    }
+}
+
+#[cfg(test)]
+mod block_parsing_error_tests {
+    use super::BlockParsingError;
+
+    // See the note in `tvm_block::error`: a `#[error]` attribute whose trailing
+    // argument is a bare `0` interpolates that integer literal, not the
+    // variant's field.
+    #[test]
+    fn invalid_data_error_carries_its_reason() {
+        let error = BlockParsingError::InvalidData("no such field".to_string());
+        assert_eq!(error.to_string(), "Invalid data: no such field");
     }
 }
