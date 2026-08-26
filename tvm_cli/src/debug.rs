@@ -79,7 +79,6 @@ use crate::helpers::has_log_file;
 use crate::helpers::is_json_mode;
 use crate::helpers::load_abi;
 use crate::helpers::load_debug_info;
-use crate::helpers::load_params;
 use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
 use crate::helpers::query_with_limit;
@@ -738,7 +737,7 @@ async fn debug_call_command(
     let now = parse_now(matches)?;
 
     let addr = account.get_addr().unwrap().to_string();
-    let params = load_params(&params.unwrap())?;
+    let params = params.unwrap();
     let message = if false {
         prepare_message(
             ton_client.clone(),
@@ -956,7 +955,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     let (msg, address) = prepare_deploy_message(
         tvc.unwrap(),
         opt_abi.as_ref().unwrap(),
-        &load_params(&params.unwrap())?,
+        &params.unwrap(),
         sign,
         wc,
         config,

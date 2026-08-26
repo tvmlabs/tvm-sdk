@@ -1119,24 +1119,28 @@ macro_rules! print_args {
 pub fn load_params(params: &str) -> Result<String, String> {
     if params.find('{').is_none() {
         std::fs::read_to_string(params)
-            .map_err(|e| format!("failed to load params from file: {}", e))
+            .map_err(|e| format!("failed to load params from file {}: {}", params, e))
     } else {
         Ok(params.to_string())
     }
 }
 
+/// Resolves `<PARAMS>` to the json the command will encode. Every form the
+/// help promises is accepted: the json itself, a list of `--name value` pairs,
+/// or the name of a file holding the json -- on the command line and in the
+/// `parameters` config field alike.
 pub async fn unpack_alternative_params(
     matches: &ArgMatches,
     abi_path: &str,
     method: &str,
     config: &Config,
 ) -> Result<String, String> {
-    if let Some(params) = matches.values_of("PARAMS") {
-        let params = params.collect();
-        parse_params(params, abi_path, method, config).await
+    let params = if let Some(params) = matches.values_of("PARAMS") {
+        parse_params(params.collect(), abi_path, method, config).await?
     } else {
-        Ok(config.parameters.clone().unwrap_or("{}".to_string()))
-    }
+        config.parameters.clone().unwrap_or("{}".to_string())
+    };
+    load_params(&params)
 }
 
 pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<i32, String> {

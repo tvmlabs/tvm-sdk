@@ -201,7 +201,7 @@ async fn main_internal() -> Result<(), String> {
         .help("Contract address. Can be specified in the config file.");
 
     let multi_params_arg = Arg::new("PARAMS")
-        .help("Function arguments. Must be a list of `--name value` pairs or a json string with all arguments.")
+        .help("Function arguments. Must be a list of `--name value` pairs, a json string with all arguments or path to the file with parameters.")
         .multiple(true);
 
     let author = "TVM Labs";
@@ -1389,9 +1389,9 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
             .ok_or("Method is not defined. Supply it in the config file or command line.")?,
     );
     let (address, abi, keys) = contract_data_from_matches_or_config_alias(matches, full_config)?;
-    let params =
-        unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?;
-    let params = Some(load_params(&params)?);
+    let params = Some(
+        unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?,
+    );
     let thread_id = matches.value_of("THREAD");
 
     if !config.is_json {
@@ -1449,15 +1449,18 @@ async fn deploy_command(
     let config = &full_config.config;
     let tvc = matches.value_of("TVC");
     let wc = wc_from_matches_or_config(matches, config)?;
-    let raw = matches.is_present("RAW");
-    let output = matches.value_of("OUTPUT");
     let abi = Some(abi_from_matches_or_config(matches, config)?);
     let keys = matches
         .value_of("KEYS")
         .or(matches.value_of("SIGN"))
         .map(|s| s.to_string())
         .or(config.keys_path.clone());
-    let alias = matches.value_of("ALIAS");
+    // Only `deploy` defines `--alias`; `deploy_message` and `fee deploy` share
+    // this handler without it and have no use for it either.
+    let alias = match deploy_type {
+        DeployType::Full => matches.value_of("ALIAS"),
+        DeployType::MsgOnly | DeployType::Fee => None,
+    };
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
@@ -1483,6 +1486,11 @@ async fn deploy_command(
             .await
         }
         DeployType::MsgOnly => {
+            // `--raw` and `--output` are defined by `deploy_message` alone:
+            // `deploy` and `fee deploy` share this handler without them, and
+            // clap aborts when asked for an id the running command lacks.
+            let raw = matches.is_present("RAW");
+            let output = matches.value_of("OUTPUT");
             generate_deploy_message(
                 tvc.unwrap(),
                 &abi.unwrap(),

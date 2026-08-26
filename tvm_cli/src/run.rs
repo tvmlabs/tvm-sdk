@@ -142,10 +142,8 @@ async fn run(
     let params = if is_alternative {
         unpack_alternative_params(matches, &abi_path, method, config).await?
     } else {
-        matches.value_of("PARAMS").unwrap().to_string()
+        load_params(matches.value_of("PARAMS").unwrap())?
     };
-
-    let params = load_params(&params)?;
 
     let expire_at = config.lifetime + now();
     let header = FunctionHeader { expire: Some(expire_at), ..Default::default() };
