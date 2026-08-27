@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - `tvm_client`: support for pre-1.0.0 servers. There is one wire format; `dapp_id` is required on every send and account read, and an empty value is now always an error rather than a legacy-node allowance.
 - `tvm_client`: `ClientContext::supports_dapp_id()`, `ServerLink::supports_dapp_id()` and `ServerLink::server_version()`. Version-conditional application code has nothing left to gate on and should drop the gate.
 - `tvm-cli`: `--dst-dapp-id` on `deploy`, `deployx`, `deploy_message` and `fee deploy`. A contract deployed through the CLI roots its own dapp, so its dapp_id is derived from its own address instead of being asked for.
+- `docs/reference/types-and-methods/`: a second, unpublished copy of the SDK reference, still documenting the pre-dapp_id `address` field. It was never linked from `SUMMARY.md` and is no longer generated into, so it could only go stale. `UNSTABLE.md` and `DEPRECATED.md` moved to the published copy, which links to them as siblings and was missing them; older changelog entries now point at the published copy too.
 
 ### Changed (breaking)
 - `tvm_client`: sending a message and reading an account no longer probe GraphQL. Both go straight to REST, so a send costs one round-trip fewer and a node that serves no GraphQL needs no special handling.
@@ -773,7 +774,7 @@ State init should be finalized and ready to be used in message as is.
 - `send_event` parameter is now optional with default value `false`.
 
 ### Deprecated
-- Debot module is [DEPRECATED](./docs/reference/types-and-methods/DEPRECATED.md)
+- Debot module is [DEPRECATED](./docs/acki-nacki-sdk/types-and-methods/DEPRECATED.md)
 
 ## [1.44.0] – 2023-07-12
 
@@ -1177,19 +1178,19 @@ connection
   Crypto box provides signing and encryption boxes.
 
   Functions:
-  [`create_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#create_crypto_box) -
+  [`create_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#create_crypto_box) -
   initializes cryptobox with secret
-  [`remove_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#remove_crypto_box) -
+  [`remove_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#remove_crypto_box) -
   removes cryptobox and overwrites all secrets with zeroes
-  [`get_crypto_box_seed_phrase`](./docs/reference/types-and-methods/mod_crypto.md#get_crypto_box_seed_phrase)
+  [`get_crypto_box_seed_phrase`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_crypto_box_seed_phrase)
   - returns decrypted seed phrase
-  [`get_crypto_box_info`](./docs/reference/types-and-methods/mod_crypto.md#get_crypto_box_info) -
+  [`get_crypto_box_info`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_crypto_box_info) -
   returns encrypted cryptobox secret for next cryptobox initializations
-  [`get_signing_box_from_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#get_signing_box_from_crypto_box)
+  [`get_signing_box_from_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_signing_box_from_crypto_box)
   - derives signing box from secret
-  [`get_encryption_box_from_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#get_encryption_box_from_crypto_box)
+  [`get_encryption_box_from_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_encryption_box_from_crypto_box)
   - derives encryption box from secret
-  [`clear_crypto_box_secret_cache`](./docs/reference/types-and-methods/mod_crypto.md#clear_crypto_box_secret_cache)
+  [`clear_crypto_box_secret_cache`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#clear_crypto_box_secret_cache)
   - forces secret cache (signing and encryption) clean up (overwrites all secrets with zeroes).
 
 - Support of `initCodeHash` in tvm: `X-Evernode-Expected-Account-Boc-Version`=2 http header added to
@@ -1262,7 +1263,7 @@ done to avoid breaking changes in existing applications and give time to migrate
 ### New
 
 -
-Function [`abi.encode_initial_data`](./docs/reference/types-and-methods/mod_abi.md#encode_initial_data)
+Function [`abi.encode_initial_data`](./docs/acki-nacki-sdk/types-and-methods/mod_abi.md#encode_initial_data)
 which
 encodes initial account data with initial values for the contract's static variables and owner's
 public key.
@@ -1291,7 +1292,7 @@ This function is analogue of `tvm.buildDataInit` function in Solidity.
       for completion of async external calls.
     - Added support for DeBots with ABI 2.2.
 -
-Function [`proofs.proof_message_data`](./docs/reference/types-and-methods/mod_proofs.md#proof_message_data)
+Function [`proofs.proof_message_data`](./docs/acki-nacki-sdk/types-and-methods/mod_proofs.md#proof_message_data)
 which proves message data, retrieved
 from Graphql API.
 
