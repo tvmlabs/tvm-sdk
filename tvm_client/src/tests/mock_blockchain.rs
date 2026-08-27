@@ -282,56 +282,6 @@ async fn get_account_maps_mock_blockchain_rest_errors() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn get_account_maps_rest_errors() {
-    let blockchain = MockBlockchain::start().await;
-    let authorized = client_for_with_token(blockchain.endpoint(), Some("secret"));
-
-    let internal_error = account::get_account(
-        authorized.clone(),
-        ParamsOfGetAccount {
-            account_id: "5555555555555555555555555555555555555555555555555555555555555555"
-                .to_owned(),
-            dapp_id: TEST_DAPP_ID.to_owned(),
-        },
-    )
-    .await;
-    let internal_error = expect_client_err(internal_error);
-    assert_eq!(internal_error.code(), ErrorCode::InvalidServerResponse as u32);
-
-    let invalid_shape = account::get_account(
-        authorized.clone(),
-        ParamsOfGetAccount {
-            account_id: TEST_BAD_JSON_ACCOUNT_ID.to_owned(),
-            dapp_id: TEST_DAPP_ID.to_owned(),
-        },
-    )
-    .await;
-    let invalid_shape = expect_client_err(invalid_shape);
-    assert_eq!(invalid_shape.code(), ErrorCode::InvalidServerResponse as u32);
-
-    let invalid_json = account::get_account(
-        authorized.clone(),
-        ParamsOfGetAccount {
-            account_id: TEST_NOT_JSON_ACCOUNT_ID.to_owned(),
-            dapp_id: TEST_DAPP_ID.to_owned(),
-        },
-    )
-    .await;
-    let _invalid_json = expect_client_err(invalid_json);
-
-    let unauthorized = account::get_account(
-        client_for_with_token(blockchain.endpoint(), Some("wrong")),
-        ParamsOfGetAccount {
-            account_id: TEST_ACCOUNT_ID.to_owned(),
-            dapp_id: TEST_DAPP_ID.to_owned(),
-        },
-    )
-    .await;
-    let unauthorized = expect_client_err(unauthorized);
-    assert_eq!(unauthorized.code(), ErrorCode::Unauthorized as u32);
-}
-
-#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn wait_for_collection_uses_mock_blockchain_response_and_timeout_path() {
     let blockchain = MockBlockchain::start().await;
     let client = client_for(blockchain.endpoint());
