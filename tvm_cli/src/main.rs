@@ -187,7 +187,9 @@ async fn main_internal() -> Result<(), String> {
     let dst_dapp_id_arg = Arg::new("DST_DAPP_ID")
         .long("--dst-dapp-id")
         .takes_value(true)
-        .help("Destination DApp identifier (64-char hex). Required for sending ext messages to accounts in non-root dapps.");
+        .help(
+            "Destination DApp identifier (64-char hex). Required: a prepared message carries no dapp_id to derive from.",
+        );
 
     let method_opt_arg = Arg::new("METHOD")
         .takes_value(true)
@@ -248,8 +250,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(wc_arg.clone())
         .arg(tvc_arg.clone())
         .arg(alias_arg_long.clone())
-        .arg(multi_params_arg.clone())
-        .arg(dst_dapp_id_arg.clone());
+        .arg(multi_params_arg.clone());
 
     let address_boc_tvc_arg = Arg::new("ADDRESS").takes_value(true).help(
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
@@ -394,7 +395,6 @@ async fn main_internal() -> Result<(), String> {
             .arg(sign_arg.clone())
             .arg(keys_arg.clone())
             .arg(wc_arg.clone())
-            .arg(dst_dapp_id_arg.clone())
     };
 
     let deploy_cmd = deploy_args("deploy").about("Deploys a smart contract to the blockchain.");
@@ -1464,7 +1464,6 @@ async fn deploy_command(
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
-    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         let keys = keys.as_deref().map(mask_key_source);
@@ -1481,7 +1480,6 @@ async fn deploy_command(
                 wc,
                 false,
                 alias,
-                dst_dapp_id,
             )
             .await
         }
@@ -1513,7 +1511,6 @@ async fn deploy_command(
                 wc,
                 true,
                 None,
-                dst_dapp_id,
             )
             .await
         }
@@ -1531,7 +1528,6 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let keys = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.value_of("ALIAS");
-    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         let keys = keys.as_deref().map(mask_key_source);
@@ -1546,7 +1542,6 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
         wc,
         false,
         alias,
-        dst_dapp_id,
     )
     .await
 }
