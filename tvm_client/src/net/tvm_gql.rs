@@ -321,7 +321,7 @@ impl QueryOperationBuilder {
 
     fn add_info(&mut self) {
         self.start_op("info");
-        self.end_op("version time latency rempEnabled");
+        self.end_op("time latency rempEnabled");
     }
 
     fn add_agg_op_params(
@@ -559,5 +559,24 @@ mod ext_message_tests {
         assert_eq!(v["dapp_id"], json!("dapp_hex"));
         assert_eq!(v["account_id"], json!("acc_hex"));
         assert!(v.get("dst_dapp_id").is_none());
+    }
+}
+
+#[cfg(test)]
+mod info_query_tests {
+    use super::GraphQLQuery;
+
+    #[test]
+    fn info_selection_set_does_not_request_version() {
+        // `GraphQLQuery::build(_, include_info = true, _)` is the only public
+        // way `add_info` is reached (tvm_gql.rs:442-455), so no server is
+        // needed to assert on the emitted selection set.
+        let query = GraphQLQuery::build(&[], true, 60_000).query;
+        assert!(query.contains("info"), "unexpected query: {query}");
+        assert!(query.contains("time"), "unexpected info query: {query}");
+        assert!(
+            !query.contains("version"),
+            "info query must not request a field nothing parses: {query}"
+        );
     }
 }

@@ -58,7 +58,7 @@ impl Clone for Endpoint {
     }
 }
 
-const QUERY_INFO: &str = "?query=%7Binfo%7Bversion%20time%20latency%20rempEnabled%7D%7D";
+const QUERY_INFO: &str = "?query=%7Binfo%7Btime%20latency%20rempEnabled%7D%7D";
 
 const HTTP_PROTOCOL: &str = "http://";
 const HTTPS_PROTOCOL: &str = "https://";

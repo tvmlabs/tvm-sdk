@@ -14,6 +14,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::get;
 use serde_json::json;
+use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 use crate::ClientConfig;
@@ -67,6 +68,24 @@ async fn mock_v3_server(
         );
     }
     (spawn_server(port, app).await, graphql_hits)
+}
+
+async fn mock_recording_graphql_server(port: u16) -> (JoinHandle<()>, Arc<Mutex<Option<String>>>) {
+    let captured: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+    let captured_handle = captured.clone();
+    let app = Router::new().route(
+        "/graphql",
+        get(move |uri: axum::http::Uri| {
+            let captured = captured_handle.clone();
+            async move {
+                *captured.lock().await = Some(uri.query().unwrap_or_default().to_string());
+                Json(json!({"data": {"info": {
+                    "time": 1_700_000_000_i64, "latency": 1_i64, "rempEnabled": false
+                }}}))
+            }
+        }),
+    );
+    (spawn_server(port, app).await, captured)
 }
 
 async fn spawn_server(port: u16, app: Router) -> JoinHandle<()> {
@@ -159,4 +178,17 @@ async fn get_account_rejects_account_id_with_workchain() {
     };
     let err = account::get_account(client, params).await.unwrap_err();
     assert!(err.message().contains("account_id"));
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn endpoint_probe_does_not_request_version() -> ClientResult<()> {
+    let (handle, captured_query) = mock_recording_graphql_server(18618).await;
+    let client = make_client(18618);
+    // `?`, not `let _ =`: resolution succeeding on a response without
+    // `version` is half of what this test asserts.
+    client.get_server_link()?.state().get_query_endpoint().await?;
+    let q = captured_query.lock().await.clone().expect("graphql query captured");
+    assert!(!q.contains("version"), "probe must not request version: {q}");
+    handle.abort();
+    Ok(())
 }
