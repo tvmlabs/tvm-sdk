@@ -69,6 +69,13 @@ pub async fn deploy_contract(
         }
     }
 
+    // dst_dapp_id (== account_id for a self-rooted deploy) must reach the wire
+    // before `--wc != 0` is ever checked, so this parses `addr` with
+    // `MsgAddressInt` rather than calling `strip_workchain` here: unlike
+    // `strip_workchain`, it never rejects a non-zero workchain, so the send
+    // below still happens first. See
+    // `deploy_with_non_zero_workchain_still_sends_before_failing` in
+    // `tvm_cli/tests/deploy_dapp_id.rs`, which guards this ordering.
     let account_id = MsgAddressInt::from_str(&addr)
         .map_err(|e| format!("failed to parse deploy address {addr}: {e}"))?
         .address()
