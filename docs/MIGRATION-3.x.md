@@ -353,9 +353,14 @@ address must be supplied in the `dapp_id::account_id` form; the CLI extracts
 the dapp_id from the address and forwards it to the SDK. Legacy `0:<acc>`
 address inputs are no longer accepted for `call`/`callx`.
 
+The two spell the same call differently. `call` takes the address, the method
+and the arguments as positionals; `callx` takes them as options, and — because
+everything after the first positional is treated as arguments — every option
+must come before them:
+
 ```bash
-tvm-cli call <dapp>::<acc> --abi ... --method ... '{...}'
-tvm-cli callx <dapp>::<acc> --abi ... --method ... '{...}'
+tvm-cli call <dapp>::<acc> <method> '{...}' --abi <abi>
+tvm-cli callx --addr <dapp>::<acc> --abi <abi> --method <method> '{...}'
 ```
 
 `message` doesn't send anything — it generates and signs a BOC and stops —
@@ -369,16 +374,25 @@ has ever declared it, and clap fails before either command runs.
 `callx` does not. It carries the same `allow_hyphen_values` +
 `trailing_var_arg` pair as `deployx` (see the parser trap above, and the
 pitfall entry below, which already names `callx` and `runx`), so an
-unrecognized `--dst-dapp-id` is absorbed rather than rejected. Unlike
-`deployx`, this need not surface downstream at all: `callx`'s constructor
-arguments are a variable-length list, so the absorbed flag and its value
-can simply sit unused among them — no "not found" error, no file error,
-nothing to notice. The command sends normally, to the `dapp_id` in the
-address argument, never the one named by the flag. If you relied on
-3.0.0's advice that the flag "overrides any dapp_id embedded in the
-address," it now does the opposite on `callx`: the flag is silently
-dropped and the address wins. Remove `--dst-dapp-id` from every `callx`
-script.
+unrecognized `--dst-dapp-id` is absorbed into the function arguments rather
+than rejected. What happens next depends on the call, and neither outcome
+is the one you asked for:
+
+- **A method that takes no arguments.** The absorbed flag and its value sit
+  unused among the arguments and nothing complains. The message is sent —
+  to the `dapp_id` in the address, never the one named by the flag.
+- **A method that takes arguments, passed as a JSON object** (the form
+  shown above). The absorbed pair lands beside the JSON, which stops
+  `callx` from reading the object as a whole and sends it looking for each
+  declared input by name instead. It fails with `argument "<name>" of type
+  "<type>" not found` — the same symptom as the pitfall entry below — and
+  nothing is sent.
+
+So on `callx` the flag is either silently ignored or turned into a
+confusing error about an unrelated argument. If you relied on 3.0.0's
+advice that it "overrides any dapp_id embedded in the address," note that
+it now does the opposite where it works at all: the flag is dropped and the
+address wins. Remove `--dst-dapp-id` from every `callx` script.
 
 ### `send` / `sendfile`
 
