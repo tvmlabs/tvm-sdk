@@ -58,6 +58,7 @@ tvm_vm.workspace = true
 
 [dev-dependencies]
 assert_cmd = "2"
+axum = "0.8"
 predicates = "3"
 string-error = "0.1"
 testdir = "0.9.3"
