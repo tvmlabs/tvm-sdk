@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"docs": "node index docs -o ../docs/reference/types-and-methods"
+		"docs": "node index docs -o ../docs/acki-nacki-sdk/types-and-methods"
 	},
 	"keywords": [],
 	"author": "",

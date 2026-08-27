@@ -794,6 +794,28 @@ fn test_strip_secret() {
     );
 }
 
+/// The BIP-39 dictionaries include Japanese, Korean and both Chinese
+/// wordlists, so a mistyped phrase reaching `strip_secret` is routinely
+/// multi-byte. Truncating by bytes panicked whenever the cut fell inside a
+/// code point -- `tvm-cli genpubkey 'あああ'` aborted instead of reporting an
+/// invalid phrase -- and the length it reported was bytes labelled as chars.
+#[test]
+fn test_strip_secret_counts_characters_not_bytes() {
+    // Nine bytes, three characters: short enough to be shown in full, and the
+    // byte-based check used to send it down the truncating path.
+    assert_eq!(strip_secret("あああ"), r#""あああ""#);
+
+    // Ten characters, thirty bytes. The old code sliced at byte 8, which lands
+    // inside the third character.
+    assert_eq!(strip_secret("ああああああああああ"), r#""ああああああああ..." (10 chars)"#);
+
+    // A cut that would fall inside a multi-byte character in a mixed string.
+    assert_eq!(strip_secret("abcdefgあああ"), r#""abcdefgあ..." (10 chars)"#);
+
+    // Characters outside the BMP are four bytes each.
+    assert_eq!(strip_secret("🔑🔑🔑🔑🔑🔑🔑🔑🔑"), r#""🔑🔑🔑🔑🔑🔑🔑🔑..." (9 chars)"#);
+}
+
 #[test]
 fn test_debug_keypair_secret_stripped() {
     let keypair = KeyPair::new(

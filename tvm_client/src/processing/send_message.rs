@@ -75,9 +75,7 @@ pub struct ParamsOfSendMessage {
     /// Default is `false`.
     #[serde(default)]
     pub send_events: bool,
-    /// Destination dapp_id (64-character hex, no 0x).
-    /// Required for v>=1.0.0 servers; for v<1.0.0 may be empty
-    /// (sent as legacy `dst_dapp_id: null`).
+    /// Destination dapp_id (64-character hex, no 0x). Required.
     #[serde(default)]
     pub dapp_id: String,
 }
@@ -124,14 +122,14 @@ pub struct ResultOfSendMessage {
     /// The timestamp of generating this response.
     pub current_time: Option<String>,
 
-    /// Destination account_id (64-hex, no workchain). Always populated:
-    /// taken from the server response on v>=1.0.0, derived locally
-    /// from the message destination on v<1.0.0.
+    /// Destination account_id (64-hex, no workchain). Always populated: from
+    /// the server response, or derived from the message destination if the
+    /// server omits it.
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub account_id: String,
 
-    /// Destination dapp_id (64-hex). Always populated: taken from the
-    /// server response on v>=1.0.0, mirrored from the request on v<1.0.0.
+    /// Destination dapp_id (64-hex). Always populated: from the server
+    /// response, or mirrored from the request if the server omits it.
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub dapp_id: String,
 }
@@ -219,8 +217,10 @@ pub async fn send_message<F: futures::Future<Output = ()> + Send>(
             let mut res: ResultOfSendMessage =
                 serde_json::from_value(result_value.clone()).map_err(Error::invalid_data)?;
 
-            // Always-populated fields: derive locally if the server (v<1.0.0)
-            // didn't return them.
+            // Defensive: a v3 server is expected to populate both. If it does
+            // not, fill from the request rather than returning empty strings
+            // inside a successful result. Covered by
+            // `send_message_fills_result_ids_when_server_omits_them`.
             if res.account_id.is_empty() {
                 res.account_id = message.dst.address().as_hex_string();
             }
@@ -293,6 +293,8 @@ mod test {
     use std::net::IpAddr;
     use std::net::SocketAddr;
     use std::sync::Arc;
+    use std::sync::atomic::AtomicUsize;
+    use std::sync::atomic::Ordering;
     use std::time::Duration;
 
     use axum::Json;
@@ -339,9 +341,6 @@ mod test {
     async fn mock_server(socket_addr: SocketAddr) -> JoinHandle<()> {
         let socket_addr_clone = socket_addr.to_string();
         let app = Router::new()
-            // Serve a /graphql info endpoint so endpoint resolution succeeds
-            // and the server is identified as pre-1.0.0 (v2 wire format).
-            .route("/graphql", graphql_info_handler("0.54.0"))
             .route(
                 "/v2/messages",
                 post(|_body: Body| async move {
@@ -386,8 +385,8 @@ mod test {
     }
 
     fn create_message(context: &Arc<ClientContext>) -> Result<SendingMessage, ClientError> {
-        let boc = "te6ccgEBBQEA3gABRYgB0sAot7nO81FRdsdro5q5hNKjB6k6k6N0XXZSSbXxTUoMAQHh4AxQHiMp1/uMXYuNfGnJTSsq1DVvVlzApSGJkiF2orMR7b4l5EDxyH+tSUgEiCa+PjBmLMDnpf5H6LU1nLxSAcWYRhwySlz8mR2+azk8IhaQSMlY/kcFs4BX0+ppdawTwAAAZf1xorQaHASN34I/2WACAmWAHADCv78M71zAKAvf+gThFn5J+iUYEGTkeR5uVkByCnogAAAAAAAAAAAAAAAAAAAAEAwEAwAAABGgAAAAAhg9CQQ=";
-        SendingMessage::new(context, boc, None, None, String::new())
+        let boc = TEST_MSG_BOC;
+        SendingMessage::new(context, boc, None, None, "2".repeat(64))
     }
 
     #[tokio::test]
@@ -474,65 +473,63 @@ mod test {
     // `send_message` API.
     // ------------------------------------------------------------------
 
-    /// A minimal GraphQL /graphql handler that returns the given server version
-    /// string, satisfying the `Endpoint::resolve` info-query.
-    fn graphql_info_handler(version: &'static str) -> axum::routing::MethodRouter {
-        get(move || async move {
-            Json(json!({
-                "data": {
-                    "info": {
-                        "version": version,
-                        "time": 1700000000_i64,
-                        "latency": 1_i64,
-                        "rempEnabled": false
-                    }
-                }
-            }))
-        })
-    }
-
-    /// Triggers endpoint resolution so the server version gets populated from
-    /// the /graphql info response before any REST calls are made.
-    async fn resolve_endpoint_version(client: &Arc<ClientContext>) {
-        let sl = client.get_server_link().unwrap();
-        let _ = sl.state().get_query_endpoint().await;
-    }
-
     async fn start_capturing_mock(
         port: u16,
         version: &'static str,
         response: serde_json::Value,
-    ) -> (JoinHandle<()>, Arc<Mutex<Option<serde_json::Value>>>) {
+    ) -> (JoinHandle<()>, Arc<Mutex<Option<serde_json::Value>>>, Arc<AtomicUsize>) {
         let captured: Arc<Mutex<Option<serde_json::Value>>> = Arc::new(Mutex::new(None));
         let captured_handle = captured.clone();
+        let graphql_hits = Arc::new(AtomicUsize::new(0));
+        let graphql_hits_handle = graphql_hits.clone();
         let response = Arc::new(response);
-        let app = Router::new().route("/graphql", graphql_info_handler(version)).route(
-            "/v2/messages",
-            post(move |body: Body| {
-                let captured = captured_handle.clone();
-                let response = response.clone();
-                async move {
-                    let bytes = to_bytes(body, usize::MAX).await.unwrap();
-                    let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-                    *captured.lock().await = Some(v);
-                    Json((*response).clone()).into_response()
-                }
-            }),
-        );
+        let app = Router::new()
+            .route(
+                "/graphql",
+                get(move || {
+                    let hits = graphql_hits_handle.clone();
+                    async move {
+                        hits.fetch_add(1, Ordering::SeqCst);
+                        Json(json!({
+                            "data": {
+                                "info": {
+                                    "version": version,
+                                    "time": 1700000000_i64,
+                                    "latency": 1_i64,
+                                    "rempEnabled": false
+                                }
+                            }
+                        }))
+                    }
+                }),
+            )
+            .route(
+                "/v2/messages",
+                post(move |body: Body| {
+                    let captured = captured_handle.clone();
+                    let response = response.clone();
+                    async move {
+                        let bytes = to_bytes(body, usize::MAX).await.unwrap();
+                        let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+                        *captured.lock().await = Some(v);
+                        Json((*response).clone()).into_response()
+                    }
+                }),
+            );
         let listener = tokio::net::TcpListener::bind(("127.0.0.1", port)).await.unwrap();
         let handle = tokio::spawn(async move {
             axum::serve(listener, app).await.unwrap();
         });
         tokio::time::sleep(Duration::from_secs(1)).await;
-        (handle, captured)
+        (handle, captured, graphql_hits)
     }
 
     // Same BOC as `create_message` above.
     const TEST_MSG_BOC: &str = "te6ccgEBBQEA3gABRYgB0sAot7nO81FRdsdro5q5hNKjB6k6k6N0XXZSSbXxTUoMAQHh4AxQHiMp1/uMXYuNfGnJTSsq1DVvVlzApSGJkiF2orMR7b4l5EDxyH+tSUgEiCa+PjBmLMDnpf5H6LU1nLxSAcWYRhwySlz8mR2+azk8IhaQSMlY/kcFs4BX0+ppdawTwAAAZf1xorQaHASN34I/2WACAmWAHADCv78M71zAKAvf+gThFn5J+iUYEGTkeR5uVkByCnogAAAAAAAAAAAAAAAAAAAAEAwEAwAAABGgAAAAAhg9CQQ=";
 
     #[tokio::test]
-    async fn send_message_v3_sends_dapp_id_and_account_id() {
-        let (handle, captured) = start_capturing_mock(
+    async fn send_message_sends_dapp_id_and_account_id() {
+        let (handle, captured, graphql_hits) = start_capturing_mock(
             18621,
             "1.0.0",
             json!({
@@ -558,7 +555,6 @@ mod test {
             ..Default::default()
         };
         let client = Arc::new(ClientContext::new(config).unwrap());
-        resolve_endpoint_version(&client).await;
 
         let dapp_hex = "2".repeat(64);
         let res = public_send_message(
@@ -588,19 +584,23 @@ mod test {
         assert_eq!(res.account_id, "aaaa");
         assert_eq!(res.dapp_id, "bbbb");
 
+        assert_eq!(graphql_hits.load(Ordering::SeqCst), 0, "send_message must not probe GraphQL");
+
         handle.abort();
     }
 
     #[tokio::test]
-    async fn send_message_v2_sends_dst_dapp_id_and_derives_result_locally() {
-        let (handle, captured) = start_capturing_mock(
+    async fn send_message_ignores_pre_1_0_0_server_version() {
+        let (handle, captured, _graphql_hits) = start_capturing_mock(
             18622,
             "0.9.0",
             json!({
                 "result": {
                     "message_hash": "deadbeef",
                     "thread_id": null,
-                    "producers": []
+                    "producers": [],
+                    "account_id": "aaaa",
+                    "dapp_id": "bbbb"
                 },
                 "error": null,
                 "ext_message_token": null
@@ -617,10 +617,9 @@ mod test {
             ..Default::default()
         };
         let client = Arc::new(ClientContext::new(config).unwrap());
-        resolve_endpoint_version(&client).await;
 
-        let dapp_hex = "3".repeat(64);
-        let res = public_send_message(
+        let dapp_hex = "2".repeat(64);
+        public_send_message(
             client,
             ParamsOfSendMessage {
                 message: TEST_MSG_BOC.to_string(),
@@ -634,22 +633,20 @@ mod test {
         .await
         .unwrap();
 
+        // The server reports 0.9.0 and is ignored: the v3 payload goes out
+        // regardless of what `info.version` says.
         let body = captured.lock().await.clone().expect("body captured");
         let item = &body[0];
-        assert_eq!(item["dst_dapp_id"], serde_json::Value::String(dapp_hex.clone()));
-        assert!(item.get("dapp_id").is_none());
-        assert!(item.get("account_id").is_none());
-
-        // Result fields derived locally from request:
-        assert!(!res.account_id.is_empty(), "account_id should be derived from message dst");
-        assert_eq!(res.dapp_id, dapp_hex);
+        assert_eq!(item["dapp_id"], serde_json::Value::String(dapp_hex));
+        assert!(!item["account_id"].as_str().unwrap_or("").is_empty());
+        assert!(item.get("dst_dapp_id").is_none());
 
         handle.abort();
     }
 
     #[tokio::test]
-    async fn send_message_v3_rejects_empty_dapp_id() {
-        let (handle, _captured) = start_capturing_mock(
+    async fn send_message_rejects_empty_dapp_id() {
+        let (handle, _captured, _graphql_hits) = start_capturing_mock(
             18623,
             "1.0.0",
             json!({ "result": null, "error": null, "ext_message_token": null }),
@@ -665,7 +662,6 @@ mod test {
             ..Default::default()
         };
         let client = Arc::new(ClientContext::new(config).unwrap());
-        resolve_endpoint_version(&client).await;
 
         let err = public_send_message(
             client,
@@ -680,17 +676,75 @@ mod test {
         )
         .await
         .unwrap_err();
+        // Pin the code, not just the word: `validate_hex_id` also produces a
+        // message mentioning `dapp_id`, from another module and under
+        // InvalidData (512). Only an *empty* value on the send path is 518.
+        assert_eq!(
+            err.code(),
+            crate::processing::ErrorCode::DappIdRequired as u32,
+            "expected DappIdRequired, got: {err}"
+        );
         assert!(err.message().contains("dapp_id"));
+
+        handle.abort();
+    }
+
+    #[tokio::test]
+    async fn send_message_fills_result_ids_when_server_omits_them() {
+        let (handle, _captured, _graphql_hits) = start_capturing_mock(
+            18626,
+            "1.0.0",
+            json!({
+                "result": {
+                    "message_hash": "deadbeef",
+                    "thread_id": null,
+                    "producers": []
+                },
+                "error": null,
+                "ext_message_token": null
+            }),
+        )
+        .await;
+
+        let config = ClientConfig {
+            network: NetworkConfig {
+                endpoints: Some(vec!["http://127.0.0.1:18626".to_string()]),
+                api_token: Some("secret".to_string()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let client = Arc::new(ClientContext::new(config).unwrap());
+
+        let dapp_hex = "2".repeat(64);
+        let res = public_send_message(
+            client,
+            ParamsOfSendMessage {
+                message: TEST_MSG_BOC.to_string(),
+                abi: None,
+                thread_id: None,
+                send_events: false,
+                dapp_id: dapp_hex.clone(),
+            },
+            |_| async {},
+        )
+        .await
+        .unwrap();
+
+        // Deliberate fallback: a response without these fields is filled from
+        // the request and the message destination rather than returning empty
+        // strings inside a successful result.
+        assert_eq!(res.dapp_id, dapp_hex);
+        assert!(!res.account_id.is_empty());
 
         handle.abort();
     }
 
     // ------------------------------------------------------------------
     // Regression: a REST-only node that returns 404 on `/graphql` must
-    // still be sendable. `send_message` must not hard-fail on the GraphQL
-    // version probe (the old behavior surfaced as `code 11: Server
-    // responded with code 404`); it falls back to inferring the wire
-    // format from the caller-supplied dapp_id, mirroring `get_account`.
+    // still be sendable. `send_message` never queries GraphQL, so a node
+    // exposing no GraphQL endpoint is unremarkable — not the old hard
+    // failure (`code 11: Server responded with code 404`).
     // ------------------------------------------------------------------
 
     /// A `/graphql` handler that always returns HTTP 404 with a salvo-style
@@ -706,8 +760,8 @@ mod test {
         })
     }
 
-    /// Like `start_capturing_mock`, but `/graphql` returns 404 so GraphQL
-    /// endpoint resolution fails — exercising the REST-only fallback path.
+    /// Like `start_capturing_mock`, but `/graphql` returns 404 — showing
+    /// that `send_message` doesn't care, since it never queries GraphQL.
     async fn start_capturing_mock_no_graphql(
         port: u16,
         response: serde_json::Value,
@@ -737,7 +791,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn send_message_uses_v3_when_graphql_unavailable_and_dapp_id_present() {
+    async fn send_message_works_without_graphql() {
         let (handle, captured) = start_capturing_mock_no_graphql(
             18624,
             json!({
@@ -779,8 +833,8 @@ mod test {
         .await
         .expect("send must succeed even though /graphql returns 404");
 
-        // GraphQL is unavailable, so the send defaults to the v3 wire format
-        // (not a hard 404 failure): dapp_id + account_id present, no legacy
+        // send_message never queries GraphQL, so an unavailable `/graphql`
+        // changes nothing: dapp_id + account_id go out as always, no legacy
         // dst_dapp_id.
         let body = captured.lock().await.clone().expect("body captured");
         let item = &body[0];
@@ -795,7 +849,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn send_message_defaults_to_v3_and_requires_dapp_id_when_graphql_unavailable() {
+    async fn send_message_requires_dapp_id_without_graphql() {
         let (handle, _captured) = start_capturing_mock_no_graphql(
             18625,
             json!({ "result": null, "error": null, "ext_message_token": null }),
@@ -812,12 +866,10 @@ mod test {
         };
         let client = Arc::new(ClientContext::new(config).unwrap());
 
-        // With GraphQL unavailable the wire format defaults to v3 (it is *not*
-        // inferred from the request payload, since the SDK accepts only the new
-        // dapp_id::account_id address form). An empty dapp_id is therefore
-        // rejected with the dapp_id requirement — not the old
-        // `code 11: Server responded with code 404`, and not a silent v2
-        // downgrade.
+        // GraphQL is never consulted, so an unavailable `/graphql` changes
+        // nothing here either: an empty dapp_id is rejected with the same
+        // dapp_id requirement — not the old `code 11: Server responded with
+        // code 404`.
         let err = public_send_message(
             client,
             ParamsOfSendMessage {
@@ -832,6 +884,11 @@ mod test {
         .await
         .unwrap_err();
 
+        assert_eq!(
+            err.code(),
+            crate::processing::ErrorCode::DappIdRequired as u32,
+            "expected DappIdRequired, got: {err}"
+        );
         assert!(err.message().contains("dapp_id"), "expected dapp_id requirement, got: {err}");
         assert!(!err.message().contains("404"), "must not be the GraphQL 404 failure: {err}");
 

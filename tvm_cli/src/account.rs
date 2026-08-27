@@ -112,8 +112,6 @@ pub async fn get_account(
     let client = crate::helpers::create_client(config)?;
 
     for address in addresses.iter() {
-        // The strict parser guarantees a dapp_id is present; the SDK drops
-        // it on the wire for legacy v2 servers.
         let sdk_address = crate::helpers::SdkAddress::from_str(address)
             .map_err(|e| format!("invalid address `{address}`: {e}"))?;
         let account_id = crate::helpers::strip_workchain(&sdk_address.account_id)?;

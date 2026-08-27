@@ -187,7 +187,9 @@ async fn main_internal() -> Result<(), String> {
     let dst_dapp_id_arg = Arg::new("DST_DAPP_ID")
         .long("--dst-dapp-id")
         .takes_value(true)
-        .help("Destination DApp identifier (64-char hex). Required for sending ext messages to accounts in non-root dapps.");
+        .help(
+            "Destination DApp identifier (64-char hex). Required: a prepared message carries no dapp_id to derive from.",
+        );
 
     let method_opt_arg = Arg::new("METHOD")
         .takes_value(true)
@@ -248,8 +250,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(wc_arg.clone())
         .arg(tvc_arg.clone())
         .arg(alias_arg_long.clone())
-        .arg(multi_params_arg.clone())
-        .arg(dst_dapp_id_arg.clone());
+        .arg(multi_params_arg.clone());
 
     let address_boc_tvc_arg = Arg::new("ADDRESS").takes_value(true).help(
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
@@ -260,9 +261,11 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Name of the function being called.");
 
+    // The conflict with `--tvc` is attached per command rather than here:
+    // `account` takes `--boc` without `--tvc`, and clap asserts when a
+    // `conflicts_with` names an argument the command does not register.
     let boc_flag = Arg::new("BOC")
         .long("--boc")
-        .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tvc_flag = Arg::new("TVC")
@@ -287,7 +290,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone())
         .arg(method_opt_arg.clone())
         .arg(multi_params_arg.clone())
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -305,7 +308,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::new("PARAMS")
             .help("Function arguments.")
             .multiple(true))
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -394,7 +397,6 @@ async fn main_internal() -> Result<(), String> {
             .arg(sign_arg.clone())
             .arg(keys_arg.clone())
             .arg(wc_arg.clone())
-            .arg(dst_dapp_id_arg.clone())
     };
 
     let deploy_cmd = deploy_args("deploy").about("Deploys a smart contract to the blockchain.");
@@ -493,7 +495,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(method_arg.clone())
         .arg(params_arg.clone())
         .arg(abi_arg.clone())
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -1304,9 +1306,14 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
     let address = matches.value_of("ADDRESS");
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
-    let lifetime = matches.value_of("LIFETIME");
-    let raw = matches.is_present("RAW");
-    let output = matches.value_of("OUTPUT");
+    // Only `message` defines `--lifetime` and `--output`; `call` and `fee call`
+    // share this handler without them, and clap aborts when asked for an id the
+    // running command lacks. `--raw` and `--timestamp` are read inside the
+    // `CallType::Msg` arm for the same reason.
+    let (lifetime, output) = match call {
+        CallType::Msg => (matches.value_of("LIFETIME"), matches.value_of("OUTPUT")),
+        CallType::Call | CallType::Fee => (None, None),
+    };
 
     let abi = Some(abi_from_matches_or_config(matches, config)?);
 
@@ -1347,6 +1354,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
             .await
         }
         CallType::Msg => {
+            let raw = matches.is_present("RAW");
             let lifetime = lifetime
                 .map(|val| {
                     u32::from_str_radix(val, 10)
@@ -1464,7 +1472,6 @@ async fn deploy_command(
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
-    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         let keys = keys.as_deref().map(mask_key_source);
@@ -1481,7 +1488,6 @@ async fn deploy_command(
                 wc,
                 false,
                 alias,
-                dst_dapp_id,
             )
             .await
         }
@@ -1513,7 +1519,6 @@ async fn deploy_command(
                 wc,
                 true,
                 None,
-                dst_dapp_id,
             )
             .await
         }
@@ -1531,7 +1536,6 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let keys = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.value_of("ALIAS");
-    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         let keys = keys.as_deref().map(mask_key_source);
@@ -1546,7 +1550,6 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
         wc,
         false,
         alias,
-        dst_dapp_id,
     )
     .await
 }

@@ -24,8 +24,7 @@ pub struct ParamsOfProcessMessage {
     #[serde(default)]
     pub send_events: bool,
 
-    /// Destination dapp_id (64-character hex, no 0x).
-    /// Required for v>=1.0.0 servers; for v<1.0.0 may be empty.
+    /// Destination dapp_id (64-character hex, no 0x). Required.
     #[serde(default)]
     pub dapp_id: String,
 }

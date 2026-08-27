@@ -4,14 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- `tvm_client`: support for pre-1.0.0 servers. There is one wire format; `dapp_id` is required on every send and account read, and an empty value is now always an error rather than a legacy-node allowance.
+- `tvm_client`: `ClientContext::supports_dapp_id()`, `ServerLink::supports_dapp_id()` and `ServerLink::server_version()`. Version-conditional application code has nothing left to gate on and should drop the gate.
+- `tvm-cli`: `--dst-dapp-id` on `deploy`, `deployx`, `deploy_message` and `fee deploy`. A contract deployed through the CLI roots its own dapp, so its dapp_id is derived from its own address instead of being asked for.
+- `docs/reference/types-and-methods/`: a second, unpublished copy of the SDK reference, still documenting the pre-dapp_id `address` field. It was never linked from `SUMMARY.md` and is no longer generated into, so it could only go stale. `UNSTABLE.md` and `DEPRECATED.md` moved to the published copy, which links to them as siblings and was missing them; older changelog entries now point at the published copy too.
+
+### Changed (breaking)
+- `tvm_client`: sending a message and reading an account no longer probe GraphQL. Both go straight to REST. The probe was cached per client, so against a normal node this removes one round-trip per client rather than one per call; against a node that serves no GraphQL, where the probe failed and cached nothing, it removes one per call and the node needs no special handling.
+- `tvm-cli`: `send` and `sendfile` keep `--dst-dapp-id`, but omitting it now always fails. Their destination comes from a prepared message, which carries no dapp_id to derive from.
+
 ### Fixed
 - `tvm-cli`: a seed phrase or secret key passed on the command line is no longer printed back. Values of `--keys`, `--sign`, `--setkey`, `--phrase` and `--keypair` now appear in the `Input arguments:` block as `<seed phrase>` or `<secret key>`, while a path to a keypair file is still shown in full. `genaddr` no longer repeats a phrase supplied with `--setkey`, in text or JSON output, and `config` / `config alias` no longer print a phrase held in place of a keypair path. A phrase the tool generates itself is still shown, since nothing else records it.
+- `tvm-cli`: a seed phrase written with ideographic spaces is no longer echoed in full. BIP-39 separates the words of a Japanese mnemonic with U+3000 rather than the ASCII space, and the Chinese and Korean wordlists are commonly written the same way; the masking test looked only for an ASCII space, so it took such a phrase for a filename and printed the whole wallet in the `Input arguments:` block, in `--keys` summaries and in `config` listings. Loading a phrase separated this way still fails — the parser is ASCII-only throughout — but it now fails without showing it.
 - `tvm_client` / `tvm-cli`: an invalid seed phrase is no longer repeated back in the `Invalid bip39 phrase` error. A phrase with one mistyped word is still nearly the whole wallet, so the message now carries only a short stub and the length, the way invalid secret keys were already reported.
+- `tvm_client` / `tvm-cli`: a mistyped seed phrase from the Japanese, Korean or either Chinese wordlist no longer crashes the tool. Shortening a phrase for that error message counted bytes instead of characters, so a phrase in any non-Latin dictionary aborted with a panic rather than reporting `Invalid bip39 phrase`; both the stub and the length it quotes are now counted in characters.
 - `tvm-cli`: `genaddr`, `getkeypair`, `genphrase`, `account`, `decode` and the other subcommands listed after `deploy_message` no longer abort immediately in debug builds. `deploy_message` was registered under the wrong internal name, which tripped an argument-parser assertion during command dispatch. Release builds were unaffected.
-- `tvm_abi`: refusing an `address` argument now says which form belongs there. A canonical `dapp_id::account_id` passed inside ABI arguments used to fail with an unrelated parser complaint; the message now states that this form names a contract for a command to act on, that ABI arguments take the on-chain `<workchain>:<account_id>` form, and what to pass instead. Every other malformed address is refused with the reason plus the expected form. Which form belongs where is documented in `docs/MIGRATION-3.0.md`.
+- `tvm_abi`: refusing an `address` argument now says which form belongs there. A canonical `dapp_id::account_id` passed inside ABI arguments used to fail with an unrelated parser complaint; the message now states that this form names a contract for a command to act on, that ABI arguments take the on-chain `<workchain>:<account_id>` form, and what to pass instead. Every other malformed address is refused with the reason plus the expected form. Which form belongs where is documented in `docs/MIGRATION-3.x.md`.
 - Error messages no longer print `0` in place of what they were built with. Twenty error variants across `tvm_block`, `tvm_vm`, `tvm_executor`, `tvm_abi` and `tvm_block_json` interpolated an integer literal instead of their own field, so the reason an argument was invalid, the VM exception code, and the exit code a contract refused a message with were all reported as zero. They now carry the real value.
 - `tvm-cli`: `deploy`, `deploy_message`, `fee deploy` and `deployx` now accept a filename in place of the constructor arguments, which the help has always promised. A filename used to reach the json parser unchanged and fail with `function arguments is not a json: expected value at line 1 column 1`; it is now read the way `call`, `run` and `debug` already read it, including a filename given in the `parameters` config field. A file that cannot be read is reported by name and reason instead of as broken json.
 - `tvm-cli`: `deploy`, `deploy_message` and `fee deploy` no longer abort immediately in debug builds. The three share one implementation, which asked the argument parser for `--alias`, `--output` and `--raw` whichever of them was running; each of those belongs to a single command, and asking for the others tripped a parser assertion. Release builds were unaffected.
+- `tvm-cli`: `account` no longer aborts immediately in debug builds. `--boc` declared a conflict with `--tvc` for every command that takes it, but `account` takes `--boc` alone, and the argument parser asserts when a declared conflict names an argument the command never registers. The conflict is now attached only where both options exist, so `run`, `runx` and `debug run` still refuse the two together. Release builds were unaffected. An entry above claimed this command was already fixed; that fix addressed a different cause.
+- `tvm-cli`: `call` and `fee call` no longer abort immediately in debug builds. They share an implementation with `message`, which alone defines `--lifetime`, `--timestamp`, `--output` and `--raw`; asking the argument parser for those while running `call` tripped the same assertion as the case above. Release builds were unaffected.
 
 ## [3.0.5] - 2026-08-11
 
@@ -46,7 +60,7 @@ All notable changes to this project will be documented in this file.
 
 ## [3.0.0] - 2026-06-05
 
-> **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
+> **Upgrading from 2.x?** See [`docs/MIGRATION-3.x.md`](docs/MIGRATION-3.x.md)
 > for a step-by-step migration guide covering the dapp_id changes below.
 
 ### Changed (breaking)
@@ -761,7 +775,7 @@ State init should be finalized and ready to be used in message as is.
 - `send_event` parameter is now optional with default value `false`.
 
 ### Deprecated
-- Debot module is [DEPRECATED](./docs/reference/types-and-methods/DEPRECATED.md)
+- Debot module is [DEPRECATED](./docs/acki-nacki-sdk/types-and-methods/DEPRECATED.md)
 
 ## [1.44.0] – 2023-07-12
 
@@ -1165,19 +1179,19 @@ connection
   Crypto box provides signing and encryption boxes.
 
   Functions:
-  [`create_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#create_crypto_box) -
+  [`create_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#create_crypto_box) -
   initializes cryptobox with secret
-  [`remove_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#remove_crypto_box) -
+  [`remove_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#remove_crypto_box) -
   removes cryptobox and overwrites all secrets with zeroes
-  [`get_crypto_box_seed_phrase`](./docs/reference/types-and-methods/mod_crypto.md#get_crypto_box_seed_phrase)
+  [`get_crypto_box_seed_phrase`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_crypto_box_seed_phrase)
   - returns decrypted seed phrase
-  [`get_crypto_box_info`](./docs/reference/types-and-methods/mod_crypto.md#get_crypto_box_info) -
+  [`get_crypto_box_info`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_crypto_box_info) -
   returns encrypted cryptobox secret for next cryptobox initializations
-  [`get_signing_box_from_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#get_signing_box_from_crypto_box)
+  [`get_signing_box_from_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_signing_box_from_crypto_box)
   - derives signing box from secret
-  [`get_encryption_box_from_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#get_encryption_box_from_crypto_box)
+  [`get_encryption_box_from_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_encryption_box_from_crypto_box)
   - derives encryption box from secret
-  [`clear_crypto_box_secret_cache`](./docs/reference/types-and-methods/mod_crypto.md#clear_crypto_box_secret_cache)
+  [`clear_crypto_box_secret_cache`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#clear_crypto_box_secret_cache)
   - forces secret cache (signing and encryption) clean up (overwrites all secrets with zeroes).
 
 - Support of `initCodeHash` in tvm: `X-Evernode-Expected-Account-Boc-Version`=2 http header added to
@@ -1250,7 +1264,7 @@ done to avoid breaking changes in existing applications and give time to migrate
 ### New
 
 -
-Function [`abi.encode_initial_data`](./docs/reference/types-and-methods/mod_abi.md#encode_initial_data)
+Function [`abi.encode_initial_data`](./docs/acki-nacki-sdk/types-and-methods/mod_abi.md#encode_initial_data)
 which
 encodes initial account data with initial values for the contract's static variables and owner's
 public key.
@@ -1279,7 +1293,7 @@ This function is analogue of `tvm.buildDataInit` function in Solidity.
       for completion of async external calls.
     - Added support for DeBots with ABI 2.2.
 -
-Function [`proofs.proof_message_data`](./docs/reference/types-and-methods/mod_proofs.md#proof_message_data)
+Function [`proofs.proof_message_data`](./docs/acki-nacki-sdk/types-and-methods/mod_proofs.md#proof_message_data)
 which proves message data, retrieved
 from Graphql API.
 
