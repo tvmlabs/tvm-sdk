@@ -22,9 +22,10 @@ write version-conditional code of their own.
 
 1. **One wire format.** Every external message is `ExtMessageV3`; every account
    read uses `account_id=…&dapp_id=…`. `ExtMessageV2` is deleted.
-2. **`dapp_id` is unconditionally required.** An empty value is
-   `dapp_id_required`, raised before the network call, and a malformed one is
-   refused by `validate_hex_id`.
+2. **`dapp_id` is unconditionally required.** On `send_message` an empty value
+   is `dapp_id_required`, raised before the network call; on `get_account`,
+   and for a malformed value on either path, `validate_hex_id` refuses it
+   with a hex-format error. Both checks run before any request goes out.
 3. **`info.version` is not consulted, or even requested.** Both `info`
    selection sets drop the field, and `Endpoint::server_version`,
    `ServerLink::{server_version, supports_dapp_id}` and
@@ -37,8 +38,9 @@ write version-conditional code of their own.
    There is no `/v3/` URL.
 6. **`tvm-cli` deploys derive their own `dapp_id`.** A contract deployed
    through the CLI roots its own dapp, so `dapp_id == account_id`;
-   `--dst-dapp-id` is removed from `deploy` and `deployx` and kept on `send`
-   and `sendfile`, where the destination comes from a prepared BOC.
+   `--dst-dapp-id` is removed from `deploy`, `deployx`, `deploy_message` and
+   `fee deploy`, and kept on `send` and `sendfile`, where the destination
+   comes from a prepared BOC.
 
 ## Consequences
 
@@ -56,4 +58,4 @@ write version-conditional code of their own.
 
 ## References
 
-- Migration details for API consumers: `docs/MIGRATION-3.x.md`.
+- Migration details for API consumers: `docs/MIGRATION-3.0.md`.
