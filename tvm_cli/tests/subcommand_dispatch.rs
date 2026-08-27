@@ -61,6 +61,39 @@ fn deploy_message_does_not_look_up_arguments_it_does_not_define()
     Ok(())
 }
 
+const ADDR: &str = "1111111111111111111111111111111111111111111111111111111111111111::2222222222222222222222222222222222222222222222222222222222222222";
+
+/// The same hazard on the other shared handler: `call`, `message` and
+/// `fee call` share `call_command`, but only `message` defines `--lifetime`,
+/// `--timestamp`, `--output` and `--raw`. `call` and `fee call` reached
+/// `Input arguments:` only in release builds; in debug they aborted on the
+/// first of those lookups.
+#[test]
+fn call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("call").arg(ADDR).arg("sayHello").arg("{}").arg("--abi").arg(ABI);
+    cmd.assert().stdout(predicate::str::contains("Input arguments:"));
+    Ok(())
+}
+
+#[test]
+fn fee_call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
+{
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("fee").arg("call").arg(ADDR).arg("sayHello").arg("{}").arg("--abi").arg(ABI);
+    cmd.assert().stdout(predicate::str::contains("Input arguments:"));
+    Ok(())
+}
+
+#[test]
+fn message_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
+{
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("message").arg(ADDR).arg("sayHello").arg("{}").arg("--abi").arg(ABI);
+    cmd.assert().stdout(predicate::str::contains("Input arguments:"));
+    Ok(())
+}
+
 /// `deployx` has no counterpart to this test: it sets `allow_hyphen_values`
 /// and `trailing_var_arg` for its alternative-syntax constructor params, so
 /// an unknown flag like `--dst-dapp-id` is absorbed as a positional (the TVC

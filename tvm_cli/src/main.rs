@@ -1304,9 +1304,14 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
     let address = matches.value_of("ADDRESS");
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
-    let lifetime = matches.value_of("LIFETIME");
-    let raw = matches.is_present("RAW");
-    let output = matches.value_of("OUTPUT");
+    // Only `message` defines `--lifetime` and `--output`; `call` and `fee call`
+    // share this handler without them, and clap aborts when asked for an id the
+    // running command lacks. `--raw` and `--timestamp` are read inside the
+    // `CallType::Msg` arm for the same reason.
+    let (lifetime, output) = match call {
+        CallType::Msg => (matches.value_of("LIFETIME"), matches.value_of("OUTPUT")),
+        CallType::Call | CallType::Fee => (None, None),
+    };
 
     let abi = Some(abi_from_matches_or_config(matches, config)?);
 
@@ -1347,6 +1352,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
             .await
         }
         CallType::Msg => {
+            let raw = matches.is_present("RAW");
             let lifetime = lifetime
                 .map(|val| {
                     u32::from_str_radix(val, 10)
