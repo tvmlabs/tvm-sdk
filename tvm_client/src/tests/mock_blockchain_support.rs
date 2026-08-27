@@ -31,15 +31,7 @@ pub struct MockBlockchain {
 
 impl MockBlockchain {
     pub async fn start() -> Self {
-        Self::start_with_version("1.2.3").await
-    }
-
-    pub async fn start_legacy() -> Self {
-        Self::start_with_version("0.9.9").await
-    }
-
-    async fn start_with_version(version: &str) -> Self {
-        let state = MockState { version: version.to_owned() };
+        let state = MockState { version: "1.2.3".to_owned() };
         let app = Router::new()
             .route("/graphql", get(info).post(graphql))
             .route("/v2/account", get(account))
@@ -184,11 +176,6 @@ async fn graphql(
 }
 
 #[derive(Deserialize)]
-struct AccountParamsV2 {
-    address: String,
-}
-
-#[derive(Deserialize)]
 struct AccountParamsV3 {
     account_id: String,
     dapp_id: String,
@@ -201,45 +188,12 @@ async fn account(
     let auth = headers.get("Authorization").and_then(|value| value.to_str().ok());
     let query = query.0;
 
-    if let Ok(params) = serde_json::from_value::<AccountParamsV3>(query.clone()) {
-        return handle_account_v3(&params.account_id, &params.dapp_id, auth);
-    }
-
-    let params = match serde_json::from_value::<AccountParamsV2>(query) {
+    let params = match serde_json::from_value::<AccountParamsV3>(query) {
         Ok(p) => p,
         Err(_) => return (StatusCode::BAD_REQUEST, "Invalid parameters").into_response(),
     };
 
-    handle_account_v2(params.address, auth)
-}
-
-fn handle_account_v2(address: String, auth: Option<&str>) -> axum::response::Response {
-    match (address.as_str(), auth) {
-        (address, Some("Bearer secret")) if is_v2_address(address, TEST_ACCOUNT_ID) => {
-            Json(json!({
-                "boc": "te6ccAAS",
-                "dapp_id": "mock-dapp",
-                "state_timestamp": 1_700_000_001_u64
-            }))
-            .into_response()
-        }
-        (
-            "0:5555555555555555555555555555555555555555555555555555555555555555",
-            Some("Bearer secret"),
-        ) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
-        (address, Some("Bearer secret")) if is_v2_address(address, TEST_BAD_JSON_ACCOUNT_ID) => {
-            Json(json!({ "unexpected": true })).into_response()
-        }
-        (address, Some("Bearer secret")) if is_v2_address(address, TEST_NOT_JSON_ACCOUNT_ID) => {
-            (StatusCode::OK, "not-json").into_response()
-        }
-        (_, Some("Bearer secret")) => (StatusCode::NOT_FOUND, "not found").into_response(),
-        (_, _) => (StatusCode::UNAUTHORIZED, "Unauthorized").into_response(),
-    }
-}
-
-fn is_v2_address(address: &str, account_id: &str) -> bool {
-    address.strip_prefix("0:") == Some(account_id)
+    handle_account_v3(&params.account_id, &params.dapp_id, auth)
 }
 
 fn handle_account_v3(
