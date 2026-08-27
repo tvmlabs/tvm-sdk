@@ -559,6 +559,31 @@ mod ext_message_tests {
         assert_eq!(v["dapp_id"], json!("dapp_hex"));
         assert_eq!(v["account_id"], json!("acc_hex"));
         assert!(v.get("dst_dapp_id").is_none());
+        assert_eq!(v["thread_id"], json!("ttt"));
+    }
+
+    /// `thread_id` carries `skip_serializing_if = "Option::is_none"`, and it is
+    /// reachable: `ServerLink::send_message` calls `set_thread_id(None)` when a
+    /// node answers with a malformed thread_id, then re-serializes the message
+    /// for the retry. Without the attribute that retry would put
+    /// `"thread_id": null` on the wire. The only test that covered a `None`
+    /// thread_id was the v2 one deleted with `ExtMessageV2`.
+    #[test]
+    fn v3_omits_thread_id_when_none() {
+        let m = ExtMessageV3 {
+            id: "abc".into(),
+            body: "Zm9v".into(),
+            expire_at: None,
+            thread_id: None,
+            ext_message_token: None,
+            dapp_id: "dapp_hex".into(),
+            account_id: "acc_hex".into(),
+        };
+        let v = serde_json::to_value(&m).unwrap();
+        assert!(v.get("thread_id").is_none(), "thread_id must be omitted, not null: {v}");
+        // The fields that are always present stay present.
+        assert_eq!(v["dapp_id"], json!("dapp_hex"));
+        assert_eq!(v["account_id"], json!("acc_hex"));
     }
 }
 

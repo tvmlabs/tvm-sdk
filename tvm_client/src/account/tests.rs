@@ -165,6 +165,16 @@ async fn get_account_rejects_empty_dapp_id() {
     )
     .await
     .expect_err("empty dapp_id must be refused");
+    // Deliberately NOT DappIdRequired (518): that code is raised only on the
+    // send path, which has an explicit is_empty() check. `get_account` has
+    // none and reaches `validate_hex_id`, so an empty value is refused the
+    // same way a malformed one is -- InvalidData (512). Pinning the code
+    // keeps the two paths from being conflated again.
+    assert_eq!(
+        err.code(),
+        crate::processing::ErrorCode::InvalidData as u32,
+        "expected InvalidData, got: {err}"
+    );
     assert!(err.message().contains("dapp_id"), "unexpected error: {}", err.message());
     handle.abort();
 }

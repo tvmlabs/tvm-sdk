@@ -676,6 +676,14 @@ mod test {
         )
         .await
         .unwrap_err();
+        // Pin the code, not just the word: `validate_hex_id` also produces a
+        // message mentioning `dapp_id`, from another module and under
+        // InvalidData (512). Only an *empty* value on the send path is 518.
+        assert_eq!(
+            err.code(),
+            crate::processing::ErrorCode::DappIdRequired as u32,
+            "expected DappIdRequired, got: {err}"
+        );
         assert!(err.message().contains("dapp_id"));
 
         handle.abort();
@@ -876,6 +884,11 @@ mod test {
         .await
         .unwrap_err();
 
+        assert_eq!(
+            err.code(),
+            crate::processing::ErrorCode::DappIdRequired as u32,
+            "expected DappIdRequired, got: {err}"
+        );
         assert!(err.message().contains("dapp_id"), "expected dapp_id requirement, got: {err}");
         assert!(!err.message().contains("404"), "must not be the GraphQL 404 failure: {err}");
 
