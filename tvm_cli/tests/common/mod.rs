@@ -7,6 +7,35 @@ use serde_json::Map;
 use serde_json::Value;
 
 pub const BIN_NAME: &str = "tvm-cli";
+
+/// Returns a command for the tvm-cli binary.
+///
+/// Release is preferred because clap 3's debug assertions reject some of the
+/// legacy underscore subcommands.  The target directory is deliberately not
+/// derived from the workspace: Cargo may be configured with a custom target
+/// directory.
+pub fn cargo_bin_smart() -> Command {
+    if let Ok(path) = env::var("CLI_NAME") {
+        if !path.is_empty() {
+            return Command::new(path);
+        }
+    }
+
+    if let Ok(target_dir) = env::var("CARGO_TARGET_DIR") {
+        let target_dir = std::path::PathBuf::from(target_dir);
+        for profile in ["release", "debug"] {
+            let path = target_dir.join(profile).join(BIN_NAME);
+            if path.is_file() {
+                return Command::new(path);
+            }
+        }
+    }
+
+    // assert_cmd asks Cargo for the package target directory and therefore
+    // also works when CARGO_TARGET_DIR is configured outside this repository.
+    Command::cargo_bin(BIN_NAME).expect("unable to locate tvm-cli; build it first")
+}
+
 pub const GIVER_ADDR: &str = "0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94";
 pub const GIVER_ABI: &str = "tests/samples/giver.abi.json";
 pub const GIVER_V2_ADDR: &str =
@@ -146,4 +175,25 @@ pub fn generate_phrase_and_key(key_path: &str) -> Result<String, Box<dyn std::er
     seed.replace_range(seed.find("Keypair").unwrap_or(seed.len()) - 2.., "");
 
     Ok(seed)
+}
+
+pub mod mock_server;
+
+pub fn with_mock_server<F>(test: F)
+where
+    F: FnOnce(String) + Send + 'static,
+{
+    let runtime = tokio::runtime::Runtime::new().unwrap();
+    let server = runtime.block_on(async {
+        let server = mock_server::MockGraphQLServer::new().await;
+        server.setup_default_fixtures();
+        let url = server.url();
+        server.run().await;
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        url
+    });
+    test(server);
+    // Let the runtime keep running until the test finishes.
+    // The server task will be dropped when runtime is dropped.
+    drop(runtime);
 }

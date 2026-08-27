@@ -1,0 +1,276 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "receive_message",
+			"inputs": [
+				{"name":"index","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "send_messages",
+			"inputs": [
+				{"name":"to","type":"address"},
+				{"name":"start_index","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "bounce_messages_between_dapps",
+			"inputs": [
+				{"name":"index","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "add",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "get_my_dapp",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"uint256"}
+			]
+		},
+		{
+			"name": "iterate",
+			"inputs": [
+				{"name":"index","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "iterate_inc",
+			"inputs": [
+				{"name":"index","type":"uint256"},
+				{"name":"max_index","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "inc",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "inc_with_stop",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "inc_with_stop_parameterized",
+			"inputs": [
+				{"name":"stop_value","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "single_inc_self",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "single_inc_self_many_times",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "single_inc_self_many_times_internal",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "single_inc",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "send_to",
+			"inputs": [
+				{"name":"destination","type":"address"},
+				{"name":"value","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "receive_from",
+			"inputs": [
+				{"name":"value","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "test_aborted_messages",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "seq_no",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "get_message_order",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"message_order","type":"uint256[]"}
+			]
+		},
+		{
+			"name": "call_papas",
+			"inputs": [
+				{"name":"papa1","type":"address"},
+				{"name":"papa2","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "papa_send",
+			"inputs": [
+				{"name":"destination","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "papa_receive",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "deploy_mt_tester",
+			"inputs": [
+				{"name":"first_state_init","type":"cell"},
+				{"name":"sibling_state_init","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "destruct",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "destruct_with_messages",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "deploy_sibling",
+			"inputs": [
+				{"name":"state_init","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "test_gas",
+			"inputs": [
+				{"name":"iterations","type":"uint256"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "counter",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"counter","type":"uint256"}
+			]
+		},
+		{
+			"name": "seq",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"seq","type":"uint32"}
+			]
+		},
+		{
+			"name": "received",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"received","type":"uint256"}
+			]
+		},
+		{
+			"name": "papa_counter",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"papa_counter","type":"uint256"}
+			]
+		},
+		{
+			"name": "papa_send_counter",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"papa_send_counter","type":"uint256"}
+			]
+		}
+	],
+	"events": [
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"init":false,"name":"counter","type":"uint256"},
+		{"init":false,"name":"seq","type":"uint32"},
+		{"init":false,"name":"received","type":"uint256"},
+		{"init":false,"name":"papa_counter","type":"uint256"},
+		{"init":false,"name":"papa_send_counter","type":"uint256"},
+		{"init":false,"name":"_message_order","type":"uint256[]"}
+	]
+}

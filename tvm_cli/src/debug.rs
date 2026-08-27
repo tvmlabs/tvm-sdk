@@ -1452,7 +1452,7 @@ async fn fetch_transactions(
                 .await
             };
 
-            let transactions = tokio_retry::Retry::spawn(retry_strategy.clone(), action)
+            let transactions = tokio_retry::Retry::start(retry_strategy.clone(), action)
                 .await
                 .map_err(|e| format!("Failed to fetch transactions: {}", e))?;
 

@@ -1,0 +1,16 @@
+{
+  "data": {
+    "transactions": [
+      {
+        "id": "ab12cd34ef5678901234567890123456789012345678901234567890123456",
+        "status": 3,
+        "status_name": "Finalized",
+        "account_addr": "0:06b8a619779f770630fa97efb96b86e03aad5b08b6d0df689057569424ec91b1",
+        "logical_time": "5448615",
+        "balance_delta": "-1000000",
+        "total_fees": "500000",
+        "now": 1760103403
+      }
+    ]
+  }
+}
