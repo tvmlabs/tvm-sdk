@@ -62,8 +62,11 @@ address of the root smart contract, which is deployed using an external
 message. All contracts deployed with internal messages automatically receive
 the same Dapp ID. Whether from the same root contract, or from contracts
 deployed by the root contract. Every contract belongs to exactly one dapp,
-and every external message routed through `/v2/messages` and `/v2/account`
-must carry it.
+and — **in the current release** — every send and every account read must
+carry its dapp_id. 3.0.0 only enforced this against a `>= 1.0.0` node; see
+the version-specific notes under `ParamsOfGetAccount`, `ParamsOfSendMessage`,
+`ParamsOfProcessMessage` and `account` below for what a pre-1.0.0 node
+allowed instead.
 
 The SDK introduces an **extended address form**:
 
@@ -132,10 +135,14 @@ let boc:        String = res.boc;
 Notes:
 - `account_id` and `dapp_id` are validated up front. Pass them as
   64-character hex with no `0x` and no workchain prefix.
-- An empty `dapp_id` produces error code `518 DappIdRequired`. (3.0.0
-  allowed an empty `dapp_id` when talking to a pre-1.0.0 server, skipping
-  the field on the wire; pre-1.0.0 servers are no longer supported, so this
-  is always an error now.)
+- An empty or malformed `dapp_id` (or `account_id`) is refused before any
+  request goes out, with error code `512 InvalidData`: `` Invalid data:
+  `dapp_id` must be a 64-character hex string (no 0x prefix, no
+  workchain) ``. (3.0.0 allowed an empty `dapp_id` when talking to a
+  pre-1.0.0 server, skipping the field on the wire; pre-1.0.0 servers are
+  no longer supported, so this is always an error now.) `get_account` has
+  no separate "empty" case the way sending a message does — see
+  `518 DappIdRequired` below for that distinction.
 
 ### `ParamsOfSendMessage` and `ResultOfSendMessage`
 
@@ -400,10 +407,24 @@ it normalizes the address before encoding.
 
 ### `518 DappIdRequired`
 
-You sent a message or read an account with an empty `dapp_id`. Provide it
-explicitly: Rust API, set `dapp_id`; CLI, use the extended
-`dapp_id::account_id` address form for `account`/`call`/`callx`, or pass
-`--dst-dapp-id` for `send`/`sendfile`.
+You sent a message with an empty `dapp_id`. This code is specific to
+sending: it comes from an explicit empty-value check that runs before the
+network call. Provide `dapp_id` explicitly: Rust API, set it on
+`ParamsOfSendMessage` or `ParamsOfProcessMessage`; CLI, pass
+`--dst-dapp-id` on `send`/`sendfile` — the only commands that still take
+it.
+
+### `512 InvalidData`: `` `dapp_id` must be a 64-character hex string ``
+
+You called `get_account` directly — Rust API, or a binding around it —
+with an empty or malformed `dapp_id` or `account_id`. `get_account` has no
+separate empty-value check the way sending does: an empty value fails the
+same 64-hex-digit format check as any other malformed one, so it surfaces
+as `512 InvalidData`, not `518 DappIdRequired`. Pass a real 64-character
+hex value for both fields. (`tvm-cli account` can't produce this error:
+its own address parser already rejects anything that isn't two 64-hex
+halves, with a different message (`` address `…` must be in the form
+`dapp_id::account_id` ``), before `get_account` is ever called.)
 
 ### `ResultOfGetAccount.dapp_id` no longer compiles
 
