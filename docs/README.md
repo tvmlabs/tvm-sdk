@@ -2,10 +2,12 @@
 
 {% hint style="info" %}
 **Upgrading from `tvm_client` / `tvm-cli` 2.x?** See the
-[3.0.0 migration guide](MIGRATION-3.0.md) for breaking changes in the
+[3.x migration guide](MIGRATION-3.x.md) for breaking changes in the
 SDK types and CLI inputs (renamed `address` → `account_id`,
 `dst_dapp_id` → `dapp_id`, the extended `dapp_id::account_id` address
-form, and required `--dst-dapp-id` on deploy commands against v3 nodes).
+form, and `--dst-dapp-id` removed from `deploy`/`deployx` — a contract
+deployed through the CLI now derives its own dapp_id instead of taking
+one on the command line).
 {% endhint %}
 
 ## **What will you learn from this guide?** <a href="#prerequisites" id="prerequisites"></a>

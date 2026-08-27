@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Removed
+- `--dst-dapp-id` on `deploy`, `deployx`, `deploy_message` and `fee deploy`. The dapp_id of a contract deployed through the CLI equals its own account_id, so it is derived rather than supplied. This reverses the 3.0.0 change that made the flag mandatory on these commands.
+
+### Changed
+- `send` and `sendfile` still take `--dst-dapp-id`, and it is now required in every case, including self-rooted destinations. Its help text said the flag was only needed for non-root dapps, which stopped being true when support for pre-1.0.0 servers was removed.
+
 ## [3.0.2] - 2026-06-15
 
 ### Fixed

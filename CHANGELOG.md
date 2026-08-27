@@ -4,11 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- `tvm_client`: support for pre-1.0.0 servers. There is one wire format; `dapp_id` is required on every send and account read, and an empty value is now always an error rather than a legacy-node allowance.
+- `tvm_client`: `ClientContext::supports_dapp_id()`, `ServerLink::supports_dapp_id()` and `ServerLink::server_version()`. Version-conditional application code has nothing left to gate on and should drop the gate.
+- `tvm-cli`: `--dst-dapp-id` on `deploy`, `deployx`, `deploy_message` and `fee deploy`. A contract deployed through the CLI roots its own dapp, so its dapp_id is derived from its own address instead of being asked for.
+
+### Changed (breaking)
+- `tvm_client`: sending a message and reading an account no longer probe GraphQL. Both go straight to REST, so a send costs one round-trip fewer and a node that serves no GraphQL needs no special handling.
+- `tvm-cli`: `send` and `sendfile` keep `--dst-dapp-id`, but omitting it now always fails. Their destination comes from a prepared message, which carries no dapp_id to derive from.
+
 ### Fixed
 - `tvm-cli`: a seed phrase or secret key passed on the command line is no longer printed back. Values of `--keys`, `--sign`, `--setkey`, `--phrase` and `--keypair` now appear in the `Input arguments:` block as `<seed phrase>` or `<secret key>`, while a path to a keypair file is still shown in full. `genaddr` no longer repeats a phrase supplied with `--setkey`, in text or JSON output, and `config` / `config alias` no longer print a phrase held in place of a keypair path. A phrase the tool generates itself is still shown, since nothing else records it.
 - `tvm_client` / `tvm-cli`: an invalid seed phrase is no longer repeated back in the `Invalid bip39 phrase` error. A phrase with one mistyped word is still nearly the whole wallet, so the message now carries only a short stub and the length, the way invalid secret keys were already reported.
 - `tvm-cli`: `genaddr`, `getkeypair`, `genphrase`, `account`, `decode` and the other subcommands listed after `deploy_message` no longer abort immediately in debug builds. `deploy_message` was registered under the wrong internal name, which tripped an argument-parser assertion during command dispatch. Release builds were unaffected.
-- `tvm_abi`: refusing an `address` argument now says which form belongs there. A canonical `dapp_id::account_id` passed inside ABI arguments used to fail with an unrelated parser complaint; the message now states that this form names a contract for a command to act on, that ABI arguments take the on-chain `<workchain>:<account_id>` form, and what to pass instead. Every other malformed address is refused with the reason plus the expected form. Which form belongs where is documented in `docs/MIGRATION-3.0.md`.
+- `tvm_abi`: refusing an `address` argument now says which form belongs there. A canonical `dapp_id::account_id` passed inside ABI arguments used to fail with an unrelated parser complaint; the message now states that this form names a contract for a command to act on, that ABI arguments take the on-chain `<workchain>:<account_id>` form, and what to pass instead. Every other malformed address is refused with the reason plus the expected form. Which form belongs where is documented in `docs/MIGRATION-3.x.md`.
 - Error messages no longer print `0` in place of what they were built with. Twenty error variants across `tvm_block`, `tvm_vm`, `tvm_executor`, `tvm_abi` and `tvm_block_json` interpolated an integer literal instead of their own field, so the reason an argument was invalid, the VM exception code, and the exit code a contract refused a message with were all reported as zero. They now carry the real value.
 - `tvm-cli`: `deploy`, `deploy_message`, `fee deploy` and `deployx` now accept a filename in place of the constructor arguments, which the help has always promised. A filename used to reach the json parser unchanged and fail with `function arguments is not a json: expected value at line 1 column 1`; it is now read the way `call`, `run` and `debug` already read it, including a filename given in the `parameters` config field. A file that cannot be read is reported by name and reason instead of as broken json.
 - `tvm-cli`: `deploy`, `deploy_message` and `fee deploy` no longer abort immediately in debug builds. The three share one implementation, which asked the argument parser for `--alias`, `--output` and `--raw` whichever of them was running; each of those belongs to a single command, and asking for the others tripped a parser assertion. Release builds were unaffected.
@@ -46,7 +55,7 @@ All notable changes to this project will be documented in this file.
 
 ## [3.0.0] - 2026-06-05
 
-> **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
+> **Upgrading from 2.x?** See [`docs/MIGRATION-3.x.md`](docs/MIGRATION-3.x.md)
 > for a step-by-step migration guide covering the dapp_id changes below.
 
 ### Changed (breaking)

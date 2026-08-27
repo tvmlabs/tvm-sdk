@@ -58,4 +58,4 @@ write version-conditional code of their own.
 
 ## References
 
-- Migration details for API consumers: `docs/MIGRATION-3.0.md`.
+- Migration details for API consumers: `docs/MIGRATION-3.x.md`.

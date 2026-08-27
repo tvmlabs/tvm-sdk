@@ -140,7 +140,7 @@ Version detection interacts with address handling as follows:
   (`server_link.rs:1056-1058`, `1110-1118`).
 - `get_account` validates `dapp_id` as strict 64-hex only on the v3 path
   (`account/mod.rs:88`); the v2 path never touches it.
-- Migration details for API consumers: `docs/MIGRATION-3.0.md`.
+- Migration details for API consumers: `docs/MIGRATION-3.x.md`.
 
 ## Consequences
 
