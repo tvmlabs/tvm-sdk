@@ -34,7 +34,6 @@ use tvm_types::base64_encode;
 use url::Url;
 
 use super::ErrorCode;
-use super::tvm_gql::ExtMessageV2;
 use super::tvm_gql::ExtMessageV3;
 use crate::client::ClientEnv;
 use crate::client::FetchMethod;
@@ -1029,99 +1028,33 @@ impl ServerLink {
             }
         }
 
-        // Best-effort, fail-fast GraphQL version probe to choose the v2 vs v3
-        // wire format. Mirrors `get_account`: a REST-only node that exposes no
-        // GraphQL endpoint must still be sendable, so we never hard-fail here
-        // (the old `get_query_endpoint().await?` surfaced a missing `/graphql`
-        // as `code 11: Server responded with code 404`).
-        //
-        // When GraphQL is reachable we trust its `info.version`. When it is
-        // unavailable we cannot use the request payload to disambiguate the
-        // node — the SDK accepts only the new `dapp_id::account_id` address
-        // form, so a dapp_id is present regardless of node version. Instead we
-        // assume the modern v3 wire format: a node serving no GraphQL is a
-        // REST-only v3 node, whereas legacy v<1.0.0 nodes always expose GraphQL
-        // and are detected above. Sampled once for the whole send attempt
-        // (including retries): all retries go to nodes in the same cluster, so
-        // a mid-attempt version flip is not expected and we don't re-probe.
-        let is_v3 = match self.state.try_resolve_query_endpoint().await {
-            Ok(_) => self.supports_dapp_id().await,
-            Err(_) => true,
-        };
         let network_state = self.state();
 
-        if is_v3 && dapp_id.is_empty() {
+        if dapp_id.is_empty() {
             return Err(crate::processing::Error::dapp_id_required());
         }
-        if !dapp_id.is_empty() {
-            crate::account::validate_hex_id("dapp_id", &dapp_id)?;
-        }
-
-        // Wire-version-aware wrapper so the retry loop can mutate the
-        // mutable fields (`thread_id`, `ext_message_token`) and re-serialize
-        // without caring which wire format the connected server speaks.
-        enum WireMsg {
-            V2(ExtMessageV2),
-            V3(ExtMessageV3),
-        }
-        impl WireMsg {
-            fn set_thread_id(&mut self, t: Option<String>) {
-                match self {
-                    WireMsg::V2(m) => m.set_thread_id(t),
-                    WireMsg::V3(m) => m.set_thread_id(t),
-                }
-            }
-
-            fn set_ext_message_token(&mut self, token: Option<Value>) {
-                match self {
-                    WireMsg::V2(m) => m.ext_message_token = token,
-                    WireMsg::V3(m) => m.ext_message_token = token,
-                }
-            }
-
-            fn serialize_array(&self) -> ClientResult<String> {
-                match self {
-                    WireMsg::V2(m) => {
-                        serde_json::to_string(&[m]).map_err(crate::processing::Error::invalid_data)
-                    }
-                    WireMsg::V3(m) => {
-                        serde_json::to_string(&[m]).map_err(crate::processing::Error::invalid_data)
-                    }
-                }
-            }
-        }
+        crate::account::validate_hex_id("dapp_id", &dapp_id)?;
 
         // NOTE: account_id_hex assumes a 256-bit MsgAddressInt::AddrStd
         // destination. For MsgAddressInt::AddrVar with non-aligned bit
-        // lengths the v3 wire format may fail server-side validation.
-        // Mainnet currently uses AddrStd; revisit if AddrVar becomes
-        // common on v>=1.0.0 nodes (NODE-3500 follow-up).
+        // lengths the wire format may fail server-side validation.
+        // Mainnet currently uses AddrStd; revisit if AddrVar becomes common.
         let account_id_hex = dst.address().as_hex_string();
-        let mut message = if is_v3 {
-            WireMsg::V3(ExtMessageV3 {
-                id: msg_id.to_string(),
-                body: base64_encode(msg_body),
-                expire_at: None,
-                thread_id: Some(thread_id.to_string()),
-                ext_message_token: network_state.get_bm_token().await,
-                dapp_id: dapp_id.clone(),
-                account_id: account_id_hex,
-            })
-        } else {
-            WireMsg::V2(ExtMessageV2 {
-                id: msg_id.to_string(),
-                body: base64_encode(msg_body),
-                expire_at: None,
-                thread_id: Some(thread_id.to_string()),
-                ext_message_token: network_state.get_bm_token().await,
-                dst_dapp_id: (!dapp_id.is_empty()).then(|| dapp_id.clone()),
-            })
+        let mut message = ExtMessageV3 {
+            id: msg_id.to_string(),
+            body: base64_encode(msg_body),
+            expire_at: None,
+            thread_id: Some(thread_id.to_string()),
+            ext_message_token: network_state.get_bm_token().await,
+            dapp_id: dapp_id.clone(),
+            account_id: account_id_hex,
         };
 
         let mut attempts = 0;
         let mut endpoint = network_state.select_send_message_endpoint().await;
 
-        let mut query = message.serialize_array()?;
+        let mut query =
+            serde_json::to_string(&[&message]).map_err(crate::processing::Error::invalid_data)?;
         log::debug!(
             "send_message: id={}, dst={}, endpoint={}, body={}",
             msg_id,
@@ -1151,7 +1084,7 @@ impl ServerLink {
 
             if let Some(Value::Object(_)) = err.data().get("ext_message_token") {
                 network_state.update_bm_data(&err.data()["ext_message_token"]).await;
-                message.set_ext_message_token(network_state.get_bm_token().await);
+                message.ext_message_token = network_state.get_bm_token().await;
             }
 
             let Some(ext) = err.data().get("node_error").and_then(|e| e.get("extensions")) else {
@@ -1195,7 +1128,8 @@ impl ServerLink {
                 network_state.update_bk_send_message_endpoint(Some(bk_endpoint)).await;
                 endpoint = network_state.select_send_message_endpoint().await;
             }
-            query = message.serialize_array()?;
+            query = serde_json::to_string(&[&message])
+                .map_err(crate::processing::Error::invalid_data)?;
             log::debug!(
                 "send_message retry: id={}, attempt={}, endpoint={}, body={}",
                 msg_id,
