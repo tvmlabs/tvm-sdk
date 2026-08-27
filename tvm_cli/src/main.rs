@@ -261,9 +261,11 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Name of the function being called.");
 
+    // The conflict with `--tvc` is attached per command rather than here:
+    // `account` takes `--boc` without `--tvc`, and clap asserts when a
+    // `conflicts_with` names an argument the command does not register.
     let boc_flag = Arg::new("BOC")
         .long("--boc")
-        .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tvc_flag = Arg::new("TVC")
@@ -288,7 +290,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone())
         .arg(method_opt_arg.clone())
         .arg(multi_params_arg.clone())
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -306,7 +308,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::new("PARAMS")
             .help("Function arguments.")
             .multiple(true))
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -493,7 +495,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(method_arg.clone())
         .arg(params_arg.clone())
         .arg(abi_arg.clone())
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 

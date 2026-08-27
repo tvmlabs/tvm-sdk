@@ -85,6 +85,39 @@ fn fee_call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dy
     Ok(())
 }
 
+/// `--boc` and `--tvc` are alternatives wherever both exist, but `account`
+/// registers only `--boc`. Declaring the conflict on the shared argument made
+/// `account` name a `TVC` it never registers, and clap asserts on a
+/// `conflicts_with` target that does not exist — so every `account`
+/// invocation, `--help` included, aborted in debug builds.
+#[test]
+fn account_does_not_conflict_with_an_argument_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("account").arg("--help").assert().success().stdout(predicate::str::contains("--boc"));
+    Ok(())
+}
+
+/// The conflict must survive where it means something: `--boc` and `--tvc`
+/// both exist on `run`, `runx` and `debug run`, and passing both must still
+/// be refused.
+#[test]
+fn run_still_refuses_boc_together_with_tvc() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("run")
+        .arg("--boc")
+        .arg("--tvc")
+        .arg("account.boc")
+        .arg("sayHello")
+        .arg("{}")
+        .arg("--abi")
+        .arg(ABI)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("cannot be used with"));
+    Ok(())
+}
+
 #[test]
 fn message_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
 {
