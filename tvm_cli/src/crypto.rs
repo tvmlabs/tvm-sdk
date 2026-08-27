@@ -39,8 +39,16 @@ pub fn load_keypair(keys: &str) -> Result<KeyPair, String> {
 
 /// What a `--keys` / `--sign` / `--phrase` argument turned out to hold.
 enum KeySource {
-    /// A seed phrase: words separated by spaces, the same rule `load_keypair`
-    /// uses to tell a phrase from a path.
+    /// A seed phrase: several words with whitespace between them.
+    ///
+    /// Deliberately looser than the ASCII-space test `load_keypair` uses to
+    /// tell a phrase from a path. BIP-39 separates the Japanese wordlist with
+    /// U+3000 IDEOGRAPHIC SPACE, and the Chinese and Korean lists are commonly
+    /// written that way too, so an ASCII-only test reads a whole wallet as a
+    /// filename. The two functions can afford different rules because they are
+    /// paying for different mistakes: `load_keypair` mistaking a path for a
+    /// phrase breaks a working command, while masking one costs a line of
+    /// diagnostics.
     Phrase,
     /// A raw secret key in hex, optionally with the public key appended --
     /// what `generate_keypair_from_secret` accepts.
@@ -50,7 +58,7 @@ enum KeySource {
 }
 
 fn classify(value: &str) -> KeySource {
-    if value.contains(' ') {
+    if value.chars().any(char::is_whitespace) {
         KeySource::Phrase
     } else if value.len() >= 64 && value.chars().all(|c| c.is_ascii_hexdigit()) {
         KeySource::SecretKey
@@ -310,6 +318,24 @@ mod tests {
         // A secret concatenated with its public key, as accepted by
         // generate_keypair_from_secret.
         assert_eq!(mask_key_source(&format!("{SECRET_HEX}{SECRET_HEX}")), "<secret key>");
+    }
+
+    /// BIP-39 separates the words of a Japanese mnemonic with U+3000
+    /// IDEOGRAPHIC SPACE, not the ASCII space, and the Chinese and Korean
+    /// wordlists are commonly written the same way. A phrase like this
+    /// contains no ASCII space at all, so a masker that looks only for one
+    /// classifies the whole wallet as a filename and prints it.
+    #[test]
+    fn mask_key_source_hides_a_phrase_separated_by_unicode_spaces() {
+        let japanese = "あいこくしん\u{3000}あいさつ\u{3000}あいだ\u{3000}あおぞら\u{3000}\
+                        あかちゃん\u{3000}あきる\u{3000}あけがた\u{3000}あさい\u{3000}\
+                        あさひ\u{3000}あしあと\u{3000}あじわう\u{3000}あずかる";
+        assert_eq!(mask_key_source(japanese), "<seed phrase>");
+
+        // Any other separator Unicode calls whitespace gets the same
+        // treatment: the cost of being wrong is asymmetric.
+        assert_eq!(mask_key_source("word\u{00a0}word"), "<seed phrase>");
+        assert_eq!(mask_key_source("word\tword"), "<seed phrase>");
     }
 
     #[test]
