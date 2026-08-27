@@ -1017,7 +1017,7 @@ impl ServerLink {
             expire_at: None,
             thread_id: Some(thread_id.to_string()),
             ext_message_token: network_state.get_bm_token().await,
-            dapp_id: dapp_id.clone(),
+            dapp_id,
             account_id: account_id_hex,
         };
 
