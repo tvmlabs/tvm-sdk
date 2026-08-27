@@ -72,10 +72,13 @@ fn parse_get_account_response(
     value: Value,
     params: &ParamsOfGetAccount,
 ) -> ClientResult<ResultOfGetAccount> {
-    let raw: RawAccountResponse = serde_json::from_value(value).map_err(|_| {
+    // Keep the parser's own complaint. This is the only account-read path
+    // now that the v2 branch is gone, so "can not be parsed" on its own would
+    // leave a malformed response with nothing to debug from.
+    let raw: RawAccountResponse = serde_json::from_value(value).map_err(|err| {
         ClientError::with_code_message(
             crate::net::ErrorCode::InvalidServerResponse as u32,
-            "Server response can not be parsed".to_string(),
+            format!("Server response can not be parsed: {err}"),
         )
     })?;
 

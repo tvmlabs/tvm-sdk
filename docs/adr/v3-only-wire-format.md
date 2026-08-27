@@ -20,8 +20,13 @@ write version-conditional code of their own.
 
 ## Decision
 
-1. **One wire format.** Every external message is `ExtMessageV3`; every account
-   read uses `account_id=…&dapp_id=…`. `ExtMessageV2` is deleted.
+1. **One wire format on the REST send path.** Every external message sent
+   through `ServerLink::send_message` is `ExtMessageV3`; every account read
+   uses `account_id=…&dapp_id=…`. `ExtMessageV2` is deleted.
+
+   Scope: this is about the REST `/v2/` path. `ServerLink::send_messages` —
+   the batch path, which posts GraphQL `postRequests` — is untouched by this
+   decision and carries no `dapp_id`. Nothing in this ADR governs it.
 2. **`dapp_id` is unconditionally required.** On `send_message` an empty value
    is `dapp_id_required`, raised before the network call; on `get_account`,
    and for a malformed value on either path, `validate_hex_id` refuses it
@@ -44,8 +49,12 @@ write version-conditional code of their own.
 
 ## Consequences
 
-- Sends no longer pay a GraphQL round-trip. A REST-only node needs no special
-  handling, because nothing probes.
+- The GraphQL endpoint probe is off the send and account-read paths entirely.
+  It was cached per client, so against a normal node this saves one round-trip
+  per client lifetime rather than one per call. The saving is per-call only
+  against a REST-only node, where resolution failed every time and cached
+  nothing. Either way a REST-only node now needs no special handling, because
+  nothing probes.
 - Pre-1.0.0 nodes are unsupported. Pointing the SDK at one produces a
   server-side rejection, not a fallback.
 - Applications that gated on `supports_dapp_id()` must drop the gate; there is

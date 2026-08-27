@@ -258,6 +258,13 @@ async fn get_account_maps_mock_blockchain_rest_errors() {
     .await;
     let invalid_shape = expect_client_err(invalid_shape);
     assert_eq!(invalid_shape.code(), ErrorCode::InvalidServerResponse as u32);
+    // The message must say what was wrong with the body. This is now the only
+    // account-read path, so "can not be parsed" alone leaves nothing to debug.
+    assert!(
+        invalid_shape.message().contains("boc"),
+        "the parse failure must name the field it tripped on, got: {}",
+        invalid_shape.message()
+    );
 
     let invalid_json = account::get_account(
         authorized,

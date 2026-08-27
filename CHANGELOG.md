@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 - `docs/reference/types-and-methods/`: a second, unpublished copy of the SDK reference, still documenting the pre-dapp_id `address` field. It was never linked from `SUMMARY.md` and is no longer generated into, so it could only go stale. `UNSTABLE.md` and `DEPRECATED.md` moved to the published copy, which links to them as siblings and was missing them; older changelog entries now point at the published copy too.
 
 ### Changed (breaking)
-- `tvm_client`: sending a message and reading an account no longer probe GraphQL. Both go straight to REST, so a send costs one round-trip fewer and a node that serves no GraphQL needs no special handling.
+- `tvm_client`: sending a message and reading an account no longer probe GraphQL. Both go straight to REST. The probe was cached per client, so against a normal node this removes one round-trip per client rather than one per call; against a node that serves no GraphQL, where the probe failed and cached nothing, it removes one per call and the node needs no special handling.
 - `tvm-cli`: `send` and `sendfile` keep `--dst-dapp-id`, but omitting it now always fails. Their destination comes from a prepared message, which carries no dapp_id to derive from.
 
 ### Fixed

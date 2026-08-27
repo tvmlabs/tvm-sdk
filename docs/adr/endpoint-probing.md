@@ -9,6 +9,12 @@
 > no longer a wire format to choose and `info.version` is no longer consulted.
 > Everything below describes the behaviour up to that change and is kept as a
 > record of why the probing worked the way it did.
+>
+> **Its line references are as of commit `eaa18df5`**, the last state it
+> describes. Several of the symbols it cites — `try_resolve_query_endpoint`,
+> `ServerLink::server_version`, `ServerLink::supports_dapp_id` — no longer
+> exist, and the files have since shrunk past some of the line numbers below.
+> Read them against `git show eaa18df5:<path>`, not against the working tree.
 
 ## Context
 
