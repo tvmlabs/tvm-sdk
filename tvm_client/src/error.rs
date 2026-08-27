@@ -114,7 +114,6 @@ impl ClientError {
     pub const BOC: isize = 200;
     pub const CLIENT: isize = 0;
     pub const CRYPTO: isize = 100;
-    pub const DEBOT: isize = 800;
     pub const NET: isize = 600;
     pub const PROCESSING: isize = 500;
     pub const TVM: isize = 400;

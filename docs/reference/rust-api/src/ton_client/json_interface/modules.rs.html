@@ -1078,33 +1078,6 @@
     <span class="ident">module</span>.<span class="ident">register</span>();
 }
 
-<span class="doccomment">/// [UNSTABLE](UNSTABLE.md) Module for working with debot.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">ApiModule</span>)]</span>
-<span class="attribute">#[<span class="ident">api_module</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;debot&quot;</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DebotModule</span>;
-
-<span class="kw">fn</span> <span class="ident">register_debot</span>(<span class="ident">handlers</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">RuntimeHandlers</span>) {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">ModuleReg</span>::<span class="ident">new</span>::<span class="op">&lt;</span><span class="ident">DebotModule</span><span class="op">&gt;</span>(<span class="ident">handlers</span>);
-    <span class="ident">module</span>.<span class="ident">register_error_code</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">ErrorCode</span><span class="op">&gt;</span>();
-
-    <span class="ident">module</span>.<span class="ident">register_type</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">DebotHandle</span><span class="op">&gt;</span>();
-    <span class="ident">module</span>.<span class="ident">register_type</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">DebotAction</span><span class="op">&gt;</span>();
-    <span class="ident">module</span>.<span class="ident">register_type</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">DebotHandle</span><span class="op">&gt;</span>();
-    <span class="ident">module</span>.<span class="ident">register_type</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">DebotInfo</span><span class="op">&gt;</span>();
-    <span class="ident">module</span>.<span class="ident">register_type</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">DebotActivity</span><span class="op">&gt;</span>();
-    <span class="ident">module</span>.<span class="ident">register_type</span>::<span class="op">&lt;</span><span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">Spending</span><span class="op">&gt;</span>();
-    <span class="ident">module</span>.<span class="ident">register_async_fn_with_app_object</span>(
-        <span class="kw">crate</span>::<span class="ident">json_interface</span>::<span class="ident">debot</span>::<span class="ident">init</span>,
-        <span class="kw">crate</span>::<span class="ident">json_interface</span>::<span class="ident">debot</span>::<span class="ident">init_api</span>,
-    );
-    <span class="ident">module</span>.<span class="ident">register_async_fn</span>(<span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">start</span>, <span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">start_api</span>);
-    <span class="ident">module</span>.<span class="ident">register_async_fn</span>(<span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">fetch</span>, <span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">fetch_api</span>);
-    <span class="ident">module</span>.<span class="ident">register_async_fn</span>(<span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">execute</span>, <span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">execute_api</span>);
-    <span class="ident">module</span>.<span class="ident">register_async_fn</span>(<span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">send</span>, <span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">send_api</span>);
-    <span class="ident">module</span>.<span class="ident">register_sync_fn</span>(<span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">remove</span>, <span class="kw">crate</span>::<span class="ident">debot</span>::<span class="ident">remove_api</span>);
-    <span class="ident">module</span>.<span class="ident">register</span>();
-}
-
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">register_modules</span>(<span class="ident">handlers</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">RuntimeHandlers</span>) {
     <span class="ident">register_client</span>(<span class="ident">handlers</span>);
     <span class="ident">register_crypto</span>(<span class="ident">handlers</span>);
@@ -1114,7 +1087,6 @@
     <span class="ident">register_utils</span>(<span class="ident">handlers</span>);
     <span class="ident">register_tvm</span>(<span class="ident">handlers</span>);
     <span class="ident">register_net</span>(<span class="ident">handlers</span>);
-    <span class="ident">register_debot</span>(<span class="ident">handlers</span>);
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="ton_client" data-search-js="../../../search-index.js"></div>

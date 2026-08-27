@@ -267,7 +267,7 @@ fn test_pinned_cache() {
 
 #[test]
 fn test_unpinned_cache() {
-    let boc1 = TestClient::tvc(crate::tests::TEST_DEBOT, None).unwrap();
+    let boc1 = TestClient::tvc(crate::tests::HELLO, None).unwrap();
     let boc2 = TestClient::tvc(crate::tests::SUBSCRIBE, None).unwrap();
 
     let boc_max_size =

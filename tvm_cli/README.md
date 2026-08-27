@@ -3,7 +3,7 @@
 TVM-CLI is a multi-platform command line interface for TVM compatible networks (Acki Nacki, Venom, TON).
 
 It allows user to work with keys and seed phrases, deploy contracts, call any of their methods, generate and broadcast
-messages. It supports specific commands for DeBot, DePool and Multisignature Wallet contracts, as well as a number of
+messages. It supports specific commands for DePool and Multisignature Wallet contracts, as well as a number of
 supplementary functions.
 
 To access built-in help, use `--help` or `-h` flag:
@@ -69,57 +69,56 @@ tvm-cli <subcommand> -h
       - [4.8.4. Decode stateInit fields](#484-decode-stateinit-fields)
     - [4.9. Generate payload for internal function call](#49-generate-payload-for-internal-function-call)
     - [4.10. Alternative syntax for call, deploy and run commands](#410-alternative-syntax-for-call-deploy-and-run-commands)
-  - [5. DeBot commands](#5-debot-commands)
-  - [6. Multisig commands](#6-multisig-commands)
-    - [6.1. Send tokens](#61-send-tokens)
-  - [6.2. Deploy wallet](#62-deploy-wallet)
-  - [7. DePool commands](#7-depool-commands)
-    - [7.1. Configure TVM-CLI for DePool operations](#71-configure-tvm-cli-for-depool-operations)
-    - [7.2. Deposit stakes](#72-deposit-stakes)
-      - [7.2.1. Ordinary stake](#721-ordinary-stake)
-      - [7.2.2. Vesting stake](#722-vesting-stake)
-      - [7.2.3. Lock stake](#723-lock-stake)
-    - [7.3. Remove stakes](#73-remove-stakes)
-    - [7.4. Transfer stakes](#74-transfer-stakes)
-    - [7.5. Withdraw Stakes](#75-withdraw-stakes)
-      - [7.5.1. Withdraw entire stake](#751-withdraw-entire-stake)
-      - [7.5.2. Withdraw part of the stake](#752-withdraw-part-of-the-stake)
-    - [7.6. Reinvest Stakes](#76-reinvest-stakes)
-    - [7.7. Read DePool answers](#77-read-depool-answers)
-    - [7.8. View DePool events](#78-view-depool-events)
-    - [7.9. Replenish DePool balance](#79-replenish-depool-balance)
-    - [7.10. Send ticktock to DePool](#710-send-ticktock-to-depool)
-  - [8. Proposal commands](#8-proposal-commands)
-    - [8.1. Create proposal and cast the first vote](#81-create-proposal-and-cast-the-first-vote)
-    - [8.2. Vote for proposal](#82-vote-for-proposal)
-    - [8.3. Decode proposal comment](#83-decode-proposal-comment)
-  - [9. Supplementary commands](#9-supplementary-commands)
-    - [9.1. Get global config](#91-get-global-config)
-    - [9.2. NodeID](#92-nodeid)
-    - [9.3. Dump blockchain config](#93-dump-blockchain-config)
-    - [9.4. Dump several account states](#94-dump-several-account-states)
-    - [9.5. Update global config parameter](#95-update-global-config-parameter)
-    - [9.6. Wait for an account change](#96-wait-for-an-account-change)
-    - [9.7. Make a raw GraphQL query](#97-make-a-raw-graphql-query)
-    - [9.8. Fee commands](#98-fee-commands)
-      - [9.8.1. Call fee command](#981-call-fee-command)
-      - [9.8.2. Deploy fee command](#982-deploy-fee-command)
-      - [9.8.3. Storage fee command](#983-storage-fee-command)
-    - [10. Fetch and replay](#10-fetch-and-replay)
-      - [10.1. How to unfreeze account](#101-how-to-unfreeze-account)
-      - [10.2. Fetch block command](#102-fetch-block-command)
-    - [11. Debug commands](#11-debug-commands)
-      - [11.1. Debug transaction](#111-debug-transaction)
-      - [11.2. Debug call](#112-debug-call)
-      - [11.3. Debug run](#113-debug-run)
-      - [11.4. Debug replay transaction on the saved account state](#114-debug-replay-transaction-on-the-saved-account-state)
-      - [11.5. Debug deploy](#115-debug-deploy)
-      - [11.6. Debug message](#116-debug-message)
-      - [11.7. Debug account](#117-debug-account)
-      - [11.8. Render UML sequence diagram](#118-render-uml-sequence-diagram)
+  - [5. Multisig commands](#5-multisig-commands)
+    - [5.1. Send tokens](#51-send-tokens)
+  - [5.2. Deploy wallet](#52-deploy-wallet)
+  - [6. DePool commands](#6-depool-commands)
+    - [6.1. Configure TVM-CLI for DePool operations](#61-configure-tvm-cli-for-depool-operations)
+    - [6.2. Deposit stakes](#62-deposit-stakes)
+      - [6.2.1. Ordinary stake](#621-ordinary-stake)
+      - [6.2.2. Vesting stake](#622-vesting-stake)
+      - [6.2.3. Lock stake](#623-lock-stake)
+    - [6.3. Remove stakes](#63-remove-stakes)
+    - [6.4. Transfer stakes](#64-transfer-stakes)
+    - [6.5. Withdraw Stakes](#65-withdraw-stakes)
+      - [6.5.1. Withdraw entire stake](#651-withdraw-entire-stake)
+      - [6.5.2. Withdraw part of the stake](#652-withdraw-part-of-the-stake)
+    - [6.6. Reinvest Stakes](#66-reinvest-stakes)
+    - [6.7. Read DePool answers](#67-read-depool-answers)
+    - [6.8. View DePool events](#68-view-depool-events)
+    - [6.9. Replenish DePool balance](#69-replenish-depool-balance)
+    - [6.10. Send ticktock to DePool](#610-send-ticktock-to-depool)
+  - [7. Proposal commands](#7-proposal-commands)
+    - [7.1. Create proposal and cast the first vote](#71-create-proposal-and-cast-the-first-vote)
+    - [7.2. Vote for proposal](#72-vote-for-proposal)
+    - [7.3. Decode proposal comment](#73-decode-proposal-comment)
+  - [8. Supplementary commands](#8-supplementary-commands)
+    - [8.1. Get global config](#81-get-global-config)
+    - [8.2. NodeID](#82-nodeid)
+    - [8.3. Dump blockchain config](#83-dump-blockchain-config)
+    - [8.4. Dump several account states](#84-dump-several-account-states)
+    - [8.5. Update global config parameter](#85-update-global-config-parameter)
+    - [8.6. Wait for an account change](#86-wait-for-an-account-change)
+    - [8.7. Make a raw GraphQL query](#87-make-a-raw-graphql-query)
+    - [8.8. Fee commands](#88-fee-commands)
+      - [8.8.1. Call fee command](#881-call-fee-command)
+      - [8.8.2. Deploy fee command](#882-deploy-fee-command)
+      - [8.8.3. Storage fee command](#883-storage-fee-command)
+    - [9. Fetch and replay](#9-fetch-and-replay)
+      - [9.1. How to unfreeze account](#91-how-to-unfreeze-account)
+      - [9.2. Fetch block command](#92-fetch-block-command)
+    - [10. Debug commands](#10-debug-commands)
+      - [10.1. Debug transaction](#101-debug-transaction)
+      - [10.2. Debug call](#102-debug-call)
+      - [10.3. Debug run](#103-debug-run)
+      - [10.4. Debug replay transaction on the saved account state](#104-debug-replay-transaction-on-the-saved-account-state)
+      - [10.5. Debug deploy](#105-debug-deploy)
+      - [10.6. Debug message](#106-debug-message)
+      - [10.7. Debug account](#107-debug-account)
+      - [10.8. Render UML sequence diagram](#108-render-uml-sequence-diagram)
       - [Caveat](#caveat)
-    - [12. Alias functionality](#12-alias-functionality)
-    - [13. Sold](#13-sold)
+    - [11. Alias functionality](#11-alias-functionality)
+    - [12. Sold](#12-sold)
 
 ## 1. Installation
 
@@ -347,7 +346,7 @@ List of available options:
 --out_of_sync <OUT_OF_SYNC>                   Network connection "out_of_sync_threshold" parameter in seconds. Mind that it cant exceed half of the "lifetime" parameter.
 --parameters <PARAMETERS>                     Function parameters that can be saved to be used by some commands (runx, callx).
 --project_id <PROJECT_ID>                     Project Id in Evercloud (dashboard.evercloud.dev).
---pubkey <PUBKEY>                             User public key. Used by DeBot Browser.
+--pubkey <PUBKEY>                             User public key.
 --api-token <API_TOKEN>                  Rest API token.
 --retries <RETRIES>                           Number of attempts to call smart contract function if previous attempt was unsuccessful.
 --timeout <TIMEOUT>                           Network `wait_for` timeout in ms. This value is also used as timeout for remote files (specified with link, e.g. ABI file) loading.
@@ -1790,48 +1789,12 @@ tvm-cli callx --abi arguments.abi.json --addr 0:62c2040f7f7406732037c1856e91732b
 tvm-cli callx -- --addr 2 --keys 3 --abi 4 --method 5
 ```
 
-## 5. DeBot commands
-
-TVM-CLI has a built-in DeBot <link to DeBots repo> browser, which is regularly updated with the most recent versions of DEngine <link to DEngine>.
-
-To call a DeBot, use the following command:
-
-```bash
-tvm-cli debot fetch <--debug> <debot_address>
-```
-
-`<debot_address>` - address of the DeBot contract.
-
-`<--debug>` - runs DeBot in verbose mode.
-
-Example:
-
-```bash
-$ tvm-cli debot fetch 0:09403116d2d04f3d86ab2de138b390f6ec1b0bc02363dbf006953946e807051e
-Config: /home/user/tvm-cli.conf.json
-Connecting to net.evercloud.dev
-DeBot Info:
-Name   : Multisig
-Version: 1.2.0
-Author : TON Labs
-Publisher: TON Labs
-Support: 0:66e01d6df5a8d7677d9ab2daf7f258f1e2a7fe73da5320300395f99e01dc3b5f
-Description: DeBot for multisig wallets
-Hi, I will help you work with multisig wallets that can have multiple custodians.
-Run the DeBot (y/n)?
-y
-
-Which wallet do you want to work with?
-```
-
-Further input depends on the DeBot, which usually explains any actions it offers you to perform.
-
-## 6. Multisig commands
+## 5. Multisig commands
 
 Multisig commands allow you to work with any existing Multisig wallets <link to repo> in a more convenient way and with
 no need of ABI files.
 
-### 6.1. Send tokens
+### 5.1. Send tokens
 
 Use the following command to send tokens to any recipient:
 
@@ -1868,7 +1831,7 @@ Result: {
 }.
 ```
 
-## 6.2. Deploy wallet
+## 5.2. Deploy wallet
 
 Use the following command to deploy a multisignature wallet:
 
@@ -1907,9 +1870,9 @@ Wallet address: 0:4d892e63989c1c0ad64b0bbe22e8d036b0da271c19b6686d01bd29a99dcbc8
 tvm-cli multisig deploy -l 5000000000 -c 2 -o 8b445b0feab10b9abf4e039d649348ec8662e3673fe9c37b7208c4d9d04c9b3f,ddc5bc7198c90feb75d9ce09e1b1f25a7e14a252fef31b50fac048c6ac3ee46c -k test.key
 ```
 
-## 7. DePool commands
+## 6. DePool commands
 
-### 7.1. Configure TVM-CLI for DePool operations
+### 6.1. Configure TVM-CLI for DePool operations
 
 For all commands listed below, the DePool address, the wallet making the stake, the amount of fee to pay for DePool's
 services and the path to the keyfile/seed phrase may be specified in the TVM-CLI config file in advance:
@@ -1999,9 +1962,9 @@ Result: {
 In both cases the stake is rejected for being too small, but with `no-answer` set to `false` it isn't immediately
 apparent, as only the results of the sussecful multisig transaction are displayed.
 
-### 7.2. Deposit stakes
+### 6.2. Deposit stakes
 
-#### 7.2.1. Ordinary stake
+#### 6.2.1. Ordinary stake
 
 Ordinary stake is the most basic type of stake. It and the rewards from it belong to the wallet that made it.
 
@@ -2034,7 +1997,7 @@ Example:
 tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a2596b700ace stake ordinary --wallet 0:1b91c010f35b1f5b42a05ad98eb2df80c302c37df69651e1f5ac9c69b7e90d4e --value 100.5 --sign "dizzy modify exotic daring gloom rival pipe disagree again film neck fuel"
 ```
 
-#### 7.2.2. Vesting stake
+#### 6.2.2. Vesting stake
 
 A wallet can make a vesting stake and define a target participant address (beneficiary) who will own this stake,
 provided the beneficiary has previously indicated the donor as its vesting donor address. This condition prevents
@@ -2113,7 +2076,7 @@ tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a259
 
 > Note: Each participant can concurrently be the beneficiary of only one vesting stake. Once the current vesting stake expires, another can be made for the participant.
 
-#### 7.2.3. Lock stake
+#### 6.2.3. Lock stake
 
 A wallet can make a lock stake, in which it locks its funds in DePool for a defined period, but rewards from this stake
 will be paid to another target participant (beneficiary). As with vesting, the beneficiary has to indicate the donor as
@@ -2195,7 +2158,7 @@ tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a259
 
 > Note: Each participant can concurrently be the beneficiary of only one lock stake. Once the current lock stake expires, another can be made for the participant.
 
-### 7.3. Remove stakes
+### 6.3. Remove stakes
 
 This command removes an ordinary stake from a pooling round (while it has not been staked in the Elector yet):
 
@@ -2223,7 +2186,7 @@ Example:
 tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a2596b700ace stake remove --wallet 0:1b91c010f35b1f5b42a05ad98eb2df80c302c37df69651e1f5ac9c69b7e90d4e --value 100 --sign "dizzy modify exotic daring gloom rival pipe disagree again film neck fuel"
 ```
 
-### 7.4. Transfer stakes
+### 6.4. Transfer stakes
 
 The following command assigns an existing ordinary stake or its part to another participant wallet. If the entirety of
 the stake is transferred, the transferring wallet is removed from the list of participants in the DePool. If the
@@ -2257,9 +2220,9 @@ tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a259
 
 > Note: Stakes cannot be transferred from or to DePool's validator wallet, and between any wallets during round completion step.
 
-### 7.5. Withdraw Stakes
+### 6.5. Withdraw Stakes
 
-#### 7.5.1. Withdraw entire stake
+#### 6.5.1. Withdraw entire stake
 
 The following command allows to withdraw an ordinary stake to the wallet that owns it, as soon as the stake becomes
 available. Use `withdraw on` to receive the stake, once it's unlocked. If you then make another stake, and want to keep
@@ -2287,7 +2250,7 @@ Example:
 tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a2596b700ace withdraw on --wallet 0:1b91c010f35b1f5b42a05ad98eb2df80c302c37df69651e1f5ac9c69b7e90d4e --sign "dizzy modify exotic daring gloom rival pipe disagree again film neck fuel"
 ```
 
-#### 7.5.2. Withdraw part of the stake
+#### 6.5.2. Withdraw part of the stake
 
 The following command allows to withdraw part of an ordinary stake to the wallet that owns it, as soon as the stake
 becomes available. If, as result of this withdrawal, participant's ordinary stake becomes less than `minStake`, then
@@ -2317,7 +2280,7 @@ Example:
 tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a2596b700ace stake withdrawPart --wallet 0:1b91c010f35b1f5b42a05ad98eb2df80c302c37df69651e1f5ac9c69b7e90d4e --value 1000 --sign "dizzy modify exotic daring gloom rival pipe disagree again film neck fuel"
 ```
 
-### 7.6. Reinvest Stakes
+### 6.6. Reinvest Stakes
 
 [Ordinary](#721-ordinary-stake) stake reinvestment is controlled by the DePool reinvest flag. By default, this flag is
 set to `yes`, and the participant's available ordinary stake will be reinvested every round, no additional action
@@ -2352,7 +2315,7 @@ tvm-cli depool --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a259
 [Lock](#723-lock-stake) and [vesting](#722-vesting-stake) stakes are reinvested according to their initial settings for
 the full duration of the staking period. There is no way to change these settings once lock and vesting stakes are made.
 
-### 7.7. Read DePool answers
+### 6.7. Read DePool answers
 
 Every time anything happens with the participant stake in the DePool, e.g. a round completes and rewards are
 distributed, DePool sends the participant a message with the relevant details. Use the following command to read these
@@ -2383,7 +2346,7 @@ Decoded body:
 onRoundComplete {"roundId":"104","reward":"2907725565","ordinaryStake":"211269425171","vestingStake":"0","lockStake":"0","reinvest":true,"reason":"5"}
 ```
 
-### 7.8. View DePool events
+### 6.8. View DePool events
 
 Various events occurring in the DePool are broadcasted to the blockchain and can be monitored. use the following command
 to view them:
@@ -2429,7 +2392,7 @@ tvm-cli depool [--addr <depool_address>] events --wait-one
 
 TVM-CLI waits until new event will be emitted and then prints it to terminal.
 
-### 7.9. Replenish DePool balance
+### 6.9. Replenish DePool balance
 
 To operate correctly, DePool needs to maintain a balance over 20 tokens. Normally, this happens automatically, but in
 some cases, when normal operation is interrupted, DePool balance may drop lower. Use the following command to replenish
@@ -2471,7 +2434,7 @@ Result: {
 }
 ```
 
-### 7.10. Send ticktock to DePool
+### 6.10. Send ticktock to DePool
 
 To operate correctly, DePool needs to receive regular ticktock (state update) calls. One way to set them up, is through
 a TVM-CLI with the use of a multisig wallet. Use the following command to send a ticktock call (you may set up a
@@ -2509,12 +2472,12 @@ Result: {
 }
 ```
 
-## 8. Proposal commands
+## 7. Proposal commands
 
 The following commands are used when voting for various FreeTON proposals at
 [https://gov.freeton.org/](https://gov.freeton.org/)
 
-### 8.1. Create proposal and cast the first vote
+### 7.1. Create proposal and cast the first vote
 
 Use the following command:
 
@@ -2535,7 +2498,7 @@ The utility generates the proposal transaction ID and casts the first vote for t
 The proposal transaction ID can be used to vote for the proposal by all other wallet custodians and should be
 communicated to them.
 
-### 8.2. Vote for proposal
+### 7.2. Vote for proposal
 
 Receive proposal transaction ID and use the following command to cast a vote:
 
@@ -2552,7 +2515,7 @@ tvm-cli proposal vote <msig_address> <proposal_id> <path_to_keyfile_or_seed_phra
 Once the proposal transaction receives the required amount of votes (depends on judge wallet configuration), the
 transaction is executed and the proposal is considered approved.
 
-### 8.3. Decode proposal comment
+### 7.3. Decode proposal comment
 
 Use the following command to read the proposal comment added when the proposal transaction was created:
 
@@ -2564,9 +2527,9 @@ tvm-cli proposal decode <msig_address> <proposal_id>
 
 `<proposal_id>` - proposal transaction ID.
 
-## 9. Supplementary commands
+## 8. Supplementary commands
 
-### 9.1. Get global config
+### 8.1. Get global config
 
 ```bash
 tvm-cli getconfig [<index>]
@@ -2591,7 +2554,7 @@ Config p16: {
 }
 ```
 
-### 9.2. NodeID
+### 8.2. NodeID
 
 The following command calculates node ID from validator public key:
 
@@ -2614,7 +2577,7 @@ Input arguments:
 50232655f2ad44f026b03ec1834ae8316bfa1f3533732da1e19b3b31c0f04143
 ```
 
-### 9.3. Dump blockchain config
+### 8.3. Dump blockchain config
 
 ```bash
 tvm-cli dump config <path>
@@ -2633,7 +2596,7 @@ Connecting to main.evercloud.dev
 Config successfully saved to config.boc
 ```
 
-### 9.4. Dump several account states
+### 8.4. Dump several account states
 
 Dumps the list of accounts. Files will have address without workchain id as a name.
 
@@ -2663,7 +2626,7 @@ Processing...
 Succeeded.
 ```
 
-### 9.5. Update global config parameter
+### 8.5. Update global config parameter
 
 Use the following command to update one parameter of the blockchain global config, that is stored in a .json file:
 
@@ -2701,7 +2664,7 @@ Message: b5ee9c720101020100850001e589feaaaaaaaaaaaaa...
 
 ```
 
-### 9.6. Wait for an account change
+### 8.6. Wait for an account change
 
 The command `account-wait` waits for the change of the `last_trans_lt` account field. It exits with zero exit code upon success (the field has changed before timeout). Otherwise, it exits with non-zero code.
 
@@ -2723,7 +2686,7 @@ $ echo $?
 0
 ```
 
-### 9.7. Make a raw GraphQL query
+### 8.7. Make a raw GraphQL query
 
 The command `query-raw` executes a raw network query by directly calling the `ton_client::net::query_collection` SDK
 interface.
@@ -2768,11 +2731,11 @@ $ tvm-cli --json query-raw accounts "id bits cells" --order '[ { "path": "balanc
 
 For more information and syntax read docs section on [playground](https://ever-live-playground.web.app/).
 
-### 9.8. Fee commands
+### 8.8. Fee commands
 
 This commands allow user to learn how much funds smart contract can consume.
 
-#### 9.8.1. Call fee command
+#### 8.8.1. Call fee command
 
 This command executes smart contract call locally, calculates fees and prints table of all fees in nanovmshells.
 Command has the same option as [tvm-cli call](#441-call-contract-on-the-blockchain) command:
@@ -2809,7 +2772,7 @@ Not set rand_seed_block
 }
 ```
 
-#### 9.8.2. Deploy fee command
+#### 8.8.2. Deploy fee command
 
 This command executes smart contract deploy locally, calculates fees and prints table of all fees in nanovmshells.
 Command has the same option as [tvm-cli deploy](#42-deploy-contract) command:
@@ -2844,7 +2807,7 @@ Not set rand_seed_block
 }
 ```
 
-#### 9.8.3. Storage fee command
+#### 8.8.3. Storage fee command
 
 This command allows user to calculate storage fees for a deployed contract using it's address.
 
@@ -2866,7 +2829,7 @@ tvm-cli --json fee storage --period 1000000 0:ece57bcc6c530283becbbd8a3b24d3c598
 }
 ```
 
-### 10. Fetch and replay
+### 9. Fetch and replay
 
 These two commands are commonly used in pairs to recover a state of the account at the specific point before a given
 transaction.
@@ -2901,7 +2864,7 @@ replayed and serialized Account state.
 
 Note 2: to get StateInit (tvc) from Account state use `tvm-cli decode account boc` command with `--dumptvc` option.
 
-#### 10.1. How to unfreeze account
+#### 9.1. How to unfreeze account
 
 - 1) Dump Account state before transaction in which account changed state from Active to Frozen.
 
@@ -2947,7 +2910,7 @@ Deployer.abi.json:
 }
 ```
 
-#### 10.2. Fetch block command
+#### 9.2. Fetch block command
 
 This command allow user to fetch block and save it to the output file.
 
@@ -2960,12 +2923,12 @@ Options:
 `<BLOCKID>` - Block ID.
 `<OUTPUT>` - Output file name
 
-### 11. Debug commands
+### 10. Debug commands
 
 Debug commands allow user to replay transaction locally or execute a function call locally and obtain TVM trace.
 More about debug flow is written in [Debug.md](https://github.com/tvmlabs/tvm-cli/blob/master/Debug.md).
 
-#### 11.1. Debug transaction
+#### 10.1. Debug transaction
 
 ```bash
 tvm-cli debug transaction [FLAGS] [OPTIONS] <tx_id>
@@ -3023,7 +2986,7 @@ DONE
 Log saved to tvm_trace.log.
 ```
 
-#### 11.2. Debug call
+#### 10.2. Debug call
 
 ```bash
 tvm-cli debug call [FLAGS] [OPTIONS] [--addr <address>] [-m <method>] <params>
@@ -3087,7 +3050,7 @@ Execution finished.
 Log saved to call.log
 ```
 
-#### 11.3. Debug run
+#### 10.3. Debug run
 
 ```bash
 tvm-cli debug run [FLAGS] [OPTIONS] [--addr <address>] [-m <method>] <params>
@@ -3144,7 +3107,7 @@ Execution finished.
 Log saved to run.log
 ```
 
-#### 11.4. Debug replay transaction on the saved account state
+#### 10.4. Debug replay transaction on the saved account state
 
 ```bash
     tvm-cli debug replay [FLAGS] [OPTIONS] <TX_ID> <INPUT>
@@ -3189,7 +3152,7 @@ Execution finished.
 Log saved to trace2.log
 ```
 
-#### 11.5. Debug deploy
+#### 10.5. Debug deploy
 
 ```bash
 tvm-cli debug deploy [FLAGS] [OPTIONS] <tvc> <params>
@@ -3229,7 +3192,7 @@ This command allows user locally emulate contract deploy.
 Command can work with prepared network account or create a dummy one with big balance (if --init_balance flag is
 specified).
 
-#### 11.6. Debug message
+#### 10.6. Debug message
 
 ```bash
 $ tvm-cli debug message [--boc] [--addr <address_or_path>] [-u] [-o <log_path>] <message_in_base64_or_path_to_file>
@@ -3291,7 +3254,7 @@ Output messages:
 
 `Message_base64` then can be passed to `tvm-cli debug message` to play it on another account.
 
-#### 11.7. Debug account
+#### 10.7. Debug account
 
 Allows to debug transaction of the specified account
 
@@ -3364,7 +3327,7 @@ Connecting to:
 Log saved to ./trace.log.
 ```
 
-#### 11.8. Render UML sequence diagram
+#### 10.8. Render UML sequence diagram
 
 ```bash
     tvm-cli debug sequence-diagram <address_list>
@@ -3390,7 +3353,7 @@ depicting asynchronicity.
 Practically, this means that one should look cautiously at the point of transaction spawn, being aware that the spawning
 message can be located somewhere above.
 
-### 12. Alias functionality
+### 11. Alias functionality
 
 Aliases can facilitate manual work with several contracts. When user deploys a contract an alias can be passed to the
 `deploy` command. This option saves the deployed contract address, abi and key to the map in config file. Alias can be
@@ -3421,7 +3384,7 @@ $ tvm-cli runx --addr accum -m sum
 }
 ```
 
-### 13. Sold
+### 12. Sold
 
 Starting from version 0.29.1 [sold](https://github.com/tonlabs/TON-Solidity-Compiler/tree/master/sold) functionality was
 added to the tvm-cli. To use it one should build tvm-cli with corresponding feature:
