@@ -19,8 +19,7 @@ const API_VERSION: &str = "v2";
 pub struct ParamsOfGetAccount {
     /// Account ID as a 64-character hex string (no 0x, no workchain).
     pub account_id: String,
-    /// Dapp ID as a 64-character hex string (no 0x).
-    /// Required when the server supports the v3 API (info.version >= "1.0.0").
+    /// Dapp ID as a 64-character hex string (no 0x). Required.
     pub dapp_id: String,
 }
 

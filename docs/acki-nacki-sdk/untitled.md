@@ -188,7 +188,7 @@ Rebuild `docs`:
 cd tools
 npm i
 tsc
-node index docs -o ../docs
+node index docs -o ../docs/acki-nacki-sdk/types-and-methods
 ```
 
 Rebuild `modules.ts`:

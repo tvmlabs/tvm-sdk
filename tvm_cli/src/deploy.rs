@@ -46,9 +46,6 @@ pub async fn deploy_contract(
     let config = &full_config.config;
     let tvm_client = create_client_verbose(config)?;
 
-    // dapp_id is always required on the CLI (including --fee). The SDK
-    // ignores it on the wire for legacy v2 servers, but it must be
-    // supplied explicitly here.
     require_dst_dapp_id(dst_dapp_id)?;
 
     if !is_fee && !config.is_json {

@@ -235,9 +235,6 @@ impl Error {
     }
 
     pub fn dapp_id_required() -> ClientError {
-        error(
-            ErrorCode::DappIdRequired,
-            "`dapp_id` is required when connected to a v>=1.0.0 server".into(),
-        )
+        error(ErrorCode::DappIdRequired, "`dapp_id` is required".into())
     }
 }

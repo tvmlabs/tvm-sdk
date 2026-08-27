@@ -75,9 +75,7 @@ pub struct ParamsOfSendMessage {
     /// Default is `false`.
     #[serde(default)]
     pub send_events: bool,
-    /// Destination dapp_id (64-character hex, no 0x).
-    /// Required for v>=1.0.0 servers; for v<1.0.0 may be empty
-    /// (sent as legacy `dst_dapp_id: null`).
+    /// Destination dapp_id (64-character hex, no 0x). Required.
     #[serde(default)]
     pub dapp_id: String,
 }
@@ -124,14 +122,14 @@ pub struct ResultOfSendMessage {
     /// The timestamp of generating this response.
     pub current_time: Option<String>,
 
-    /// Destination account_id (64-hex, no workchain). Always populated:
-    /// taken from the server response on v>=1.0.0, derived locally
-    /// from the message destination on v<1.0.0.
+    /// Destination account_id (64-hex, no workchain). Always populated: from
+    /// the server response, or derived from the message destination if the
+    /// server omits it.
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub account_id: String,
 
-    /// Destination dapp_id (64-hex). Always populated: taken from the
-    /// server response on v>=1.0.0, mirrored from the request on v<1.0.0.
+    /// Destination dapp_id (64-hex). Always populated: from the server
+    /// response, or mirrored from the request if the server omits it.
     #[serde(default, deserialize_with = "deserialize_null_default")]
     pub dapp_id: String,
 }
