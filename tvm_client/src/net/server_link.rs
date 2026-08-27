@@ -363,35 +363,6 @@ impl NetworkState {
         Ok(fastest)
     }
 
-    /// Best-effort, single-attempt query-endpoint resolution for fast version
-    /// detection. Unlike `get_query_endpoint`, it does NOT enter the reconnect
-    /// retry loop (`max_reconnect_timeout`), so it fails fast when no GraphQL
-    /// endpoint is reachable. On success it populates the cache, so a later
-    /// `get_query_endpoint`/`server_version` reuses the resolved endpoint.
-    pub async fn try_resolve_query_endpoint(
-        self: &Arc<NetworkState>,
-    ) -> ClientResult<Arc<Endpoint>> {
-        if let Some(endpoint) = &*self.query_endpoint.read().await {
-            return Ok(endpoint.clone());
-        }
-        let mut locked_query_endpoint = self.query_endpoint.write().await;
-        if let Some(endpoint) = &*locked_query_endpoint {
-            return Ok(endpoint.clone());
-        }
-        let addresses = self.endpoint_addresses.read().await.clone();
-        let mut last_err = crate::client::Error::net_module_not_init();
-        for address in &addresses {
-            match self.resolve_endpoint(address).await {
-                Ok(endpoint) => {
-                    *locked_query_endpoint = Some(endpoint.clone());
-                    return Ok(endpoint);
-                }
-                Err(err) => last_err = err,
-            }
-        }
-        Err(last_err)
-    }
-
     pub async fn get_all_endpoint_addresses(&self) -> ClientResult<Vec<String>> {
         Ok(self.endpoint_addresses.read().await.clone())
     }
@@ -1230,22 +1201,6 @@ impl ServerLink {
     pub async fn invalidate_querying_endpoint(&self) {
         self.state.invalidate_querying_endpoint().await
     }
-
-    /// Version of the currently selected GraphQL query endpoint, packed as
-    /// major*1_000_000 + minor*1_000 + patch. Returns 0 when no endpoint
-    /// has been resolved yet (treated as pre-1.0.0).
-    pub async fn server_version(&self) -> u32 {
-        match self.state.query_endpoint().await {
-            Some(ep) => ep.server_version.load(Ordering::Relaxed),
-            None => 0,
-        }
-    }
-
-    /// Returns true when the connected server speaks the v3 dapp_id REST
-    /// format (`info.version >= "1.0.0"`).
-    pub async fn supports_dapp_id(&self) -> bool {
-        self.server_version().await >= 1_000_000
-    }
 }
 
 fn ensure_address(err_data: &mut Value, dst: Value) {
@@ -1294,29 +1249,3 @@ fn test_construct_rest_endpoint() {
 // #[cfg(test)]
 // #[path = "tests/test_server_link.rs"]
 // mod tests;
-
-#[cfg(test)]
-mod server_version_tests {
-    use crate::ClientConfig;
-    use crate::ClientContext;
-    use crate::net::NetworkConfig;
-
-    fn make_client_context() -> ClientContext {
-        let config = ClientConfig {
-            network: NetworkConfig {
-                endpoints: Some(vec!["http://127.0.0.1:0".to_string()]),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        ClientContext::new(config).unwrap()
-    }
-
-    #[tokio::test]
-    async fn server_version_returns_zero_when_no_endpoint_resolved() {
-        let ctx = make_client_context();
-        let sl = ctx.get_server_link().unwrap();
-        assert_eq!(sl.server_version().await, 0);
-        assert!(!sl.supports_dapp_id().await);
-    }
-}
