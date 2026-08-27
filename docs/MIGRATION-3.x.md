@@ -164,7 +164,7 @@ let params = ParamsOfSendMessage {
     abi: Some(abi),
     thread_id: None,
     send_events: false,
-    dapp_id: "def...".to_string(),  // String, not Option<String>
+    dapp_id: "def...".to_string(),  // String, not Option<String>; required
 };
 let res = send_message(client, params, |_| async {}).await?;
 let account_id: String = res.account_id;  // always populated
@@ -176,6 +176,12 @@ directly from the server's response when it returns them, and derived
 locally (destination address hex / mirrored from the request) as a
 fallback when it doesn't. Your downstream code does not need to branch on
 server version.
+
+An empty `dapp_id` produces error code `518 DappIdRequired`. 3.0.0 allowed
+an empty value here only when talking to a pre-1.0.0 server; those servers
+are no longer supported, so an empty `dapp_id` is always an error now. A
+malformed (non-empty) `dapp_id` is a different error; see `512
+InvalidData` under Common pitfalls below.
 
 ### `ParamsOfProcessMessage`
 
@@ -263,7 +269,7 @@ The output always shows both `account_id` and `dapp_id` as plain fields.
 > `dapp_id`, so JSON output showed `null` (text output showed `None`).
 > Pre-1.0.0 nodes are no longer supported, so this no longer happens —
 > `dapp_id` is always forwarded on the wire and always populated in the
-> response.
+> output.
 
 ### `deploy` / `deployx`
 
@@ -357,8 +363,22 @@ so there is no destination dapp_id involved at all; the address it takes is
 whatever the encoded call needs, on-chain form included where ABI expects
 it.
 
-Passing `--dst-dapp-id` to any of the three fails as an unknown argument.
-This isn't new: neither `call`, `callx` nor `message` has ever declared it.
+`call` and `message` reject `--dst-dapp-id` as an unknown argument: neither
+has ever declared it, and clap fails before either command runs.
+
+`callx` does not. It carries the same `allow_hyphen_values` +
+`trailing_var_arg` pair as `deployx` (see the parser trap above, and the
+pitfall entry below, which already names `callx` and `runx`), so an
+unrecognized `--dst-dapp-id` is absorbed rather than rejected. Unlike
+`deployx`, this need not surface downstream at all: `callx`'s constructor
+arguments are a variable-length list, so the absorbed flag and its value
+can simply sit unused among them — no "not found" error, no file error,
+nothing to notice. The command sends normally, to the `dapp_id` in the
+address argument, never the one named by the flag. If you relied on
+3.0.0's advice that the flag "overrides any dapp_id embedded in the
+address," it now does the opposite on `callx`: the flag is silently
+dropped and the address wins. Remove `--dst-dapp-id` from every `callx`
+script.
 
 ### `send` / `sendfile`
 
@@ -412,19 +432,30 @@ sending: it comes from an explicit empty-value check that runs before the
 network call. Provide `dapp_id` explicitly: Rust API, set it on
 `ParamsOfSendMessage` or `ParamsOfProcessMessage`; CLI, pass
 `--dst-dapp-id` on `send`/`sendfile` — the only commands that still take
-it.
+it. A *malformed but non-empty* `dapp_id` does not hit this check — see
+`512 InvalidData` below.
 
 ### `512 InvalidData`: `` `dapp_id` must be a 64-character hex string ``
 
-You called `get_account` directly — Rust API, or a binding around it —
-with an empty or malformed `dapp_id` or `account_id`. `get_account` has no
-separate empty-value check the way sending does: an empty value fails the
-same 64-hex-digit format check as any other malformed one, so it surfaces
-as `512 InvalidData`, not `518 DappIdRequired`. Pass a real 64-character
-hex value for both fields. (`tvm-cli account` can't produce this error:
-its own address parser already rejects anything that isn't two 64-hex
-halves, with a different message (`` address `…` must be in the form
-`dapp_id::account_id` ``), before `get_account` is ever called.)
+Two different call sites reach this, and the split is by emptiness, not by
+API:
+
+- **Sending** (`send_message`, `process_message`; CLI `send
+  --dst-dapp-id <value>` / `sendfile --dst-dapp-id <value>` — the only two
+  commands that still take the flag): an *empty* `dapp_id` is caught first
+  and reported as `518 DappIdRequired` (above). A *malformed, non-empty*
+  `dapp_id` skips that check and fails the same 64-hex-digit format check
+  `account_id` gets, surfacing here as `512 InvalidData` instead.
+- **`get_account`** (Rust API, or a binding around it): there is no
+  separate empty-value check at all. Empty and malformed values both fail
+  the same format check and both surface as `512 InvalidData` — `518`
+  never happens here.
+
+Pass a real 64-character hex value for both fields. (`tvm-cli account`
+can't produce this error: its own address parser already rejects anything
+that isn't two 64-hex halves, with a different message (`` address `…`
+must be in the form `dapp_id::account_id` ``), before `get_account` is
+ever called.)
 
 ### `ResultOfGetAccount.dapp_id` no longer compiles
 

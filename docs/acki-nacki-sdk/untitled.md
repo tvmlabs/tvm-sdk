@@ -179,7 +179,7 @@ Rebuild `api.json`:
 
 ```shell
 cd tools/tvm_api_gen
-cargo run api -o ../tools
+cargo run -- api -o ..
 ```
 
 Rebuild `docs`:
