@@ -85,6 +85,36 @@ fn deploy_rejects_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// `docs/MIGRATION-3.x.md`'s `deployx` parser-trap section promises this
+/// exact error text (down to the absorbed flag naming the missing "file").
+/// Assert against that string, not a clap usage error: as
+/// `deploy_rejects_dst_dapp_id`'s doc comment explains, `deployx` has no
+/// usage error here by construction — `allow_hyphen_values` +
+/// `trailing_var_arg` make it absorb the unrecognized `--dst-dapp-id` as
+/// the TVC positional instead. This is what the guide's promise actually
+/// rests on, so a future reorder of `deployx_cmd`'s positionals that
+/// changed which one absorbs the flag would break this test, which is the
+/// point: it also recovers, for `deployx`, the rejection coverage
+/// `deploy_rejects_dst_dapp_id` provides for `deploy`.
+#[test]
+fn deployx_absorbs_dst_dapp_id_as_tvc_path() -> Result<(), Box<dyn std::error::Error>> {
+    let dapp = "a".repeat(64);
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("deployx")
+        .arg("--abi")
+        .arg(ABI)
+        .arg("--dst-dapp-id")
+        .arg(&dapp)
+        .arg(TVC)
+        .arg("{}")
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains(
+            "failed to read smart contract file --dst-dapp-id: No such file or directory",
+        ));
+    Ok(())
+}
+
 #[test]
 fn deploy_help_no_longer_offers_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>> {
     for subcommand in ["deploy", "deployx"] {
