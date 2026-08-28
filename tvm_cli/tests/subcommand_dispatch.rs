@@ -629,3 +629,37 @@ fn multisig_deploy_does_not_look_up_arguments_it_does_not_define()
         .stdout(predicate::str::contains("multisig address is not defined"));
     Ok(())
 }
+
+/// The other side of `--update`: a message the contract rejects executes
+/// nothing, so there is nothing to write back. The update ran outside the
+/// match on the result, so the command announced `successfully updated` and
+/// rewrote the file with the state it had started from.
+#[test]
+fn debug_call_does_not_write_the_account_back_when_nothing_executed()
+-> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let account = deploy_account_boc(&dir)?;
+    let before = std::fs::read(&account)?;
+
+    let mut cmd = tvm_cli()?;
+    cmd.arg("debug")
+        .arg("call")
+        .arg("--addr")
+        .arg(&account)
+        .arg("--boc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .arg("--update")
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("call.log"))
+        .assert()
+        .stdout(predicate::str::contains("Execution failed"))
+        .stdout(predicate::str::contains("successfully updated").not());
+
+    assert_eq!(std::fs::read(&account)?, before, "the account file was rewritten anyway");
+    Ok(())
+}

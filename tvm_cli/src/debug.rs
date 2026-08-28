@@ -832,6 +832,7 @@ async fn debug_call_command(
     )
     .await;
 
+    let executed = trans.is_ok();
     let mut out_res = vec![];
     let msg_string = match trans {
         Ok(trans) => {
@@ -858,7 +859,10 @@ async fn debug_call_command(
         }
     };
 
-    if call_only_args && matches.is_present("UPDATE_BOC") {
+    // Only what executed is worth writing back: on the failure path the
+    // account state is the one this run started from, and announcing it as
+    // updated is worse than not writing it.
+    if executed && call_only_args && matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
             .map_err(|e| format!("Failed to construct account: {}", e))?
             .write_to_file(input)
@@ -939,7 +943,8 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
         Err(e) => (format!("Execution failed: {}", e), Some(e)),
     };
 
-    if matches.is_present("UPDATE_BOC") {
+    // As in `debug call`: nothing executed, nothing to write back.
+    if error.is_none() && matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
             .map_err(|e| format!("Failed to construct account: {}", e))?
             .write_to_file(input)
