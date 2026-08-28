@@ -522,6 +522,109 @@ fn depool_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn 
     Ok(())
 }
 
+/// Every command the binary offers, as the walk below spells its path. A new
+/// subcommand belongs here; a path that disappears from the walk without
+/// leaving here is a command that stopped being reachable.
+const EVERY_COMMAND: [&str; 97] = [
+    "", // the top-level command itself
+    "account",
+    "account-wait",
+    "body",
+    "call",
+    "callx",
+    "config",
+    "config alias",
+    "config alias add",
+    "config alias print",
+    "config alias remove",
+    "config alias reset",
+    "config clear",
+    "config endpoint",
+    "config endpoint add",
+    "config endpoint print",
+    "config endpoint remove",
+    "config endpoint reset",
+    "debot",
+    "debot fetch",
+    "debot invoke",
+    "debot start",
+    "debug",
+    "debug account",
+    "debug call",
+    "debug deploy",
+    "debug message",
+    "debug replay",
+    "debug run",
+    "debug sequence-diagram",
+    "debug transaction",
+    "decode",
+    "decode account",
+    "decode account boc",
+    "decode account data",
+    "decode body",
+    "decode msg",
+    "decode stateinit",
+    "deploy",
+    "deploy_message",
+    "deployx",
+    "depool",
+    "depool answers",
+    "depool donor",
+    "depool donor lock",
+    "depool donor vesting",
+    "depool events",
+    "depool replenish",
+    "depool stake",
+    "depool stake lock",
+    "depool stake ordinary",
+    "depool stake remove",
+    "depool stake transfer",
+    "depool stake vesting",
+    "depool stake withdrawPart",
+    "depool ticktock",
+    "depool withdraw",
+    "depool withdraw off",
+    "depool withdraw on",
+    "dump",
+    "dump account",
+    "dump config",
+    "fee",
+    "fee call",
+    "fee deploy",
+    "fee storage",
+    "fetch",
+    "fetch-block",
+    "genaddr",
+    "genphrase",
+    "genpubkey",
+    "getconfig",
+    "getkeypair",
+    "message",
+    "multisig",
+    "multisig deploy",
+    "multisig send",
+    "nodeid",
+    "proposal",
+    "proposal create",
+    "proposal decode",
+    "proposal vote",
+    "query-raw",
+    "replay",
+    "run",
+    "runget",
+    "runx",
+    "send",
+    "sendfile",
+    "sign",
+    "test",
+    "test config",
+    "test deploy",
+    "test sign",
+    "test ticktock",
+    "update_config",
+    "version",
+];
+
 /// clap validates a command's `conflicts_with`/`requires` graph while building
 /// it, and aborts on a target the command does not register -- in debug builds
 /// only, which is why `account` and `debug message` both shipped broken. The
@@ -533,22 +636,28 @@ fn depool_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn 
 /// so a handler asking for an argument id its command does not define goes
 /// unnoticed; that half needs a test per command, of which the rest of this
 /// file is made.
+///
+/// The expected paths are spelled out rather than counted. A count taken from
+/// the tree the walk itself discovered is satisfied by a tree that lost pages
+/// and gained others -- a command that stops listing its subcommands hides
+/// them from the walk and from the total alike.
 #[test]
 fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
-    fn walk(path: &[String], checked: &mut usize) -> Result<(), Box<dyn std::error::Error>> {
+    fn walk(path: &[String], walked: &mut Vec<String>) -> Result<(), Box<dyn std::error::Error>> {
         let mut cmd = tvm_cli()?;
         let out = cmd.args(path).arg("--help").output()?;
         let stderr = String::from_utf8_lossy(&out.stderr);
         assert!(
-            !stderr.contains("panicked"),
-            "`tvm-cli {} --help` aborted:\n{stderr}",
-            path.join(" ")
+            out.status.success(),
+            "`tvm-cli {} --help` exited with {}:\n{stderr}",
+            path.join(" "),
+            out.status
         );
-        *checked += 1;
+        walked.push(path.join(" "));
         for sub in subcommands(&String::from_utf8_lossy(&out.stdout)) {
             let mut next = path.to_vec();
             next.push(sub);
-            walk(&next, checked)?;
+            walk(&next, walked)?;
         }
         Ok(())
     }
@@ -573,12 +682,14 @@ fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
             .collect()
     }
 
-    let mut checked = 0;
-    walk(&[], &mut checked)?;
+    let mut walked = Vec::new();
+    walk(&[], &mut walked)?;
+    walked.sort();
+
+    let expected: Vec<String> = EVERY_COMMAND.iter().map(|s| s.to_string()).collect();
     assert_eq!(
-        checked, 97,
-        "walked {checked} help pages, expected 97 -- update this number when adding or removing \
-         a subcommand, and check that a page did not simply stop listing its children"
+        walked, expected,
+        "the command tree changed -- update EVERY_COMMAND if that was the intent"
     );
     Ok(())
 }
