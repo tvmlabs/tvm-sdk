@@ -596,3 +596,64 @@ async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Resul
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::Command;
+
+    use super::CallArgs;
+    use super::MultisigArgs;
+    use super::WalletArgs;
+    use super::create_multisig_command;
+    use crate::config::Config;
+
+    const WALLET: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+                          ::bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+    /// `CallArgs::default()` stands in for `CallArgs::deploy()`, which would
+    /// download the wallet image from GitHub. Only the arguments the wallet
+    /// itself is resolved from matter here.
+    fn deploy_matches() -> clap::ArgMatches {
+        let matches = Command::new("tvm-cli")
+            .subcommand(create_multisig_command())
+            .try_get_matches_from(["tvm-cli", "multisig", "deploy", "--keys", "wallet.keys"])
+            .expect("multisig deploy takes --keys");
+        matches
+            .subcommand_matches("multisig")
+            .and_then(|m| m.subcommand_matches("deploy"))
+            .expect("deploy is a multisig subcommand")
+            .clone()
+    }
+
+    /// `multisig deploy` names its key `--keys` and registers neither `--addr`
+    /// nor `--sign`. Reading the ids `multisig send` defines aborts, so a
+    /// regression here kills the process rather than returning a wrong key.
+    #[test]
+    fn multisig_deploy_takes_its_key_from_the_argument_it_defines() {
+        let matches = deploy_matches();
+        let config = Config { wallet: Some(WALLET.to_owned()), ..Config::default() };
+
+        let args = MultisigArgs::new(&matches, &config, CallArgs::default(), WalletArgs::Keys)
+            .expect("a configured wallet and a key are all it needs");
+
+        assert_eq!(args.keys(), "wallet.keys");
+    }
+
+    /// The wallet address is not optional for `deploy` either: it supplies the
+    /// dapp_id that routes the deploy message, and `deploy` has no argument to
+    /// give it, so it has to come from the config file.
+    #[test]
+    fn multisig_deploy_still_needs_a_configured_wallet() {
+        let result = MultisigArgs::new(
+            &deploy_matches(),
+            &Config::default(),
+            CallArgs::default(),
+            WalletArgs::Keys,
+        );
+
+        match result {
+            Err(err) => assert_eq!(err, "multisig address is not defined"),
+            Ok(_) => panic!("deploy resolved a wallet address out of nowhere"),
+        }
+    }
+}

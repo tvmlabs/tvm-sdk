@@ -1760,3 +1760,35 @@ pub async fn debug_error(e: &ClientError, debug_params: DebugParams<'_>) -> Resu
     }
     Err(result)
 }
+
+#[cfg(test)]
+mod tests {
+    use clap::Command;
+
+    use super::create_debug_command;
+    use super::load_decode_abi;
+    use crate::config::Config;
+
+    /// `debug message` decodes with `--decode_abi` or the config file: it
+    /// registers no `--abi`. Asking clap for an id the running command does
+    /// not define aborts, so a regression here fails this test by killing the
+    /// process rather than by returning the wrong value.
+    ///
+    /// This cannot be a CLI test: `load_decode_abi` runs only once execution
+    /// returns a transaction, and reaching that through `debug message` needs
+    /// a message the account accepts, which in turn needs an address in the
+    /// `dapp_id::account_id` form that no locally built account state has.
+    #[test]
+    fn load_decode_abi_does_not_read_an_abi_the_command_does_not_define() {
+        let matches = Command::new("tvm-cli")
+            .subcommand(create_debug_command())
+            .try_get_matches_from(["tvm-cli", "debug", "message", "msg"])
+            .expect("debug message takes a message");
+        let matches = matches
+            .subcommand_matches("debug")
+            .and_then(|m| m.subcommand_matches("message"))
+            .expect("message is a debug subcommand");
+
+        assert_eq!(load_decode_abi(matches, None, &Config::default()), None);
+    }
+}

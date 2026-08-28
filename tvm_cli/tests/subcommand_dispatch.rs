@@ -423,3 +423,79 @@ fn body_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn st
         .stdout(predicate::str::contains("Message body:"));
     Ok(())
 }
+
+/// The other half of the `debug call` / `debug run` split: `debug call` must
+/// still read the `--keys` it defines. Guarding the lookup by the wrong
+/// direction would leave the command signing with whatever the config file
+/// names, silently, so a key file that cannot be read has to be an error.
+#[test]
+fn debug_call_reads_the_keys_it_defines() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let account = deploy_account_boc(&dir)?;
+    let mut cmd = tvm_cli()?;
+    cmd.arg("debug")
+        .arg("call")
+        .arg("--addr")
+        .arg(&account)
+        .arg("--boc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .arg("--keys")
+        .arg(dir.join("no-such.keys"))
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("call.log"))
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("failed to read the keypair file"));
+    Ok(())
+}
+
+/// And the `--update` it defines: skipping the lookup would leave the account
+/// state unwritten while the command reported success.
+#[test]
+fn debug_call_writes_the_account_back_with_update() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let account = deploy_account_boc(&dir)?;
+    let mut cmd = tvm_cli()?;
+    cmd.arg("debug")
+        .arg("call")
+        .arg("--addr")
+        .arg(&account)
+        .arg("--boc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .arg("--update")
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("call.log"))
+        .assert()
+        .stdout(predicate::str::contains("successfully updated"));
+    Ok(())
+}
+
+/// Every `depool` subcommand that sends through the wallet shares the multisig
+/// argument struct with `multisig deploy`, which names its key `--keys`. The
+/// depool commands define `--sign` alone.
+#[test]
+fn depool_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
+{
+    let mut cmd = tvm_cli()?;
+    cmd.arg("depool")
+        .arg("--addr")
+        .arg(ADDR)
+        .arg("withdraw")
+        .arg("on")
+        .arg("--wallet")
+        .arg(ADDR)
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("sign key is not defined"));
+    Ok(())
+}
