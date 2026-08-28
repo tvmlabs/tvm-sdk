@@ -299,3 +299,19 @@ fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn st
         .stdout(predicate::str::contains("Running get-method"));
     Ok(())
 }
+
+/// `debug message` registers `--boc` but no `--tvc`, and the shared `--boc`
+/// definition declared the conflict, so clap asserted on a `conflicts_with`
+/// target the command does not have -- aborting even `--help`.
+#[test]
+fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("debug")
+        .arg("message")
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("--boc"));
+    Ok(())
+}

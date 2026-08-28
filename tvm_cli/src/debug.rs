@@ -235,9 +235,12 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .long("--full_trace")
         .help("Flag that changes trace to full version.");
 
+    // No conflict with `--tvc` here: `debug message` takes `--boc` without
+    // `--tvc`, and clap asserts when a `conflicts_with` names an argument the
+    // command does not register. `debug run` and `debug call` are the two that
+    // define both, and their `--tvc` states the conflict from its own side.
     let boc_arg = Arg::new("BOC")
         .long("--boc")
-        .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tx_id_arg = Arg::new("TX_ID")
