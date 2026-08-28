@@ -101,10 +101,10 @@ use crate::getconfig::gen_update_config_message;
 use crate::helpers::AccountSource;
 use crate::helpers::SdkAddress;
 use crate::helpers::abi_from_matches_or_config;
-use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
 use crate::helpers::load_abi_from_tvc;
 use crate::helpers::load_params;
+use crate::helpers::migrated_default_config_name;
 use crate::helpers::parse_lifetime;
 use crate::helpers::unpack_alternative_params;
 use crate::helpers::wc_from_matches_or_config;
@@ -796,7 +796,10 @@ async fn main_internal() -> Result<(), String> {
         ));
 
     let proposal_cmd = Command::new("proposal")
-        .help("Proposal control commands.")
+        // `.about`, not `.help`: the latter is clap's `override_help`, which
+        // replaces the whole page. `proposal --help` printed this one line and
+        // never listed `create`, `vote` or `decode`.
+        .about("Proposal control commands.")
         .subcommand(
             Command::new("create")
                 .about("Submits a proposal transaction in the multisignature wallet with a text comment.")
@@ -1063,7 +1066,9 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
         .value_of("CONFIG")
         .map(|v| v.to_string())
         .or(env::var("TONOSCLI_CONFIG").ok())
-        .unwrap_or(default_config_name());
+        // The only place the deprecated config is migrated: this is the one
+        // caller that falls back to the default path and then uses it.
+        .unwrap_or_else(migrated_default_config_name);
 
     let mut full_config = FullConfig::from_file(&config_file);
 
@@ -1266,11 +1271,13 @@ async fn send_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
 async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
-    let output = matches.value_of("OUTPUT");
+    // `body` writes to stdout and registers no `--output`, so the argument it
+    // used to print here could only ever be absent -- and naming an id the
+    // command does not define aborts debug builds.
     let abi = Some(abi_from_matches_or_config(matches, config)?);
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
-        print_args!(method, params, abi, output);
+        print_args!(method, params, abi);
     }
 
     let params = serde_json::from_str(&params.unwrap())
@@ -1396,7 +1403,8 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
             .or(config.method.as_deref())
             .ok_or("Method is not defined. Supply it in the config file or command line.")?,
     );
-    let (address, abi, keys) = contract_data_from_matches_or_config_alias(matches, full_config)?;
+    let (address, abi, keys) =
+        contract_data_from_matches_or_config_alias(matches, full_config, matches.value_of("KEYS"))?;
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?,
     );
