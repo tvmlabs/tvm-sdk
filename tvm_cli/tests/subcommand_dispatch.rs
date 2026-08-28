@@ -312,6 +312,12 @@ fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
 
 /// `runx` and `callx` share the helper that resolves address, ABI and keys
 /// from an alias, but only `callx` defines `--keys`.
+///
+/// Success is not asserted, unlike in `debug_run_traces_a_getter`: `run` and
+/// `runx` give a TVC-backed account the address `0` * 64, which the strict
+/// `dapp_id::account_id` parser rejects, so the run cannot finish offline for
+/// reasons of its own. What is left is still checked on both sides -- the
+/// command reaches its own work, and nothing aborted on the way there.
 #[test]
 fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = tvm_cli()?;
@@ -324,7 +330,8 @@ fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn st
         .arg("-m")
         .arg("sayHello")
         .assert()
-        .stdout(predicate::str::contains("Running get-method"));
+        .stdout(predicate::str::contains("Running get-method"))
+        .stderr(predicate::str::contains("panicked").not());
     Ok(())
 }
 
