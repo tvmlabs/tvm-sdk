@@ -461,12 +461,17 @@ fn debug_call_reads_the_keys_it_defines() -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-/// And the `--update` it defines: skipping the lookup would leave the account
-/// state unwritten while the command reported success.
+/// And the `--update` it defines: skipping that lookup leaves the account
+/// state unwritten. `touch` is what makes the difference observable --
+/// `sayHello` is rejected by the contract, and on that path the command writes
+/// the pre-execution state back and still exits 0, so neither the message nor
+/// the exit code tells the two apart.
 #[test]
 fn debug_call_writes_the_account_back_with_update() -> Result<(), Box<dyn std::error::Error>> {
     let dir = testdir!();
     let account = deploy_account_boc(&dir)?;
+    let before = std::fs::read(&account)?;
+
     let mut cmd = tvm_cli()?;
     cmd.arg("debug")
         .arg("call")
@@ -476,14 +481,17 @@ fn debug_call_writes_the_account_back_with_update() -> Result<(), Box<dyn std::e
         .arg("--abi")
         .arg(HELLO_ABI)
         .arg("-m")
-        .arg("sayHello")
+        .arg("touch")
         .arg("--update")
         .arg("--config")
         .arg(BC_CONFIG)
         .arg("-o")
         .arg(dir.join("call.log"))
         .assert()
+        .success()
         .stdout(predicate::str::contains("successfully updated"));
+
+    assert_ne!(std::fs::read(&account)?, before, "the executed state was not written back");
     Ok(())
 }
 
