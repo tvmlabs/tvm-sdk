@@ -372,3 +372,26 @@ fn deploy_account_boc(
         .stdout(predicate::str::contains("Account written to"));
     Ok(dir.join("Hello.boc"))
 }
+
+/// `test ticktock` shares the tracing callback with the commands that define
+/// `--abi`, and the callback resolved that argument unconditionally. The
+/// command then fails on its own account -- it hands a ticktock to the
+/// ordinary transaction executor -- so what is asserted here is only that it
+/// reaches its own logic instead of aborting on an argument it never defines.
+#[test]
+fn test_ticktock_does_not_look_up_arguments_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let account = deploy_account_boc(&dir)?;
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("test")
+        .arg("ticktock")
+        .arg(&account)
+        .arg("--bc_config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("ticktock.log"))
+        .assert()
+        .stderr(predicate::str::contains("panicked").not());
+    Ok(())
+}

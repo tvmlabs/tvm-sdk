@@ -552,7 +552,8 @@ async fn debug_transaction_command(
         contract_path,
         config_path,
         &tx_id,
-        Some(generate_callback(Some(matches), config)),
+        // `debug transaction` and `debug account` define no `--abi`.
+        Some(generate_callback(Some(TraceArgs { matches, abi: None }), config)),
         || init_debug_logger(trace_path),
         dump_mask,
         config,
@@ -560,7 +561,7 @@ async fn debug_transaction_command(
     )
     .await?;
 
-    decode_messages(&tr, load_decode_abi(matches, config), config).await?;
+    decode_messages(&tr, load_decode_abi(matches, None, config), config).await?;
     if !config.is_json {
         println!("Log saved to {}.", trace_path);
     }
@@ -630,7 +631,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         get_blockchain_config(config, config_path).await?,
         &mut account,
         msg.as_ref(),
-        Some(matches),
+        Some(TraceArgs { matches, abi: None }),
         trans.now() as u64 * 1000,
         block_lt,
         trans.logical_time(),
@@ -651,7 +652,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
 
     match result_trans {
         Ok(result_trans) => {
-            decode_messages(&result_trans, load_decode_abi(matches, config), config).await?;
+            decode_messages(&result_trans, load_decode_abi(matches, None, config), config).await?;
             if !config.is_json {
                 println!("Execution finished.");
             }
@@ -675,11 +676,16 @@ fn parse_now(matches: &ArgMatches) -> Result<u64, String> {
     })
 }
 
-fn load_decode_abi(matches: &ArgMatches, config: &Config) -> Option<String> {
+/// `abi` is the running command's `--abi`, or `None` where it defines none:
+/// `debug transaction`, `debug account`, `debug replay` and `debug message`
+/// decode with `--decode_abi` or the config file alone, and clap aborts when
+/// asked for an id the running command does not define.
+fn load_decode_abi(matches: &ArgMatches, abi: Option<String>, config: &Config) -> Option<String> {
     let abi = matches
         .value_of("DECODE_ABI")
         .map(|s| s.to_owned())
-        .or(abi_from_matches_or_config(matches, config).ok());
+        .or(abi)
+        .or_else(|| config.abi_path.clone());
     match abi {
         Some(path) => match std::fs::read_to_string(path) {
             Ok(res) => Some(res),
@@ -814,7 +820,7 @@ async fn debug_call_command(
         bc_config,
         &mut acc_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: matches.value_of("ABI").map(|s| s.to_owned()) }),
         now,
         now,
         now,
@@ -828,7 +834,11 @@ async fn debug_call_command(
         Ok(trans) => {
             out_res = decode_messages(
                 &trans,
-                load_decode_abi(matches, &full_config.config),
+                load_decode_abi(
+                    matches,
+                    matches.value_of("ABI").map(|s| s.to_owned()),
+                    &full_config.config,
+                ),
                 &full_config.config,
             )
             .await?;
@@ -909,7 +919,7 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
         get_blockchain_config(config, matches.value_of("CONFIG_PATH")).await?,
         &mut acc_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: None }),
         now,
         now,
         now,
@@ -920,7 +930,7 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
 
     let (msg_string, error) = match result {
         Ok(trans) => {
-            decode_messages(&trans, load_decode_abi(matches, config), config).await?;
+            decode_messages(&trans, load_decode_abi(matches, None, config), config).await?;
             ("Execution finished.".to_string(), None)
         }
         Err(e) => (format!("Execution failed: {}", e), Some(e)),
@@ -1014,7 +1024,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
         get_blockchain_config(config, matches.value_of("CONFIG_PATH")).await?,
         &mut acc_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: matches.value_of("ABI").map(|s| s.to_owned()) }),
         now,
         now,
         now,
@@ -1033,7 +1043,12 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
                     format!("Failed to serialize account after debug deploy {:?}: {e}", output)
                 })?;
             }
-            decode_messages(&trans, load_decode_abi(matches, config), config).await?;
+            decode_messages(
+                &trans,
+                load_decode_abi(matches, matches.value_of("ABI").map(|s| s.to_owned()), config),
+                config,
+            )
+            .await?;
             "Execution finished.".to_string()
         }
         Err(e) => {
@@ -1218,7 +1233,7 @@ pub async fn execute_debug_params(debug_params: &DebugParams<'_>) -> Result<Tran
         debug_params.bc_config.clone(),
         &mut account_root,
         message.as_ref(),
-        debug_params.matches,
+        debug_params.matches.map(|matches| TraceArgs { matches, abi: None }),
         debug_params.time_in_ms,
         debug_params.block_lt,
         debug_params.last_tr_lt,
@@ -1232,7 +1247,7 @@ pub async fn execute_debug(
     bc_config: BlockchainConfig,
     account_root: &mut Cell,
     message: Option<&Message>,
-    matches: Option<&ArgMatches>,
+    trace: Option<TraceArgs<'_>>,
     time_in_ms: u64,
     block_lt: u64,
     last_tr_lt: u64,
@@ -1271,7 +1286,7 @@ pub async fn execute_debug(
         block_lt,
         last_tr_lt: Arc::new(AtomicU64::new(last_tr_lt)),
         debug: true,
-        trace_callback: Some(generate_callback(matches, tonos_config)),
+        trace_callback: Some(generate_callback(trace, tonos_config)),
         ..ExecuteParams::default()
     };
     let tr = executor.execute_with_libs_and_params(message, account_root, params).map_err(|e| {
@@ -1331,6 +1346,15 @@ fn trace_callback_minimal(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) 
     log::info!(target: "tvm", "{} {} {} {} {}", info.step, info.gas_used, info.gas_cmd, info.cmd_str, position);
 }
 
+/// What the tracing callback is allowed to read from the running command. The
+/// ABI is resolved by the caller: `debug replay`, `debug message` and
+/// `test ticktock` share the callback without registering `--abi`, and clap
+/// aborts when asked for an id the running command does not define.
+pub struct TraceArgs<'a> {
+    pub matches: &'a ArgMatches,
+    pub abi: Option<String>,
+}
+
 fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<String, String> {
     let debug_info = debug_info.ok_or_else(String::new)?;
     let cell_hash = info.cmd_code.cell().repr_hash();
@@ -1345,15 +1369,15 @@ fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<
 }
 
 fn generate_callback(
-    matches: Option<&ArgMatches>,
+    trace: Option<TraceArgs<'_>>,
     config: &Config,
 ) -> Arc<dyn Fn(&Engine, &EngineTraceInfo) + Send + Sync> {
-    if let Some(matches) = matches {
-        let opt_abi = abi_from_matches_or_config(matches, config);
+    if let Some(TraceArgs { matches, abi }) = trace {
+        let opt_abi = abi.or_else(|| config.abi_path.clone());
         let debug_info = matches
             .value_of("DBG_INFO")
             .map(|s| s.to_string())
-            .or(if opt_abi.is_ok() { load_debug_info(opt_abi.as_ref().unwrap()) } else { None });
+            .or_else(|| opt_abi.as_deref().and_then(load_debug_info));
         let debug_info = if let Some(dbg_path) = debug_info {
             match File::open(&dbg_path) {
                 Ok(file) => match serde_json::from_reader(file) {

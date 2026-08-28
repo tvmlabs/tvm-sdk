@@ -42,6 +42,7 @@ use crate::config::Config;
 use crate::crypto::load_keypair;
 use crate::crypto::{self};
 use crate::debug::DEFAULT_TRACE_PATH;
+use crate::debug::TraceArgs;
 use crate::debug::decode_messages;
 use crate::debug::execute_debug;
 use crate::debug::init_debug_logger;
@@ -309,7 +310,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         bc_config,
         &mut account_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: Some(abi_path.to_owned()) }),
         now,
         0,
         0,
@@ -352,7 +353,18 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     let bc_config = get_blockchain_config(config, bc_config).await?;
     let mut account_root = account.serialize().unwrap();
     let result =
-        execute_debug(bc_config, &mut account_root, None, Some(matches), now, 0, 0, false, config)
+        // `test ticktock` defines no `--abi`.
+        execute_debug(
+            bc_config,
+            &mut account_root,
+            None,
+            Some(TraceArgs { matches, abi: None }),
+            now,
+            0,
+            0,
+            false,
+            config,
+        )
             .await;
 
     match result {
