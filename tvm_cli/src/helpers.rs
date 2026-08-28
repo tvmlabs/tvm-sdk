@@ -81,20 +81,29 @@ const GLOBAL_CONFIG_PATH: &str = ".tvm-cli.global.conf.json";
 
 // todo: rewrite `config.url`, `config.endpoints[]`, `endpoints_map{}` and
 // `path`
+/// Where the config lives when none was named. Pure: it is also the serde
+/// default for `FullConfig::path`, so it runs for a config file the caller
+/// chose, and computing a path is not a licence to move a file.
 pub fn default_config_name() -> String {
     match env::current_dir() {
-        Ok(dir) => {
-            let new = dir.join(PathBuf::from(CONFIG_BASE_NAME));
-            let old = dir.join(PathBuf::from(DEPRECATED_CONFIG_BASE_NAME));
-
-            if !new.exists() && old.exists() {
-                let _ = std::fs::rename(&old, &new);
-            }
-
-            new.to_string_lossy().into_owned()
-        }
+        Ok(dir) => dir.join(PathBuf::from(CONFIG_BASE_NAME)).to_string_lossy().into_owned(),
         Err(_) => CONFIG_BASE_NAME.to_string(),
     }
+}
+
+/// The same path, having renamed a `tonos-cli.conf.json` left in the current
+/// directory to the current name. Only for the one caller that is about to use
+/// the default: no other run has any business migrating it.
+pub fn migrated_default_config_name() -> String {
+    let name = default_config_name();
+    if let Ok(dir) = env::current_dir() {
+        let new = dir.join(PathBuf::from(CONFIG_BASE_NAME));
+        let old = dir.join(PathBuf::from(DEPRECATED_CONFIG_BASE_NAME));
+        if !new.exists() && old.exists() {
+            let _ = std::fs::rename(&old, &new);
+        }
+    }
+    name
 }
 
 pub fn global_config_path() -> String {

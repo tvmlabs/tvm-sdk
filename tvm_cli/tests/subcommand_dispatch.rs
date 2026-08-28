@@ -582,3 +582,31 @@ fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
     );
     Ok(())
 }
+
+/// Computing the default config path also migrates a `tonos-cli.conf.json`
+/// left in the current directory, and the path was computed in three places
+/// that have nothing to do with the file being used: the `--config` fallback,
+/// the serde default for a config that parses without a `path`, and
+/// `FullConfig`'s own `Default`. A run that named its config file must not
+/// move another one, whatever is in the file it was given.
+#[test]
+fn a_named_config_does_not_migrate_the_deprecated_one() -> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let cwd = dir.join("cwd");
+    std::fs::create_dir_all(&cwd)?;
+    let deprecated = cwd.join("tonos-cli.conf.json");
+    std::fs::write(&deprecated, "{}")?;
+
+    // Deliberately not the helper's config: its one non-default field takes an
+    // early return that skips the serde default, which is where two of the
+    // three path computations live.
+    let config = dir.join("empty.conf.json");
+    std::fs::write(&config, "{}")?;
+
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.current_dir(&cwd).arg("--config").arg(&config).arg("genphrase").assert().success();
+
+    assert!(deprecated.exists(), "the deprecated config was moved out from under the run");
+    assert!(!cwd.join("tvm-cli.conf.json").exists(), "a config file was created in the cwd");
+    Ok(())
+}

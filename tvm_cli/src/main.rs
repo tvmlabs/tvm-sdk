@@ -101,10 +101,10 @@ use crate::getconfig::gen_update_config_message;
 use crate::helpers::AccountSource;
 use crate::helpers::SdkAddress;
 use crate::helpers::abi_from_matches_or_config;
-use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
 use crate::helpers::load_abi_from_tvc;
 use crate::helpers::load_params;
+use crate::helpers::migrated_default_config_name;
 use crate::helpers::parse_lifetime;
 use crate::helpers::unpack_alternative_params;
 use crate::helpers::wc_from_matches_or_config;
@@ -1066,10 +1066,9 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
         .value_of("CONFIG")
         .map(|v| v.to_string())
         .or(env::var("TONOSCLI_CONFIG").ok())
-        // Lazily: `default_config_name()` renames a `tonos-cli.conf.json` it
-        // finds in the current directory, which is no business of a run that
-        // was given a config path of its own.
-        .unwrap_or_else(default_config_name);
+        // The only place the deprecated config is migrated: this is the one
+        // caller that falls back to the default path and then uses it.
+        .unwrap_or_else(migrated_default_config_name);
 
     let mut full_config = FullConfig::from_file(&config_file);
 
