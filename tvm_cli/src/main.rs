@@ -796,7 +796,10 @@ async fn main_internal() -> Result<(), String> {
         ));
 
     let proposal_cmd = Command::new("proposal")
-        .help("Proposal control commands.")
+        // `.about`, not `.help`: the latter is clap's `override_help`, which
+        // replaces the whole page. `proposal --help` printed this one line and
+        // never listed `create`, `vote` or `decode`.
+        .about("Proposal control commands.")
         .subcommand(
             Command::new("create")
                 .about("Submits a proposal transaction in the multisignature wallet with a text comment.")
