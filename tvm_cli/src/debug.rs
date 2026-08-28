@@ -696,7 +696,12 @@ async fn debug_call_command(
     full_config: &FullConfig,
     is_getter: bool,
 ) -> Result<(), String> {
-    let (input, opt_abi, sign) = contract_data_from_matches_or_config_alias(matches, full_config)?;
+    // `--keys` and `--update` belong to `debug call` alone: `debug run` shares
+    // this handler without them, and clap aborts when asked for an id the
+    // running command does not define. `is_getter` is what tells the two apart.
+    let call_only_args = !is_getter;
+    let (input, opt_abi, sign) =
+        contract_data_from_matches_or_config_alias(matches, full_config, call_only_args)?;
     let input = input.as_ref();
     let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
     let method = Some(
@@ -837,7 +842,7 @@ async fn debug_call_command(
         }
     };
 
-    if matches.is_present("UPDATE_BOC") {
+    if call_only_args && matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
             .map_err(|e| format!("Failed to construct account: {}", e))?
             .write_to_file(input)

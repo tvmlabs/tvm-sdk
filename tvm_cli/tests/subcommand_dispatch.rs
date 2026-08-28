@@ -253,3 +253,49 @@ fn debug_subcommands_after_call_are_dispatchable() -> Result<(), Box<dyn std::er
         .stdout(predicate::str::contains("Failed to open file"));
     Ok(())
 }
+
+/// `debug call` was built as a renamed clone of `debug run`, which leaves it
+/// registered under the id `run`: `subcommand_matches("call")` then names an
+/// id clap does not know and aborts every `debug` subcommand dispatched at or
+/// after that lookup. `debug run` additionally reaches this handler without
+/// `--keys` and `--update`, which only `debug call` defines.
+#[test]
+fn debug_run_traces_a_getter() -> Result<(), Box<dyn std::error::Error>> {
+    let trace = testdir!().join("trace.log");
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("debug")
+        .arg("run")
+        .arg("--addr")
+        .arg(HELLO_TVC)
+        .arg("--tvc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("--output")
+        .arg(&trace)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Execution finished."));
+    Ok(())
+}
+
+/// `runx` and `callx` share the helper that resolves address, ABI and keys
+/// from an alias, but only `callx` defines `--keys`.
+#[test]
+fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("runx")
+        .arg("--addr")
+        .arg(HELLO_TVC)
+        .arg("--tvc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .assert()
+        .stdout(predicate::str::contains("Running get-method"));
+    Ok(())
+}

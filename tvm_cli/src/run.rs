@@ -53,7 +53,10 @@ pub async fn run_command(
 ) -> Result<(), String> {
     let config = &full_config.config;
     let (address, abi_path) = if is_alternative {
-        let (address, abi, _) = contract_data_from_matches_or_config_alias(matches, full_config)?;
+        // `runx` has no `--keys`, and the keys this returns are discarded
+        // here anyway.
+        let (address, abi, _) =
+            contract_data_from_matches_or_config_alias(matches, full_config, false)?;
         (address.unwrap(), abi.unwrap())
     } else {
         (
