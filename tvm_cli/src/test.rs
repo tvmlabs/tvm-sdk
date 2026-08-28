@@ -235,7 +235,10 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
     let keys = matches.value_of("KEYS").map(load_keypair).transpose()?;
     let address_opt = matches.value_of("ACCOUNT_ADDRESS");
     let balance = matches.value_of("INITIAL_BALANCE").unwrap();
-    let workchain_id = matches.value_of("WC").and_then(|wc| wc.parse().ok());
+    // `test deploy` registers no `--wc`: this named an id clap does not know,
+    // which aborts debug builds and resolves to `None` everywhere else. Add the
+    // argument first if the workchain is ever meant to be selectable here.
+    let workchain_id: Option<i32> = None;
     let now = matches.value_of("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
     let trace_path = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
 

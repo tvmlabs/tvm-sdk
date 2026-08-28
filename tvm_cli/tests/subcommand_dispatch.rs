@@ -336,3 +336,39 @@ fn multisig_send_does_not_look_up_arguments_it_does_not_define()
         .stdout(predicate::str::contains("sign key is not defined"));
     Ok(())
 }
+
+/// `test deploy` reached for a `--wc` it never registers.
+#[test]
+fn test_deploy_does_not_look_up_arguments_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    deploy_account_boc(&dir)?;
+    Ok(())
+}
+
+/// Deploys `Hello.tvc` locally into `dir` and returns the account BOC that
+/// `test deploy` writes next to the copied TVC.
+fn deploy_account_boc(
+    dir: &std::path::Path,
+) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
+    let tvc = dir.join("Hello.tvc");
+    std::fs::copy(HELLO_TVC, &tvc)?;
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("test")
+        .arg("deploy")
+        .arg(&tvc)
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("--address")
+        .arg("0:1111111111111111111111111111111111111111111111111111111111111111")
+        .arg("--initial_balance")
+        .arg("1000000000")
+        .arg("--bc_config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("deploy.log"))
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Account written to"));
+    Ok(dir.join("Hello.boc"))
+}
