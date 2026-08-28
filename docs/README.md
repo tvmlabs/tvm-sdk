@@ -626,7 +626,6 @@ For example, our HelloWorld contract will have the following Dapp ID:
       method: deployNewConfigCustom
       params: {"authorityAddress": null}
          abi: contracts/0.79.3_compiled/dappconfig/DappRoot.abi.json
-      output: None
     Message body: te6ccgEBAQEABwAACVumOBNA
     ```
 

@@ -212,6 +212,34 @@ const HELLO_ABI: &str = "tests/Hello.abi.json";
 // `get_blockchain_config` queries the network and only then falls back.
 const BC_CONFIG: &str = "tests/config_contract.saved";
 
+/// `debug call` was built as a renamed clone of `debug run`, which leaves it
+/// registered under the id `run`: `subcommand_matches("call")` then names an
+/// id clap does not know and aborts every `debug` subcommand dispatched at or
+/// after that lookup. `debug run` additionally reaches this handler without
+/// `--keys` and `--update`, which only `debug call` defines.
+#[test]
+fn debug_run_traces_a_getter() -> Result<(), Box<dyn std::error::Error>> {
+    let trace = testdir!().join("trace.log");
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("debug")
+        .arg("run")
+        .arg("--addr")
+        .arg(HELLO_TVC)
+        .arg("--tvc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("--output")
+        .arg(&trace)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Execution finished."));
+    Ok(())
+}
+
 /// The renamed clone also decided which handler ran: with no `call` id
 /// registered, `debug call` fell through to the `run` arm and traced as a
 /// getter -- unlimited gas, and a message the contract never accepted
@@ -254,31 +282,19 @@ fn debug_subcommands_after_call_are_dispatchable() -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-/// `debug call` was built as a renamed clone of `debug run`, which leaves it
-/// registered under the id `run`: `subcommand_matches("call")` then names an
-/// id clap does not know and aborts every `debug` subcommand dispatched at or
-/// after that lookup. `debug run` additionally reaches this handler without
-/// `--keys` and `--update`, which only `debug call` defines.
+/// `debug message` registers `--boc` but no `--tvc`, and the shared `--boc`
+/// definition declared the conflict, so clap asserted on a `conflicts_with`
+/// target the command does not have -- aborting even `--help`.
 #[test]
-fn debug_run_traces_a_getter() -> Result<(), Box<dyn std::error::Error>> {
-    let trace = testdir!().join("trace.log");
+fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("debug")
-        .arg("run")
-        .arg("--addr")
-        .arg(HELLO_TVC)
-        .arg("--tvc")
-        .arg("--abi")
-        .arg(HELLO_ABI)
-        .arg("-m")
-        .arg("sayHello")
-        .arg("--config")
-        .arg(BC_CONFIG)
-        .arg("--output")
-        .arg(&trace)
+        .arg("message")
+        .arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("Execution finished."));
+        .stdout(predicate::str::contains("--boc"));
     Ok(())
 }
 
@@ -297,22 +313,6 @@ fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn st
         .arg("sayHello")
         .assert()
         .stdout(predicate::str::contains("Running get-method"));
-    Ok(())
-}
-
-/// `debug message` registers `--boc` but no `--tvc`, and the shared `--boc`
-/// definition declared the conflict, so clap asserted on a `conflicts_with`
-/// target the command does not have -- aborting even `--help`.
-#[test]
-fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
--> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("debug")
-        .arg("message")
-        .arg("--help")
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("--boc"));
     Ok(())
 }
 
@@ -346,6 +346,29 @@ fn test_deploy_does_not_look_up_arguments_it_does_not_define()
     Ok(())
 }
 
+/// `test ticktock` shares the tracing callback with the commands that define
+/// `--abi`, and the callback resolved that argument unconditionally. The
+/// command then fails on its own account -- it hands a ticktock to the
+/// ordinary transaction executor -- so what is asserted here is only that it
+/// reaches its own logic instead of aborting on an argument it never defines.
+#[test]
+fn test_ticktock_does_not_look_up_arguments_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let account = deploy_account_boc(&dir)?;
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("test")
+        .arg("ticktock")
+        .arg(&account)
+        .arg("--bc_config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("ticktock.log"))
+        .assert()
+        .stderr(predicate::str::contains("panicked").not());
+    Ok(())
+}
+
 /// Deploys `Hello.tvc` locally into `dir` and returns the account BOC that
 /// `test deploy` writes next to the copied TVC.
 fn deploy_account_boc(
@@ -373,25 +396,18 @@ fn deploy_account_boc(
     Ok(dir.join("Hello.boc"))
 }
 
-/// `test ticktock` shares the tracing callback with the commands that define
-/// `--abi`, and the callback resolved that argument unconditionally. The
-/// command then fails on its own account -- it hands a ticktock to the
-/// ordinary transaction executor -- so what is asserted here is only that it
-/// reaches its own logic instead of aborting on an argument it never defines.
+/// `body` defines no `--output`, but the handler read one to print it among
+/// the input arguments.
 #[test]
-fn test_ticktock_does_not_look_up_arguments_it_does_not_define()
--> Result<(), Box<dyn std::error::Error>> {
-    let dir = testdir!();
-    let account = deploy_account_boc(&dir)?;
+fn body_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("test")
-        .arg("ticktock")
-        .arg(&account)
-        .arg("--bc_config")
-        .arg(BC_CONFIG)
-        .arg("-o")
-        .arg(dir.join("ticktock.log"))
+    cmd.arg("body")
+        .arg("sayHello")
+        .arg("{}")
+        .arg("--abi")
+        .arg(HELLO_ABI)
         .assert()
-        .stderr(predicate::str::contains("panicked").not());
+        .success()
+        .stdout(predicate::str::contains("Message body:"));
     Ok(())
 }

@@ -1266,11 +1266,13 @@ async fn send_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
 async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
-    let output = matches.value_of("OUTPUT");
+    // `body` writes to stdout and registers no `--output`, so the argument it
+    // used to print here could only ever be absent -- and naming an id the
+    // command does not define aborts debug builds.
     let abi = Some(abi_from_matches_or_config(matches, config)?);
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
-        print_args!(method, params, abi, output);
+        print_args!(method, params, abi);
     }
 
     let params = serde_json::from_str(&params.unwrap())
