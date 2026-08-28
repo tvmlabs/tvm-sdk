@@ -662,7 +662,8 @@ mod tests {
 
     /// `multisig deploy` names its key `--keys` and registers neither `--addr`
     /// nor `--sign`. Reading the ids `multisig send` defines aborts, so a
-    /// regression here kills the process rather than returning a wrong key.
+    /// regression here fails by panicking rather than by returning a wrong
+    /// key. The call site itself is covered from the CLI.
     #[test]
     fn multisig_deploy_takes_its_key_from_the_argument_it_defines() {
         let matches = deploy_matches();

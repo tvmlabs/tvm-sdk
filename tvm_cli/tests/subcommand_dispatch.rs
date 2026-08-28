@@ -12,8 +12,10 @@ const BIN_NAME: &str = "tvm-cli";
 ///
 /// The file has to be written, not merely named: a config that cannot be read
 /// falls back to `<exe dir>/.tvm-cli.global.conf.json`, and the local build
-/// directory has one. One field that differs from the defaults is enough for
-/// the search to stop at this file.
+/// directory has one. Any config that parses stops that search; the one
+/// non-default field also takes the early return that never attempts the
+/// second, whole-file parse, so a future field without a serde default cannot
+/// quietly reopen the fallback.
 fn tvm_cli() -> Result<Command, Box<dyn std::error::Error>> {
     let path = testdir!().join("tvm-cli.conf.json");
     std::fs::write(&path, r#"{"retries": 1}"#)?;

@@ -1354,11 +1354,13 @@ fn trace_callback_minimal(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) 
     log::info!(target: "tvm", "{} {} {} {} {}", info.step, info.gas_used, info.gas_cmd, info.cmd_str, position);
 }
 
-/// What the tracing callback is allowed to read from the running command. The
-/// ABI is resolved by the caller: `debug transaction`, `debug account`,
-/// `debug replay`, `debug message` and `test ticktock` share the callback
-/// without registering `--abi`, and clap aborts in debug builds when asked for
-/// an id the running command does not define.
+/// What the tracing callback is allowed to read from the running command. It
+/// reads `--dbg_info` and `--full_trace`, which every command that traces
+/// registers, out of `matches`; the ABI it also wants comes from the caller,
+/// because `debug transaction`, `debug account`, `debug replay`,
+/// `debug message` and `test ticktock` share the callback without registering
+/// `--abi`, and clap aborts in debug builds when asked for an id the running
+/// command does not define.
 pub struct TraceArgs<'a> {
     pub matches: &'a ArgMatches,
     pub abi: Option<String>,
@@ -1807,8 +1809,8 @@ mod tests {
     }
 
     /// `debug message` registers no `--abi`. Asking clap for an id the running
-    /// command does not define aborts, so a regression here fails this test by
-    /// panicking rather than by returning the wrong value. The CLI test
+    /// command does not define aborts, so a regression there fails by panicking
+    /// rather than by returning the wrong value. The CLI test
     /// `debug_message_does_not_look_up_an_abi_it_does_not_define` covers the
     /// call site; this pins what the resolution itself does.
     #[test]
