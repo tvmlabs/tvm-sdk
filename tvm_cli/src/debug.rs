@@ -1774,32 +1774,86 @@ pub async fn debug_error(e: &ClientError, debug_params: DebugParams<'_>) -> Resu
 
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
+    use clap::ArgMatches;
     use clap::Command;
+    use testdir::testdir;
 
     use super::create_debug_command;
     use super::load_decode_abi;
     use crate::config::Config;
 
-    /// `debug message` decodes with `--decode_abi` or the config file: it
-    /// registers no `--abi`. Asking clap for an id the running command does
-    /// not define aborts, so a regression here fails this test by killing the
-    /// process rather than by returning the wrong value.
-    ///
-    /// This cannot be a CLI test: `load_decode_abi` runs only once execution
-    /// returns a transaction, and reaching that through `debug message` needs
-    /// a message the account accepts, which in turn needs an address in the
-    /// `dapp_id::account_id` form that no locally built account state has.
-    #[test]
-    fn load_decode_abi_does_not_read_an_abi_the_command_does_not_define() {
+    /// The matches of `debug message`, which registers `--decode_abi` and no
+    /// `--abi`. `argv` continues `["tvm-cli", "debug", "message"]`.
+    fn debug_message_matches(argv: &[&str]) -> ArgMatches {
+        let mut full = vec!["tvm-cli", "debug", "message"];
+        full.extend_from_slice(argv);
         let matches = Command::new("tvm-cli")
             .subcommand(create_debug_command())
-            .try_get_matches_from(["tvm-cli", "debug", "message", "msg"])
+            .try_get_matches_from(full)
             .expect("debug message takes a message");
-        let matches = matches
+        matches
             .subcommand_matches("debug")
             .and_then(|m| m.subcommand_matches("message"))
-            .expect("message is a debug subcommand");
+            .expect("message is a debug subcommand")
+            .clone()
+    }
 
-        assert_eq!(load_decode_abi(matches, None, &Config::default()), None);
+    fn abi_file(dir: &Path, name: &str) -> String {
+        let path = dir.join(name);
+        std::fs::write(&path, format!("{{\"marker\": \"{name}\"}}")).unwrap();
+        path.to_string_lossy().into_owned()
+    }
+
+    /// `debug message` registers no `--abi`. Asking clap for an id the running
+    /// command does not define aborts, so a regression here fails this test by
+    /// panicking rather than by returning the wrong value. The CLI test
+    /// `debug_message_does_not_look_up_an_abi_it_does_not_define` covers the
+    /// call site; this pins what the resolution itself does.
+    #[test]
+    fn load_decode_abi_reads_nothing_when_no_abi_is_named() {
+        let matches = debug_message_matches(&["msg"]);
+
+        assert_eq!(load_decode_abi(&matches, None, &Config::default()), None);
+    }
+
+    #[test]
+    fn load_decode_abi_prefers_decode_abi_to_every_other_source() {
+        let dir = testdir!();
+        let decode_abi = abi_file(&dir, "decode.abi.json");
+        let command_abi = abi_file(&dir, "command.abi.json");
+        let config =
+            Config { abi_path: Some(abi_file(&dir, "config.abi.json")), ..Config::default() };
+        let matches = debug_message_matches(&["--decode_abi", &decode_abi, "msg"]);
+
+        let loaded = load_decode_abi(&matches, Some(command_abi), &config);
+
+        assert_eq!(loaded, Some(r#"{"marker": "decode.abi.json"}"#.to_owned()));
+    }
+
+    #[test]
+    fn load_decode_abi_prefers_the_command_abi_to_the_config() {
+        let dir = testdir!();
+        let command_abi = abi_file(&dir, "command.abi.json");
+        let config =
+            Config { abi_path: Some(abi_file(&dir, "config.abi.json")), ..Config::default() };
+        let matches = debug_message_matches(&["msg"]);
+
+        let loaded = load_decode_abi(&matches, Some(command_abi), &config);
+
+        assert_eq!(loaded, Some(r#"{"marker": "command.abi.json"}"#.to_owned()));
+    }
+
+    #[test]
+    fn load_decode_abi_falls_back_to_the_config() {
+        let dir = testdir!();
+        let config =
+            Config { abi_path: Some(abi_file(&dir, "config.abi.json")), ..Config::default() };
+        let matches = debug_message_matches(&["msg"]);
+
+        let loaded = load_decode_abi(&matches, None, &config);
+
+        assert_eq!(loaded, Some(r#"{"marker": "config.abi.json"}"#.to_owned()));
     }
 }

@@ -774,3 +774,44 @@ fn debug_call_does_not_write_the_account_back_when_nothing_executed()
     assert_eq!(std::fs::read(&account)?, before, "the account file was rewritten anyway");
     Ok(())
 }
+
+/// The call site of the shared decoder: `debug message` registers no `--abi`,
+/// so it must ask for none. Getting there means executing something the
+/// contract accepts, which is why the test makes its own message rather than
+/// reusing a fixture -- decoding only runs once a transaction comes back.
+#[test]
+fn debug_message_does_not_look_up_an_abi_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let dir = testdir!();
+    let account = deploy_account_boc(&dir)?;
+    let message = dir.join("touch.boc");
+
+    let mut cmd = tvm_cli()?;
+    cmd.arg("message")
+        .arg(ADDR)
+        .arg("touch")
+        .arg("{}")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("--raw")
+        .arg("--output")
+        .arg(&message)
+        .assert()
+        .success();
+
+    let mut cmd = tvm_cli()?;
+    cmd.arg("debug")
+        .arg("message")
+        .arg("--addr")
+        .arg(&account)
+        .arg("--boc")
+        .arg(&message)
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("-o")
+        .arg(dir.join("message.log"))
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Execution finished."));
+    Ok(())
+}
