@@ -1399,7 +1399,7 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
             .ok_or("Method is not defined. Supply it in the config file or command line.")?,
     );
     let (address, abi, keys) =
-        contract_data_from_matches_or_config_alias(matches, full_config, true)?;
+        contract_data_from_matches_or_config_alias(matches, full_config, matches.value_of("KEYS"))?;
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?,
     );

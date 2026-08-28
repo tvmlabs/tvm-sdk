@@ -56,7 +56,7 @@ pub async fn run_command(
         // `runx` has no `--keys`, and the keys this returns are discarded
         // here anyway.
         let (address, abi, _) =
-            contract_data_from_matches_or_config_alias(matches, full_config, false)?;
+            contract_data_from_matches_or_config_alias(matches, full_config, None)?;
         (address.unwrap(), abi.unwrap())
     } else {
         (

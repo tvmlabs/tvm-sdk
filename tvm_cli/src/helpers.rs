@@ -1152,14 +1152,15 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Resul
         .unwrap_or(config.wc))
 }
 
-/// `keys_from_matches` says whether the running command defines `--keys`:
-/// `callx` and `debug call` do, `runx` and `debug run` share this resolution
-/// without it, and clap aborts when asked for an id the running command does
-/// not register. Keys from the config file or the alias are unaffected.
+/// `keys` is the running command's `--keys`, or `None` where it defines none:
+/// `callx` and `debug call` have one, `runx` and `debug run` share this
+/// resolution without it, and clap aborts in debug builds when asked for an id
+/// the running command does not register. Keys from the config file or the
+/// alias are unaffected.
 pub fn contract_data_from_matches_or_config_alias(
     matches: &ArgMatches,
     full_config: &FullConfig,
-    keys_from_matches: bool,
+    keys: Option<&str>,
 ) -> Result<(Option<String>, Option<String>, Option<String>), String> {
     let address = matches
         .value_of("ADDRESS")
@@ -1168,7 +1169,7 @@ pub fn contract_data_from_matches_or_config_alias(
         .ok_or(
             "ADDRESS is not defined. Supply it in the config file or command line.".to_string(),
         )?;
-    let (address, abi, keys) = if full_config.aliases.contains_key(&address) {
+    let (address, abi, alias_keys) = if full_config.aliases.contains_key(&address) {
         let alias = full_config.aliases.get(&address).unwrap();
         (alias.address.clone(), alias.abi_path.clone(), alias.key_path.clone())
     } else {
@@ -1182,12 +1183,7 @@ pub fn contract_data_from_matches_or_config_alias(
         .ok_or(
             "ABI file is not defined. Supply it in the config file or command line.".to_string(),
         )?;
-    let keys = keys_from_matches
-        .then(|| matches.value_of("KEYS"))
-        .flatten()
-        .map(|s| s.to_string())
-        .or(full_config.config.keys_path.clone())
-        .or(keys);
+    let keys = keys.map(|s| s.to_string()).or(full_config.config.keys_path.clone()).or(alias_keys);
     Ok((address, Some(abi), keys))
 }
 
