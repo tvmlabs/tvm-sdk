@@ -679,8 +679,8 @@ fn parse_now(matches: &ArgMatches) -> Result<u64, String> {
 
 /// `abi` is the running command's `--abi`, or `None` where it defines none:
 /// `debug transaction`, `debug account`, `debug replay` and `debug message`
-/// decode with `--decode_abi` or the config file alone, and clap aborts when
-/// asked for an id the running command does not define.
+/// decode with `--decode_abi` or the config file alone, and clap aborts in
+/// debug builds when asked for an id the running command does not define.
 fn load_decode_abi(matches: &ArgMatches, abi: Option<String>, config: &Config) -> Option<String> {
     let abi = matches
         .value_of("DECODE_ABI")
@@ -1714,9 +1714,10 @@ async fn make_sequence_diagram(
     Ok("{{}}".to_owned())
 }
 
-/// No `matches`: the tracing callback reads ids from the running command, and
-/// nothing that builds these params has a command whose ids it can be sure of.
-/// `debug_error` is reached from `call`, `run` and `deployx` alike.
+/// No `matches`: the tracing callback reads `--dbg_info` and `--full_trace`
+/// from the running command, and the only caller that builds these params is
+/// `run()` in run.rs, serving `run` and `runx`. Neither registers either
+/// argument, so filling the field in would abort them in debug builds.
 pub struct DebugParams<'a> {
     pub config: &'a Config,
     pub bc_config: BlockchainConfig,

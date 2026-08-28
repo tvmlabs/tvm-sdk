@@ -234,7 +234,8 @@ const BC_CONFIG: &str = "tests/config_contract.saved";
 /// registered under the id `run`: `subcommand_matches("call")` then names an
 /// id clap does not know and aborts every `debug` subcommand dispatched at or
 /// after that lookup. `debug run` additionally reaches this handler without
-/// `--keys` and `--update`, which only `debug call` defines.
+/// `--keys` and `--update`, which of the two commands it serves only
+/// `debug call` defines.
 #[test]
 fn debug_run_traces_a_getter() -> Result<(), Box<dyn std::error::Error>> {
     let trace = testdir!().join("trace.log");
