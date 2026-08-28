@@ -521,6 +521,11 @@ fn depool_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn 
 /// check runs per command, so it needs every node of the tree visited, which
 /// rendering help does. Walking the tree from the binary covers the commands
 /// built inline in `main`, which no unit test can reach.
+///
+/// This is the registration half of the hazard only. Nothing here dispatches,
+/// so a handler asking for an argument id its command does not define goes
+/// unnoticed; that half needs a test per command, of which the rest of this
+/// file is made.
 #[test]
 fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
     fn walk(path: &[String], checked: &mut usize) -> Result<(), Box<dyn std::error::Error>> {
@@ -542,7 +547,9 @@ fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     /// Names listed under the `SUBCOMMANDS:` heading of a help page, which
-    /// clap indents by four spaces. `help` is clap's own and has no builder.
+    /// clap indents by exactly four spaces. It wraps a long description under
+    /// the name at a deeper indent, so anything indented further is a word of
+    /// prose, not a command. `help` is clap's own and has no builder.
     fn subcommands(help: &str) -> Vec<String> {
         let Some((_, list)) = help.split_once("\nSUBCOMMANDS:\n") else {
             return Vec::new();
@@ -550,14 +557,21 @@ fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
         list.lines()
             .filter_map(|line| {
                 let name = line.strip_prefix("    ")?;
+                if name.starts_with(' ') {
+                    return None;
+                }
                 let name = name.split_whitespace().next()?;
-                (!name.starts_with('-') && name != "help").then(|| name.to_string())
+                (name != "help").then(|| name.to_string())
             })
             .collect()
     }
 
     let mut checked = 0;
     walk(&[], &mut checked)?;
-    assert!(checked > 90, "expected the whole command tree, walked only {checked} pages");
+    assert_eq!(
+        checked, 97,
+        "walked {checked} help pages, expected 97 -- update this number when adding or removing \
+         a subcommand, and check that a page did not simply stop listing its children"
+    );
     Ok(())
 }
