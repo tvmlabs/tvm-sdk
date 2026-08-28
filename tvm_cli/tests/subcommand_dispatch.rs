@@ -4,6 +4,18 @@ use testdir::testdir;
 
 const BIN_NAME: &str = "tvm-cli";
 
+/// The binary runs from the crate root, where `default_config_name()`
+/// resolves to `tvm_cli/tvm-cli.conf.json` -- gitignored, machine-specific and
+/// whatever the last local CLI run left behind. A `keys_path` in it is enough
+/// to change what several of these tests observe, so point `--config` at a
+/// path inside the test's own directory instead. The file is never created;
+/// the CLI falls back to its defaults when it does not exist.
+fn tvm_cli() -> Result<Command, Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("--config").arg(testdir!().join("tvm-cli.conf.json"));
+    Ok(cmd)
+}
+
 /// `deploy_message` is looked up by name while dispatching, so every
 /// subcommand listed after it aborts if that name is not a registered
 /// subcommand id. clap only asserts this in debug builds, which is why it
@@ -11,14 +23,14 @@ const BIN_NAME: &str = "tvm-cli";
 #[test]
 fn subcommands_listed_after_deploy_message_are_dispatchable()
 -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("genphrase").assert().success().stdout(predicate::str::contains("Seed phrase"));
     Ok(())
 }
 
 #[test]
 fn deploy_message_is_reachable_by_its_own_name() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("deploy_message")
         .arg("--help")
         .assert()
@@ -38,7 +50,7 @@ const ABI: &str = "tests/test_abi_v2.1.abi.json";
 #[test]
 fn deploy_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
 {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("deploy").arg(TVC).arg("{}").arg("--abi").arg(ABI);
     cmd.assert().stdout(predicate::str::contains("Input arguments:"));
     Ok(())
@@ -47,7 +59,7 @@ fn deploy_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn 
 #[test]
 fn fee_deploy_does_not_look_up_arguments_it_does_not_define()
 -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("fee").arg("deploy").arg(TVC).arg("{}").arg("--abi").arg(ABI);
     cmd.assert().stdout(predicate::str::contains("Input arguments:"));
     Ok(())
@@ -56,7 +68,7 @@ fn fee_deploy_does_not_look_up_arguments_it_does_not_define()
 #[test]
 fn deploy_message_does_not_look_up_arguments_it_does_not_define()
 -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("deploy_message").arg(TVC).arg("{}").arg("--abi").arg(ABI);
     cmd.assert().stdout(predicate::str::contains("Input arguments:"));
     Ok(())
@@ -71,7 +83,7 @@ const ADDR: &str = "111111111111111111111111111111111111111111111111111111111111
 /// first of those lookups.
 #[test]
 fn call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("call").arg(ADDR).arg("sayHello").arg("{}").arg("--abi").arg(ABI);
     cmd.assert().stdout(predicate::str::contains("Input arguments:"));
     Ok(())
@@ -80,7 +92,7 @@ fn call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn st
 #[test]
 fn fee_call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
 {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("fee").arg("call").arg(ADDR).arg("sayHello").arg("{}").arg("--abi").arg(ABI);
     cmd.assert().stdout(predicate::str::contains("Input arguments:"));
     Ok(())
@@ -94,7 +106,7 @@ fn fee_call_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dy
 #[test]
 fn account_does_not_conflict_with_an_argument_it_does_not_define()
 -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("account").arg("--help").assert().success().stdout(predicate::str::contains("--boc"));
     Ok(())
 }
@@ -104,7 +116,7 @@ fn account_does_not_conflict_with_an_argument_it_does_not_define()
 /// be refused.
 #[test]
 fn run_still_refuses_boc_together_with_tvc() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("run")
         .arg("--boc")
         .arg("--tvc")
@@ -122,7 +134,7 @@ fn run_still_refuses_boc_together_with_tvc() -> Result<(), Box<dyn std::error::E
 #[test]
 fn message_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>>
 {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("message").arg(ADDR).arg("sayHello").arg("{}").arg("--abi").arg(ABI);
     cmd.assert().stdout(predicate::str::contains("Input arguments:"));
     Ok(())
@@ -138,7 +150,7 @@ fn message_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn
 #[test]
 fn deploy_rejects_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>> {
     let dapp = "a".repeat(64);
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("deploy")
         .arg(TVC)
         .arg("{}")
@@ -166,7 +178,7 @@ fn deploy_rejects_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn deployx_absorbs_dst_dapp_id_as_tvc_path() -> Result<(), Box<dyn std::error::Error>> {
     let dapp = "a".repeat(64);
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("deployx")
         .arg("--abi")
         .arg(ABI)
@@ -185,7 +197,7 @@ fn deployx_absorbs_dst_dapp_id_as_tvc_path() -> Result<(), Box<dyn std::error::E
 #[test]
 fn deploy_help_no_longer_offers_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>> {
     for subcommand in ["deploy", "deployx"] {
-        let mut cmd = Command::cargo_bin(BIN_NAME)?;
+        let mut cmd = tvm_cli()?;
         cmd.arg(subcommand)
             .arg("--help")
             .assert()
@@ -197,7 +209,7 @@ fn deploy_help_no_longer_offers_dst_dapp_id() -> Result<(), Box<dyn std::error::
 
 #[test]
 fn send_help_still_offers_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("send")
         .arg("--help")
         .assert()
@@ -220,7 +232,7 @@ const BC_CONFIG: &str = "tests/config_contract.saved";
 #[test]
 fn debug_run_traces_a_getter() -> Result<(), Box<dyn std::error::Error>> {
     let trace = testdir!().join("trace.log");
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("debug")
         .arg("run")
         .arg("--addr")
@@ -248,7 +260,7 @@ fn debug_run_traces_a_getter() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn debug_call_does_not_trace_as_a_getter() -> Result<(), Box<dyn std::error::Error>> {
     let trace = testdir!().join("trace.log");
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("debug")
         .arg("call")
         .arg("--addr")
@@ -272,7 +284,7 @@ fn debug_call_does_not_trace_as_a_getter() -> Result<(), Box<dyn std::error::Err
 #[test]
 fn debug_subcommands_after_call_are_dispatchable() -> Result<(), Box<dyn std::error::Error>> {
     let missing = testdir!().join("no-such-addresses.txt");
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("debug")
         .arg("sequence-diagram")
         .arg(&missing)
@@ -288,7 +300,7 @@ fn debug_subcommands_after_call_are_dispatchable() -> Result<(), Box<dyn std::er
 #[test]
 fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
 -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("debug")
         .arg("message")
         .arg("--help")
@@ -302,7 +314,7 @@ fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
 /// from an alias, but only `callx` defines `--keys`.
 #[test]
 fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("runx")
         .arg("--addr")
         .arg(HELLO_TVC)
@@ -322,7 +334,7 @@ fn runx_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn st
 #[test]
 fn multisig_send_does_not_look_up_arguments_it_does_not_define()
 -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("multisig")
         .arg("send")
         .arg("--addr")
@@ -356,7 +368,7 @@ fn test_ticktock_does_not_look_up_arguments_it_does_not_define()
 -> Result<(), Box<dyn std::error::Error>> {
     let dir = testdir!();
     let account = deploy_account_boc(&dir)?;
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("test")
         .arg("ticktock")
         .arg(&account)
@@ -376,7 +388,7 @@ fn deploy_account_boc(
 ) -> Result<std::path::PathBuf, Box<dyn std::error::Error>> {
     let tvc = dir.join("Hello.tvc");
     std::fs::copy(HELLO_TVC, &tvc)?;
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("test")
         .arg("deploy")
         .arg(&tvc)
@@ -400,7 +412,7 @@ fn deploy_account_boc(
 /// the input arguments.
 #[test]
 fn body_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    let mut cmd = tvm_cli()?;
     cmd.arg("body")
         .arg("sayHello")
         .arg("{}")
