@@ -7332,6 +7332,7 @@ dependencies = [
  "lazy_static",
  "serde",
  "serde_json",
+ "testdir",
  "tvm_abi",
  "tvm_block",
  "tvm_client",

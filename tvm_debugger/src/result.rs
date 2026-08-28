@@ -1,6 +1,8 @@
 use serde_json::Value;
 use serde_json::json;
 use tvm_block::CommonMsgInfo;
+use tvm_block::ExtOutMessageHeader;
+use tvm_block::ExtOutMessageHeaderV2;
 use tvm_block::Message;
 use tvm_block::Serializable;
 use tvm_types::base64_encode;
@@ -68,6 +70,8 @@ impl ExecutionResult {
     }
 
     pub fn add_out_message(&mut self, message: Message) {
+        let body = tree_of_cells_into_base64(message.body().map(|s| s.into_cell()).as_ref());
+        let boc = base64_encode(message.write_to_bytes().unwrap());
         match message.header() {
             CommonMsgInfo::IntMsgInfo(_) => {
                 let state_init = message
@@ -75,18 +79,27 @@ impl ExecutionResult {
                     .map(|state_init| base64_encode(state_init.write_to_bytes().unwrap()));
                 let destination =
                     message.header().get_dst_address().unwrap_or_default().to_string();
-                let body =
-                    tree_of_cells_into_base64(message.body().map(|s| s.into_cell()).as_ref());
-                let boc = base64_encode(message.write_to_bytes().unwrap());
                 self.messages.push(json!({
+                    "type": "internal",
                     "state_init": state_init,
                     "destination": destination,
                     "body": body,
                     "boc": boc,
                 }));
             }
+            // Events and the response of an externally called function both
+            // leave the contract this way, so they are reported side by side and
+            // left for the caller to tell apart by their body.
+            CommonMsgInfo::ExtOutMsgInfo(ExtOutMessageHeader { dst, .. })
+            | CommonMsgInfo::ExtOutMsgInfoV2(ExtOutMessageHeaderV2 { dst, .. }) => {
+                self.messages.push(json!({
+                    "type": "external",
+                    "destination": dst.to_string(),
+                    "body": body,
+                    "boc": boc,
+                }));
+            }
             CommonMsgInfo::ExtInMsgInfo(_) => {}
-            CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) => {}
         }
     }
 

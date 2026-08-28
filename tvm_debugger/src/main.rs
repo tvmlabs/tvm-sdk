@@ -321,4 +321,260 @@ mod tests {
         assert_eq!(actual["response"], response);
         cleanup_temp_contract_file(&temp);
     }
+
+    const EMITTER_ABI: &str = "tests/contract/emitter.abi.json";
+    /// The same contract, described by an abi whose event is named after the
+    /// function under test and pins the id the contract actually emits.
+    const EMITTER_COLLISION_ABI: &str = "tests/contract/emitter-name-collision.abi.json";
+    const EMITTER_ADDRESS: &str =
+        "0:1010101010101010101010101010101010101010101010101010101010101010";
+    const EMITTER_SENDER: &str =
+        "0:2020202020202020202020202020202020202020202020202020202020202020";
+
+    fn emitter_args(input_file: PathBuf, func: &str) -> RunArgs {
+        RunArgs {
+            input_file,
+            abi_file: Some(PathBuf::from(EMITTER_ABI)),
+            function_name: Some(func.to_string()),
+            address: Some(EMITTER_ADDRESS.to_string()),
+            json: true,
+            ..RunArgs::default()
+        }
+    }
+
+    fn emitter_internal_args(input_file: PathBuf, func: &str, params: Value) -> RunArgs {
+        RunArgs {
+            internal: true,
+            message_source: Some(EMITTER_SENDER.to_string()),
+            call_parameters: Some(params),
+            ..emitter_args(input_file, func)
+        }
+    }
+
+    fn bump_params(value: u128) -> Value {
+        json!({ "value": value.to_string() })
+    }
+
+    /// An ABI header carrying an explicit logical time, `offset_ms` ahead of
+    /// now.
+    ///
+    /// The contract rejects an external message whose time does not exceed the
+    /// one it already stored, so two external calls that land in the same
+    /// millisecond would make the second fail with exit code 52. Ordering the
+    /// two by hand keeps that out of the tests.
+    fn emitter_abi_header(offset_ms: u64) -> Value {
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("Failed to read the clock")
+            .as_millis() as u64;
+        json!({ "time": now_ms + offset_ms, "expire": now_ms / 1000 + 600 })
+    }
+
+    /// Copies the emitter fixture into an isolated directory and runs its
+    /// constructor, so that the resulting state accepts calls to its methods.
+    fn deployed_emitter() -> PathBuf {
+        let state = testdir::testdir!().join("emitter.tvc");
+        fs::copy("tests/contract/emitter.tvc", &state).expect("Failed to copy the emitter state");
+        let mut args = emitter_args(state.clone(), "constructor");
+        args.abi_header = Some(emitter_abi_header(0));
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("Failed to run the emitter constructor");
+        assert_eq!(res.to_json()["exit_code"], 0i32);
+        state
+    }
+
+    /// Reads `counter` back out of a stored contract state.
+    fn emitter_counter(state_file: &PathBuf) -> String {
+        let state_init = StateInit::construct_from_file(state_file)
+            .expect("Failed to load the emitter state init");
+        let data = tvm_types::SliceData::load_cell(state_init.data.clone().unwrap())
+            .expect("Failed to load the emitter data cell");
+        let abi = fs::read_to_string(EMITTER_ABI).expect("Failed to read the emitter abi");
+        let fields: Value = serde_json::from_str(
+            &tvm_abi::decode_storage_fields(&abi, data, true)
+                .expect("Failed to decode the emitter storage fields"),
+        )
+        .expect("Failed to parse the decoded storage fields");
+        fields["counter"].as_str().expect("counter is not a string").to_string()
+    }
+
+    /// An internal call whose method emits an event must still write the
+    /// resulting state back to the input file.
+    #[test]
+    fn test_internal_call_emitting_an_event_updates_the_state() {
+        let state = deployed_emitter();
+        assert_eq!(emitter_counter(&state), "0");
+
+        let args = emitter_internal_args(state.clone(), "bump", bump_params(7));
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("An emitted event must not fail the run");
+
+        assert_eq!(res.to_json()["exit_code"], 0i32);
+        assert_eq!(res.to_json()["vm_success"], true);
+        assert_eq!(emitter_counter(&state), "7");
+    }
+
+    /// The event leaves the contract as an external outbound message, so it
+    /// must be reported among the out messages rather than taken for the
+    /// response.
+    #[test]
+    fn test_internal_call_reports_the_emitted_event() {
+        let state = deployed_emitter();
+        let args = emitter_internal_args(state, "bump", bump_params(7));
+        let mut res = ExecutionResult::new(false);
+        execute(&args, &mut res).expect("An emitted event must not fail the run");
+
+        let messages = res.to_json()["messages"].as_array().cloned().unwrap_or_default();
+        assert_eq!(messages.len(), 1, "the emitted event is missing from the out messages");
+        assert_eq!(messages[0]["type"], "external");
+
+        // `ExecutionResult` starts out with the response unset, as the string
+        // `{}` rather than an empty object.
+        // The source is filled in the way it is for internal sends, so the
+        // reported BOC carries the address the event really left from.
+        let boc = messages[0]["boc"].as_str().expect("the event carries no boc");
+        let event = tvm_block::Message::construct_from_bytes(
+            &tvm_types::base64_decode(boc).expect("the boc is not base64"),
+        )
+        .expect("the boc is not a message");
+        assert_eq!(
+            event.src_ref().map(ToString::to_string),
+            Some(EMITTER_ADDRESS.to_string()),
+            "the event was reported with an unfilled source"
+        );
+
+        assert_eq!(res.to_json()["response"], json!("{}"), "an event is not the function response");
+        assert!(
+            res.output().contains("Bumped"),
+            "the event is not named in the output: {}",
+            res.output()
+        );
+    }
+
+    /// An external call gets its response in an external outbound message too,
+    /// so an event emitted alongside it must not displace the decoded
+    /// response.
+    #[test]
+    fn test_external_call_decodes_the_response_next_to_an_event() {
+        let state = deployed_emitter();
+        let bump = emitter_internal_args(state.clone(), "bump", bump_params(7));
+        let mut res = ExecutionResult::new(bump.json);
+        execute(&bump, &mut res).expect("An emitted event must not fail the run");
+
+        let mut read = emitter_args(state, "readAndEmit");
+        // Strictly later than the constructor's, whatever the two runs cost.
+        read.abi_header = Some(emitter_abi_header(60_000));
+        let mut res = ExecutionResult::new(read.json);
+        execute(&read, &mut res).expect("An emitted event must not fail the run");
+
+        assert_eq!(res.to_json()["exit_code"], 0i32);
+        assert_eq!(res.to_json()["response"], json!({ "total": "7" }));
+        assert_eq!(
+            res.to_json()["messages"].as_array().map(|m| m.len()),
+            Some(2),
+            "the event and the response are both out messages"
+        );
+    }
+
+    /// An event and an internal send in one run: the event is reported next to
+    /// the internal message, and the logical time that orders internal messages
+    /// is not spent on the event.
+    #[test]
+    fn test_event_does_not_consume_the_internal_logical_time() {
+        let state = deployed_emitter();
+        let params = json!({ "to": EMITTER_SENDER, "value": "7" });
+        let args = emitter_internal_args(state, "bumpAndForward", params);
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("An emitted event must not fail the run");
+
+        let messages = res.to_json()["messages"].as_array().cloned().unwrap_or_default();
+        let kinds: Vec<_> = messages.iter().map(|m| m["type"].as_str().unwrap()).collect();
+        assert_eq!(kinds, vec!["external", "internal"], "the event is emitted before the send");
+
+        let boc = messages[1]["boc"].as_str().expect("the internal message carries no boc");
+        let sent = tvm_block::Message::construct_from_bytes(
+            &tvm_types::base64_decode(boc).expect("the boc is not base64"),
+        )
+        .expect("the boc is not a message");
+        // 1, not 2: the preceding event did not take a number from the counter.
+        assert_eq!(sent.lt(), Some(1));
+    }
+
+    /// A method that emits nothing keeps behaving exactly as before.
+    #[test]
+    fn test_internal_call_without_an_event_updates_the_state() {
+        let state = deployed_emitter();
+        let args = emitter_internal_args(state.clone(), "bumpQuiet", bump_params(7));
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("Failed to run a method that emits nothing");
+
+        assert_eq!(res.to_json()["exit_code"], 0i32);
+        assert_eq!(res.to_json()["messages"], json!([]));
+        assert_eq!(emitter_counter(&state), "7");
+    }
+
+    /// A non-zero exit code leaves the input file untouched, event or no event.
+    #[test]
+    fn test_failing_call_leaves_the_state_untouched() {
+        let state = deployed_emitter();
+        let before = fs::read(&state).expect("Failed to read the emitter state");
+
+        let args = emitter_internal_args(state.clone(), "boom", bump_params(7));
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("A failing call is reported, not an error");
+
+        assert_eq!(res.to_json()["exit_code"], 199i32);
+        assert_eq!(res.to_json()["vm_success"], false);
+        assert_eq!(fs::read(&state).expect("Failed to read the emitter state"), before);
+        assert_eq!(emitter_counter(&state), "0");
+    }
+
+    /// The source address is passed to the contract as given, so a method that
+    /// guards on its sender stays callable.
+    #[test]
+    fn test_internal_call_keeps_the_given_message_source() {
+        let state = deployed_emitter();
+        let params = json!({ "expected": EMITTER_SENDER, "value": "7" });
+        let args = emitter_internal_args(state.clone(), "bumpFromSender", params);
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("A sender-guarded method must stay callable");
+
+        assert_eq!(res.to_json()["exit_code"], 0i32);
+        assert_eq!(emitter_counter(&state), "7");
+    }
+
+    /// Functions and events are separate ABI namespaces, so an event may carry
+    /// the called function's name. The response is the message whose id matches
+    /// the function's output id, and such an event is not it.
+    #[test]
+    fn test_event_sharing_the_function_name_is_not_the_response() {
+        let state = deployed_emitter();
+        let mut args = emitter_internal_args(state.clone(), "bump", bump_params(7));
+        args.abi_file = Some(PathBuf::from(EMITTER_COLLISION_ABI));
+        let mut res = ExecutionResult::new(false);
+        execute(&args, &mut res).expect("An emitted event must not fail the run");
+
+        // `bump` declares no outputs, so its response stays unset.
+        assert_eq!(res.to_json()["response"], json!("{}"));
+        assert!(
+            res.output().contains(r#"Event(bump): {"total":"7","value":"7"}"#),
+            "the event was not reported as an event: {}",
+            res.output()
+        );
+        assert_eq!(emitter_counter(&state), "7");
+    }
+
+    /// The counterpart of the above: a source the method does not expect is
+    /// refused, which is what makes the test above meaningful.
+    #[test]
+    fn test_internal_call_is_refused_for_another_message_source() {
+        let state = deployed_emitter();
+        let params = json!({ "expected": EMITTER_ADDRESS, "value": "7" });
+        let args = emitter_internal_args(state.clone(), "bumpFromSender", params);
+        let mut res = ExecutionResult::new(args.json);
+        execute(&args, &mut res).expect("A refused call is reported, not an error");
+
+        assert_eq!(res.to_json()["exit_code"], 200i32);
+        assert_eq!(emitter_counter(&state), "0");
+    }
 }
