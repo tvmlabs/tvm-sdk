@@ -499,3 +499,50 @@ fn depool_does_not_look_up_arguments_it_does_not_define() -> Result<(), Box<dyn 
         .stdout(predicate::str::contains("sign key is not defined"));
     Ok(())
 }
+
+/// clap validates a command's `conflicts_with`/`requires` graph while building
+/// it, and aborts on a target the command does not register -- in debug builds
+/// only, which is why `account` and `debug message` both shipped broken. The
+/// check runs per command, so it needs every node of the tree visited, which
+/// rendering help does. Walking the tree from the binary covers the commands
+/// built inline in `main`, which no unit test can reach.
+#[test]
+fn every_command_renders_its_help() -> Result<(), Box<dyn std::error::Error>> {
+    fn walk(path: &[String], checked: &mut usize) -> Result<(), Box<dyn std::error::Error>> {
+        let mut cmd = tvm_cli()?;
+        let out = cmd.args(path).arg("--help").output()?;
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert!(
+            !stderr.contains("panicked"),
+            "`tvm-cli {} --help` aborted:\n{stderr}",
+            path.join(" ")
+        );
+        *checked += 1;
+        for sub in subcommands(&String::from_utf8_lossy(&out.stdout)) {
+            let mut next = path.to_vec();
+            next.push(sub);
+            walk(&next, checked)?;
+        }
+        Ok(())
+    }
+
+    /// Names listed under the `SUBCOMMANDS:` heading of a help page, which
+    /// clap indents by four spaces. `help` is clap's own and has no builder.
+    fn subcommands(help: &str) -> Vec<String> {
+        let Some((_, list)) = help.split_once("\nSUBCOMMANDS:\n") else {
+            return Vec::new();
+        };
+        list.lines()
+            .filter_map(|line| {
+                let name = line.strip_prefix("    ")?;
+                let name = name.split_whitespace().next()?;
+                (!name.starts_with('-') && name != "help").then(|| name.to_string())
+            })
+            .collect()
+    }
+
+    let mut checked = 0;
+    walk(&[], &mut checked)?;
+    assert!(checked > 90, "expected the whole command tree, walked only {checked} pages");
+    Ok(())
+}
