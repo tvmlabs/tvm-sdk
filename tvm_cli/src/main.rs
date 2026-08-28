@@ -1066,7 +1066,10 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
         .value_of("CONFIG")
         .map(|v| v.to_string())
         .or(env::var("TONOSCLI_CONFIG").ok())
-        .unwrap_or(default_config_name());
+        // Lazily: `default_config_name()` renames a `tonos-cli.conf.json` it
+        // finds in the current directory, which is no business of a run that
+        // was given a config path of its own.
+        .unwrap_or_else(default_config_name);
 
     let mut full_config = FullConfig::from_file(&config_file);
 
