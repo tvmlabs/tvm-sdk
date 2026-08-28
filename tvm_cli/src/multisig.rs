@@ -273,16 +273,27 @@ impl CallArgs {
         });
 
         if v2 {
-            let lifetime = matches
-                .value_of("LIFETIME")
-                .map(|s| s.parse::<u64>())
-                .unwrap_or(Ok(0))
-                .map_err(|e| e.to_string())?;
-            params["lifetime"] = json!(lifetime);
+            // `multisig deploy` registers no `--lifetime`, so this used to read
+            // an id clap does not know -- an abort in debug builds and a
+            // constant 0 everywhere else. Register the argument here first if
+            // the constructor's lifetime is ever meant to be configurable.
+            params["lifetime"] = json!(0);
         }
 
         Ok(Self { params, func_name: "constructor".to_owned(), image: Some(image) })
     }
+}
+
+/// Which arguments the running command defines for the wallet it signs with.
+/// Asking clap for the other variant's id aborts in debug builds, so the
+/// lookup has to follow the command that is actually running.
+pub enum WalletArgs {
+    /// The wallet address comes from `--addr`/`--wallet` and the key from
+    /// `--sign`: `multisig send` and every `depool` subcommand.
+    AddrAndSign,
+    /// The key comes from `--keys` and there is no wallet argument:
+    /// `multisig deploy` derives the address from the deploy message.
+    Keys,
 }
 
 pub struct MultisigArgs {
@@ -294,18 +305,25 @@ pub struct MultisigArgs {
 }
 
 impl MultisigArgs {
-    pub fn new(matches: &ArgMatches, config: &Config, call_args: CallArgs) -> Result<Self, String> {
-        let address = matches
-            .value_of("MSIG")
-            .map(|s| s.to_owned())
-            .or_else(|| config.wallet.clone())
-            .ok_or("multisig address is not defined".to_string())?;
-        let keys = matches
-            .value_of("SIGN")
-            .or_else(|| matches.value_of("KEYS"))
-            .map(|s| s.to_owned())
-            .or_else(|| config.keys_path.clone())
-            .ok_or("sign key is not defined".to_string())?;
+    pub fn new(
+        matches: &ArgMatches,
+        config: &Config,
+        call_args: CallArgs,
+        wallet_args: WalletArgs,
+    ) -> Result<Self, String> {
+        let address = match wallet_args {
+            WalletArgs::AddrAndSign => matches.value_of("MSIG").map(|s| s.to_owned()),
+            WalletArgs::Keys => None,
+        }
+        .or_else(|| config.wallet.clone())
+        .ok_or("multisig address is not defined".to_string())?;
+        let keys = match wallet_args {
+            WalletArgs::AddrAndSign => matches.value_of("SIGN"),
+            WalletArgs::Keys => matches.value_of("KEYS"),
+        }
+        .map(|s| s.to_owned())
+        .or_else(|| config.keys_path.clone())
+        .ok_or("sign key is not defined".to_string())?;
         let v2 = matches.is_present("V2");
 
         let sdk_addr = SdkAddress::from_str(&address)?;
@@ -468,7 +486,7 @@ pub async fn multisig_command(m: &ArgMatches, config: &Config) -> Result<(), Str
 
 async fn multisig_send_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let call_args = CallArgs::submit(matches).await?;
-    let common_args = MultisigArgs::new(matches, config, call_args)?;
+    let common_args = MultisigArgs::new(matches, config, call_args, WalletArgs::AddrAndSign)?;
     send(config, common_args).await
 }
 
@@ -503,7 +521,7 @@ async fn send(config: &Config, args: MultisigArgs) -> Result<(), String> {
 
 async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let call_args = CallArgs::deploy(matches).await?;
-    let args = MultisigArgs::new(matches, config, call_args)?;
+    let args = MultisigArgs::new(matches, config, call_args, WalletArgs::Keys)?;
 
     let keys = load_keypair(args.keys())?;
     let mut params = args.params().clone();

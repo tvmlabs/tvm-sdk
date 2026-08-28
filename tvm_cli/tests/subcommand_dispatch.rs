@@ -315,3 +315,24 @@ fn debug_message_does_not_conflict_with_an_argument_it_does_not_define()
         .stdout(predicate::str::contains("--boc"));
     Ok(())
 }
+
+/// `multisig send` and `multisig deploy` share the argument struct, but the
+/// key is `--sign` on one and `--keys` on the other, and the wallet address is
+/// `--addr` on `send` alone.
+#[test]
+fn multisig_send_does_not_look_up_arguments_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("multisig")
+        .arg("send")
+        .arg("--addr")
+        .arg(ADDR)
+        .arg("--dest")
+        .arg(ADDR)
+        .arg("--value")
+        .arg("1")
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("sign key is not defined"));
+    Ok(())
+}
