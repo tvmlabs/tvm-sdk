@@ -1235,7 +1235,7 @@ pub async fn execute_debug_params(debug_params: &DebugParams<'_>) -> Result<Tran
         debug_params.bc_config.clone(),
         &mut account_root,
         message.as_ref(),
-        debug_params.matches.map(|matches| TraceArgs { matches, abi: None }),
+        None,
         debug_params.time_in_ms,
         debug_params.block_lt,
         debug_params.last_tr_lt,
@@ -1712,9 +1712,11 @@ async fn make_sequence_diagram(
     Ok("{{}}".to_owned())
 }
 
+/// No `matches`: the tracing callback reads ids from the running command, and
+/// nothing that builds these params has a command whose ids it can be sure of.
+/// `debug_error` is reached from `call`, `run` and `deployx` alike.
 pub struct DebugParams<'a> {
     pub config: &'a Config,
-    pub matches: Option<&'a ArgMatches>,
     pub bc_config: BlockchainConfig,
     pub account: &'a str,
     pub message: Option<&'a str>,
@@ -1729,7 +1731,6 @@ impl<'a> DebugParams<'a> {
         DebugParams {
             config,
             bc_config,
-            matches: None,
             account: "",
             message: None,
             time_in_ms: 0,
