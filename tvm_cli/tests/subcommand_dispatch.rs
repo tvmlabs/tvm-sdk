@@ -7,12 +7,18 @@ const BIN_NAME: &str = "tvm-cli";
 /// The binary runs from the crate root, where `default_config_name()`
 /// resolves to `tvm_cli/tvm-cli.conf.json` -- gitignored, machine-specific and
 /// whatever the last local CLI run left behind. A `keys_path` in it is enough
-/// to change what several of these tests observe, so point `--config` at a
-/// path inside the test's own directory instead. The file is never created;
-/// the CLI falls back to its defaults when it does not exist.
+/// to change what several of these tests observe, so point `--config` at the
+/// test's own directory instead.
+///
+/// The file has to be written, not merely named: a config that cannot be read
+/// falls back to `<exe dir>/.tvm-cli.global.conf.json`, and the local build
+/// directory has one. One field that differs from the defaults is enough for
+/// the search to stop at this file.
 fn tvm_cli() -> Result<Command, Box<dyn std::error::Error>> {
+    let path = testdir!().join("tvm-cli.conf.json");
+    std::fs::write(&path, r#"{"retries": 1}"#)?;
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config").arg(testdir!().join("tvm-cli.conf.json"));
+    cmd.arg("--config").arg(&path);
     Ok(cmd)
 }
 
