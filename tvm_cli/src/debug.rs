@@ -236,9 +236,10 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .help("Flag that changes trace to full version.");
 
     // No conflict with `--tvc` here: `debug message` takes `--boc` without
-    // `--tvc`, and clap asserts when a `conflicts_with` names an argument the
-    // command does not register. `debug run` and `debug call` are the two that
-    // define both, and their `--tvc` states the conflict from its own side.
+    // `--tvc`, and clap asserts in debug builds when a `conflicts_with` names
+    // an argument the command does not register. `debug run` and `debug call`
+    // are the two that define both, and their `--tvc` states the conflict from
+    // its own side.
     let boc_arg = Arg::new("BOC")
         .long("--boc")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
@@ -1349,9 +1350,10 @@ fn trace_callback_minimal(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) 
 }
 
 /// What the tracing callback is allowed to read from the running command. The
-/// ABI is resolved by the caller: `debug replay`, `debug message` and
-/// `test ticktock` share the callback without registering `--abi`, and clap
-/// aborts when asked for an id the running command does not define.
+/// ABI is resolved by the caller: `debug transaction`, `debug account`,
+/// `debug replay`, `debug message` and `test ticktock` share the callback
+/// without registering `--abi`, and clap aborts in debug builds when asked for
+/// an id the running command does not define.
 pub struct TraceArgs<'a> {
     pub matches: &'a ArgMatches,
     pub abi: Option<String>,

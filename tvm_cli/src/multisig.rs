@@ -289,10 +289,15 @@ impl CallArgs {
 /// lookup has to follow the command that is actually running.
 pub enum WalletArgs {
     /// The wallet address comes from `--addr`/`--wallet` and the key from
-    /// `--sign`: `multisig send` and every `depool` subcommand.
+    /// `--sign`: `multisig send`, and the `depool` subcommands that send
+    /// through the wallet -- which is all of them except `events` and
+    /// `answers`, neither of which sends anything.
     AddrAndSign,
-    /// The key comes from `--keys` and there is no wallet argument:
-    /// `multisig deploy` derives the address from the deploy message.
+    /// The key comes from `--keys`, and there is no wallet argument at all:
+    /// `multisig deploy` takes the wallet from the config file. That address
+    /// is still required, because its dapp_id is what routes the deploy
+    /// message; the address of the wallet being deployed is a separate value,
+    /// computed from the deploy message itself.
     Keys,
 }
 
