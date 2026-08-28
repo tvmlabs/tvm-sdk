@@ -1,5 +1,6 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
+use testdir::testdir;
 
 const BIN_NAME: &str = "tvm-cli";
 
@@ -202,5 +203,53 @@ fn send_help_still_offers_dst_dapp_id() -> Result<(), Box<dyn std::error::Error>
         .assert()
         .success()
         .stdout(predicate::str::contains("--dst-dapp-id"));
+    Ok(())
+}
+
+const HELLO_TVC: &str = "tests/Hello.tvc";
+const HELLO_ABI: &str = "tests/Hello.abi.json";
+// Pins the blockchain config to a file so the run stays offline: without it
+// `get_blockchain_config` queries the network and only then falls back.
+const BC_CONFIG: &str = "tests/config_contract.saved";
+
+/// The renamed clone also decided which handler ran: with no `call` id
+/// registered, `debug call` fell through to the `run` arm and traced as a
+/// getter -- unlimited gas, and a message the contract never accepted
+/// reported as "Execution finished.". Release builds have no assertion to
+/// stop this, so they took that path silently.
+#[test]
+fn debug_call_does_not_trace_as_a_getter() -> Result<(), Box<dyn std::error::Error>> {
+    let trace = testdir!().join("trace.log");
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("debug")
+        .arg("call")
+        .arg("--addr")
+        .arg(HELLO_TVC)
+        .arg("--tvc")
+        .arg("--abi")
+        .arg(HELLO_ABI)
+        .arg("-m")
+        .arg("sayHello")
+        .arg("--config")
+        .arg(BC_CONFIG)
+        .arg("--output")
+        .arg(&trace)
+        .assert()
+        .stdout(predicate::str::contains("Contract did not accept message"));
+    Ok(())
+}
+
+/// `debug sequence-diagram` is the last subcommand the dispatcher looks up, so
+/// it only runs once every lookup before it names a registered id.
+#[test]
+fn debug_subcommands_after_call_are_dispatchable() -> Result<(), Box<dyn std::error::Error>> {
+    let missing = testdir!().join("no-such-addresses.txt");
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("debug")
+        .arg("sequence-diagram")
+        .arg(&missing)
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("Failed to open file"));
     Ok(())
 }

@@ -307,28 +307,35 @@ pub fn create_debug_command<'b>() -> Command<'b> {
                 .help("Message in Base64 or path to file with message."),
         );
 
-    let run_cmd = Command::new("run")
-        .about("Play getter locally with trace")
-        .arg(output_arg.clone())
-        .arg(dbg_info_arg.clone())
-        .arg(address_arg.clone())
-        .arg(method_arg.clone())
-        .arg(params_arg.clone())
-        .arg(abi_arg.clone())
-        .arg(full_trace_arg.clone())
-        .arg(decode_abi_arg.clone())
-        .arg(boc_arg.clone())
-        .arg(Arg::new("TVC")
-            .long("--tvc")
-            .conflicts_with("BOC")
-            .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC)."))
-        .arg(Arg::new("ACCOUNT_ADDRESS")
-            .takes_value(true)
-            .long("--tvc_address")
-            .help("Account address for account constructed from TVC.")
-            .requires("TVC"))
-        .arg(now_arg.clone())
-        .arg(config_path_arg.clone());
+    // `run` and `call` take the same arguments, but each has to be built from
+    // its own name: clap keeps the id assigned by `Command::new`, so a renamed
+    // clone stays addressable only under the original name and every lookup by
+    // the new one fails.
+    let debug_run_args = |name: &'static str| {
+        Command::new(name)
+            .arg(output_arg.clone())
+            .arg(dbg_info_arg.clone())
+            .arg(address_arg.clone())
+            .arg(method_arg.clone())
+            .arg(params_arg.clone())
+            .arg(abi_arg.clone())
+            .arg(full_trace_arg.clone())
+            .arg(decode_abi_arg.clone())
+            .arg(boc_arg.clone())
+            .arg(Arg::new("TVC")
+                .long("--tvc")
+                .conflicts_with("BOC")
+                .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC)."))
+            .arg(Arg::new("ACCOUNT_ADDRESS")
+                .takes_value(true)
+                .long("--tvc_address")
+                .help("Account address for account constructed from TVC.")
+                .requires("TVC"))
+            .arg(now_arg.clone())
+            .arg(config_path_arg.clone())
+    };
+
+    let run_cmd = debug_run_args("run").about("Play getter locally with trace");
 
     let deploy_cmd = Command::new("deploy")
         .about("Play deploy locally with trace")
@@ -365,9 +372,7 @@ pub fn create_debug_command<'b>() -> Command<'b> {
             "Do not fetch account from the network, but create dummy account with big balance.",
         ));
 
-    let call_cmd = run_cmd
-        .clone()
-        .name("call")
+    let call_cmd = debug_run_args("call")
         .about("Play call locally with trace")
         .arg(sign_arg.clone())
         .arg(update_arg.clone());
