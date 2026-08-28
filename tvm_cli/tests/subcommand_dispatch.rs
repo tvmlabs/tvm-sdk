@@ -610,3 +610,22 @@ fn a_named_config_does_not_migrate_the_deprecated_one() -> Result<(), Box<dyn st
     assert!(!cwd.join("tvm-cli.conf.json").exists(), "a config file was created in the cwd");
     Ok(())
 }
+
+/// The `multisig deploy` call site itself: it is the one place that asks for
+/// `deploy`'s own wallet arguments, and naming `send`'s aborts. Reaching it
+/// needs the wallet resolved before the wallet image is downloaded, which is
+/// also why this test needs no network -- a run with nothing configured is
+/// turned away at once.
+#[test]
+fn multisig_deploy_does_not_look_up_arguments_it_does_not_define()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = tvm_cli()?;
+    cmd.arg("multisig")
+        .arg("deploy")
+        .arg("--keys")
+        .arg("wallet.keys")
+        .assert()
+        .failure()
+        .stdout(predicate::str::contains("multisig address is not defined"));
+    Ok(())
+}

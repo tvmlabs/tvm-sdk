@@ -309,6 +309,33 @@ pub struct MultisigArgs {
     keys: String,
 }
 
+impl WalletArgs {
+    /// The wallet address and the key to sign with, from whichever arguments
+    /// the running command defines. Separate from `MultisigArgs::new` so that
+    /// `multisig deploy` can find out it has no wallet before downloading the
+    /// wallet image.
+    pub fn resolve(
+        &self,
+        matches: &ArgMatches,
+        config: &Config,
+    ) -> Result<(String, String), String> {
+        let address = match self {
+            WalletArgs::AddrAndSign => matches.value_of("MSIG").map(|s| s.to_owned()),
+            WalletArgs::Keys => None,
+        }
+        .or_else(|| config.wallet.clone())
+        .ok_or("multisig address is not defined".to_string())?;
+        let keys = match self {
+            WalletArgs::AddrAndSign => matches.value_of("SIGN"),
+            WalletArgs::Keys => matches.value_of("KEYS"),
+        }
+        .map(|s| s.to_owned())
+        .or_else(|| config.keys_path.clone())
+        .ok_or("sign key is not defined".to_string())?;
+        Ok((address, keys))
+    }
+}
+
 impl MultisigArgs {
     pub fn new(
         matches: &ArgMatches,
@@ -316,19 +343,18 @@ impl MultisigArgs {
         call_args: CallArgs,
         wallet_args: WalletArgs,
     ) -> Result<Self, String> {
-        let address = match wallet_args {
-            WalletArgs::AddrAndSign => matches.value_of("MSIG").map(|s| s.to_owned()),
-            WalletArgs::Keys => None,
-        }
-        .or_else(|| config.wallet.clone())
-        .ok_or("multisig address is not defined".to_string())?;
-        let keys = match wallet_args {
-            WalletArgs::AddrAndSign => matches.value_of("SIGN"),
-            WalletArgs::Keys => matches.value_of("KEYS"),
-        }
-        .map(|s| s.to_owned())
-        .or_else(|| config.keys_path.clone())
-        .ok_or("sign key is not defined".to_string())?;
+        let (address, keys) = wallet_args.resolve(matches, config)?;
+        Self::with_wallet(matches, address, keys, call_args)
+    }
+
+    /// For a caller that resolved the wallet earlier, before doing work it
+    /// would rather not do without one.
+    pub fn with_wallet(
+        matches: &ArgMatches,
+        address: String,
+        keys: String,
+        call_args: CallArgs,
+    ) -> Result<Self, String> {
         let v2 = matches.is_present("V2");
 
         let sdk_addr = SdkAddress::from_str(&address)?;
@@ -525,8 +551,12 @@ async fn send(config: &Config, args: MultisigArgs) -> Result<(), String> {
 }
 
 async fn multisig_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
+    // Before `CallArgs::deploy`, which downloads the wallet image: a run with
+    // no wallet configured, or no `--keys`, is knowable without waiting for
+    // that, and this is the lookup that has to name `deploy`'s own arguments.
+    let (address, keys) = WalletArgs::Keys.resolve(matches, config)?;
     let call_args = CallArgs::deploy(matches).await?;
-    let args = MultisigArgs::new(matches, config, call_args, WalletArgs::Keys)?;
+    let args = MultisigArgs::with_wallet(matches, address, keys, call_args)?;
 
     let keys = load_keypair(args.keys())?;
     let mut params = args.params().clone();
