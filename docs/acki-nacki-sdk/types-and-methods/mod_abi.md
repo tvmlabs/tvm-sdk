@@ -1,154 +1,151 @@
 # Module abi
 
-## Module abi
-
 Provides message encoding and decoding according to the ABI specification.
 
-### Functions
-
-[encode\_message\_body](mod_abi.md#encode_message_body) – Encodes message body according to ABI function call.
-
-[attach\_signature\_to\_message\_body](mod_abi.md#attach_signature_to_message_body)
-
-[encode\_message](mod_abi.md#encode_message) – Encodes an ABI-compatible message
-
-[encode\_internal\_message](mod_abi.md#encode_internal_message) – Encodes an internal ABI-compatible message
-
-[attach\_signature](mod_abi.md#attach_signature) – Combines `hex`-encoded `signature` with `base64`-encoded `unsigned_message`. Returns signed message encoded in `base64`.
-
-[decode\_message](mod_abi.md#decode_message) – Decodes message body using provided message BOC and ABI.
-
-[decode\_message\_body](mod_abi.md#decode_message_body) – Decodes message body using provided body BOC and ABI.
-
-[encode\_account](mod_abi.md#encode_account) – Creates account state BOC
-
-[decode\_account\_data](mod_abi.md#decode_account_data) – Decodes account data using provided data BOC and ABI.
-
-[update\_initial\_data](mod_abi.md#update_initial_data) – Updates initial account data with initial values for the contract's static variables and owner's public key. This operation is applicable only for initial account data (before deploy). If the contract is already deployed, its data doesn't contain this data section any more.
-
-[encode\_initial\_data](mod_abi.md#encode_initial_data) – Encodes initial account data with initial values for the contract's static variables and owner's public key into a data BOC that can be passed to `encode_tvc` function afterwards.
-
-[decode\_initial\_data](mod_abi.md#decode_initial_data) – Decodes initial values of a contract's static variables and owner's public key from account initial data This operation is applicable only for initial account data (before deploy). If the contract is already deployed, its data doesn't contain this data section any more.
-
-[decode\_boc](mod_abi.md#decode_boc) – Decodes BOC into JSON as a set of provided parameters.
-
-[encode\_boc](mod_abi.md#encode_boc) – Encodes given parameters in JSON into a BOC using param types from ABI.
-
-[calc\_function\_id](mod_abi.md#calc_function_id) – Calculates contract function ID by contract ABI
-
-[get\_signature\_data](mod_abi.md#get_signature_data) – Extracts signature from message body and calculates hash to verify the signature
-
-### Types
-
-[AbiErrorCode](mod_abi.md#abierrorcode)
-
-[AbiContractVariant](mod_abi.md#abicontractvariant)
-
-[AbiJsonVariant](mod_abi.md#abijsonvariant)
-
-[AbiHandleVariant](mod_abi.md#abihandlevariant)
-
-[AbiSerializedVariant](mod_abi.md#abiserializedvariant)
-
-[Abi](mod_abi.md#abi)
-
-[AbiHandle](mod_abi.md#abihandle)
-
-[FunctionHeader](mod_abi.md#functionheader) – The ABI function header.
-
-[CallSet](mod_abi.md#callset)
-
-[DeploySet](mod_abi.md#deployset)
-
-[SignerNoneVariant](mod_abi.md#signernonevariant) – No keys are provided.
-
-[SignerExternalVariant](mod_abi.md#signerexternalvariant) – Only public key is provided in unprefixed hex string format to generate unsigned message and `data_to_sign` which can be signed later.
-
-[SignerKeysVariant](mod_abi.md#signerkeysvariant) – Key pair is provided for signing
-
-[SignerSigningBoxVariant](mod_abi.md#signersigningboxvariant) – Signing Box interface is provided for signing, allows Dapps to sign messages using external APIs, such as HSM, cold wallet, etc.
-
-[Signer](mod_abi.md#signer)
-
-[MessageBodyType](mod_abi.md#messagebodytype)
-
-[AbiParam](mod_abi.md#abiparam)
-
-[AbiEvent](mod_abi.md#abievent)
-
-[AbiData](mod_abi.md#abidata)
-
-[AbiFunction](mod_abi.md#abifunction)
-
-[AbiContract](mod_abi.md#abicontract)
-
-[DataLayout](mod_abi.md#datalayout)
-
-[ParamsOfEncodeMessageBody](mod_abi.md#paramsofencodemessagebody)
-
-[ResultOfEncodeMessageBody](mod_abi.md#resultofencodemessagebody)
-
-[ParamsOfAttachSignatureToMessageBody](mod_abi.md#paramsofattachsignaturetomessagebody)
-
-[ResultOfAttachSignatureToMessageBody](mod_abi.md#resultofattachsignaturetomessagebody)
-
-[ParamsOfEncodeMessage](mod_abi.md#paramsofencodemessage)
-
-[ResultOfEncodeMessage](mod_abi.md#resultofencodemessage)
-
-[ParamsOfEncodeInternalMessage](mod_abi.md#paramsofencodeinternalmessage)
-
-[ResultOfEncodeInternalMessage](mod_abi.md#resultofencodeinternalmessage)
-
-[ParamsOfAttachSignature](mod_abi.md#paramsofattachsignature)
-
-[ResultOfAttachSignature](mod_abi.md#resultofattachsignature)
-
-[ParamsOfDecodeMessage](mod_abi.md#paramsofdecodemessage)
-
-[DecodedMessageBody](mod_abi.md#decodedmessagebody)
-
-[ParamsOfDecodeMessageBody](mod_abi.md#paramsofdecodemessagebody)
-
-[ParamsOfEncodeAccount](mod_abi.md#paramsofencodeaccount)
-
-[ResultOfEncodeAccount](mod_abi.md#resultofencodeaccount)
-
-[ParamsOfDecodeAccountData](mod_abi.md#paramsofdecodeaccountdata)
-
-[ResultOfDecodeAccountData](mod_abi.md#resultofdecodeaccountdata)
-
-[ParamsOfUpdateInitialData](mod_abi.md#paramsofupdateinitialdata)
-
-[ResultOfUpdateInitialData](mod_abi.md#resultofupdateinitialdata)
-
-[ParamsOfEncodeInitialData](mod_abi.md#paramsofencodeinitialdata)
-
-[ResultOfEncodeInitialData](mod_abi.md#resultofencodeinitialdata)
-
-[ParamsOfDecodeInitialData](mod_abi.md#paramsofdecodeinitialdata)
-
-[ResultOfDecodeInitialData](mod_abi.md#resultofdecodeinitialdata)
-
-[ParamsOfDecodeBoc](mod_abi.md#paramsofdecodeboc)
-
-[ResultOfDecodeBoc](mod_abi.md#resultofdecodeboc)
-
-[ParamsOfAbiEncodeBoc](mod_abi.md#paramsofabiencodeboc)
-
-[ResultOfAbiEncodeBoc](mod_abi.md#resultofabiencodeboc)
-
-[ParamsOfCalcFunctionId](mod_abi.md#paramsofcalcfunctionid)
-
-[ResultOfCalcFunctionId](mod_abi.md#resultofcalcfunctionid)
-
-[ParamsOfGetSignatureData](mod_abi.md#paramsofgetsignaturedata)
-
-[ResultOfGetSignatureData](mod_abi.md#resultofgetsignaturedata)
 
 ## Functions
+[encode_message_body](mod\_abi.md#encode_message_body) – Encodes message body according to ABI function call.
 
-### encode\_message\_body
+[attach_signature_to_message_body](mod\_abi.md#attach_signature_to_message_body) – Attach signature
+
+[encode_message](mod\_abi.md#encode_message) – Encodes an ABI-compatible message
+
+[encode_internal_message](mod\_abi.md#encode_internal_message) – Encodes an internal ABI-compatible message
+
+[attach_signature](mod\_abi.md#attach_signature) – Combines `hex`-encoded `signature` with `base64`-encoded `unsigned_message`. Returns signed message encoded in `base64`.
+
+[decode_message](mod\_abi.md#decode_message) – Decodes message body using provided message BOC and ABI.
+
+[decode_message_body](mod\_abi.md#decode_message_body) – Decodes message body using provided body BOC and ABI.
+
+[encode_account](mod\_abi.md#encode_account) – Creates account state BOC
+
+[decode_account_data](mod\_abi.md#decode_account_data) – Decodes account data using provided data BOC and ABI.
+
+[update_initial_data](mod\_abi.md#update_initial_data) – Updates initial account data with initial values for the contract's static variables and owner's public key.
+
+[encode_initial_data](mod\_abi.md#encode_initial_data) – Encodes initial account data with initial values for the contract's static variables and owner's public key into a data BOC that can be passed to `encode_tvc` function afterwards.
+
+[decode_initial_data](mod\_abi.md#decode_initial_data) – Decodes initial values of a contract's static variables and owner's public key from account initial data This operation is applicable only for initial account data (before deploy).
+
+[decode_boc](mod\_abi.md#decode_boc) – Decodes BOC into JSON as a set of provided parameters.
+
+[encode_boc](mod\_abi.md#encode_boc) – Encodes given parameters in JSON into a BOC using param types from ABI.
+
+[calc_function_id](mod\_abi.md#calc_function_id) – Calculates contract function ID by contract ABI
+
+[get_signature_data](mod\_abi.md#get_signature_data) – Extracts signature from message body and calculates hash to verify the signature
+
+## Types
+[AbiErrorCode](mod\_abi.md#abierrorcode)
+
+[AbiContractVariant](mod\_abi.md#abicontractvariant)
+
+[AbiJsonVariant](mod\_abi.md#abijsonvariant)
+
+[AbiHandleVariant](mod\_abi.md#abihandlevariant)
+
+[AbiSerializedVariant](mod\_abi.md#abiserializedvariant)
+
+[Abi](mod\_abi.md#abi)
+
+[AbiHandle](mod\_abi.md#abihandle)
+
+[FunctionHeader](mod\_abi.md#functionheader) – The ABI function header.
+
+[CallSet](mod\_abi.md#callset)
+
+[DeploySet](mod\_abi.md#deployset)
+
+[SignerNoneVariant](mod\_abi.md#signernonevariant) – No keys are provided.
+
+[SignerExternalVariant](mod\_abi.md#signerexternalvariant) – Only public key is provided in unprefixed hex string format to generate unsigned message and `data_to_sign` which can be signed later.
+
+[SignerKeysVariant](mod\_abi.md#signerkeysvariant) – Key pair is provided for signing
+
+[SignerSigningBoxVariant](mod\_abi.md#signersigningboxvariant) – Signing Box interface is provided for signing, allows Dapps to sign messages using external APIs, such as HSM, cold wallet, etc.
+
+[Signer](mod\_abi.md#signer)
+
+[MessageBodyType](mod\_abi.md#messagebodytype)
+
+[AbiParam](mod\_abi.md#abiparam)
+
+[AbiEvent](mod\_abi.md#abievent)
+
+[AbiData](mod\_abi.md#abidata)
+
+[AbiFunction](mod\_abi.md#abifunction)
+
+[AbiContract](mod\_abi.md#abicontract)
+
+[DataLayout](mod\_abi.md#datalayout)
+
+[ParamsOfEncodeMessageBody](mod\_abi.md#paramsofencodemessagebody)
+
+[ResultOfEncodeMessageBody](mod\_abi.md#resultofencodemessagebody)
+
+[ParamsOfAttachSignatureToMessageBody](mod\_abi.md#paramsofattachsignaturetomessagebody)
+
+[ResultOfAttachSignatureToMessageBody](mod\_abi.md#resultofattachsignaturetomessagebody)
+
+[ParamsOfEncodeMessage](mod\_abi.md#paramsofencodemessage)
+
+[ResultOfEncodeMessage](mod\_abi.md#resultofencodemessage)
+
+[ParamsOfEncodeInternalMessage](mod\_abi.md#paramsofencodeinternalmessage)
+
+[ResultOfEncodeInternalMessage](mod\_abi.md#resultofencodeinternalmessage)
+
+[ParamsOfAttachSignature](mod\_abi.md#paramsofattachsignature)
+
+[ResultOfAttachSignature](mod\_abi.md#resultofattachsignature)
+
+[ParamsOfDecodeMessage](mod\_abi.md#paramsofdecodemessage)
+
+[DecodedMessageBody](mod\_abi.md#decodedmessagebody)
+
+[ParamsOfDecodeMessageBody](mod\_abi.md#paramsofdecodemessagebody)
+
+[ParamsOfEncodeAccount](mod\_abi.md#paramsofencodeaccount)
+
+[ResultOfEncodeAccount](mod\_abi.md#resultofencodeaccount)
+
+[ParamsOfDecodeAccountData](mod\_abi.md#paramsofdecodeaccountdata)
+
+[ResultOfDecodeAccountData](mod\_abi.md#resultofdecodeaccountdata)
+
+[ParamsOfUpdateInitialData](mod\_abi.md#paramsofupdateinitialdata)
+
+[ResultOfUpdateInitialData](mod\_abi.md#resultofupdateinitialdata)
+
+[ParamsOfEncodeInitialData](mod\_abi.md#paramsofencodeinitialdata)
+
+[ResultOfEncodeInitialData](mod\_abi.md#resultofencodeinitialdata)
+
+[ParamsOfDecodeInitialData](mod\_abi.md#paramsofdecodeinitialdata)
+
+[ResultOfDecodeInitialData](mod\_abi.md#resultofdecodeinitialdata)
+
+[ParamsOfDecodeBoc](mod\_abi.md#paramsofdecodeboc)
+
+[ResultOfDecodeBoc](mod\_abi.md#resultofdecodeboc)
+
+[ParamsOfAbiEncodeBoc](mod\_abi.md#paramsofabiencodeboc)
+
+[ResultOfAbiEncodeBoc](mod\_abi.md#resultofabiencodeboc)
+
+[ParamsOfCalcFunctionId](mod\_abi.md#paramsofcalcfunctionid)
+
+[ResultOfCalcFunctionId](mod\_abi.md#resultofcalcfunctionid)
+
+[ParamsOfGetSignatureData](mod\_abi.md#paramsofgetsignaturedata)
+
+[ResultOfGetSignatureData](mod\_abi.md#resultofgetsignaturedata)
+
+
+# Functions
+## encode_message_body
 
 Encodes message body according to ABI function call.
 
@@ -176,43 +173,30 @@ function encode_message_body_sync(
     params: ParamsOfEncodeMessageBody,
 ): ResultOfEncodeMessageBody;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+- `call_set`: _[CallSet](mod\_abi.md#callset)_ – Function call parameters.
+<br>Must be specified in non deploy message.<br><br>In case of deploy message contains parameters of constructor.
+- `is_internal`: _boolean_ – True if internal message body must be encoded.
+- `signer`: _[Signer](mod\_abi.md#signer)_ – Signing parameters.
+- `processing_try_index`?: _number_ – Processing try index.
+<br>Used in message processing with retries.<br><br>Encoder uses the provided try index to calculate message<br>expiration time.<br><br>Expiration timeouts will grow with every retry.<br><br>Default value is 0.
+- `address`?: _string_ – Destination address of the message
+<br>Since ABI version 2.3 destination address of external inbound message is<br>used in message body signature calculation. Should be provided when<br>signed external inbound message body is created. Otherwise can be<br>omitted.
+- `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.
-* `call_set`: [_CallSet_](mod_abi.md#callset) – Function call parameters.\
-  Must be specified in non deploy message.\
-  \
-  In case of deploy message contains parameters of constructor.
-* `is_internal`: _boolean_ – True if internal message body must be encoded.
-* `signer`: [_Signer_](mod_abi.md#signer) – Signing parameters.
-* `processing_try_index`?: _number_ – Processing try index.\
-  Used in message processing with retries.\
-  \
-  Encoder uses the provided try index to calculate message\
-  expiration time.\
-  \
-  Expiration timeouts will grow with every retry.\
-  \
-  Default value is 0.
-* `address`?: _string_ – Destination address of the message\
-  Since ABI version 2.3 destination address of external inbound message is used in message\
-  body signature calculation. Should be provided when signed external inbound message body is\
-  created. Otherwise can be omitted.
-* `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
+### Result
 
-#### Result
+- `body`: _string_ – Message body BOC encoded with `base64`.
+- `data_to_sign`?: _string_ – Optional data to sign.
+<br>Encoded with `base64`. <br>Presents when `message` is unsigned. Can be used for external<br>message signing. Is this case you need to sing this data and<br>produce signed message using `abi.attach_signature`.
 
-* `body`: _string_ – Message body BOC encoded with `base64`.
-* `data_to_sign`?: _string_ – Optional data to sign.\
-  Encoded with `base64`.\
-  Presents when `message` is unsigned. Can be used for external\
-  message signing. Is this case you need to sing this data and\
-  produce signed message using `abi.attach_signature`.
 
-### attach\_signature\_to\_message\_body
+## attach_signature_to_message_body
+
+Attach signature
 
 ```ts
 type ParamsOfAttachSignatureToMessageBody = {
@@ -234,49 +218,55 @@ function attach_signature_to_message_body_sync(
     params: ParamsOfAttachSignatureToMessageBody,
 ): ResultOfAttachSignatureToMessageBody;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `public_key`: _string_ – Public key.
+<br>Must be encoded with `hex`.
+- `message`: _string_ – Unsigned message body BOC.
+<br>Must be encoded with `base64`.
+- `signature`: _string_ – Signature.
+<br>Must be encoded with `hex`.
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `public_key`: _string_ – Public key.\
-  Must be encoded with `hex`.
-* `message`: _string_ – Unsigned message body BOC.\
-  Must be encoded with `base64`.
-* `signature`: _string_ – Signature.\
-  Must be encoded with `hex`.
+### Result
 
-#### Result
+- `body`: _string_
 
-* `body`: _string_
 
-### encode\_message
+## encode_message
 
 Encodes an ABI-compatible message
 
-Allows to encode deploy and function call messages, both signed and unsigned.
+Allows to encode deploy and function call messages,
+both signed and unsigned.
 
 Use cases include messages of any possible type:
-
-* deploy with initial function call (i.e. `constructor` or any other function that is used for some kind of initialization);
-* deploy without initial function call;
-* signed/unsigned + data for signing.
+- deploy with initial function call (i.e. `constructor` or any other
+  function that is used for some kind
+of initialization);
+- deploy without initial function call;
+- signed/unsigned + data for signing.
 
 `Signer` defines how the message should or shouldn't be signed:
 
-`Signer::None` creates an unsigned message. This may be needed in case of some public methods, that do not require authorization by pubkey.
+`Signer::None` creates an unsigned message. This may be needed in case of
+some public methods, that do not require authorization by pubkey.
 
-`Signer::External` takes public key and returns `data_to_sign` for later signing. Use `attach_signature` method with the result signature to get the signed message.
+`Signer::External` takes public key and returns `data_to_sign` for later
+signing. Use `attach_signature` method with the result signature to get the
+signed message.
 
 `Signer::Keys` creates a signed message with provided key pair.
 
-\[SOON] `Signer::SigningBox` Allows using a special interface to implement signing without private key disclosure to SDK. For instance, in case of using a cold wallet or HSM, when application calls some API to sign data.
+[SOON] `Signer::SigningBox` Allows using a special interface to implement
+signing without private key disclosure to SDK. For instance, in case of
+using a cold wallet or HSM, when application calls some API to sign data.
 
-There is an optional public key can be provided in deploy set in order to substitute one in TVM file.
+There is an optional public key can be provided in deploy set in order to
+substitute one in TVM file.
 
 Public key resolving priority:
-
 1. Public key from deploy set.
 2. Public key, specified in TVM file.
 3. Public key, provided by signer.
@@ -307,62 +297,47 @@ function encode_message_sync(
     params: ParamsOfEncodeMessage,
 ): ResultOfEncodeMessage;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+- `address`?: _string_ – Target address the message will be sent to.
+<br>Must be specified in case of non-deploy message.
+- `deploy_set`?: _[DeploySet](mod\_abi.md#deployset)_ – Deploy parameters.
+<br>Must be specified in case of deploy message.
+- `call_set`?: _[CallSet](mod\_abi.md#callset)_ – Function call parameters.
+<br>Must be specified in case of non-deploy message.<br><br>In case of deploy message it is optional and contains parameters<br>of the functions that will to be called upon deploy transaction.
+- `signer`: _[Signer](mod\_abi.md#signer)_ – Signing parameters.
+- `processing_try_index`?: _number_ – Processing try index.
+<br>Used in message processing with retries (if contract's ABI includes<br>"expire" header).<br><br>Encoder uses the provided try index to calculate message<br>expiration time. The 1st message expiration time is specified in<br>Client config.<br><br>Expiration timeouts will grow with every retry.<br>Retry grow factor is set in Client config:<br><.....add config parameter with default value here><br><br>Default value is 0.
+- `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.
-* `address`?: _string_ – Target address the message will be sent to.\
-  Must be specified in case of non-deploy message.
-* `deploy_set`?: [_DeploySet_](mod_abi.md#deployset) – Deploy parameters.\
-  Must be specified in case of deploy message.
-* `call_set`?: [_CallSet_](mod_abi.md#callset) – Function call parameters.\
-  Must be specified in case of non-deploy message.\
-  \
-  In case of deploy message it is optional and contains parameters\
-  of the functions that will to be called upon deploy transaction.
-* `signer`: [_Signer_](mod_abi.md#signer) – Signing parameters.
-* `processing_try_index`?: _number_ – Processing try index.\
-  Used in message processing with retries (if contract's ABI includes "expire" header).\
-  \
-  Encoder uses the provided try index to calculate message\
-  expiration time. The 1st message expiration time is specified in\
-  Client config.\
-  \
-  Expiration timeouts will grow with every retry.\
-  Retry grow factor is set in Client config:\
-  <.....add config parameter with default value here>\
-  \
-  Default value is 0.
-* `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
+### Result
 
-#### Result
+- `message`: _string_ – Message BOC encoded with `base64`.
+- `data_to_sign`?: _string_ – Optional data to be signed encoded in `base64`.
+<br>Returned in case of `Signer::External`. Can be used for external<br>message signing. Is this case you need to use this data to create<br>signature and then produce signed message using<br>`abi.attach_signature`.
+- `address`: _string_ – Destination address.
+- `message_id`: _string_ – Message id.
 
-* `message`: _string_ – Message BOC encoded with `base64`.
-* `data_to_sign`?: _string_ – Optional data to be signed encoded in `base64`.\
-  Returned in case of `Signer::External`. Can be used for external\
-  message signing. Is this case you need to use this data to create signature and\
-  then produce signed message using `abi.attach_signature`.
-* `address`: _string_ – Destination address.
-* `message_id`: _string_ – Message id.
 
-### encode\_internal\_message
+## encode_internal_message
 
 Encodes an internal ABI-compatible message
 
 Allows to encode deploy and function call messages.
 
 Use cases include messages of any possible type:
+- deploy with initial function call (i.e. `constructor` or any other
+  function that is used for some kind
+of initialization);
+- deploy without initial function call;
+- simple function call
 
-* deploy with initial function call (i.e. `constructor` or any other function that is used for some kind of initialization);
-* deploy without initial function call;
-* simple function call
-
-There is an optional public key can be provided in deploy set in order to substitute one in TVM file.
+There is an optional public key can be provided in deploy set in order to
+substitute one in TVM file.
 
 Public key resolving priority:
-
 1. Public key from deploy set.
 2. Public key, specified in TVM file.
 
@@ -392,36 +367,32 @@ function encode_internal_message_sync(
     params: ParamsOfEncodeInternalMessage,
 ): ResultOfEncodeInternalMessage;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`?: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+<br>Can be None if both deploy_set and call_set are None.
+- `address`?: _string_ – Target address the message will be sent to.
+<br>Must be specified in case of non-deploy message.
+- `src_address`?: _string_ – Source address of the message.
+- `deploy_set`?: _[DeploySet](mod\_abi.md#deployset)_ – Deploy parameters.
+<br>Must be specified in case of deploy message.
+- `call_set`?: _[CallSet](mod\_abi.md#callset)_ – Function call parameters.
+<br>Must be specified in case of non-deploy message.<br><br>In case of deploy message it is optional and contains parameters<br>of the functions that will to be called upon deploy transaction.
+- `value`: _string_ – Value in nanotokens to be sent with message.
+- `bounce`?: _boolean_ – Flag of bounceable message.
+<br>Default is true.
+- `enable_ihr`?: _boolean_ – Enable Instant Hypercube Routing for the message.
+<br>Default is false.
 
-#### Parameters
 
-* `abi`?: [_Abi_](mod_abi.md#abi) – Contract ABI.\
-  Can be None if both deploy\_set and call\_set are None.
-* `address`?: _string_ – Target address the message will be sent to.\
-  Must be specified in case of non-deploy message.
-* `src_address`?: _string_ – Source address of the message.
-* `deploy_set`?: [_DeploySet_](mod_abi.md#deployset) – Deploy parameters.\
-  Must be specified in case of deploy message.
-* `call_set`?: [_CallSet_](mod_abi.md#callset) – Function call parameters.\
-  Must be specified in case of non-deploy message.\
-  \
-  In case of deploy message it is optional and contains parameters\
-  of the functions that will to be called upon deploy transaction.
-* `value`: _string_ – Value in nanotokens to be sent with message.
-* `bounce`?: _boolean_ – Flag of bounceable message.\
-  Default is true.
-* `enable_ihr`?: _boolean_ – Enable Instant Hypercube Routing for the message.\
-  Default is false.
+### Result
 
-#### Result
+- `message`: _string_ – Message BOC encoded with `base64`.
+- `address`: _string_ – Destination address.
+- `message_id`: _string_ – Message id.
 
-* `message`: _string_ – Message BOC encoded with `base64`.
-* `address`: _string_ – Destination address.
-* `message_id`: _string_ – Message id.
 
-### attach\_signature
+## attach_signature
 
 Combines `hex`-encoded `signature` with `base64`-encoded `unsigned_message`. Returns signed message encoded in `base64`.
 
@@ -446,22 +417,21 @@ function attach_signature_sync(
     params: ParamsOfAttachSignature,
 ): ResultOfAttachSignature;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `public_key`: _string_ – Public key encoded in `hex`.
+- `message`: _string_ – Unsigned message BOC encoded in `base64`.
+- `signature`: _string_ – Signature encoded in `hex`.
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `public_key`: _string_ – Public key encoded in `hex`.
-* `message`: _string_ – Unsigned message BOC encoded in `base64`.
-* `signature`: _string_ – Signature encoded in `hex`.
+### Result
 
-#### Result
+- `message`: _string_ – Signed message BOC
+- `message_id`: _string_ – Message ID
 
-* `message`: _string_ – Signed message BOC
-* `message_id`: _string_ – Message ID
 
-### decode\_message
+## decode_message
 
 Decodes message body using provided message BOC and ABI.
 
@@ -489,25 +459,25 @@ function decode_message_sync(
     params: ParamsOfDecodeMessage,
 ): DecodedMessageBody;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – contract ABI
+- `message`: _string_ – Message BOC
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
+- `function_name`?: _string_ – Function name or function id if is known in advance
+- `data_layout`?: _[DataLayout](mod\_abi.md#datalayout)_
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – contract ABI
-* `message`: _string_ – Message BOC
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
-* `function_name`?: _string_ – Function name or function id if is known in advance
-* `data_layout`?: [_DataLayout_](mod_abi.md#datalayout)
+### Result
 
-#### Result
+- `body_type`: _[MessageBodyType](mod\_abi.md#messagebodytype)_ – Type of the message body content.
+- `name`: _string_ – Function or event name.
+- `value`?: _any_ – Parameters or result value.
+- `header`?: _[FunctionHeader](mod\_abi.md#functionheader)_ – Function header.
 
-* `body_type`: [_MessageBodyType_](mod_abi.md#messagebodytype) – Type of the message body content.
-* `name`: _string_ – Function or event name.
-* `value`?: _any_ – Parameters or result value.
-* `header`?: [_FunctionHeader_](mod_abi.md#functionheader) – Function header.
 
-### decode\_message\_body
+## decode_message_body
 
 Decodes message body using provided body BOC and ABI.
 
@@ -536,26 +506,26 @@ function decode_message_body_sync(
     params: ParamsOfDecodeMessageBody,
 ): DecodedMessageBody;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI used to decode.
+- `body`: _string_ – Message body BOC encoded in `base64`.
+- `is_internal`: _boolean_ – True if the body belongs to the internal message.
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
+- `function_name`?: _string_ – Function name or function id if is known in advance
+- `data_layout`?: _[DataLayout](mod\_abi.md#datalayout)_
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI used to decode.
-* `body`: _string_ – Message body BOC encoded in `base64`.
-* `is_internal`: _boolean_ – True if the body belongs to the internal message.
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
-* `function_name`?: _string_ – Function name or function id if is known in advance
-* `data_layout`?: [_DataLayout_](mod_abi.md#datalayout)
+### Result
 
-#### Result
+- `body_type`: _[MessageBodyType](mod\_abi.md#messagebodytype)_ – Type of the message body content.
+- `name`: _string_ – Function or event name.
+- `value`?: _any_ – Parameters or result value.
+- `header`?: _[FunctionHeader](mod\_abi.md#functionheader)_ – Function header.
 
-* `body_type`: [_MessageBodyType_](mod_abi.md#messagebodytype) – Type of the message body content.
-* `name`: _string_ – Function or event name.
-* `value`?: _any_ – Parameters or result value.
-* `header`?: [_FunctionHeader_](mod_abi.md#functionheader) – Function header.
 
-### encode\_account
+## encode_account
 
 Creates account state BOC
 
@@ -581,24 +551,23 @@ function encode_account_sync(
     params: ParamsOfEncodeAccount,
 ): ResultOfEncodeAccount;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `state_init`: _string_ – Account state init.
+- `balance`?: _bigint_ – Initial balance.
+- `last_trans_lt`?: _bigint_ – Initial value for the `last_trans_lt`.
+- `last_paid`?: _number_ – Initial value for the `last_paid`.
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result.
+<br>The BOC itself returned if no cache type provided
 
-#### Parameters
 
-* `state_init`: _string_ – Account state init.
-* `balance`?: _bigint_ – Initial balance.
-* `last_trans_lt`?: _bigint_ – Initial value for the `last_trans_lt`.
-* `last_paid`?: _number_ – Initial value for the `last_paid`.
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result.\
-  The BOC itself returned if no cache type provided
+### Result
 
-#### Result
+- `account`: _string_ – Account BOC encoded in `base64`.
+- `id`: _string_ – Account ID  encoded in `hex`.
 
-* `account`: _string_ – Account BOC encoded in `base64`.
-* `id`: _string_ – Account ID encoded in `hex`.
 
-### decode\_account\_data
+## decode_account_data
 
 Decodes account data using provided data BOC and ABI.
 
@@ -623,22 +592,25 @@ function decode_account_data_sync(
     params: ParamsOfDecodeAccountData,
 ): ResultOfDecodeAccountData;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `data`: _string_ – Data BOC or BOC handle
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `data`: _string_ – Data BOC or BOC handle
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
+### Result
 
-#### Result
+- `data`: _any_ – Decoded data as a JSON structure.
 
-* `data`: _any_ – Decoded data as a JSON structure.
 
-### update\_initial\_data
+## update_initial_data
 
-Updates initial account data with initial values for the contract's static variables and owner's public key. This operation is applicable only for initial account data (before deploy). If the contract is already deployed, its data doesn't contain this data section any more.
+Updates initial account data with initial values for the contract's static variables and owner's public key.
+
+This operation is applicable only for initial account data (before deploy). If the contract is already deployed,
+its data doesn't contain this data section any more.
 
 Doesn't support ABI version >= 2.4. Use `encode_initial_data` instead
 
@@ -663,23 +635,22 @@ function update_initial_data_sync(
     params: ParamsOfUpdateInitialData,
 ): ResultOfUpdateInitialData;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `data`: _string_ – Data BOC or BOC handle
+- `initial_data`?: _any_ – List of initial values for contract's static variables.
+<br>`abi` parameter should be provided to set initial data
+- `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `data`: _string_ – Data BOC or BOC handle
-* `initial_data`?: _any_ – List of initial values for contract's static variables.\
-  `abi` parameter should be provided to set initial data
-* `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
+### Result
 
-#### Result
+- `data`: _string_ – Updated data BOC or BOC handle
 
-* `data`: _string_ – Updated data BOC or BOC handle
 
-### encode\_initial\_data
+## encode_initial_data
 
 Encodes initial account data with initial values for the contract's static variables and owner's public key into a data BOC that can be passed to `encode_tvc` function afterwards.
 
@@ -705,24 +676,25 @@ function encode_initial_data_sync(
     params: ParamsOfEncodeInitialData,
 ): ResultOfEncodeInitialData;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `initial_data`?: _any_ – List of initial values for contract's static variables.
+<br>`abi` parameter should be provided to set initial data
+- `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `initial_data`?: _any_ – List of initial values for contract's static variables.\
-  `abi` parameter should be provided to set initial data
-* `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
+### Result
 
-#### Result
+- `data`: _string_ – Updated data BOC or BOC handle
 
-* `data`: _string_ – Updated data BOC or BOC handle
 
-### decode\_initial\_data
+## decode_initial_data
 
-Decodes initial values of a contract's static variables and owner's public key from account initial data This operation is applicable only for initial account data (before deploy). If the contract is already deployed, its data doesn't contain this data section any more.
+Decodes initial values of a contract's static variables and owner's public key from account initial data This operation is applicable only for initial account data (before deploy).
+
+If the contract is already deployed, its data doesn't contain this data section any more.
 
 Doesn't support ABI version >= 2.4. Use `decode_account_data` instead
 
@@ -746,31 +718,43 @@ function decode_initial_data_sync(
     params: ParamsOfDecodeInitialData,
 ): ResultOfDecodeInitialData;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+<br>Initial data is decoded if this parameter is provided
+- `data`: _string_ – Data BOC or BOC handle
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.\
-  Initial data is decoded if this parameter is provided
-* `data`: _string_ – Data BOC or BOC handle
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
+### Result
 
-#### Result
+- `initial_data`: _any_ – List of initial values of contract's public variables.
+<br>Initial data is decoded if `abi` input parameter is provided
+- `initial_pubkey`: _string_ – Initial account owner's public key
 
-* `initial_data`: _any_ – List of initial values of contract's public variables.\
-  Initial data is decoded if `abi` input parameter is provided
-* `initial_pubkey`: _string_ – Initial account owner's public key
 
-### decode\_boc
+## decode_boc
 
 Decodes BOC into JSON as a set of provided parameters.
 
-Solidity functions use ABI types for [builder encoding](https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#tvmbuilderstore). The simplest way to decode such a BOC is to use ABI decoding. ABI has it own rules for fields layout in cells so manually encoded BOC can not be described in terms of ABI rules.
+Solidity functions use ABI types for [builder encoding](https://github.com/tonlabs/TON-Solidity-Compiler/blob/master/API.md#tvmbuilderstore).
+The simplest way to decode such a BOC is to use ABI decoding.
+ABI has it own rules for fields layout in cells so manually encoded
+BOC can not be described in terms of ABI rules.
 
-To solve this problem we introduce a new ABI type `Ref(<ParamType>)` which allows to store `ParamType` ABI parameter in cell reference and, thus, decode manually encoded BOCs. This type is available only in `decode_boc` function and will not be available in ABI messages encoding until it is included into some ABI revision.
+To solve this problem we introduce a new ABI type `Ref(<ParamType>)`
+which allows to store `ParamType` ABI parameter in cell reference and, thus,
+decode manually encoded BOCs. This type is available only in `decode_boc`
+function and will not be available in ABI messages encoding until it is
+included into some ABI revision.
 
-Such BOC descriptions covers most users needs. If someone wants to decode some BOC which can not be described by these rules (i.e. BOC with TLB containing constructors of flags defining some parsing conditions) then they can decode the fields up to fork condition, check the parsed data manually, expand the parsing schema and then decode the whole BOC with the full schema.
+Such BOC descriptions covers most users needs. If someone wants to decode
+some BOC which can not be described by these rules (i.e. BOC with TLB
+containing constructors of flags defining some parsing conditions) then they
+can decode the fields up to fork condition, check the parsed data manually,
+expand the parsing schema and then decode the whole BOC with the full
+schema.
 
 ```ts
 type ParamsOfDecodeBoc = {
@@ -791,20 +775,19 @@ function decode_boc_sync(
     params: ParamsOfDecodeBoc,
 ): ResultOfDecodeBoc;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `params`: _[AbiParam](mod\_abi.md#abiparam)[]_ – Parameters to decode from BOC
+- `boc`: _string_ – Data BOC or BOC handle
+- `allow_partial`: _boolean_
 
-#### Parameters
 
-* `params`: [_AbiParam_](mod_abi.md#abiparam)_\[]_ – Parameters to decode from BOC
-* `boc`: _string_ – Data BOC or BOC handle
-* `allow_partial`: _boolean_
+### Result
 
-#### Result
+- `data`: _any_ – Decoded data as a JSON structure.
 
-* `data`: _any_ – Decoded data as a JSON structure.
 
-### encode\_boc
+## encode_boc
 
 Encodes given parameters in JSON into a BOC using param types from ABI.
 
@@ -827,21 +810,20 @@ function encode_boc_sync(
     params: ParamsOfAbiEncodeBoc,
 ): ResultOfAbiEncodeBoc;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `params`: _[AbiParam](mod\_abi.md#abiparam)[]_ – Parameters to encode into BOC
+- `data`: _any_ – Parameters and values as a JSON structure
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result.
+<br>The BOC itself returned if no cache type provided
 
-#### Parameters
 
-* `params`: [_AbiParam_](mod_abi.md#abiparam)_\[]_ – Parameters to encode into BOC
-* `data`: _any_ – Parameters and values as a JSON structure
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result.\
-  The BOC itself returned if no cache type provided
+### Result
 
-#### Result
+- `boc`: _string_ – BOC encoded as base64
 
-* `boc`: _string_ – BOC encoded as base64
 
-### calc\_function\_id
+## calc_function_id
 
 Calculates contract function ID by contract ABI
 
@@ -864,20 +846,20 @@ function calc_function_id_sync(
     params: ParamsOfCalcFunctionId,
 ): ResultOfCalcFunctionId;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+- `function_name`: _string_ – Contract function name
+- `output`?: _boolean_ – If set to `true` output function ID will be returned which is used in contract response.
+<br>Default is `false`
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.
-* `function_name`: _string_ – Contract function name
-* `output`?: _boolean_ – If set to `true` output function ID will be returned which is used in contract response. Default is `false`
+### Result
 
-#### Result
+- `function_id`: _number_ – Contract function ID
 
-* `function_id`: _number_ – Contract function ID
 
-### get\_signature\_data
+## get_signature_data
 
 Extracts signature from message body and calculates hash to verify the signature
 
@@ -901,24 +883,21 @@ function get_signature_data_sync(
     params: ParamsOfGetSignatureData,
 ): ResultOfGetSignatureData;
 ```
-
 NOTE: Sync version is available only for `lib-node` binding.
+### Parameters
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI used to decode.
+- `message`: _string_ – Message BOC encoded in `base64`.
+- `signature_id`?: _number_ – Signature ID to be used in unsigned data preparing when CapSignatureWithId capability is enabled
 
-#### Parameters
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI used to decode.
-* `message`: _string_ – Message BOC encoded in `base64`.
-* `signature_id`?: _number_ – Signature ID to be used in unsigned data preparing when CapSignatureWithId capability is enabled
+### Result
 
-#### Result
+- `signature`: _string_ – Signature from the message in `hex`.
+- `unsigned`: _string_ – Data to verify the signature in `base64`.
 
-* `signature`: _string_ – Signature from the message in `hex`.
-* `unsigned`: _string_ – Data to verify the signature in `base64`.
 
-## Types
-
-### AbiErrorCode
-
+# Types
+## AbiErrorCode
 ```ts
 enum AbiErrorCode {
     RequiredAddressMissingForEncodeMessage = 301,
@@ -939,68 +918,63 @@ enum AbiErrorCode {
     PubKeyNotSupported = 316
 }
 ```
-
 One of the following value:
 
-* `RequiredAddressMissingForEncodeMessage = 301`
-* `RequiredCallSetMissingForEncodeMessage = 302`
-* `InvalidJson = 303`
-* `InvalidMessage = 304`
-* `EncodeDeployMessageFailed = 305`
-* `EncodeRunMessageFailed = 306`
-* `AttachSignatureFailed = 307`
-* `InvalidTvcImage = 308`
-* `RequiredPublicKeyMissingForFunctionHeader = 309`
-* `InvalidSigner = 310`
-* `InvalidAbi = 311`
-* `InvalidFunctionId = 312`
-* `InvalidData = 313`
-* `EncodeInitialDataFailed = 314`
-* `InvalidFunctionName = 315`
-* `PubKeyNotSupported = 316`
+- `RequiredAddressMissingForEncodeMessage = 301`
+- `RequiredCallSetMissingForEncodeMessage = 302`
+- `InvalidJson = 303`
+- `InvalidMessage = 304`
+- `EncodeDeployMessageFailed = 305`
+- `EncodeRunMessageFailed = 306`
+- `AttachSignatureFailed = 307`
+- `InvalidTvcImage = 308`
+- `RequiredPublicKeyMissingForFunctionHeader = 309`
+- `InvalidSigner = 310`
+- `InvalidAbi = 311`
+- `InvalidFunctionId = 312`
+- `InvalidData = 313`
+- `EncodeInitialDataFailed = 314`
+- `InvalidFunctionName = 315`
+- `PubKeyNotSupported = 316`
 
-### AbiContractVariant
 
+## AbiContractVariant
 ```ts
 type AbiContractVariant = {
     value: AbiContract
 }
 ```
+- `value`: _[AbiContract](mod\_abi.md#abicontract)_
 
-* `value`: [_AbiContract_](mod_abi.md#abicontract)
 
-### AbiJsonVariant
-
+## AbiJsonVariant
 ```ts
 type AbiJsonVariant = {
     value: string
 }
 ```
+- `value`: _string_
 
-* `value`: _string_
 
-### AbiHandleVariant
-
+## AbiHandleVariant
 ```ts
 type AbiHandleVariant = {
     value: AbiHandle
 }
 ```
+- `value`: _[AbiHandle](mod\_abi.md#abihandle)_
 
-* `value`: [_AbiHandle_](mod_abi.md#abihandle)
 
-### AbiSerializedVariant
-
+## AbiSerializedVariant
 ```ts
 type AbiSerializedVariant = {
     value: AbiContract
 }
 ```
+- `value`: _[AbiContract](mod\_abi.md#abicontract)_
 
-* `value`: [_AbiContract_](mod_abi.md#abicontract)
 
-### Abi
-
+## Abi
 ```ts
 type Abi = ({
     type: 'Contract'
@@ -1012,24 +986,24 @@ type Abi = ({
     type: 'Serialized'
 } & AbiSerializedVariant)
 ```
-
-Depends on value of the `type` field.
+Depends on value of the  `type` field.
 
 When _type_ is _'Contract'_
 
-* `value`: [_AbiContract_](mod_abi.md#abicontract)
+- `value`: _[AbiContract](mod\_abi.md#abicontract)_
 
 When _type_ is _'Json'_
 
-* `value`: _string_
+- `value`: _string_
 
 When _type_ is _'Handle'_
 
-* `value`: [_AbiHandle_](mod_abi.md#abihandle)
+- `value`: _[AbiHandle](mod\_abi.md#abihandle)_
 
 When _type_ is _'Serialized'_
 
-* `value`: [_AbiContract_](mod_abi.md#abicontract)
+- `value`: _[AbiContract](mod\_abi.md#abicontract)_
+
 
 Variant constructors:
 
@@ -1040,19 +1014,21 @@ function abiHandle(value: AbiHandle): Abi;
 function abiSerialized(value: AbiContract): Abi;
 ```
 
-### AbiHandle
-
+## AbiHandle
 ```ts
 type AbiHandle = number
 ```
 
-### FunctionHeader
 
+## FunctionHeader
 The ABI function header.
 
-Includes several hidden function parameters that contract uses for security, message delivery monitoring and replay protection reasons.
+Includes several hidden function parameters that contract
+uses for security, message delivery monitoring and replay protection
+reasons.
 
-The actual set of header fields depends on the contract's ABI. If a contract's ABI does not include some headers, then they are not filled.
+The actual set of header fields depends on the contract's ABI.
+If a contract's ABI does not include some headers, then they are not filled.
 
 ```ts
 type FunctionHeader = {
@@ -1061,17 +1037,15 @@ type FunctionHeader = {
     pubkey?: string
 }
 ```
+- `expire`?: _number_ – Message expiration timestamp (UNIX time) in seconds.
+<br>If not specified - calculated automatically from<br>message_expiration_timeout(), try_index and<br>message_expiration_timeout_grow_factor() (if ABI includes `expire`<br>header).
+- `time`?: _bigint_ – Message creation time in milliseconds.
+<br>If not specified, `now` is used (if ABI includes `time` header).
+- `pubkey`?: _string_ – Public key is used by the contract to check the signature.
+<br>Encoded in `hex`. If not specified, method fails with exception (if ABI<br>includes `pubkey` header)..
 
-* `expire`?: _number_ – Message expiration timestamp (UNIX time) in seconds.\
-  If not specified - calculated automatically from message\_expiration\_timeout(),\
-  try\_index and message\_expiration\_timeout\_grow\_factor() (if ABI includes `expire` header).
-* `time`?: _bigint_ – Message creation time in milliseconds.\
-  If not specified, `now` is used (if ABI includes `time` header).
-* `pubkey`?: _string_ – Public key is used by the contract to check the signature.\
-  Encoded in `hex`. If not specified, method fails with exception (if ABI includes `pubkey` header)..
 
-### CallSet
-
+## CallSet
 ```ts
 type CallSet = {
     function_name: string,
@@ -1079,16 +1053,13 @@ type CallSet = {
     input?: any
 }
 ```
+- `function_name`: _string_ – Function name that is being called. Or function id encoded as string in hex (starting with 0x).
+- `header`?: _[FunctionHeader](mod\_abi.md#functionheader)_ – Function header.
+<br>If an application omits some header parameters required by the<br>contract's ABI, the library will set the default values for<br>them.
+- `input`?: _any_ – Function input parameters according to ABI.
 
-* `function_name`: _string_ – Function name that is being called. Or function id encoded as string in hex (starting with 0x).
-* `header`?: [_FunctionHeader_](mod_abi.md#functionheader) – Function header.\
-  If an application omits some header parameters required by the\
-  contract's ABI, the library will set the default values for\
-  them.
-* `input`?: _any_ – Function input parameters according to ABI.
 
-### DeploySet
-
+## DeploySet
 ```ts
 type DeploySet = {
     tvc?: string,
@@ -1099,24 +1070,17 @@ type DeploySet = {
     initial_pubkey?: string
 }
 ```
+- `tvc`?: _string_ – Content of TVC file encoded in `base64`. For compatibility reason this field can contain an encoded  `StateInit`.
+- `code`?: _string_ – Contract code BOC encoded with base64.
+- `state_init`?: _string_ – State init BOC encoded with base64.
+- `workchain_id`?: _number_ – Target workchain for destination address.
+<br>Default is `0`.
+- `initial_data`?: _any_ – List of initial values for contract's public variables.
+- `initial_pubkey`?: _string_ – Optional public key that can be provided in deploy set in order to substitute one in TVM file or provided by Signer.
+<br>Public key resolving priority:<br>1. Public key from deploy set.<br>2. Public key, specified in TVM file.<br>3. Public key, provided by Signer.<br><br>Applicable only for contracts with ABI version < 2.4. Contract initial<br>public key should be explicitly provided inside `initial_data` since<br>ABI 2.4
 
-* `tvc`?: _string_ – Content of TVC file encoded in `base64`. For compatibility reason this field can contain an encoded `StateInit`.
-* `code`?: _string_ – Contract code BOC encoded with base64.
-* `state_init`?: _string_ – State init BOC encoded with base64.
-* `workchain_id`?: _number_ – Target workchain for destination address.\
-  Default is `0`.
-* `initial_data`?: _any_ – List of initial values for contract's public variables.
-* `initial_pubkey`?: _string_ – Optional public key that can be provided in deploy set in order to substitute one in TVM file or provided by Signer.\
-  Public key resolving priority:\
-  1\. Public key from deploy set.\
-  2\. Public key, specified in TVM file.\
-  3\. Public key, provided by Signer.\
-  \
-  Applicable only for contracts with ABI version < 2.4. Contract initial public key should be\
-  explicitly provided inside `initial_data` since ABI 2.4
 
-### SignerNoneVariant
-
+## SignerNoneVariant
 No keys are provided.
 
 Creates an unsigned message.
@@ -1127,8 +1091,8 @@ type SignerNoneVariant = {
 }
 ```
 
-### SignerExternalVariant
 
+## SignerExternalVariant
 Only public key is provided in unprefixed hex string format to generate unsigned message and `data_to_sign` which can be signed later.
 
 ```ts
@@ -1136,11 +1100,10 @@ type SignerExternalVariant = {
     public_key: string
 }
 ```
+- `public_key`: _string_
 
-* `public_key`: _string_
 
-### SignerKeysVariant
-
+## SignerKeysVariant
 Key pair is provided for signing
 
 ```ts
@@ -1148,11 +1111,10 @@ type SignerKeysVariant = {
     keys: KeyPair
 }
 ```
+- `keys`: _[KeyPair](mod\_crypto.md#keypair)_
 
-* `keys`: [_KeyPair_](/broken/pages/b7U0dxs59ESc6rtN09mV#keypair)
 
-### SignerSigningBoxVariant
-
+## SignerSigningBoxVariant
 Signing Box interface is provided for signing, allows Dapps to sign messages using external APIs, such as HSM, cold wallet, etc.
 
 ```ts
@@ -1160,11 +1122,10 @@ type SignerSigningBoxVariant = {
     handle: SigningBoxHandle
 }
 ```
+- `handle`: _[SigningBoxHandle](mod\_crypto.md#signingboxhandle)_
 
-* `handle`: [_SigningBoxHandle_](/broken/pages/b7U0dxs59ESc6rtN09mV#signingboxhandle)
 
-### Signer
-
+## Signer
 ```ts
 type Signer = ({
     type: 'None'
@@ -1176,8 +1137,7 @@ type Signer = ({
     type: 'SigningBox'
 } & SignerSigningBoxVariant)
 ```
-
-Depends on value of the `type` field.
+Depends on value of the  `type` field.
 
 When _type_ is _'None'_
 
@@ -1185,23 +1145,25 @@ No keys are provided.
 
 Creates an unsigned message.
 
+
 When _type_ is _'External'_
 
 Only public key is provided in unprefixed hex string format to generate unsigned message and `data_to_sign` which can be signed later.
 
-* `public_key`: _string_
+- `public_key`: _string_
 
 When _type_ is _'Keys'_
 
 Key pair is provided for signing
 
-* `keys`: [_KeyPair_](/broken/pages/b7U0dxs59ESc6rtN09mV#keypair)
+- `keys`: _[KeyPair](mod\_crypto.md#keypair)_
 
 When _type_ is _'SigningBox'_
 
 Signing Box interface is provided for signing, allows Dapps to sign messages using external APIs, such as HSM, cold wallet, etc.
 
-* `handle`: [_SigningBoxHandle_](/broken/pages/b7U0dxs59ESc6rtN09mV#signingboxhandle)
+- `handle`: _[SigningBoxHandle](mod\_crypto.md#signingboxhandle)_
+
 
 Variant constructors:
 
@@ -1212,8 +1174,7 @@ function signerKeys(keys: KeyPair): Signer;
 function signerSigningBox(handle: SigningBoxHandle): Signer;
 ```
 
-### MessageBodyType
-
+## MessageBodyType
 ```ts
 enum MessageBodyType {
     Input = "Input",
@@ -1222,18 +1183,16 @@ enum MessageBodyType {
     Event = "Event"
 }
 ```
-
 One of the following value:
 
-* `Input = "Input"` – Message contains the input of the ABI function.
-* `Output = "Output"` – Message contains the output of the ABI function.
-* `InternalOutput = "InternalOutput"` – Message contains the input of the imported ABI function.\
-  Occurs when contract sends an internal message to other\
-  contract.
-* `Event = "Event"` – Message contains the input of the ABI event.
+- `Input = "Input"` – Message contains the input of the ABI function.
+- `Output = "Output"` – Message contains the output of the ABI function.
+- `InternalOutput = "InternalOutput"` – Message contains the input of the imported ABI function.
+<br>Occurs when contract sends an internal message to other<br>contract.
+- `Event = "Event"` – Message contains the input of the ABI event.
 
-### AbiParam
 
+## AbiParam
 ```ts
 type AbiParam = {
     name: string,
@@ -1242,14 +1201,13 @@ type AbiParam = {
     init?: boolean
 }
 ```
+- `name`: _string_
+- `type`: _string_
+- `components`?: _[AbiParam](mod\_abi.md#abiparam)[]_
+- `init`?: _boolean_
 
-* `name`: _string_
-* `type`: _string_
-* `components`?: [_AbiParam_](mod_abi.md#abiparam)_\[]_
-* `init`?: _boolean_
 
-### AbiEvent
-
+## AbiEvent
 ```ts
 type AbiEvent = {
     name: string,
@@ -1257,13 +1215,12 @@ type AbiEvent = {
     id?: string | null
 }
 ```
+- `name`: _string_
+- `inputs`: _[AbiParam](mod\_abi.md#abiparam)[]_
+- `id`?: _string?_
 
-* `name`: _string_
-* `inputs`: [_AbiParam_](mod_abi.md#abiparam)_\[]_
-* `id`?: _string?_
 
-### AbiData
-
+## AbiData
 ```ts
 type AbiData = {
     key: number,
@@ -1272,14 +1229,13 @@ type AbiData = {
     components?: AbiParam[]
 }
 ```
+- `key`: _number_
+- `name`: _string_
+- `type`: _string_
+- `components`?: _[AbiParam](mod\_abi.md#abiparam)[]_
 
-* `key`: _number_
-* `name`: _string_
-* `type`: _string_
-* `components`?: [_AbiParam_](mod_abi.md#abiparam)_\[]_
 
-### AbiFunction
-
+## AbiFunction
 ```ts
 type AbiFunction = {
     name: string,
@@ -1288,14 +1244,13 @@ type AbiFunction = {
     id?: string | null
 }
 ```
+- `name`: _string_
+- `inputs`: _[AbiParam](mod\_abi.md#abiparam)[]_
+- `outputs`: _[AbiParam](mod\_abi.md#abiparam)[]_
+- `id`?: _string?_
 
-* `name`: _string_
-* `inputs`: [_AbiParam_](mod_abi.md#abiparam)_\[]_
-* `outputs`: [_AbiParam_](mod_abi.md#abiparam)_\[]_
-* `id`?: _string?_
 
-### AbiContract
-
+## AbiContract
 ```ts
 type AbiContract = {
     'ABI version'?: number,
@@ -1308,32 +1263,30 @@ type AbiContract = {
     fields?: AbiParam[]
 }
 ```
+- `ABI version`?: _number_
+- `abi_version`?: _number_
+- `version`?: _string?_
+- `header`?: _string[]_
+- `functions`?: _[AbiFunction](mod\_abi.md#abifunction)[]_
+- `events`?: _[AbiEvent](mod\_abi.md#abievent)[]_
+- `data`?: _[AbiData](mod\_abi.md#abidata)[]_
+- `fields`?: _[AbiParam](mod\_abi.md#abiparam)[]_
 
-* `ABI version`?: _number_
-* `abi_version`?: _number_
-* `version`?: _string?_
-* `header`?: _string\[]_
-* `functions`?: [_AbiFunction_](mod_abi.md#abifunction)_\[]_
-* `events`?: [_AbiEvent_](mod_abi.md#abievent)_\[]_
-* `data`?: [_AbiData_](mod_abi.md#abidata)_\[]_
-* `fields`?: [_AbiParam_](mod_abi.md#abiparam)_\[]_
 
-### DataLayout
-
+## DataLayout
 ```ts
 enum DataLayout {
     Input = "Input",
     Output = "Output"
 }
 ```
-
 One of the following value:
 
-* `Input = "Input"` – Decode message body as function input parameters.
-* `Output = "Output"` – Decode message body as function output.
+- `Input = "Input"` – Decode message body as function input parameters.
+- `Output = "Output"` – Decode message body as function output.
 
-### ParamsOfEncodeMessageBody
 
+## ParamsOfEncodeMessageBody
 ```ts
 type ParamsOfEncodeMessageBody = {
     abi: Abi,
@@ -1345,47 +1298,31 @@ type ParamsOfEncodeMessageBody = {
     signature_id?: number
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+- `call_set`: _[CallSet](mod\_abi.md#callset)_ – Function call parameters.
+<br>Must be specified in non deploy message.<br><br>In case of deploy message contains parameters of constructor.
+- `is_internal`: _boolean_ – True if internal message body must be encoded.
+- `signer`: _[Signer](mod\_abi.md#signer)_ – Signing parameters.
+- `processing_try_index`?: _number_ – Processing try index.
+<br>Used in message processing with retries.<br><br>Encoder uses the provided try index to calculate message<br>expiration time.<br><br>Expiration timeouts will grow with every retry.<br><br>Default value is 0.
+- `address`?: _string_ – Destination address of the message
+<br>Since ABI version 2.3 destination address of external inbound message is<br>used in message body signature calculation. Should be provided when<br>signed external inbound message body is created. Otherwise can be<br>omitted.
+- `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.
-* `call_set`: [_CallSet_](mod_abi.md#callset) – Function call parameters.\
-  Must be specified in non deploy message.\
-  \
-  In case of deploy message contains parameters of constructor.
-* `is_internal`: _boolean_ – True if internal message body must be encoded.
-* `signer`: [_Signer_](mod_abi.md#signer) – Signing parameters.
-* `processing_try_index`?: _number_ – Processing try index.\
-  Used in message processing with retries.\
-  \
-  Encoder uses the provided try index to calculate message\
-  expiration time.\
-  \
-  Expiration timeouts will grow with every retry.\
-  \
-  Default value is 0.
-* `address`?: _string_ – Destination address of the message\
-  Since ABI version 2.3 destination address of external inbound message is used in message\
-  body signature calculation. Should be provided when signed external inbound message body is\
-  created. Otherwise can be omitted.
-* `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
 
-### ResultOfEncodeMessageBody
-
+## ResultOfEncodeMessageBody
 ```ts
 type ResultOfEncodeMessageBody = {
     body: string,
     data_to_sign?: string
 }
 ```
+- `body`: _string_ – Message body BOC encoded with `base64`.
+- `data_to_sign`?: _string_ – Optional data to sign.
+<br>Encoded with `base64`. <br>Presents when `message` is unsigned. Can be used for external<br>message signing. Is this case you need to sing this data and<br>produce signed message using `abi.attach_signature`.
 
-* `body`: _string_ – Message body BOC encoded with `base64`.
-* `data_to_sign`?: _string_ – Optional data to sign.\
-  Encoded with `base64`.\
-  Presents when `message` is unsigned. Can be used for external\
-  message signing. Is this case you need to sing this data and\
-  produce signed message using `abi.attach_signature`.
 
-### ParamsOfAttachSignatureToMessageBody
-
+## ParamsOfAttachSignatureToMessageBody
 ```ts
 type ParamsOfAttachSignatureToMessageBody = {
     abi: Abi,
@@ -1394,27 +1331,25 @@ type ParamsOfAttachSignatureToMessageBody = {
     signature: string
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `public_key`: _string_ – Public key.
+<br>Must be encoded with `hex`.
+- `message`: _string_ – Unsigned message body BOC.
+<br>Must be encoded with `base64`.
+- `signature`: _string_ – Signature.
+<br>Must be encoded with `hex`.
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `public_key`: _string_ – Public key.\
-  Must be encoded with `hex`.
-* `message`: _string_ – Unsigned message body BOC.\
-  Must be encoded with `base64`.
-* `signature`: _string_ – Signature.\
-  Must be encoded with `hex`.
 
-### ResultOfAttachSignatureToMessageBody
-
+## ResultOfAttachSignatureToMessageBody
 ```ts
 type ResultOfAttachSignatureToMessageBody = {
     body: string
 }
 ```
+- `body`: _string_
 
-* `body`: _string_
 
-### ParamsOfEncodeMessage
-
+## ParamsOfEncodeMessage
 ```ts
 type ParamsOfEncodeMessage = {
     abi: Abi,
@@ -1426,34 +1361,20 @@ type ParamsOfEncodeMessage = {
     signature_id?: number
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+- `address`?: _string_ – Target address the message will be sent to.
+<br>Must be specified in case of non-deploy message.
+- `deploy_set`?: _[DeploySet](mod\_abi.md#deployset)_ – Deploy parameters.
+<br>Must be specified in case of deploy message.
+- `call_set`?: _[CallSet](mod\_abi.md#callset)_ – Function call parameters.
+<br>Must be specified in case of non-deploy message.<br><br>In case of deploy message it is optional and contains parameters<br>of the functions that will to be called upon deploy transaction.
+- `signer`: _[Signer](mod\_abi.md#signer)_ – Signing parameters.
+- `processing_try_index`?: _number_ – Processing try index.
+<br>Used in message processing with retries (if contract's ABI includes<br>"expire" header).<br><br>Encoder uses the provided try index to calculate message<br>expiration time. The 1st message expiration time is specified in<br>Client config.<br><br>Expiration timeouts will grow with every retry.<br>Retry grow factor is set in Client config:<br><.....add config parameter with default value here><br><br>Default value is 0.
+- `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.
-* `address`?: _string_ – Target address the message will be sent to.\
-  Must be specified in case of non-deploy message.
-* `deploy_set`?: [_DeploySet_](mod_abi.md#deployset) – Deploy parameters.\
-  Must be specified in case of deploy message.
-* `call_set`?: [_CallSet_](mod_abi.md#callset) – Function call parameters.\
-  Must be specified in case of non-deploy message.\
-  \
-  In case of deploy message it is optional and contains parameters\
-  of the functions that will to be called upon deploy transaction.
-* `signer`: [_Signer_](mod_abi.md#signer) – Signing parameters.
-* `processing_try_index`?: _number_ – Processing try index.\
-  Used in message processing with retries (if contract's ABI includes "expire" header).\
-  \
-  Encoder uses the provided try index to calculate message\
-  expiration time. The 1st message expiration time is specified in\
-  Client config.\
-  \
-  Expiration timeouts will grow with every retry.\
-  Retry grow factor is set in Client config:\
-  <.....add config parameter with default value here>\
-  \
-  Default value is 0.
-* `signature_id`?: _number_ – Signature ID to be used in data to sign preparing when CapSignatureWithId capability is enabled
 
-### ResultOfEncodeMessage
-
+## ResultOfEncodeMessage
 ```ts
 type ResultOfEncodeMessage = {
     message: string,
@@ -1462,17 +1383,14 @@ type ResultOfEncodeMessage = {
     message_id: string
 }
 ```
+- `message`: _string_ – Message BOC encoded with `base64`.
+- `data_to_sign`?: _string_ – Optional data to be signed encoded in `base64`.
+<br>Returned in case of `Signer::External`. Can be used for external<br>message signing. Is this case you need to use this data to create<br>signature and then produce signed message using<br>`abi.attach_signature`.
+- `address`: _string_ – Destination address.
+- `message_id`: _string_ – Message id.
 
-* `message`: _string_ – Message BOC encoded with `base64`.
-* `data_to_sign`?: _string_ – Optional data to be signed encoded in `base64`.\
-  Returned in case of `Signer::External`. Can be used for external\
-  message signing. Is this case you need to use this data to create signature and\
-  then produce signed message using `abi.attach_signature`.
-* `address`: _string_ – Destination address.
-* `message_id`: _string_ – Message id.
 
-### ParamsOfEncodeInternalMessage
-
+## ParamsOfEncodeInternalMessage
 ```ts
 type ParamsOfEncodeInternalMessage = {
     abi?: Abi,
@@ -1485,27 +1403,23 @@ type ParamsOfEncodeInternalMessage = {
     enable_ihr?: boolean
 }
 ```
+- `abi`?: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+<br>Can be None if both deploy_set and call_set are None.
+- `address`?: _string_ – Target address the message will be sent to.
+<br>Must be specified in case of non-deploy message.
+- `src_address`?: _string_ – Source address of the message.
+- `deploy_set`?: _[DeploySet](mod\_abi.md#deployset)_ – Deploy parameters.
+<br>Must be specified in case of deploy message.
+- `call_set`?: _[CallSet](mod\_abi.md#callset)_ – Function call parameters.
+<br>Must be specified in case of non-deploy message.<br><br>In case of deploy message it is optional and contains parameters<br>of the functions that will to be called upon deploy transaction.
+- `value`: _string_ – Value in nanotokens to be sent with message.
+- `bounce`?: _boolean_ – Flag of bounceable message.
+<br>Default is true.
+- `enable_ihr`?: _boolean_ – Enable Instant Hypercube Routing for the message.
+<br>Default is false.
 
-* `abi`?: [_Abi_](mod_abi.md#abi) – Contract ABI.\
-  Can be None if both deploy\_set and call\_set are None.
-* `address`?: _string_ – Target address the message will be sent to.\
-  Must be specified in case of non-deploy message.
-* `src_address`?: _string_ – Source address of the message.
-* `deploy_set`?: [_DeploySet_](mod_abi.md#deployset) – Deploy parameters.\
-  Must be specified in case of deploy message.
-* `call_set`?: [_CallSet_](mod_abi.md#callset) – Function call parameters.\
-  Must be specified in case of non-deploy message.\
-  \
-  In case of deploy message it is optional and contains parameters\
-  of the functions that will to be called upon deploy transaction.
-* `value`: _string_ – Value in nanotokens to be sent with message.
-* `bounce`?: _boolean_ – Flag of bounceable message.\
-  Default is true.
-* `enable_ihr`?: _boolean_ – Enable Instant Hypercube Routing for the message.\
-  Default is false.
 
-### ResultOfEncodeInternalMessage
-
+## ResultOfEncodeInternalMessage
 ```ts
 type ResultOfEncodeInternalMessage = {
     message: string,
@@ -1513,13 +1427,12 @@ type ResultOfEncodeInternalMessage = {
     message_id: string
 }
 ```
+- `message`: _string_ – Message BOC encoded with `base64`.
+- `address`: _string_ – Destination address.
+- `message_id`: _string_ – Message id.
 
-* `message`: _string_ – Message BOC encoded with `base64`.
-* `address`: _string_ – Destination address.
-* `message_id`: _string_ – Message id.
 
-### ParamsOfAttachSignature
-
+## ParamsOfAttachSignature
 ```ts
 type ParamsOfAttachSignature = {
     abi: Abi,
@@ -1528,26 +1441,24 @@ type ParamsOfAttachSignature = {
     signature: string
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `public_key`: _string_ – Public key encoded in `hex`.
+- `message`: _string_ – Unsigned message BOC encoded in `base64`.
+- `signature`: _string_ – Signature encoded in `hex`.
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `public_key`: _string_ – Public key encoded in `hex`.
-* `message`: _string_ – Unsigned message BOC encoded in `base64`.
-* `signature`: _string_ – Signature encoded in `hex`.
 
-### ResultOfAttachSignature
-
+## ResultOfAttachSignature
 ```ts
 type ResultOfAttachSignature = {
     message: string,
     message_id: string
 }
 ```
+- `message`: _string_ – Signed message BOC
+- `message_id`: _string_ – Message ID
 
-* `message`: _string_ – Signed message BOC
-* `message_id`: _string_ – Message ID
 
-### ParamsOfDecodeMessage
-
+## ParamsOfDecodeMessage
 ```ts
 type ParamsOfDecodeMessage = {
     abi: Abi,
@@ -1557,15 +1468,15 @@ type ParamsOfDecodeMessage = {
     data_layout?: DataLayout
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – contract ABI
+- `message`: _string_ – Message BOC
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
+- `function_name`?: _string_ – Function name or function id if is known in advance
+- `data_layout`?: _[DataLayout](mod\_abi.md#datalayout)_
 
-* `abi`: [_Abi_](mod_abi.md#abi) – contract ABI
-* `message`: _string_ – Message BOC
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
-* `function_name`?: _string_ – Function name or function id if is known in advance
-* `data_layout`?: [_DataLayout_](mod_abi.md#datalayout)
 
-### DecodedMessageBody
-
+## DecodedMessageBody
 ```ts
 type DecodedMessageBody = {
     body_type: MessageBodyType,
@@ -1574,14 +1485,13 @@ type DecodedMessageBody = {
     header?: FunctionHeader
 }
 ```
+- `body_type`: _[MessageBodyType](mod\_abi.md#messagebodytype)_ – Type of the message body content.
+- `name`: _string_ – Function or event name.
+- `value`?: _any_ – Parameters or result value.
+- `header`?: _[FunctionHeader](mod\_abi.md#functionheader)_ – Function header.
 
-* `body_type`: [_MessageBodyType_](mod_abi.md#messagebodytype) – Type of the message body content.
-* `name`: _string_ – Function or event name.
-* `value`?: _any_ – Parameters or result value.
-* `header`?: [_FunctionHeader_](mod_abi.md#functionheader) – Function header.
 
-### ParamsOfDecodeMessageBody
-
+## ParamsOfDecodeMessageBody
 ```ts
 type ParamsOfDecodeMessageBody = {
     abi: Abi,
@@ -1592,16 +1502,16 @@ type ParamsOfDecodeMessageBody = {
     data_layout?: DataLayout
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI used to decode.
+- `body`: _string_ – Message body BOC encoded in `base64`.
+- `is_internal`: _boolean_ – True if the body belongs to the internal message.
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
+- `function_name`?: _string_ – Function name or function id if is known in advance
+- `data_layout`?: _[DataLayout](mod\_abi.md#datalayout)_
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI used to decode.
-* `body`: _string_ – Message body BOC encoded in `base64`.
-* `is_internal`: _boolean_ – True if the body belongs to the internal message.
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
-* `function_name`?: _string_ – Function name or function id if is known in advance
-* `data_layout`?: [_DataLayout_](mod_abi.md#datalayout)
 
-### ParamsOfEncodeAccount
-
+## ParamsOfEncodeAccount
 ```ts
 type ParamsOfEncodeAccount = {
     state_init: string,
@@ -1611,28 +1521,26 @@ type ParamsOfEncodeAccount = {
     boc_cache?: BocCacheType
 }
 ```
+- `state_init`: _string_ – Account state init.
+- `balance`?: _bigint_ – Initial balance.
+- `last_trans_lt`?: _bigint_ – Initial value for the `last_trans_lt`.
+- `last_paid`?: _number_ – Initial value for the `last_paid`.
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result.
+<br>The BOC itself returned if no cache type provided
 
-* `state_init`: _string_ – Account state init.
-* `balance`?: _bigint_ – Initial balance.
-* `last_trans_lt`?: _bigint_ – Initial value for the `last_trans_lt`.
-* `last_paid`?: _number_ – Initial value for the `last_paid`.
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result.\
-  The BOC itself returned if no cache type provided
 
-### ResultOfEncodeAccount
-
+## ResultOfEncodeAccount
 ```ts
 type ResultOfEncodeAccount = {
     account: string,
     id: string
 }
 ```
+- `account`: _string_ – Account BOC encoded in `base64`.
+- `id`: _string_ – Account ID  encoded in `hex`.
 
-* `account`: _string_ – Account BOC encoded in `base64`.
-* `id`: _string_ – Account ID encoded in `hex`.
 
-### ParamsOfDecodeAccountData
-
+## ParamsOfDecodeAccountData
 ```ts
 type ParamsOfDecodeAccountData = {
     abi: Abi,
@@ -1640,23 +1548,22 @@ type ParamsOfDecodeAccountData = {
     allow_partial?: boolean
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `data`: _string_ – Data BOC or BOC handle
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `data`: _string_ – Data BOC or BOC handle
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
 
-### ResultOfDecodeAccountData
-
+## ResultOfDecodeAccountData
 ```ts
 type ResultOfDecodeAccountData = {
     data: any
 }
 ```
+- `data`: _any_ – Decoded data as a JSON structure.
 
-* `data`: _any_ – Decoded data as a JSON structure.
 
-### ParamsOfUpdateInitialData
-
+## ParamsOfUpdateInitialData
 ```ts
 type ParamsOfUpdateInitialData = {
     abi: Abi,
@@ -1666,26 +1573,24 @@ type ParamsOfUpdateInitialData = {
     boc_cache?: BocCacheType
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `data`: _string_ – Data BOC or BOC handle
+- `initial_data`?: _any_ – List of initial values for contract's static variables.
+<br>`abi` parameter should be provided to set initial data
+- `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `data`: _string_ – Data BOC or BOC handle
-* `initial_data`?: _any_ – List of initial values for contract's static variables.\
-  `abi` parameter should be provided to set initial data
-* `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-### ResultOfUpdateInitialData
-
+## ResultOfUpdateInitialData
 ```ts
 type ResultOfUpdateInitialData = {
     data: string
 }
 ```
+- `data`: _string_ – Updated data BOC or BOC handle
 
-* `data`: _string_ – Updated data BOC or BOC handle
 
-### ParamsOfEncodeInitialData
-
+## ParamsOfEncodeInitialData
 ```ts
 type ParamsOfEncodeInitialData = {
     abi: Abi,
@@ -1694,25 +1599,23 @@ type ParamsOfEncodeInitialData = {
     boc_cache?: BocCacheType
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI
+- `initial_data`?: _any_ – List of initial values for contract's static variables.
+<br>`abi` parameter should be provided to set initial data
+- `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI
-* `initial_data`?: _any_ – List of initial values for contract's static variables.\
-  `abi` parameter should be provided to set initial data
-* `initial_pubkey`?: _string_ – Initial account owner's public key to set into account data
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result. The BOC itself returned if no cache type provided.
 
-### ResultOfEncodeInitialData
-
+## ResultOfEncodeInitialData
 ```ts
 type ResultOfEncodeInitialData = {
     data: string
 }
 ```
+- `data`: _string_ – Updated data BOC or BOC handle
 
-* `data`: _string_ – Updated data BOC or BOC handle
 
-### ParamsOfDecodeInitialData
-
+## ParamsOfDecodeInitialData
 ```ts
 type ParamsOfDecodeInitialData = {
     abi: Abi,
@@ -1720,27 +1623,26 @@ type ParamsOfDecodeInitialData = {
     allow_partial?: boolean
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+<br>Initial data is decoded if this parameter is provided
+- `data`: _string_ – Data BOC or BOC handle
+- `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC.
+<br>Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC:<br>`true` - return decoded values<br>`false` - return error of incomplete BOC deserialization (default)
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.\
-  Initial data is decoded if this parameter is provided
-* `data`: _string_ – Data BOC or BOC handle
-* `allow_partial`?: _boolean_ – Flag allowing partial BOC decoding when ABI doesn't describe the full body BOC. Controls decoder behaviour when after decoding all described in ABI params there are some data left in BOC: `true` - return decoded values `false` - return error of incomplete BOC deserialization (default)
 
-### ResultOfDecodeInitialData
-
+## ResultOfDecodeInitialData
 ```ts
 type ResultOfDecodeInitialData = {
     initial_data: any,
     initial_pubkey: string
 }
 ```
+- `initial_data`: _any_ – List of initial values of contract's public variables.
+<br>Initial data is decoded if `abi` input parameter is provided
+- `initial_pubkey`: _string_ – Initial account owner's public key
 
-* `initial_data`: _any_ – List of initial values of contract's public variables.\
-  Initial data is decoded if `abi` input parameter is provided
-* `initial_pubkey`: _string_ – Initial account owner's public key
 
-### ParamsOfDecodeBoc
-
+## ParamsOfDecodeBoc
 ```ts
 type ParamsOfDecodeBoc = {
     params: AbiParam[],
@@ -1748,23 +1650,21 @@ type ParamsOfDecodeBoc = {
     allow_partial: boolean
 }
 ```
+- `params`: _[AbiParam](mod\_abi.md#abiparam)[]_ – Parameters to decode from BOC
+- `boc`: _string_ – Data BOC or BOC handle
+- `allow_partial`: _boolean_
 
-* `params`: [_AbiParam_](mod_abi.md#abiparam)_\[]_ – Parameters to decode from BOC
-* `boc`: _string_ – Data BOC or BOC handle
-* `allow_partial`: _boolean_
 
-### ResultOfDecodeBoc
-
+## ResultOfDecodeBoc
 ```ts
 type ResultOfDecodeBoc = {
     data: any
 }
 ```
+- `data`: _any_ – Decoded data as a JSON structure.
 
-* `data`: _any_ – Decoded data as a JSON structure.
 
-### ParamsOfAbiEncodeBoc
-
+## ParamsOfAbiEncodeBoc
 ```ts
 type ParamsOfAbiEncodeBoc = {
     params: AbiParam[],
@@ -1772,24 +1672,22 @@ type ParamsOfAbiEncodeBoc = {
     boc_cache?: BocCacheType
 }
 ```
+- `params`: _[AbiParam](mod\_abi.md#abiparam)[]_ – Parameters to encode into BOC
+- `data`: _any_ – Parameters and values as a JSON structure
+- `boc_cache`?: _[BocCacheType](mod\_boc.md#boccachetype)_ – Cache type to put the result.
+<br>The BOC itself returned if no cache type provided
 
-* `params`: [_AbiParam_](mod_abi.md#abiparam)_\[]_ – Parameters to encode into BOC
-* `data`: _any_ – Parameters and values as a JSON structure
-* `boc_cache`?: [_BocCacheType_](mod_boc.md#boccachetype) – Cache type to put the result.\
-  The BOC itself returned if no cache type provided
 
-### ResultOfAbiEncodeBoc
-
+## ResultOfAbiEncodeBoc
 ```ts
 type ResultOfAbiEncodeBoc = {
     boc: string
 }
 ```
+- `boc`: _string_ – BOC encoded as base64
 
-* `boc`: _string_ – BOC encoded as base64
 
-### ParamsOfCalcFunctionId
-
+## ParamsOfCalcFunctionId
 ```ts
 type ParamsOfCalcFunctionId = {
     abi: Abi,
@@ -1797,23 +1695,22 @@ type ParamsOfCalcFunctionId = {
     output?: boolean
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI.
+- `function_name`: _string_ – Contract function name
+- `output`?: _boolean_ – If set to `true` output function ID will be returned which is used in contract response.
+<br>Default is `false`
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI.
-* `function_name`: _string_ – Contract function name
-* `output`?: _boolean_ – If set to `true` output function ID will be returned which is used in contract response. Default is `false`
 
-### ResultOfCalcFunctionId
-
+## ResultOfCalcFunctionId
 ```ts
 type ResultOfCalcFunctionId = {
     function_id: number
 }
 ```
+- `function_id`: _number_ – Contract function ID
 
-* `function_id`: _number_ – Contract function ID
 
-### ParamsOfGetSignatureData
-
+## ParamsOfGetSignatureData
 ```ts
 type ParamsOfGetSignatureData = {
     abi: Abi,
@@ -1821,19 +1718,19 @@ type ParamsOfGetSignatureData = {
     signature_id?: number
 }
 ```
+- `abi`: _[Abi](mod\_abi.md#abi)_ – Contract ABI used to decode.
+- `message`: _string_ – Message BOC encoded in `base64`.
+- `signature_id`?: _number_ – Signature ID to be used in unsigned data preparing when CapSignatureWithId capability is enabled
 
-* `abi`: [_Abi_](mod_abi.md#abi) – Contract ABI used to decode.
-* `message`: _string_ – Message BOC encoded in `base64`.
-* `signature_id`?: _number_ – Signature ID to be used in unsigned data preparing when CapSignatureWithId capability is enabled
 
-### ResultOfGetSignatureData
-
+## ResultOfGetSignatureData
 ```ts
 type ResultOfGetSignatureData = {
     signature: string,
     unsigned: string
 }
 ```
+- `signature`: _string_ – Signature from the message in `hex`.
+- `unsigned`: _string_ – Data to verify the signature in `base64`.
 
-* `signature`: _string_ – Signature from the message in `hex`.
-* `unsigned`: _string_ – Data to verify the signature in `base64`.
+

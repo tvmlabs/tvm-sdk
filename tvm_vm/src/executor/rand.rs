@@ -72,3 +72,80 @@ pub(crate) fn execute_setrand(engine: &mut Engine) -> Status {
     engine.set_rand(rand)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::stack::Stack;
+
+    fn engine_with_stack(stack: Stack) -> Engine {
+        Engine::with_capabilities(0).setup(SliceData::default(), None, Some(stack), None)
+    }
+
+    #[test]
+    fn setrand_replaces_seed() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(123_u32));
+        let mut engine = engine_with_stack(stack);
+
+        execute_setrand(&mut engine).unwrap();
+
+        assert_eq!(engine.rand().unwrap().into(0u32..=123).unwrap(), 123);
+    }
+
+    #[test]
+    fn addrand_hashes_previous_seed_and_argument() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(2_u32));
+        let mut engine = engine_with_stack(stack);
+        engine.set_rand(IntegerData::from_u32(1)).unwrap();
+
+        execute_addrand(&mut engine).unwrap();
+
+        let mut hasher = Sha256::new();
+        hasher.update(
+            IntegerData::from_u32(1)
+                .as_builder::<UnsignedIntegerBigEndianEncoding>(256)
+                .unwrap()
+                .data(),
+        );
+        hasher.update(
+            IntegerData::from_u32(2)
+                .as_builder::<UnsignedIntegerBigEndianEncoding>(256)
+                .unwrap()
+                .data(),
+        );
+        let expected = UnsignedIntegerBigEndianEncoding::new(256).deserialize(&hasher.finalize());
+        assert_eq!(*engine.rand().unwrap(), expected);
+    }
+
+    #[test]
+    fn rand_and_randu256_use_sha512_stream_deterministically() {
+        let seed = IntegerData::from_u32(7);
+        let encoded_seed =
+            seed.as_builder::<UnsignedIntegerBigEndianEncoding>(256).unwrap().data().to_vec();
+        let sha512 = sha512_digest(&encoded_seed);
+        let expected_rand = UnsignedIntegerBigEndianEncoding::new(256).deserialize(&sha512[..32]);
+        let expected_randu256 =
+            UnsignedIntegerBigEndianEncoding::new(256).deserialize(&sha512[32..]);
+
+        let mut engine = engine_with_stack(Stack::new());
+        engine.set_rand(seed.clone()).unwrap();
+        execute_randu256(&mut engine).unwrap();
+        assert_eq!(*engine.rand().unwrap(), expected_rand);
+        assert_eq!(*engine.cc.stack.get(0).as_integer().unwrap(), expected_randu256);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(5_u32));
+        let mut engine = engine_with_stack(stack);
+        engine.set_rand(seed).unwrap();
+        execute_rand(&mut engine).unwrap();
+        let expected_mul = IntegerData::from_unsigned_bytes_be(&sha512[32..])
+            .mul_shr256::<Signaling>(&IntegerData::from_u32(5))
+            .unwrap();
+        assert_eq!(*engine.rand().unwrap(), expected_rand);
+        assert_eq!(*engine.cc.stack.get(0).as_integer().unwrap(), expected_mul);
+    }
+}

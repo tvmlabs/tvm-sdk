@@ -2072,7 +2072,7 @@ impl Constructors<TypeIR, FieldIR> {
     fn as_enum_doc(&self) -> String {
         use std::fmt::Write;
         let mut ret =
-            format!("TL-derived from `{}`\n\n```text\n", &self.first_constructor().original_output);
+            format!("TL-derived from `{}`\n\n```text\n", self.first_constructor().original_output);
         for (e, cm) in self.0.iter().enumerate() {
             if e != 0 {
                 ret.write_str("\n\n").unwrap();

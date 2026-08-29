@@ -706,3 +706,46 @@ impl MerkleUpdate {
         Ok(proof_cell)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_cell(value: u8) -> Cell {
+        value.serialize().unwrap()
+    }
+
+    #[test]
+    fn merkle_update_read_from_rejects_non_zero_position() {
+        let update = MerkleUpdate::create(&sample_cell(1), &sample_cell(2)).unwrap();
+        let mut slice = SliceData::load_cell(update.serialize().unwrap()).unwrap();
+        slice.get_next_bit().unwrap();
+
+        assert!(MerkleUpdate::construct_from(&mut slice).is_err());
+    }
+
+    #[test]
+    fn merkle_update_read_from_rejects_invalid_type_hash_and_depth() {
+        let old = sample_cell(3);
+        let new = sample_cell(4);
+        let update = MerkleUpdate::create(&old, &new).unwrap();
+
+        let mut wrong_type = BuilderData::new();
+        wrong_type.append_u8(0).unwrap();
+        update.old_hash.write_to(&mut wrong_type).unwrap();
+        update.new_hash.write_to(&mut wrong_type).unwrap();
+        wrong_type.append_u16(update.old_depth).unwrap();
+        wrong_type.append_u16(update.new_depth).unwrap();
+        wrong_type.checked_append_reference(update.old.clone()).unwrap();
+        wrong_type.checked_append_reference(update.new.clone()).unwrap();
+        assert!(MerkleUpdate::construct_from_cell(wrong_type.into_cell().unwrap()).is_err());
+
+        let mut wrong_hash = update.clone();
+        wrong_hash.old_hash = UInt256::from([0x11; 32]);
+        assert!(MerkleUpdate::construct_from_cell(wrong_hash.serialize().unwrap()).is_err());
+
+        let mut wrong_depth = update;
+        wrong_depth.new_depth += 1;
+        assert!(MerkleUpdate::construct_from_cell(wrong_depth.serialize().unwrap()).is_err());
+    }
+}

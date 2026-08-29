@@ -164,3 +164,46 @@ impl From<&ark_groth16::VerifyingKey<Bn254>> for PreparedVerifyingKey {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::executor::zk_stuff::error::ZkCryptoError;
+
+    fn sample_pvk() -> PreparedVerifyingKey {
+        PreparedVerifyingKey {
+            vk_gamma_abc_g1: vec![G1Affine::default(), G1Affine::default()],
+            alpha_g1_beta_g2: Fq12::default(),
+            gamma_g2_neg_pc: G2Affine::default(),
+            delta_g2_neg_pc: G2Affine::default(),
+        }
+    }
+
+    #[test]
+    fn prepared_vk_serializes_and_deserializes_roundtrip() {
+        let pvk = sample_pvk();
+        let bytes = pvk.serialize().unwrap();
+        let decoded = PreparedVerifyingKey::deserialize(&bytes).unwrap();
+        assert_eq!(decoded, pvk);
+    }
+
+    #[test]
+    fn prepared_vk_deserialize_validates_shape() {
+        let empty: Vec<Vec<u8>> = vec![];
+        assert!(matches!(
+            PreparedVerifyingKey::deserialize(&empty),
+            Err(ZkCryptoError::InputLengthWrong(0))
+        ));
+
+        let malformed = vec![vec![0u8; 31], vec![], vec![], vec![]];
+        assert!(matches!(
+            PreparedVerifyingKey::deserialize(&malformed),
+            Err(ZkCryptoError::InvalidInput)
+        ));
+    }
+
+    #[test]
+    fn verifying_key_deserialize_rejects_invalid_bytes() {
+        assert!(matches!(VerifyingKey::deserialize(&[0u8; 8]), Err(ZkCryptoError::InvalidInput)));
+    }
+}

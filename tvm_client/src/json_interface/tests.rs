@@ -4,6 +4,12 @@ use crate::tests::TestClient;
 
 #[test]
 fn test_invalid_params_errors() {
+    if !cfg!(feature = "api_info") {
+        let error = TestClient::new().request_json("abi.encode_message", json!({})).unwrap_err();
+        assert!(error.message().contains("missing field `abi`"));
+        return;
+    }
+
     check_client_error_msg(
         json!({}),
         &[

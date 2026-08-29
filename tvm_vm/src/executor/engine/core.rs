@@ -11,7 +11,9 @@
 
 use std::collections::HashMap;
 use std::collections::HashSet;
+#[cfg(feature = "wasmtime")]
 use std::fmt::Write;
+#[cfg(feature = "wasmtime")]
 use std::io::BufRead;
 use std::ops::Range;
 use std::sync::Arc;
@@ -31,6 +33,7 @@ use tvm_types::Result;
 use tvm_types::SliceData;
 use tvm_types::UInt256;
 use tvm_types::error;
+#[cfg(feature = "wasmtime")]
 use tvm_types::sha256_digest;
 
 use crate::error::TvmError;
@@ -153,6 +156,9 @@ pub struct Engine {
     engine_version: semver::Version,
 
     pub(in crate::executor) self_dapp_id: Option<UInt256>,
+
+    pub(in crate::executor) check_history_proof_hash:
+        Option<Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>>,
 }
 
 #[cfg(feature = "signature_no_check")]
@@ -327,6 +333,7 @@ impl Engine {
             self_dapp_id: None,
             mvconfig: MVConfig::default(),
             engine_version: "1.0.0".parse().unwrap(),
+            check_history_proof_hash: None,
         }
     }
 
@@ -502,6 +509,13 @@ impl Engine {
 
     pub fn set_dapp_id(&mut self, dapp_id: Option<UInt256>) {
         self.self_dapp_id = dapp_id;
+    }
+
+    pub fn set_check_history_proof_hash(
+        &mut self,
+        callback: Arc<dyn Send + Sync + Fn(u8, [u8; 32]) -> bool>,
+    ) {
+        self.check_history_proof_hash = Some(callback);
     }
 
     #[cfg(feature = "wasmtime")]

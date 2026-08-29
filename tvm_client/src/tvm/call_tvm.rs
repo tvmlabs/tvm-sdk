@@ -127,7 +127,9 @@ pub(crate) fn call_tvm_msg(
     let function_selector = match msg.header() {
         CommonMsgInfo::IntMsgInfo(_) => tvm_vm::int!(0),
         CommonMsgInfo::ExtInMsgInfo(_) => tvm_vm::int!(-1),
-        CommonMsgInfo::ExtOutMsgInfo(_) => return Err(Error::invalid_message_type()),
+        CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) => {
+            return Err(Error::invalid_message_type());
+        }
     };
     stack
         .push(tvm_vm::int!(balance)) // token balance of contract

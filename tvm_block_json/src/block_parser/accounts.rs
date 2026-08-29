@@ -288,3 +288,82 @@ impl<'a, R: JsonReducer> ParserAccounts<'a, R> {
         ParsedEntry::reduced(doc, partition, self.accounts_config)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fs::read;
+
+    use tvm_block::Account;
+    use tvm_block::Block;
+    use tvm_block::Deserializable;
+    use tvm_types::BuilderData;
+    use tvm_types::IBitstring;
+    use tvm_types::read_single_root_boc;
+
+    use super::ParserAccounts;
+    use super::read_accounts;
+    use crate::NoReduce;
+
+    #[test]
+    fn read_accounts_rejects_invalid_shard_state_tag() {
+        let mut builder = BuilderData::new();
+        builder.append_u32(0xDEAD_BEEF).unwrap();
+        let cell = builder.into_cell().unwrap();
+
+        assert!(read_accounts(cell).is_err());
+    }
+
+    #[test]
+    fn read_accounts_reads_real_shard_state_accounts() {
+        let boc = read(
+            "src/tests/data/89ED400A43E76664437EFC9C79B84AC387493A9EE5E789338FF71C25F54218BE.boc",
+        )
+        .unwrap();
+        let cell = read_single_root_boc(&boc).unwrap();
+        let block = Block::construct_from_cell(cell).unwrap();
+        let state_update = block.state_update.read_struct().unwrap();
+        assert!(read_accounts(state_update.old).is_ok());
+        assert!(read_accounts(state_update.new).is_ok());
+    }
+
+    #[test]
+    fn prepare_account_entry_rejects_account_without_id() {
+        let no_config = None;
+        let err = match ParserAccounts::<NoReduce>::prepare_account_entry(
+            Account::default(),
+            None,
+            None,
+            None,
+            0,
+            &no_config,
+            None,
+        ) {
+            Ok(_) => panic!("must fail for account without id"),
+            Err(err) => err,
+        };
+
+        assert!(err.to_string().contains("Account without id"));
+    }
+
+    #[test]
+    fn prepare_account_entry_skips_boc_when_account_exceeds_size_limit() {
+        let mut account = tvm_block::generate_test_account_by_init_code_hash(false);
+        account.update_storage_stat().unwrap();
+        let no_config = None;
+
+        let entry = ParserAccounts::<NoReduce>::prepare_account_entry(
+            account,
+            None,
+            Some("order42".to_owned()),
+            Some(0),
+            0,
+            &no_config,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(entry.body["last_trans_chain_order"], "order42");
+        assert_eq!(entry.body["boc"], "");
+        assert!(entry.body.get("boc1").is_none());
+    }
+}

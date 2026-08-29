@@ -237,3 +237,46 @@ pub(crate) type ResultOpt<T> = Result<Option<T>>;
 pub(crate) type ResultRef<'a, T> = Result<&'a T>;
 pub(crate) type ResultVec<T> = Result<Vec<T>>;
 pub(crate) type Status = Result<()>;
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::ExceptionCode;
+
+    use super::*;
+
+    #[test]
+    fn exception_codes_and_normal_termination_are_reported() {
+        let normal = Exception::from_code(ExceptionCode::NormalTermination, file!(), line!());
+        assert_eq!(normal.exception_code(), Some(ExceptionCode::NormalTermination));
+        assert_eq!(normal.custom_code(), None);
+        assert_eq!(normal.is_normal_termination(), Some(0));
+
+        let alt = Exception::from_number_and_value(1, StackItem::int(7), file!(), line!());
+        assert_eq!(alt.exception_code(), None);
+        assert_eq!(alt.custom_code(), Some(1));
+        assert_eq!(alt.is_normal_termination(), Some(1));
+    }
+
+    #[test]
+    fn exception_or_custom_code_matches_underlying_variant() {
+        let system =
+            Exception::from_code_and_value(ExceptionCode::RangeCheckError, 10, file!(), line!());
+        assert_eq!(system.exception_or_custom_code(), ExceptionCode::RangeCheckError as i32);
+
+        let custom = Exception::from_number_and_value(77, StackItem::int(9), file!(), line!());
+        assert_eq!(custom.exception_or_custom_code(), 77);
+    }
+
+    #[test]
+    fn display_and_debug_include_message_value_and_location() {
+        let err = Exception::from_number_and_value(42, StackItem::int(3), "some/file.rs", 123_u32);
+        let display = format!("{}", err);
+        let debug = format!("{:?}", err);
+
+        assert!(display.contains("code 42"));
+        assert!(display.contains("value: 3"));
+        assert!(display.contains("some/file.rs:123"));
+        assert!(debug.contains("code 42"));
+        assert!(debug.contains("value 3"));
+    }
+}

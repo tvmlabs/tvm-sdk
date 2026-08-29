@@ -109,3 +109,80 @@ impl Serializable for ShardAccounts {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::accounts::generate_test_account_by_init_code_hash;
+
+    fn sample_account(byte: u8) -> ShardAccount {
+        ShardAccount::with_params(
+            &generate_test_account_by_init_code_hash(false),
+            UInt256::from([byte; 32]),
+            byte as u64 + 1,
+            Some(UInt256::from([byte.wrapping_add(1); 32])),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn shard_accounts_cover_insert_iterate_replace_and_remove_paths() {
+        let id1 = UInt256::from([1; 32]);
+        let id2 = UInt256::from([2; 32]);
+        let mut accounts = ShardAccounts::default();
+
+        accounts.insert(&id1, &sample_account(10)).unwrap();
+        accounts.insert(&id2, &sample_account(20)).unwrap();
+
+        let mut visited = Vec::new();
+        assert!(
+            accounts
+                .iterate_accounts(|account_id, shard_account| {
+                    visited.push((account_id, shard_account.last_trans_lt()));
+                    Ok(true)
+                })
+                .unwrap()
+        );
+        visited.sort_by_key(|(account_id, _)| account_id.as_slice().first().copied().unwrap_or(0));
+        assert_eq!(visited.len(), 2);
+        assert_eq!(visited[0], (id1.clone(), 11));
+        assert_eq!(visited[1], (id2.clone(), 21));
+
+        assert!(!accounts.is_external(&id1).unwrap());
+        let original_cell = accounts.replace_with_external(&id1).unwrap();
+        assert_eq!(
+            accounts.account(&AccountId::from(&id1)).unwrap().unwrap().account_cell().unwrap(),
+            original_cell
+        );
+        assert!(accounts.is_external(&id1).unwrap());
+
+        accounts.replace_with_redirect(&id2).unwrap();
+        let redirected = accounts.account(&AccountId::from(&id2)).unwrap().unwrap();
+        assert!(redirected.is_redirect());
+        assert_eq!(redirected.last_trans_hash(), &UInt256::from([20; 32]));
+        assert_eq!(redirected.last_trans_lt(), 21);
+        assert_eq!(redirected.get_dapp_id(), Some(&UInt256::from([21; 32])));
+
+        assert!(accounts.remove(&id2).unwrap());
+        assert!(accounts.account(&AccountId::from(&id2)).unwrap().is_none());
+        assert!(!accounts.remove(&id2).unwrap());
+    }
+
+    #[test]
+    fn shard_accounts_replace_all_with_external_and_missing_account_paths() {
+        let id1 = UInt256::from([3; 32]);
+        let id2 = UInt256::from([4; 32]);
+        let missing = UInt256::from([9; 32]);
+        let mut accounts = ShardAccounts::default();
+
+        accounts.insert(&id1, &sample_account(30)).unwrap();
+        accounts.insert(&id2, &sample_account(40)).unwrap();
+        accounts.replace_all_with_external().unwrap();
+
+        assert!(accounts.is_external(&id1).unwrap());
+        assert!(accounts.is_external(&id2).unwrap());
+        assert!(!accounts.is_external(&missing).unwrap());
+        assert!(accounts.replace_with_external(&missing).is_err());
+        assert!(accounts.replace_with_redirect(&missing).is_err());
+    }
+}

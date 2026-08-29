@@ -50,12 +50,10 @@ pub const ABI: &str = r#"
 }
 "#;
 
-pub struct AddressInput {
-    config: Config,
-}
+pub struct AddressInput;
 impl AddressInput {
-    pub fn new(config: Config) -> Self {
-        Self { config }
+    pub fn new(_config: Config) -> Self {
+        Self
     }
 
     fn get(&self, args: &Value) -> InterfaceResult {

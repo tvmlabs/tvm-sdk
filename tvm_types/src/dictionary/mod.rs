@@ -1987,3 +1987,379 @@ impl<T: HashmapType + ?Sized> Iterator for HashmapIterator<T> {
         self.next_item().transpose()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bits(value: usize, bit_len: usize) -> SliceData {
+        let mut builder = BuilderData::new();
+        builder.append_bits(value, bit_len).unwrap();
+        SliceData::load_bitstring(builder).unwrap()
+    }
+
+    fn value(byte: u8) -> SliceData {
+        SliceData::load_bitstring(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    fn slice_to_u64(slice: &SliceData) -> u64 {
+        let mut slice = slice.clone();
+        slice.get_next_int(slice.remaining_bits()).unwrap()
+    }
+
+    fn key_to_u64(key: &BuilderData) -> u64 {
+        slice_to_u64(&SliceData::load_bitstring(key.clone()).unwrap())
+    }
+
+    fn fill_hashmap(items: &[(usize, u8)]) -> HashmapE {
+        let mut map = HashmapE::with_bit_len(4);
+        for (key, byte) in items {
+            map.set(bits(*key, 4), &value(*byte)).unwrap();
+        }
+        map
+    }
+
+    #[test]
+    fn hashmap_labels_roundtrip_short_long_same_and_empty() {
+        for (key, max) in [
+            (SliceData::default(), 8),
+            (bits(0b10101, 5), 16),
+            (bits(0b10101010101, 11), 1023),
+            (bits(0b1111, 4), 16),
+            (bits(0, 6), 16),
+        ] {
+            let encoded = hm_label(&key, max).unwrap();
+            let mut cursor = SliceData::load_bitstring(encoded.clone()).unwrap();
+            assert_eq!(LabelReader::read_label(&mut cursor, max).unwrap(), key);
+            assert!(cursor.is_empty());
+
+            let mut cursor = SliceData::load_bitstring(encoded.clone()).unwrap();
+            assert_eq!(
+                LabelReader::read_label_length(&mut cursor, max).unwrap(),
+                key.remaining_bits()
+            );
+
+            let mut reader = LabelReader::new(SliceData::load_bitstring(encoded).unwrap());
+            let mut remaining = max;
+            reader.skip_label(&mut remaining).unwrap();
+            assert_eq!(remaining, max - key.remaining_bits());
+            assert!(reader.remainder().unwrap().is_empty());
+        }
+    }
+
+    #[test]
+    fn label_reader_rejects_invalid_state_transitions() {
+        let encoded = hm_label(&bits(0b10, 2), 4).unwrap();
+        let mut reader = LabelReader::new(SliceData::load_bitstring(encoded).unwrap());
+        assert!(reader.clone().remainder().is_err());
+        assert!(reader.reference(0).is_err());
+
+        assert_eq!(reader.get_label(4).unwrap(), bits(0b10, 2));
+        assert!(reader.get_label(4).is_err());
+        assert!(reader.skip_label(&mut 4).is_err());
+    }
+
+    #[test]
+    fn same_bit_label_uses_short_encoding_for_single_bit() {
+        let key = bits(1, 1);
+        let encoded = hm_label(&key, 1).unwrap();
+        let mut cursor = SliceData::load_bitstring(encoded).unwrap();
+        assert_eq!(LabelReader::read_label(&mut cursor, 1).unwrap(), key);
+        assert!(cursor.is_empty());
+    }
+
+    #[test]
+    fn label_length_rejects_lengths_bigger_than_max() {
+        let mut short = BuilderData::new();
+        short.append_bit_zero().unwrap();
+        short.append_bit_one().unwrap();
+        short.append_bit_one().unwrap();
+        short.append_bit_zero().unwrap();
+        let mut short = SliceData::load_bitstring(short).unwrap();
+        assert!(LabelReader::read_label_length(&mut short, 1).is_err());
+
+        let mut long = BuilderData::new();
+        long.append_bit_one().unwrap();
+        long.append_bit_zero().unwrap();
+        long.append_bits(3, 2).unwrap();
+        let mut long = SliceData::load_bitstring(long).unwrap();
+        assert!(LabelReader::read_label_length(&mut long, 2).is_err());
+
+        let mut same = BuilderData::new();
+        same.append_bit_one().unwrap();
+        same.append_bit_one().unwrap();
+        same.append_bit_zero().unwrap();
+        same.append_bits(3, 2).unwrap();
+        let mut same = SliceData::load_bitstring(same).unwrap();
+        assert!(LabelReader::read_label_length(&mut same, 2).is_err());
+    }
+
+    #[test]
+    fn deprecated_slice_label_methods_consume_only_label() {
+        let key = bits(0b101, 3);
+        let mut encoded = hm_label(&key, 8).unwrap();
+        encoded.append_bits(0b11, 2).unwrap();
+
+        let mut cursor = SliceData::load_bitstring(encoded).unwrap();
+        assert_eq!(cursor.get_label(8).unwrap(), key);
+        assert_eq!(cursor.remaining_bits(), 2);
+        assert_eq!(slice_to_u64(&cursor), 0b11);
+
+        let mut cursor = hm_label(&bits(0b0110, 4), 8).unwrap();
+        cursor.append_bit_one().unwrap();
+        let mut cursor = SliceData::load_bitstring(cursor).unwrap();
+        let mut max = 8;
+        let raw = cursor.get_label_raw(&mut max, BuilderData::default()).unwrap();
+        assert_eq!(SliceData::load_bitstring(raw).unwrap(), bits(0b0110, 4));
+        assert_eq!(max, 4);
+        assert_eq!(slice_to_u64(&cursor), 1);
+    }
+
+    #[test]
+    fn dictionary_root_bit_handles_empty_reference_and_underflow() {
+        let mut empty = bits(0, 1);
+        let root = empty.get_dictionary_opt().unwrap();
+        assert!(root.is_empty_root());
+        assert!(empty.is_empty());
+
+        let child = value(0xaa).into_cell();
+        let mut builder = BuilderData::new();
+        builder.append_bit_one().unwrap();
+        builder.checked_append_reference(child.clone()).unwrap();
+        let mut non_empty = SliceData::load_builder(builder).unwrap();
+        let root = non_empty.get_dictionary().unwrap();
+        assert_eq!(root.remaining_references(), 1);
+        assert_eq!(root.reference(0).unwrap(), child);
+        assert!(non_empty.is_empty());
+
+        let mut missing_ref = bits(1, 1);
+        assert!(missing_ref.get_dictionary_opt().is_none());
+        let mut no_bits = SliceData::default();
+        assert!(no_bits.get_dictionary_opt().is_none());
+        assert!(no_bits.get_dictionary().is_err());
+    }
+
+    #[test]
+    fn hashmap_set_add_replace_get_remove_and_iterate() {
+        let mut map = HashmapE::with_bit_len(4);
+        assert!(map.is_empty());
+        assert_eq!(format!("{}", map), "Empty Hashmap");
+        assert_eq!(map.len().unwrap(), 0);
+        assert_eq!(map.count(1).unwrap(), 0);
+        assert!(map.get(bits(1, 3)).is_err());
+        assert!(map.get(bits(1, 4)).unwrap().is_none());
+
+        assert!(map.replace_with_gas(bits(1, 4), &value(0x11), &mut 0).unwrap().is_none());
+        assert!(map.get(bits(1, 4)).unwrap().is_none());
+
+        assert!(map.add_with_gas(bits(1, 4), &value(0x11), &mut 0).unwrap().is_none());
+        assert_eq!(map.get(bits(1, 4)).unwrap().unwrap(), value(0x11));
+        assert_eq!(
+            map.add_with_gas(bits(1, 4), &value(0x22), &mut 0).unwrap().unwrap(),
+            value(0x11)
+        );
+        assert_eq!(map.get(bits(1, 4)).unwrap().unwrap(), value(0x11));
+
+        assert_eq!(
+            map.replace_with_gas(bits(1, 4), &value(0x33), &mut 0).unwrap().unwrap(),
+            value(0x11)
+        );
+        assert_eq!(map.get(bits(1, 4)).unwrap().unwrap(), value(0x33));
+
+        for (key, byte) in [(0, 0x00), (2, 0x22), (15, 0xff)] {
+            map.set(bits(key, 4), &value(byte)).unwrap();
+        }
+        assert_eq!(map.len().unwrap(), 4);
+        assert_eq!(map.count(2).unwrap(), 2);
+
+        let iterated = map
+            .iter()
+            .map(|item| {
+                let (key, val) = item.unwrap();
+                (key_to_u64(&key), slice_to_u64(&val) as u8)
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(iterated, vec![(0, 0x00), (1, 0x33), (2, 0x22), (15, 0xff)]);
+
+        let mut visited = Vec::new();
+        assert!(
+            map.iterate_slices(|key, val| {
+                visited.push((slice_to_u64(&key), slice_to_u64(&val) as u8));
+                Ok(true)
+            })
+            .unwrap()
+        );
+        assert_eq!(visited, iterated);
+
+        assert_eq!(map.remove(bits(1, 4)).unwrap().unwrap(), value(0x33));
+        assert!(map.remove(bits(1, 4)).unwrap().is_none());
+        assert_eq!(map.len().unwrap(), 3);
+    }
+
+    #[test]
+    fn hashmap_min_max_and_find_leaf_cover_signed_and_unsigned_paths() {
+        let map = fill_hashmap(&[(0, 0x00), (2, 0x22), (8, 0x88), (15, 0xff)]);
+
+        let (key, val) = map.get_min(false, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (0, 0x00));
+        let (key, val) = map.get_max(false, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (15, 0xff));
+
+        let (key, val) = map.get_min(true, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (8, 0x88));
+        let (key, val) = map.get_max(true, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (2, 0x22));
+
+        let (key, val) = map.find_leaf(bits(2, 4), true, true, false, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (2, 0x22));
+        let (key, val) = map.find_leaf(bits(3, 4), true, false, false, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (8, 0x88));
+        let (key, val) = map.find_leaf(bits(3, 4), false, false, false, &mut 0).unwrap().unwrap();
+        assert_eq!((key_to_u64(&key), slice_to_u64(&val)), (2, 0x22));
+
+        assert!(HashmapE::with_bit_len(4).get_min(false, &mut 0).unwrap().is_none());
+        assert!(map.find_leaf(bits(15, 4), true, false, false, &mut 0).unwrap().is_none());
+    }
+
+    #[test]
+    fn hashmap_scan_diff_reports_left_right_and_changed_values() {
+        let left = fill_hashmap(&[(1, 0x11), (2, 0x22), (4, 0x44)]);
+        let right = fill_hashmap(&[(2, 0x33), (4, 0x44), (7, 0x77)]);
+
+        let mut diff = Vec::new();
+        assert!(
+            left.scan_diff(&right, |key, left, right| {
+                diff.push((
+                    slice_to_u64(&key),
+                    left.map(|slice| slice_to_u64(&slice) as u8),
+                    right.map(|slice| slice_to_u64(&slice) as u8),
+                ));
+                Ok(true)
+            })
+            .unwrap()
+        );
+
+        diff.sort_by_key(|item| item.0);
+        assert_eq!(
+            diff,
+            vec![(1, Some(0x11), None), (2, Some(0x22), Some(0x33)), (7, None, Some(0x77))]
+        );
+
+        let mut stopped = 0;
+        assert!(
+            !left
+                .scan_diff(&right, |_key, _left, _right| {
+                    stopped += 1;
+                    Ok(false)
+                })
+                .unwrap()
+        );
+        assert_eq!(stopped, 1);
+    }
+
+    #[test]
+    fn hashmap_filter_and_filter_split_rebuild_edges() {
+        let mut map = fill_hashmap(&[(1, 0x11), (2, 0x22), (3, 0x33), (4, 0x44)]);
+
+        map.hashmap_filter(|key, _value| {
+            if key_to_u64(key) == 2 {
+                Ok(HashmapFilterResult::Remove)
+            } else {
+                Ok(HashmapFilterResult::Accept)
+            }
+        })
+        .unwrap();
+        assert!(map.get(bits(2, 4)).unwrap().is_none());
+        assert_eq!(map.len().unwrap(), 3);
+
+        let mut cancelled = map.clone();
+        cancelled.hashmap_filter(|_key, _value| Ok(HashmapFilterResult::Cancel)).unwrap();
+        assert_eq!(cancelled, map);
+
+        let moved = map
+            .hashmap_filter_split(|key, _value| {
+                if key_to_u64(key) & 1 == 1 {
+                    Ok(HashmapFilterSplitResult::Move)
+                } else {
+                    Ok(HashmapFilterSplitResult::Stay)
+                }
+            })
+            .unwrap();
+
+        assert!(map.get(bits(1, 4)).unwrap().is_none());
+        assert!(map.get(bits(3, 4)).unwrap().is_none());
+        assert_eq!(map.get(bits(4, 4)).unwrap().unwrap(), value(0x44));
+        assert_eq!(moved.get(bits(1, 4)).unwrap().unwrap(), value(0x11));
+        assert_eq!(moved.get(bits(3, 4)).unwrap().unwrap(), value(0x33));
+    }
+
+    #[test]
+    fn hashmap_split_merge_combine_and_subtrees_handle_prefixes() {
+        let map = fill_hashmap(&[(1, 0x11), (2, 0x22), (8, 0x88), (15, 0xff)]);
+        let empty_prefix = SliceData::default();
+        let (left, right) = map.split(&empty_prefix).unwrap();
+        assert_eq!(left.get(bits(1, 4)).unwrap().unwrap(), value(0x11));
+        assert_eq!(left.get(bits(2, 4)).unwrap().unwrap(), value(0x22));
+        assert_eq!(right.get(bits(8, 4)).unwrap().unwrap(), value(0x88));
+        assert_eq!(right.get(bits(15, 4)).unwrap().unwrap(), value(0xff));
+
+        let mut merged = left.clone();
+        merged.merge(&right, &empty_prefix).unwrap();
+        assert_eq!(merged.len().unwrap(), 4);
+
+        let mut combined = fill_hashmap(&[(1, 0x11)]);
+        assert!(combined.combine_with(&fill_hashmap(&[(2, 0x22)])).unwrap());
+        assert!(!combined.combine_with(&fill_hashmap(&[(2, 0x22)])).unwrap());
+        assert!(combined.combine_with(&fill_hashmap(&[(2, 0x99)])).is_err());
+
+        let mut subtree = map.clone();
+        subtree.subtree_with_prefix(&bits(0, 1), &mut 0).unwrap();
+        assert_eq!(subtree.get(bits(1, 4)).unwrap().unwrap(), value(0x11));
+        assert!(subtree.get(bits(8, 4)).unwrap().is_none());
+
+        let root = map.subtree_root_cell(&bits(0, 1)).unwrap().unwrap();
+        assert!(root.bit_length() > 0 || root.references_count() > 0);
+
+        let mut without_prefix = map.clone();
+        without_prefix.subtree_without_prefix(&bits(0, 1), &mut 0).unwrap();
+        assert_eq!(without_prefix.bit_len(), 3);
+        assert_eq!(without_prefix.get(bits(1, 3)).unwrap().unwrap(), value(0x11));
+        assert!(without_prefix.get(bits(0, 3)).unwrap().is_none());
+
+        let partial =
+            map.clone().into_subtree_with_prefix_not_exact(&bits(0b011, 3), &mut 0).unwrap();
+        assert!(partial.data().is_some());
+        assert_eq!(partial.get(bits(1, 4)).unwrap().unwrap(), value(0x11));
+        assert_eq!(partial.get(bits(2, 4)).unwrap().unwrap(), value(0x22));
+        assert!(partial.get(bits(8, 4)).unwrap().is_none());
+    }
+
+    #[test]
+    fn pfx_hashmap_finds_prefix_leaves_and_removes_entries() {
+        let mut map = PfxHashmapE::with_bit_len(8);
+        assert_eq!(format!("{}", map), "Empty PfxHashmap");
+        assert!(map.get_prefix_leaf_with_gas(bits(0b10101010, 8), &mut 0).unwrap().1.is_none());
+        assert!(!map.is_prefix(bits(0b1010, 4)).unwrap());
+
+        map.set(bits(0b1010, 4), &value(0xaa)).unwrap();
+        map.set(bits(0b11110000, 8), &value(0xf0)).unwrap();
+
+        assert_eq!(map.get(bits(0b1010, 4)).unwrap().unwrap(), value(0xaa));
+        assert!(map.is_prefix(bits(0b101, 3)).unwrap());
+        assert!(!map.is_prefix(bits(0b100, 3)).unwrap());
+
+        let (path, leaf, suffix) =
+            map.get_prefix_leaf_with_gas(bits(0b10101111, 8), &mut 0).unwrap();
+        assert_eq!(path, bits(0b1010, 4));
+        assert_eq!(leaf.unwrap(), value(0xaa));
+        assert_eq!(suffix, bits(0b1111, 4));
+
+        let (path, leaf, suffix) = map.get_leaf_by_prefix(bits(0b1111, 4)).unwrap();
+        assert_eq!(path, bits(0b11110000, 8));
+        assert_eq!(leaf.unwrap(), value(0xf0));
+        assert!(suffix.is_empty());
+
+        assert_eq!(map.remove(bits(0b1010, 4)).unwrap().unwrap(), value(0xaa));
+        assert!(map.get(bits(0b1010, 4)).unwrap().is_none());
+    }
+}

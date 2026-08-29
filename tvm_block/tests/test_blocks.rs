@@ -286,7 +286,6 @@ fn test_real_tvm_boc() {
 }
 
 #[test]
-#[ignore]
 fn test_real_tvm_mgs() {
     // let in_path = Path::new("tests/data/wallet-query.boc");
     // let in_path = Path::new("tests/data/new-wallet-query.boc");

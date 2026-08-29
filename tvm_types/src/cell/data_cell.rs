@@ -53,13 +53,18 @@ pub enum DataCellError {
 }
 
 thread_local! {
-    static UNIQUE_BLOOM: RefCell<BloomFilter> = RefCell::new(BloomFilter::with_false_pos(0.00001).expected_items(1000000));
+    static UNIQUE_BLOOM: RefCell<BloomFilter> =
+        RefCell::new(BloomFilter::with_false_pos(0.00001).seed(&0u128).expected_items(1000000));
 }
 
 impl DataCell {
     thread_local! {
         pub static UNIQUE_MAX_ALLOWED_CELL_DEPTH: RefCell<Option<u16>> = const { RefCell::new(None) };
         pub static UNIQUE_MAX_ALLOWED_NESTED_CELL_BIT_COUNT: RefCell<Option<u64>> = const { RefCell::new(None) };
+    }
+
+    pub fn reset_unique_bloom() {
+        UNIQUE_BLOOM.with_borrow_mut(|bloom| bloom.clear());
     }
 
     pub fn new() -> Self {

@@ -2,6 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.2] - 2026-06-15
+
+### Fixed
+- `call`/`callx` and other message-sending commands no longer fail with `code 11: Server responded with code 404` when targeting a node that serves only the REST message API and returns 404 on `/graphql`. The GraphQL server-version probe is now best-effort: when GraphQL is reachable its `info.version` is trusted as before; when it is unavailable the send proceeds using the current v3 wire format instead of aborting.
+- Decoding return values and bodies that span multiple cells no longer produces `WrongDataLayout` when the last field spills into a reference cell (off-by-32 fix in `tvm_abi`).
+
+## [3.0.1] - 2026-06-08
+
+### Fixed
+- Fixed `decode::tests::test_decode_body_json` to use an existing manifest-relative wallet ABI fixture instead of a missing `tests/samples/wallet.abi.json` path.
+
+## [3.0.0] - 2026-06-05
+
+### Changed (breaking)
+- Default HD key derivation path changed from `m/44'/396'/0'/0/0` to `m/44'/1331'/0'/0/0`. Key and address generation that rely on the default path now derive different keys from the same seed phrase. To keep previous keys, pass the old path explicitly.
+- Address inputs now require the `dapp_id::account_id` form on all commands and against all nodes. Legacy `0:<hex>`, bare-hex, single-colon, and 128-hex address forms are no longer accepted.
+- `deploy` and `deployx` now always require `--dst-dapp-id`, including `--fee` mode. Pass all zeros for a self-rooted dapp.
+
+### Added
+- `genaddr` additionally prints the `dapp_id::account_id` self-rooted address form (`dapp_account` in JSON output).
+
+### Fixed
+- Address values are passed through internal re-parsing in full `dapp_id::account_id` form, preserving destination dapp information across commands.
+
+## [2.24.19] - 2026-04-17
+
+### Added
+- Support for extended address parsing via `SdkAddress::from_str`, including `dapp_id` extraction from user-provided addresses.
+
+### Changed
+- `call`, `callx`, and proposal commands now derive destination `dapp_id` from extended addresses.
+- `deploy`, `deployx`, and `send` commands now accept explicit `--dst-dapp-id` where the destination `dapp_id` can not be derived from an address.
+
+### Fixed
+- Fixed `dump accounts` address validation for the current `SdkAddress` API.
+
 ## [2.24.18] - 2026-04-13
 
 ### Added

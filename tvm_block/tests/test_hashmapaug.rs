@@ -21,7 +21,6 @@ use tvm_types::HashmapSubtree;
 use tvm_types::hm_label;
 use tvm_types::*;
 mod common;
-use common::write_read_and_assert;
 
 #[derive(Eq, Clone, Debug, Default, PartialEq)]
 pub struct GramStruct(Grams);

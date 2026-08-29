@@ -42,3 +42,25 @@ pub struct ParsingBlock<'a> {
     pub proof: Option<&'a BlockProof>,
     pub shard_state: Option<&'a ShardStateUnsplit>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::ParsedBlock;
+
+    #[test]
+    fn parsed_block_new_and_default_are_empty() {
+        let parsed = ParsedBlock::new();
+        assert!(parsed.block.is_none());
+        assert!(parsed.proof.is_none());
+        assert!(parsed.accounts.is_empty());
+        assert!(parsed.transactions.is_empty());
+        assert!(parsed.messages.is_empty());
+
+        let default = ParsedBlock::default();
+        assert!(default.block.is_none());
+        assert!(default.proof.is_none());
+        assert!(default.accounts.is_empty());
+        assert!(default.transactions.is_empty());
+        assert!(default.messages.is_empty());
+    }
+}

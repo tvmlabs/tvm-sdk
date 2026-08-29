@@ -161,12 +161,6 @@ impl IntegerData {
         }
     }
 
-    pub fn from_unsigned_bytes_le(data: impl AsRef<[u8]>) -> Self {
-        Self {
-            value: IntegerValue::Value(Int::from_bytes_le(num::bigint::Sign::Plus, data.as_ref())),
-        }
-    }
-
     /// Compares value with another taking in account behavior of operation.
     #[inline]
     pub(crate) fn compare<T: OperationBehavior>(&self, other: &IntegerData) -> ResultOpt<Ordering> {

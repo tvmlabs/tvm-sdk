@@ -385,3 +385,61 @@ impl Deserializable for OutAction {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn action_roundtrip(action: OutAction) {
+        assert_eq!(OutAction::construct_from_cell(action.serialize().unwrap()).unwrap(), action);
+    }
+
+    #[test]
+    fn out_action_roundtrips_cover_all_simple_variants() {
+        let message = Message::default();
+        let code = Cell::default();
+        let hash = UInt256::from([7; 32]);
+        let address = AccountId::from([9; 32]);
+
+        action_roundtrip(OutAction::new_send(SENDMSG_PAY_FEE_SEPARATELY, message.clone()));
+        action_roundtrip(OutAction::new_set(code.clone()));
+        action_roundtrip(OutAction::new_reserve(RESERVE_ALL_BUT, CurrencyCollection::default()));
+        action_roundtrip(OutAction::new_mint(ExtraCurrencyCollection::default()));
+        action_roundtrip(OutAction::new_burn(77, 13));
+        action_roundtrip(OutAction::new_exchange_shell(88));
+        action_roundtrip(OutAction::new_change_library(CHANGE_LIB_REMOVE, None, Some(hash)));
+        action_roundtrip(OutAction::new_change_library(SET_LIB_CODE_ADD_PRIVATE, Some(code), None));
+        action_roundtrip(OutAction::new_mint_shell(99));
+        action_roundtrip(OutAction::new_mint_shellq(100));
+        action_roundtrip(OutAction::send_to_dapp_config(101));
+        action_roundtrip(OutAction::new_copyleft(17, address));
+    }
+
+    #[test]
+    fn out_actions_roundtrip_preserves_order_and_reports_errors() {
+        let mut actions = OutActions::default();
+        actions.push_back(OutAction::new_burn(1, 2));
+        actions.push_back(OutAction::new_mint_shell(3));
+        actions.push_back(OutAction::new_send(0, Message::default()));
+
+        let serialized = actions.serialize().unwrap();
+        assert_eq!(OutActions::construct_from_cell(serialized).unwrap(), actions);
+
+        let mut trailing = BuilderData::new();
+        trailing.append_bit_one().unwrap();
+        assert!(OutActions::construct_from_cell(trailing.into_cell().unwrap()).is_err());
+
+        assert!(OutAction::None.serialize().is_err());
+    }
+
+    #[test]
+    fn out_action_rejects_short_cells_and_unknown_tags() {
+        let mut short = BuilderData::new();
+        short.append_u16(1).unwrap();
+        assert!(OutAction::construct_from_cell(short.into_cell().unwrap()).is_err());
+
+        let mut unknown = BuilderData::new();
+        unknown.append_u32(0xDEAD_BEEF).unwrap();
+        assert!(OutAction::construct_from_cell(unknown.into_cell().unwrap()).is_err());
+    }
+}

@@ -308,9 +308,14 @@ impl MultisigArgs {
             .ok_or("sign key is not defined".to_string())?;
         let v2 = matches.is_present("V2");
 
-        let sdk_addr = SdkAddress::from_str(&address).map_err(|e| e)?;
-        let addr = sdk_addr.account_id;
-        let dapp_id = sdk_addr.dapp_id;
+        let sdk_addr = SdkAddress::from_str(&address)?;
+        // `execute()` forwards this address to call_contract_with_result, which
+        // re-parses it via SdkAddress::from_str (prepare_message_params /
+        // emulate_locally). Store the full round-trippable dapp_id::account_id
+        // form so the strict parser accepts it; the dapp_id is also kept
+        // separately for the SDK send layer.
+        let dapp_id = sdk_addr.dapp_id.clone();
+        let addr = sdk_addr.to_string();
         let mut abi = serde_json::from_str::<AbiContract>(MSIG_ABI).unwrap_or_default();
         if v2 {
             abi.version = Some("2.3".to_owned());
