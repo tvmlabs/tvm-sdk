@@ -40,8 +40,8 @@ pub fn try_calc_subset_for_workchain(
     cc_seqno: u32,
     _time: UnixTime32,
 ) -> Result<Option<(Vec<ValidatorDescr>, u32)>> {
-    // In a case of old block proof it doesn't contain workchains in config, so 1
-    // workchain by default
+    // In a case of old block proof it doesn't contain workchains in config, so
+    // 1 workchain by default
     let workchains = config.workchains().unwrap_or_else(|_| SINGLE_WORKCHAIN.clone());
     match workchains.len()? as i32 {
         0 => tvm_types::fail!("workchain's description is empty"),
@@ -67,8 +67,8 @@ pub fn try_calc_subset_for_workchain(
                     .calc_subset(cc_config, shard_pfx, workchain_id, cc_seqno, _time)
                     .map(Some)
             } else {
-                // Not enough validators -- config is ok, but we can't validate the shard at the
-                // moment
+                // Not enough validators -- config is ok, but we can't validate
+                // the shard at the moment
                 Ok(None)
             }
         }

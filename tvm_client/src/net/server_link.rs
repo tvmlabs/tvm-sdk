@@ -1080,9 +1080,10 @@ impl ServerLink {
                 get_redirection_data(err.data(), self.state.use_https_for_rest_api);
 
             if let Some(thread_id) = real_thread_id {
-                // Guard against malformed thread_id strings in node error payloads
-                // (e.g. nodes that accidentally serialize Debug instead of hex),
-                // which would otherwise make every retry fail with HTTP 400
+                // Guard against malformed thread_id strings in node error
+                // payloads (e.g. nodes that accidentally
+                // serialize Debug instead of hex), which would
+                // otherwise make every retry fail with HTTP 400
                 // "thread_id can not be parsed" on the receiving node.
                 if ThreadIdentifier::try_from(thread_id.clone()).is_ok() {
                     message.set_thread_id(Some(thread_id));
@@ -1137,8 +1138,8 @@ impl ServerLink {
         }
         let result = self.query(&GraphQLQuery::with_post_requests(&requests), endpoint).await;
 
-        // Send messages is always successful in order to process case when server
-        // received message but client didn't receive response
+        // Send messages is always successful in order to process case when
+        // server received message but client didn't receive response
         if let Err(err) = &result {
             log::warn!("Send messages error: {}", err.message());
         }

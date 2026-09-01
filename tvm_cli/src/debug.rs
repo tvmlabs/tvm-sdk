@@ -1113,7 +1113,8 @@ pub async fn decode_messages(
         //     Err(err) => err.to_string().into()
         // };
         // let _in_msg = match tr.read_in_msg() {
-        //     Ok(Some(in_msg)) => base64_encode(in_msg.write_to_bytes().unwrap()),
+        //     Ok(Some(in_msg)) =>
+        // base64_encode(in_msg.write_to_bytes().unwrap()),
         //     _ => String::new()
         // };
         let result = json!({
@@ -1679,7 +1680,8 @@ async fn make_sequence_diagram(
                             own_index, out_index, out_id, out_name, tr_id, tr_name).unwrap();
                         last_tr_id = Some(tr_id);
                     } else {
-                        // transaction spawned by the message is out of the scope
+                        // transaction spawned by the message is out of the
+                        // scope
                         writeln!(
                             output,
                             "{} ->> {} : m:[[{url_message_prefix}{} {}]]",

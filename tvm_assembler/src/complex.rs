@@ -336,8 +336,8 @@ fn compile_pushcont(
             destination.write_command(command.as_slice(), dbg2)
         } else if n <= 127 {
             // We cannot put command and code in one cell, because it will
-            // be more than 1023 bits: 127 bytes (pushcont data) + 2 bytes(opcode).
-            // Write as r = 1 and xx = 0x00.
+            // be more than 1023 bits: 127 bytes (pushcont data) + 2
+            // bytes(opcode). Write as r = 1 and xx = 0x00.
             let dbg2 = DbgNode::from_ext(pos, vec![dbg]);
             destination.write_composite_command(&[0x8E, 0x80], vec![cont], dbg2)
         } else {

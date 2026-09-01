@@ -31,8 +31,8 @@ pub(crate) async fn find_last_shard_block(
     let workchain = address.get_workchain_id();
     let server_link = context.get_server_link()?;
 
-    // if account resides in masterchain, then starting point is last masterchain
-    // block generated before message was sent
+    // if account resides in masterchain, then starting point is last
+    // masterchain block generated before message was sent
     let blocks = server_link
         .query_collection(
             ParamsOfQueryCollection {
@@ -54,18 +54,19 @@ pub(crate) async fn find_last_shard_block(
     debug!("Last block {}", blocks[0]["id"]);
 
     if MASTERCHAIN_ID == workchain {
-        // if account resides in masterchain, then starting point is last masterchain
-        // block
+        // if account resides in masterchain, then starting point is last
+        // masterchain block
         blocks[0]["id"]
             .as_str()
             .map(|val| val.to_owned().into())
             .ok_or(Error::block_not_found("No masterchain block found".to_owned()))
     } else {
-        // if account is from other chains, then starting point is last account's shard
-        // block To obtain it we take masterchain block to get shards
-        // configuration and select matching shard
+        // if account is from other chains, then starting point is last
+        // account's shard block To obtain it we take masterchain block
+        // to get shards configuration and select matching shard
         if blocks[0].is_null() {
-            // Evernode SE case - no masterchain, no sharding. Check that only one shard
+            // Evernode SE case - no masterchain, no sharding. Check that only
+            // one shard
             let blocks = server_link
                 .query_collection(
                     ParamsOfQueryCollection {
@@ -90,8 +91,8 @@ pub(crate) async fn find_last_shard_block(
                     workchain
                 )));
             }
-            // if workchain is sharded, then it is not Evernode SE and masterchain blocks
-            // missing is error
+            // if workchain is sharded, then it is not Evernode SE and
+            // masterchain blocks missing is error
             if blocks[0]["after_merge"] == true || blocks[0]["shard"] != "8000000000000000" {
                 return Err(Error::block_not_found("No masterchain block found".to_owned()));
             }

@@ -128,8 +128,8 @@ impl From<&PreparedVerifyingKey> for ArkPreparedVerifyingKey<Bn254> {
     /// Returns a [`ark_groth16::data_structures::PreparedVerifyingKey`]
     /// corresponding to this for usage in the arkworks api.
     fn from(pvk: &PreparedVerifyingKey) -> Self {
-        // Note that not all the members are set here, but we set enough to be able to
-        // run Groth16::<Bn254>::verify_with_processed_vk.
+        // Note that not all the members are set here, but we set enough to be
+        // able to run Groth16::<Bn254>::verify_with_processed_vk.
         let mut ark_pvk = ArkPreparedVerifyingKey::default();
         ark_pvk.vk.gamma_abc_g1 = pvk.vk_gamma_abc_g1.clone();
         ark_pvk.alpha_g1_beta_g2 = pvk.alpha_g1_beta_g2;

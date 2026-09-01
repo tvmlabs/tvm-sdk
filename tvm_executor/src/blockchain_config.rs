@@ -80,12 +80,13 @@ impl CalcMsgFwdFees for MsgForwardPrices {
         bits -= msg_cell.bit_length() as u128;
         cells -= 1;
 
-        // All prices except `lump_price` are presented in `0xffff * price` form.
-        // It is needed because `ihr_factor`, `first_frac` and `next_frac` are not
-        // integer values but calculations are performed in integers, so prices
-        // are multiplied to some big number (0xffff) and fee calculation uses
-        // such values. At the end result is divided by 0xffff with ceil
-        // rounding to obtain nanograms (add 0xffff and then `>> 16`)
+        // All prices except `lump_price` are presented in `0xffff * price`
+        // form. It is needed because `ihr_factor`, `first_frac` and
+        // `next_frac` are not integer values but calculations are
+        // performed in integers, so prices are multiplied to some big
+        // number (0xffff) and fee calculation uses such values. At the
+        // end result is divided by 0xffff with ceil rounding to obtain
+        // nanograms (add 0xffff and then `>> 16`)
         self.lump_price as u128
             + ((cells * self.cell_price as u128 + bits * self.bit_price as u128 + 0xffff) >> 16)
     }
@@ -163,9 +164,9 @@ impl AccStoragePrices {
         }
         let mut fee = 0u128;
         // storage prices config contains prices array for some time intervals
-        // to calculate account storage fee we need to sum fees for all intervals since
-        // last storage fee pay calculated by formula `(cells * cell_price +
-        // bits * bits_price) * interval`
+        // to calculate account storage fee we need to sum fees for all
+        // intervals since last storage fee pay calculated by formula
+        // `(cells * cell_price + bits * bits_price) * interval`
         for i in 0..self.prices.len() {
             let prices = &self.prices[i];
             let end = if i < self.prices.len() - 1 { self.prices[i + 1].utime_since } else { now };
@@ -184,8 +185,9 @@ impl AccStoragePrices {
             }
         }
 
-        // stirage fee is calculated in pseudo values (like forward fee and gas fee) -
-        // multiplied to 0xffff, so divide by this value with ceil rounding
+        // stirage fee is calculated in pseudo values (like forward fee and gas
+        // fee) - multiplied to 0xffff, so divide by this value with
+        // ceil rounding
         (fee + 0xffff) >> 16
     }
 

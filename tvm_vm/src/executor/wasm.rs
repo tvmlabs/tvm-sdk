@@ -2133,8 +2133,8 @@ fn add_to_linker_gosh<T: WasiView + 'static>(
     // clocks::wall_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // clocks::monotonic_clock::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // filesystem::preopens::add_to_linker::<T, HasWasi<T>>(l, f)?;
-    // filesystem::types::add_to_linker::<T, HasWasi<T>>(l, f)?; // DONT USE, async
-    // random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
+    // filesystem::types::add_to_linker::<T, HasWasi<T>>(l, f)?; // DONT USE,
+    // async random::random::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // random::insecure::add_to_linker::<T, HasWasi<T>>(l, f)?;
     // random::insecure_seed::add_to_linker::<T, HasWasi<T>>(l, f)?;
     cli::exit::add_to_linker::<T, HasWasi<T>>(l, &options.into(), T::ctx)?;
@@ -2233,8 +2233,8 @@ pub(crate) fn run_wasm_core(
     })?;
     wasm_store.limiter(|state| &mut state.limiter);
     // set WASM fuel limit based on available gas
-    // TODO: Consider adding a constant offset to account for cell pack/unpack and
-    // other actions to be run after WASM instruction
+    // TODO: Consider adding a constant offset to account for cell pack/unpack
+    // and other actions to be run after WASM instruction
     // TODO: Add a catch for out-of-fuel and remove matching consumed gas from
     // instruction (or set to 0?)
     log::debug!("Starting gas: {:?}", engine.gas_remaining());
@@ -2248,8 +2248,8 @@ pub(crate) fn run_wasm_core(
     // TODO: If switching to dunamic fuel limit, use this code:
     // let wasm_fuel: u64 = match engine.gas_remaining() > 0 {
     //     true => match
-    // u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER) {
-    //         Some(k) => k,
+    // u64::try_from(engine.gas_remaining())?.checked_mul(WASM_FUEL_MULTIPLIER)
+    // {         Some(k) => k,
     //         None => err!(ExceptionCode::IntegerOverflow, "Overflow when
     // calculating WASM fuel")?,     },
     //     false => err!(ExceptionCode::OutOfGas, "Engine out of gas.")?,
@@ -2280,13 +2280,13 @@ pub(crate) fn run_wasm_core(
     //     }
     // };
 
-    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
-    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t| WasiImpl(IoImpl(t));
-    // let f: fn(&mut MyState) -> &mut WasiImpl<&mut MyState> = |t| &mut
-    // WasiImpl(IoImpl(t));
+    // let f: fn(&mut MyState) -> WasiImpl<&mut MyState> = |t|
+    // WasiImpl(IoImpl(t)); let f: fn(&mut MyState) -> WasiImpl<&mut
+    // MyState> = |t| WasiImpl(IoImpl(t)); let f: fn(&mut MyState) -> &mut
+    // WasiImpl<&mut MyState> = |t| &mut WasiImpl(IoImpl(t));
 
-    // This is a custom linker method, adding only sync, non-io wasi dependencies.
-    // If more deps are needed, add them in there!
+    // This is a custom linker method, adding only sync, non-io wasi
+    // dependencies. If more deps are needed, add them in there!
     match add_to_linker_gosh::<MyState>(wasm_linker) {
         Ok(_) => {}
         Err(e) => err!(
@@ -2304,14 +2304,15 @@ pub(crate) fn run_wasm_core(
         Err(e) => err!(ExceptionCode::WasmLinkerFail, "Failed to link IO Plugs {:?}", e)?,
     };
 
-    // This is the default add to linker method, we dont use it as it will add async
-    // calls for IO stuff, which fails inside out Tokio runtime
+    // This is the default add to linker method, we dont use it as it will add
+    // async calls for IO stuff, which fails inside out Tokio runtime
     // match wasmtime_wasi::p2::add_to_linker_sync(&mut wasm_linker) {
     //     Ok(_) => {}
-    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs to
-    // linker {:?}", e)?, };
+    //     Err(e) => err!(ExceptionCode::WasmLoadFail, "Failed to add WASI libs
+    // to linker {:?}", e)?, };
 
-    // Instantiate WASM component. Will error if missing some wasm deps from linker
+    // Instantiate WASM component. Will error if missing some wasm deps from
+    // linker
     let wasm_instance = match wasm_linker.instantiate(&mut wasm_store, wasm_component) {
         Ok(instance) => instance,
         Err(e) => {

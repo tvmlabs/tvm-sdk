@@ -1445,8 +1445,8 @@ fn serialize_mc_state_extra(
     );
     serialize_field(&mut master_map, "catchain_seqno", master.validator_info.catchain_seqno);
     serialize_field(&mut master_map, "nx_cc_updated", master.validator_info.nx_cc_updated);
-    // `prev_blocks` field is quite huge and not useful. Don't need to serialize it
-    // serialize_field(&mut master_map, "prev_blocks",
+    // `prev_blocks` field is quite huge and not useful. Don't need to serialize
+    // it serialize_field(&mut master_map, "prev_blocks",
     // serialize_old_mc_blocks_info(&master.prev_blocks, mode)?);
     serialize_field(&mut master_map, "after_key_block", master.after_key_block);
     if let Some(block_ref) = &master.last_key_block {
@@ -1961,8 +1961,8 @@ pub fn db_serialize_transaction_ex<'a>(
         if let Some(value) = msg.get_value() {
             balance_delta.add(&SignedCurrencyCollection::from_cc(value)?);
         }
-        // IHR fee is added to account balance if IHR is not used or to total fees if
-        // message delivered through IHR
+        // IHR fee is added to account balance if IHR is not used or to total
+        // fees if message delivered through IHR
         if let Some((ihr_fee, _)) = get_msg_fees(&msg) {
             balance_delta.grams += ihr_fee.as_u128();
         }
@@ -2209,8 +2209,8 @@ pub fn db_serialize_message_ex(
     let mut map = Map::new();
     serialize_field(&mut map, "json_version", VERSION);
     serialize_id(&mut map, id_str, Some(&set.id));
-    // isn't needed there - because message should be fully immutable from source
-    // block to destination one serialize_id(&mut map, "block_id",
+    // isn't needed there - because message should be fully immutable from
+    // source block to destination one serialize_id(&mut map, "block_id",
     // set.block_id.as_ref());
     serialize_id(&mut map, "transaction_id", set.transaction_id.as_ref());
     if let Some(proof) = &set.proof {

@@ -644,9 +644,11 @@ mod tests {
         // assert_eq!(resolve_net_name("http://main.ton.dev"), Some(MAINNET.to_owned()));
         // assert_eq!(resolve_net_name("  http://main.ton.dev  "), Some(MAINNET.to_owned()));
         // assert_eq!(resolve_net_name("  https://main.ton.dev  "), Some(MAINNET.to_owned()));
-        // assert_eq!(resolve_net_name("main.ton.dev"), Some(MAINNET.to_owned()));
-        // assert_eq!(resolve_net_name("main.everos.dev"), Some(MAINNET.to_owned()));
-        // assert_eq!(resolve_net_name("main.evercloud.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("main.ton.dev"),
+        // Some(MAINNET.to_owned())); assert_eq!(resolve_net_name("main.
+        // everos.dev"), Some(MAINNET.to_owned()));
+        // assert_eq!(resolve_net_name("main.evercloud.dev"),
+        // Some(MAINNET.to_owned()));
         assert_eq!(resolve_net_name("main"), Some(MAINNET.to_owned()));
         assert_eq!(resolve_net_name("mainnet"), Some(MAINNET.to_owned()));
         assert_eq!(resolve_net_name("main.ton.com"), None);
@@ -657,7 +659,8 @@ mod tests {
         // assert_eq!(resolve_net_name("http://net.ton.dev"), Some(TESTNET.to_owned()));
         // assert_eq!(resolve_net_name("  http://net.ton.dev  "), Some(TESTNET.to_owned()));
         // assert_eq!(resolve_net_name("  https://net.ton.dev  "), Some(TESTNET.to_owned()));
-        // assert_eq!(resolve_net_name("net.ton.dev"), Some(TESTNET.to_owned()));
+        // assert_eq!(resolve_net_name("net.ton.dev"),
+        // Some(TESTNET.to_owned()));
         assert_eq!(resolve_net_name("dev"), Some(TESTNET.to_owned()));
         assert_eq!(resolve_net_name("devnet"), Some(TESTNET.to_owned()));
         assert_eq!(resolve_net_name("shellnet"), Some(TESTNET.to_owned()));

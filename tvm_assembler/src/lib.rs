@@ -345,7 +345,8 @@ impl Engine {
                 }
                 continue;
             } else {
-                // TODO: (message for the owner: please write descriptive explanation)
+                // TODO: (message for the owner: please write descriptive
+                // explanation)
                 return Err(
                     CompileError::syntax(y, x, "Bad char").with_filename(self.source_name.clone())
                 );
@@ -356,7 +357,8 @@ impl Engine {
             x -= token.chars().count();
             let rule = if was_dot_inline {
                 // Do not try matching the token if the previous one is .inline,
-                // otherwise `.inline setCode` won't work since setCode gets matched as an insn
+                // otherwise `.inline setCode` won't work since setCode gets
+                // matched as an insn
                 None
             } else {
                 self.handlers.get(token.as_str())
@@ -396,7 +398,8 @@ impl Engine {
                             ),
                         ) => {
                             if was_newline {
-                                // it seems realy new command - rturn correct missing params error
+                                // it seems realy new command - rturn correct
+                                // missing params error
                                 return Err(e);
                             } else {
                                 par.push(Token::new(y, x, &source[s0..s1], was_comma));

@@ -477,8 +477,9 @@ pub trait TransactionExecutor {
                             0
                         });
 
-                        // if there was a balance in message (not bounce), then account state at
-                        // least become uninit
+                        // if there was a balance in message (not bounce), then
+                        // account state at least become
+                        // uninit
                         result_acc.uninit_account();
                         *acc = result_acc.clone();
                     }
@@ -667,8 +668,8 @@ pub trait TransactionExecutor {
         // calc gas fees
         let gas = vm.get_gas();
         let credit = gas.get_gas_credit() as u32;
-        // for external messages gas will not be exacted if VM throws the exception and
-        // gas_credit != 0
+        // for external messages gas will not be exacted if VM throws the
+        // exception and gas_credit != 0
         let used = gas.get_gas_used() as u64;
         let execution_timed_out = vm_phase.exit_code == ExceptionCode::ExecutionTimeout as i32;
         vm_phase.gas_used = used.try_into()?;
@@ -806,7 +807,8 @@ pub trait TransactionExecutor {
                     err
                 );
                 // Here you can select only one of 2 error codes:
-                // RESULT_CODE_UNKNOWN_OR_INVALID_ACTION or RESULT_CODE_ACTIONLIST_INVALID
+                // RESULT_CODE_UNKNOWN_OR_INVALID_ACTION or
+                // RESULT_CODE_ACTIONLIST_INVALID
                 phase.result_code = RESULT_CODE_UNKNOWN_OR_INVALID_ACTION;
                 return Ok(ActionPhaseResult::from_phase(phase));
             }
@@ -859,10 +861,11 @@ pub trait TransactionExecutor {
         // 1) by the SETLIBCODE and CHANGELIB insns,
         // 2) manually by modifying the c5 register.
         //
-        // In the case of CapSetLibCode is not set, (1) is denied by VM but (2) is still
-        // available. To deny (2) too, CapSetLibCode needs to be checked here in
-        // executor. However, since the executor's behavior gets modified, an
-        // additional capability must be checked beforehand.
+        // In the case of CapSetLibCode is not set, (1) is denied by VM but (2)
+        // is still available. To deny (2) too, CapSetLibCode needs to
+        // be checked here in executor. However, since the executor's
+        // behavior gets modified, an additional capability must be
+        // checked beforehand.
         let is_change_library_denied = self.config().has_capability(GlobalCapabilities::CapTvmV19)
             && !self.config().has_capability(GlobalCapabilities::CapSetLibCode);
 
@@ -1460,7 +1463,8 @@ fn compute_new_state(
                     }
                 }
                 // if msg is a constructor message then
-                // borrow code and data from it and switch account state to 'active'.
+                // borrow code and data from it and switch account state to
+                // 'active'.
                 log::debug!(target: "executor", "message for uninitialized: activated");
                 let text = "Cannot construct account from message with hash";
                 if !check_libraries(state_init, disable_set_lib, text, in_msg) {
@@ -1481,8 +1485,8 @@ fn compute_new_state(
         AccountStatus::AccStateFrozen => {
             log::debug!(target: "executor", "AccountFrozen");
             // account balance was credited and if it positive after that
-            // and inbound message bear code and data then make some check and unfreeze
-            // account
+            // and inbound message bear code and data then make some check and
+            // unfreeze account
             if !acc_balance.grams.is_zero() {
                 // This check is redundant
                 if let Some(state_init) = in_msg.state_init() {
@@ -1888,7 +1892,8 @@ fn outmsg_action_handler(
         return Err(RESULT_CODE_INVALID_BALANCE);
     }
 
-    //    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0 {
+    //    if (mode & (SENDMSG_ALL_BALANCE | SENDMSG_REMAINING_MSG_BALANCE)) != 0
+    // {
     if mode & SENDMSG_ALL_BALANCE != 0 {
         *msg_balance = CurrencyCollection::default();
     }
@@ -1978,7 +1983,8 @@ fn change_library_action_handler(
         (Some(code), None) => {
             log::debug!(target: "executor", "OutAction::ChangeLibrary mode: {}, code: {}", mode, code);
             if mode == 0 {
-                // TODO: Wrong codes. Look tvm_block/out_actions::SET_LIB_CODE_REMOVE
+                // TODO: Wrong codes. Look
+                // tvm_block/out_actions::SET_LIB_CODE_REMOVE
                 acc.delete_library(&code.repr_hash())
             } else {
                 acc.set_library(code, (mode & 2) == 2)
@@ -3445,8 +3451,8 @@ mod tests {
             eprintln!("ATHENS: artifacts missing, skipping");
             return;
         }
-        // Make the opcode's external verifier discoverable (fallback path is also baked
-        // in).
+        // Make the opcode's external verifier discoverable (fallback path is
+        // also baked in).
         std::env::set_var(
             "AN_RLC_VERIFY_BIN",
             "/home/sergey/Pruvendo/gosh/acki-nacki-bridge/deposit-prover/target/release/an_rlc_verify",
@@ -3457,8 +3463,9 @@ mod tests {
         );
 
         let state_init = StateInit::construct_from_file(tvc_path).expect("load TokenBridge.tvc");
-        // Athens: sync tvm.pubkey() with the key that signed live_finalize_msg.boc.
-        // TVM-Solidity stores pubkey as the first 256 bits of the data cell root.
+        // Athens: sync tvm.pubkey() with the key that signed
+        // live_finalize_msg.boc. TVM-Solidity stores pubkey as the
+        // first 256 bits of the data cell root.
         let mut state_init = state_init;
         let signer_pubkey: [u8; 32] = [
             0x23, 0x47, 0x18, 0x31, 0xb2, 0x7e, 0xe8, 0xca, 0x2b, 0xa1, 0x95, 0x6e, 0x3d, 0x58,
@@ -3467,7 +3474,8 @@ mod tests {
         ];
         if let Some(old_data) = state_init.data.clone() {
             let old_slice = SliceData::load_cell_ref(&old_data).expect("load data slice");
-            // Rebuild data: replace first 256 bits with signer pubkey, keep the rest.
+            // Rebuild data: replace first 256 bits with signer pubkey, keep the
+            // rest.
             let mut bldr = BuilderData::new();
             bldr.append_raw(&signer_pubkey, 256).expect("append pubkey");
             let mut rest = old_slice.clone();
