@@ -54,6 +54,7 @@ use clap::ArgMatches;
 use clap::Command;
 use config::Config;
 use config::clear_config;
+use config::reject_inline_secret;
 use config::set_config;
 use crypto::extract_pubkey;
 use crypto::generate_keypair;
@@ -174,6 +175,13 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config file.");
 
+    // `--keys` whose value is stored rather than used and forgotten. The config
+    // file is written in clear text, so only a path belongs here.
+    let stored_keys_arg = Arg::new("KEYS")
+        .long("--keys")
+        .takes_value(true)
+        .help("Path to the file with keypair used to sign the message. A seed phrase or a secret key is refused here: this value is written to the config file in clear text.");
+
     let sign_arg = Arg::new("SIGN")
         .long("--sign")
         .takes_value(true)
@@ -236,7 +244,7 @@ async fn main_internal() -> Result<(), String> {
     let alias_arg_long = Arg::new("ALIAS")
         .long("--alias")
         .takes_value(true)
-        .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address.");
+        .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address. The signing key is saved with them, so it has to be a path to a keypair file.");
 
     let deployx_cmd = Command::new("deployx")
         .about("Deploys a smart contract to the blockchain (alternative syntax).")
@@ -507,12 +515,13 @@ async fn main_internal() -> Result<(), String> {
             .help("Url to connect."))
         .arg(Arg::new("API_TOKEN")
             .long("--api-token")
-            .takes_value(true)
-            .help("Rest API token."))
+            .help("Removes the stored REST API token."))
         .arg(Arg::new("ABI")
             .long("--abi")
             .help("Path or link to the contract ABI file or pure json ABI data."))
-        .arg(keys_arg.clone())
+        .arg(Arg::new("KEYS")
+            .long("--keys")
+            .help("Removes the stored path to the file with keypair."))
         .arg(Arg::new("ADDR")
             .long("--addr")
             .help("Contract address."))
@@ -582,7 +591,7 @@ async fn main_internal() -> Result<(), String> {
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
                 .arg(Arg::new("ADDRESS").long("--addr").takes_value(true).help("Contract address."))
-                .arg(keys_arg.clone())
+                .arg(stored_keys_arg.clone())
                 .arg(
                     Arg::new("ABI")
                         .long("--abi")
@@ -635,7 +644,7 @@ async fn main_internal() -> Result<(), String> {
             .long("--abi")
             .takes_value(true)
             .help("Path or link to the contract ABI file or pure json ABI data."))
-        .arg(keys_arg.clone())
+        .arg(stored_keys_arg.clone())
         .arg(Arg::new("ADDR")
             .long("--addr")
             .takes_value(true)
@@ -1070,7 +1079,15 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
         // caller that falls back to the default path and then uses it.
         .unwrap_or_else(migrated_default_config_name);
 
-    let mut full_config = FullConfig::from_file(&config_file);
+    let mut full_config = FullConfig::from_file(&config_file)?;
+    // `config --global` replaces this config with the global one before doing
+    // anything and warns about that one instead, so warning here as well would
+    // only name a file the command is not touching.
+    let global_config_command =
+        matches.subcommand_matches("config").is_some_and(|m| m.is_present("GLOBAL"));
+    if !global_config_command {
+        full_config.warn_about_the_config_file();
+    }
 
     if let Some(m) = matches.subcommand_matches("config") {
         return config_command(m, full_config, is_json);
@@ -1477,6 +1494,18 @@ async fn deploy_command(
         DeployType::Full => matches.value_of("ALIAS"),
         DeployType::MsgOnly | DeployType::Fee => None,
     };
+    // `--alias` writes the signing key into the config file, and that key may
+    // come from the config rather than the command line. Refusing here rather
+    // than where the alias is saved keeps a deploy from being broadcast, and
+    // paid for, only to fail afterwards.
+    if alias.is_some() {
+        if let Some(keys) = keys.as_deref() {
+            reject_inline_secret(keys, &full_config.path, "--alias")?;
+        }
+        // Whether the alias can be saved is more than whether its key is a
+        // path: the config the alias goes into has to be writable at all.
+        full_config.check_writable()?;
+    }
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
@@ -1544,6 +1573,17 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let keys = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.value_of("ALIAS");
+    // See the note on the same guard in `deploy_command`: refusing here keeps
+    // the deploy from being broadcast, and paid for, only to fail where the
+    // alias is saved.
+    if alias.is_some() {
+        if let Some(keys) = keys.as_deref() {
+            reject_inline_secret(keys, &full_config.path, "--alias")?;
+        }
+        // Whether the alias can be saved is more than whether its key is a
+        // path: the config the alias goes into has to be writable at all.
+        full_config.check_writable()?;
+    }
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
         let keys = keys.as_deref().map(mask_key_source);
@@ -1567,13 +1607,13 @@ fn config_command(
     mut full_config: FullConfig,
     is_json: bool,
 ) -> Result<(), String> {
-    let mut result = Ok(());
     if matches.is_present("GLOBAL") {
-        full_config = FullConfig::from_file(&global_config_path());
+        full_config = FullConfig::from_file(&global_config_path())?;
+        full_config.warn_about_the_config_file();
     }
     if !matches.is_present("LIST") {
         if let Some(clear_matches) = matches.subcommand_matches("clear") {
-            result = clear_config(&mut full_config, clear_matches, is_json);
+            clear_config(&mut full_config, clear_matches, is_json)?;
         } else if let Some(endpoint_matches) = matches.subcommand_matches("endpoint") {
             if let Some(endpoint_matches) = endpoint_matches.subcommand_matches("add") {
                 let url = endpoint_matches.value_of("URL").unwrap();
@@ -1585,7 +1625,7 @@ fn config_command(
             } else if endpoint_matches.subcommand_matches("reset").is_some() {
                 FullConfig::reset_endpoints(full_config.path.as_str())?;
             }
-            FullConfig::print_endpoints(full_config.path.as_str());
+            FullConfig::print_endpoints(full_config.path.as_str())?;
             return Ok(());
         } else if let Some(alias_matches) = matches.subcommand_matches("alias") {
             if let Some(alias_matches) = alias_matches.subcommand_matches("add") {
@@ -1608,7 +1648,7 @@ fn config_command(
                 return Err("At least one option must be specified".to_string());
             }
 
-            result = set_config(&mut full_config, matches, is_json);
+            set_config(&mut full_config, matches, is_json)?;
         }
     }
     println!(
@@ -1616,7 +1656,7 @@ fn config_command(
         serde_json::to_string_pretty(&full_config.config.masked_for_display())
             .map_err(|e| format!("failed to print config parameters: {}", e))?
     );
-    result
+    Ok(())
 }
 
 async fn genaddr_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {

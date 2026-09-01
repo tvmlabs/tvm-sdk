@@ -29,26 +29,24 @@ use crate::helpers::create_client_local;
 use crate::helpers::read_keys;
 
 pub fn load_keypair(keys: &str) -> Result<KeyPair, String> {
-    if keys.find(' ').is_none() {
-        let keys = read_keys(keys)?;
-        Ok(keys)
-    } else {
-        generate_keypair_from_mnemonic(keys)
+    match classify(keys) {
+        KeySource::Phrase => generate_keypair_from_mnemonic(keys.trim()),
+        // A path, or a raw secret key -- which this function has never accepted
+        // and still does not, failing as a file that cannot be read. Trimmed
+        // like the phrase: `classify` read the value without the whitespace
+        // around it, so the rest of the function has to as well.
+        KeySource::SecretKey | KeySource::Path => read_keys(keys.trim()),
     }
 }
 
 /// What a `--keys` / `--sign` / `--phrase` argument turned out to hold.
-enum KeySource {
+#[derive(Debug, PartialEq, Eq)]
+pub enum KeySource {
     /// A seed phrase: several words with whitespace between them.
     ///
-    /// Deliberately looser than the ASCII-space test `load_keypair` uses to
-    /// tell a phrase from a path. BIP-39 separates the Japanese wordlist with
-    /// U+3000 IDEOGRAPHIC SPACE, and the Chinese and Korean lists are commonly
-    /// written that way too, so an ASCII-only test reads a whole wallet as a
-    /// filename. The two functions can afford different rules because they are
-    /// paying for different mistakes: `load_keypair` mistaking a path for a
-    /// phrase breaks a working command, while masking one costs a line of
-    /// diagnostics.
+    /// Whitespace, not the ASCII space: BIP-39 separates the Japanese wordlist
+    /// with U+3000 IDEOGRAPHIC SPACE, and the Chinese and Korean lists are
+    /// commonly written that way too.
     Phrase,
     /// A raw secret key in hex, optionally with the public key appended --
     /// what `generate_keypair_from_secret` accepts.
@@ -57,22 +55,63 @@ enum KeySource {
     Path,
 }
 
-fn classify(value: &str) -> KeySource {
-    if value.chars().any(char::is_whitespace) {
-        KeySource::Phrase
-    } else if value.len() >= 64 && value.chars().all(|c| c.is_ascii_hexdigit()) {
-        KeySource::SecretKey
-    } else {
-        KeySource::Path
+/// What a value holding a key turned out to be.
+///
+/// One predicate, used by everything that has to tell these apart: masking for
+/// display, refusing to store a secret in the config file, and `load_keypair`
+/// choosing how to read the value. They used to have a classifier each, and two
+/// hand-maintained rules over the same value disagree exactly where it costs
+/// most -- a wallet written to disk while the screen reports it masked.
+///
+/// The rules, in order:
+///
+/// * surrounding whitespace is not part of the value, so it is trimmed first --
+///   a copied key with a trailing newline is still the key;
+/// * a path separator settles it: no wordlist holds a word with one, and a hex
+///   key has no punctuation at all, so this is the way to name a keypair file
+///   whose name would otherwise read as a secret;
+/// * any remaining whitespace makes it a phrase, whatever the words are made
+///   of, since one mistyped word leaves the wallet a trivial search away;
+/// * otherwise a `0x` prefix is dropped and long bare hex is a secret key.
+///
+/// The separator rule is a blanket one, so a phrase written with `/` between
+/// its words reads as a path: it is neither masked nor refused. Nothing writes
+/// a phrase that way, and the alternative -- masking every value with a slash
+/// in it -- hides the paths this exists to show.
+///
+/// Nothing here consults the filesystem: what a value means cannot depend on
+/// the directory the tool happened to run from, and a keypair file may well be
+/// named before `getkeypair` writes it.
+pub fn classify(value: &str) -> KeySource {
+    let value = value.trim();
+    if value.contains('/') || value.contains('\\') {
+        return KeySource::Path;
     }
+    if value.chars().any(char::is_whitespace) {
+        return KeySource::Phrase;
+    }
+    let hex = secret_key_hex(value);
+    if hex.len() >= 64 && hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        return KeySource::SecretKey;
+    }
+    KeySource::Path
+}
+
+/// A secret key as `classify` reads it: without the whitespace around it and
+/// without an `0x` prefix. Whatever is recognised as a key has to be usable as
+/// one, or refusing a value would send its owner to a command that rejects it.
+pub fn secret_key_hex(value: &str) -> &str {
+    let value = value.trim();
+    value.strip_prefix("0x").or_else(|| value.strip_prefix("0X")).unwrap_or(value)
 }
 
 /// Renders a `--keys` / `--sign` / `--setkey` / `--keypair` argument for
 /// display. The path is useful diagnostics and is kept; an inline secret is
 /// the wallet itself and is replaced by its kind.
 ///
-/// The hex test errs towards masking: mistaking a path for a key costs a line
-/// of diagnostics, mistaking a key for a path costs the wallet.
+/// Whether a value is a secret is decided by `classify`, so what is masked
+/// here, what the config file refuses to store, and what `load_keypair` treats
+/// as a phrase cannot drift apart.
 pub fn mask_key_source(value: &str) -> &str {
     match classify(value) {
         KeySource::Phrase => "<seed phrase>",
@@ -220,10 +259,11 @@ pub fn generate_keypair(
         }
     };
 
-    let keys = if mnemonic.contains(" ") {
-        generate_keypair_from_mnemonic(&mnemonic)?
-    } else {
-        generate_keypair_from_secret(mnemonic)?
+    let keys = match classify(&mnemonic) {
+        KeySource::Phrase => generate_keypair_from_mnemonic(mnemonic.trim())?,
+        KeySource::SecretKey | KeySource::Path => {
+            generate_keypair_from_secret(secret_key_hex(&mnemonic).to_string())?
+        }
     };
     let keys_json = serde_json::to_string_pretty(&keys)
         .map_err(|e| format!("failed to serialize the keypair: {}", e))?;
@@ -250,6 +290,57 @@ pub fn generate_keypair(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const TEST_KEY: &str = "c4415c03aa9d824e89ff4555cd12497aef1d5123f839803b0268e27ba6052354";
+    const TEST_PHRASE: &str =
+        "multiply extra monitor fog rocket defy attack right night jaguar hollow enlist";
+
+    /// One predicate stands behind masking, the config refusal and
+    /// `load_keypair`, so every row here is answered the same way by all three.
+    /// Most of them are values that an earlier, hand-maintained pair of
+    /// classifiers disagreed about, each disagreement being a wallet written to
+    /// disk while the screen said it had been masked.
+    #[test]
+    fn classify_tells_a_secret_from_a_path() {
+        let long_key = format!("{TEST_KEY}{TEST_KEY}");
+        let cases: Vec<(String, KeySource)> = vec![
+            (TEST_PHRASE.to_string(), KeySource::Phrase),
+            // One mistyped word still leaves the wallet a trivial search away.
+            (TEST_PHRASE.replace("enlist", "enl1st"), KeySource::Phrase),
+            (TEST_PHRASE.replace(' ', ", "), KeySource::Phrase),
+            // BIP-39 separates the Japanese wordlist with U+3000.
+            (TEST_PHRASE.replace(' ', "\u{3000}"), KeySource::Phrase),
+            (TEST_KEY.to_string(), KeySource::SecretKey),
+            // Whitespace around a key does not stop it being the key.
+            (format!("{TEST_KEY} "), KeySource::SecretKey),
+            (format!(" {TEST_KEY}"), KeySource::SecretKey),
+            (format!("\t{TEST_KEY}\n"), KeySource::SecretKey),
+            (format!("\u{a0}{TEST_KEY}"), KeySource::SecretKey),
+            (format!("\u{3000}{TEST_KEY}"), KeySource::SecretKey),
+            (TEST_KEY.to_uppercase(), KeySource::SecretKey),
+            (format!("0x{TEST_KEY}"), KeySource::SecretKey),
+            (format!("0X{TEST_KEY}"), KeySource::SecretKey),
+            (long_key.clone(), KeySource::SecretKey),
+            (format!("0x{long_key}"), KeySource::SecretKey),
+            // A path separator settles it: no wordlist holds a word with one,
+            // and a hex key has no punctuation at all.
+            ("key.json".to_string(), KeySource::Path),
+            ("./key.json".to_string(), KeySource::Path),
+            ("./My Wallets/msig.keys.json".to_string(), KeySource::Path),
+            ("C:\\keys\\msig.json".to_string(), KeySource::Path),
+            // Without the backslash arm this one reads as a phrase.
+            ("C:\\My Wallets\\msig.json".to_string(), KeySource::Path),
+            // One character short of a secret key.
+            (TEST_KEY[1..].to_string(), KeySource::Path),
+            // A keypair file named after its public key, spelled as a path.
+            (format!("./{TEST_KEY}"), KeySource::Path),
+            (String::new(), KeySource::Path),
+            (" \t\n".to_string(), KeySource::Path),
+        ];
+        for (value, expected) in cases {
+            assert_eq!(classify(&value), expected, "classifying {value:?}");
+        }
+    }
 
     #[test]
     fn test_generate_keypair() {

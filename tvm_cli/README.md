@@ -338,7 +338,7 @@ List of available options:
 --debug_fail <DEBUG_FAIL>                     When enabled tvm-cli executes debug command on fail of run or call command. Can be enabled with values 'full' or 'minimal' which set the trace level for debug run and disabled with value 'none'.
 --depool_fee <DEPOOL_FEE>                     Value added to the message sent to depool to cover its fees (change will be returned).
 --is_json <IS_JSON>                           Cli prints output in json format.
---keys <KEYS>                                 Path to the file with keypair.
+--keys <KEYS>                                 Path to the file with keypair. A seed phrase or a secret key is refused here: this value is written to the config file in clear text.
 --lifetime <LIFETIME>                         Period of time in seconds while message is valid. Change of this parameter may affect "out_of_sync" parameter, because "lifetime" should be at least 2 times greater than "out_of_sync".
 --local_run <LOCAL_RUN>                       Enable preliminary local run before deploy and call commands.
 --method <METHOD>                             Method name that can be saved to be used by some commands (runx, callx).
@@ -651,7 +651,7 @@ Options:
 - `<alias>` - alias name of the contract;
 - `<contract_address>` - address of the contract;
 - `<contract_abi>` - path to the contract abi file;
-- `<contract_keys>` - seed phrase or path to the file with contract key pair.
+- `<contract_keys>` - path to the file with the contract key pair. A seed phrase is not accepted here: the alias is stored in the config file, in clear text.
 
 Example:
 
@@ -975,7 +975,7 @@ Options:
 
 `--abi <contract.abi.json>` - contract ABI interface file. If not specified tvm-cli can use ABI path from config of obtained from tvc path (for `<contrac>.tvc` checks `<contract>.abi.json`).
 
-`--setkey <keyfile.json>` - use already [existing](#33-generate-key-pair-file) `keyfile.json` key pair file to calculate the contract address. Seed phrase cannot be used instead of the file.
+`--setkey <keyfile.json>` - use already [existing](#33-generate-key-pair-file) `keyfile.json` key pair file to calculate the contract address. A seed phrase in quotes is accepted here as well; nothing is stored, so it never reaches the config file.
 
 `--wc <int8>` - ID of the workchain the contract will be deployed to (`-1` for masterchain, `0` for basechain). By default, this value is set to 0.
 
@@ -1020,7 +1020,7 @@ Use the following command to deploy a contract:
 tvm-cli deploy [--sign <deploy_seed_or_keyfile>] [--wc <int8>] [--abi <contract.abi.json>] [--alias <alias>] <contract.tvc> <params>
 ```
 
-`<deploy_seed_or_keyfile>` - can either be the seed phrase used to generate the deployment key pair file or the key pair file itself. If seed phrase is used, enclose it in double quotes.
+`<deploy_seed_or_keyfile>` - can either be the seed phrase used to generate the deployment key pair file or the key pair file itself. If seed phrase is used, enclose it in double quotes. With `--alias` the key is saved to the config file, so only the key pair file is accepted there.
 
 Example:
   `--sign "flip uncover dish sense hazard smile gun mom vehicle chapter order enact"`
@@ -1911,10 +1911,10 @@ tvm-cli multisig deploy -l 5000000000 -c 2 -o 8b445b0feab10b9abf4e039d649348ec86
 ### 7.1. Configure TVM-CLI for DePool operations
 
 For all commands listed below, the DePool address, the wallet making the stake, the amount of fee to pay for DePool's
-services and the path to the keyfile/seed phrase may be specified in the TVM-CLI config file in advance:
+services and the path to the keyfile may be specified in the TVM-CLI config file in advance:
 
 ```bash
-tvm-cli config --addr <address> --wallet <address> --no-answer true | false --keys <path_to_keys or seed_phrase> --depool_fee <depool_fee>
+tvm-cli config --addr <address> --wallet <address> --no-answer true | false --keys <path_to_keys> --depool_fee <depool_fee>
 ```
 
 `--addr <address>` - the address of the DePool
@@ -1923,14 +1923,14 @@ tvm-cli config --addr <address> --wallet <address> --no-answer true | false --ke
 
 `--no-answer true | false` - no-answer flag, which determines, whether TVM-CLI waits for DePool answer when performing various actions and prints it out, or simply generates and sends a transaction through the specified multisig wallet, without monitoring transaction results in the DePool. By default, is set to `true`. Setting to false can be useful for catching rejected stakes or other errors on the DePool side.
 
-`<path_to_keys or seed_phrase>` - either the keyfile for the wallet making the stake, or the seed phrase in quotes
+`<path_to_keys>` - the keyfile for the wallet making the stake. A seed phrase is not accepted here: the config file is stored in clear text. Convert one with `tvm-cli getkeypair --output <file> --phrase "<your seed phrase>"`.
 
 `--depool_fee <depool_fee>` - value in VMSHELLs, that is additionally attached to the message sent to the DePool to cover its fees. Change is returned to the sender. The default value, used if this option isn't configured, is 0.5 VMSHELLs. It should be increased only if it proves insufficient and DePool begins to run out of gas on execution.
 
 Example:
 
 ```bash
-tvm-cli config --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a2596b700ace --wallet 0:1b91c010f35b1f5b42a05ad98eb2df80c302c37df69651e1f5ac9c69b7e90d4e --no-answer false --keys "dizzy modify exotic daring gloom rival pipe disagree again film neck fuel" --depool_fee 0.8
+tvm-cli config --addr 0:37fbcb6e3279cbf5f783d61c213ed20fee16e0b1b94a48372d20a2596b700ace --wallet 0:1b91c010f35b1f5b42a05ad98eb2df80c302c37df69651e1f5ac9c69b7e90d4e --no-answer false --keys depool_wallet.keys.json --depool_fee 0.8
 ```
 
 In this case all DePool commands allow to omit `--addr`, `--wallet`, `--wait-answer` and `--sign` options.
