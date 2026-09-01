@@ -59,9 +59,9 @@ pub fn poseidon(inputs: Vec<Fr>) -> Result<Fr, ZkCryptoError> {
         return Err(ZkCryptoError::InputLengthWrong(inputs.len()));
     }
 
-    // Instances of Poseidon and PoseidonConstants from neptune have different types
-    // depending on the number of inputs, so unfortunately we need to use a
-    // macro here.
+    // Instances of Poseidon and PoseidonConstants from neptune have different
+    // types depending on the number of inputs, so unfortunately we need to
+    // use a macro here.
     let result = match inputs.len() {
         1 => define_poseidon_hash!(inputs, POSEIDON_CONSTANTS_U1),
         2 => define_poseidon_hash!(inputs, POSEIDON_CONSTANTS_U2),
@@ -249,9 +249,9 @@ fn canonical_le_bytes_to_field_element(bytes: &[u8]) -> Result<Fr, ZkCryptoError
         Ordering::Less => Ok(Fr::from_le_bytes_mod_order(bytes)),
         Ordering::Equal => {
             let field_element = Fr::from_le_bytes_mod_order(bytes);
-            // Unfortunately, there doesn't seem to be a nice way to check if a modular
-            // reduction happened without doing the extra work of serializing
-            // the field element again.
+            // Unfortunately, there doesn't seem to be a nice way to check if a
+            // modular reduction happened without doing the extra
+            // work of serializing the field element again.
             let reduced_bytes = field_element.into_bigint().to_bytes_le();
             if reduced_bytes != bytes {
                 return Err(InvalidInput);
@@ -304,9 +304,9 @@ fn test_poseidon_bytes_flat_multiple_len() {
 #[test]
 fn test_poseidon_bytes_flat() {
     let data_to_hash = vec![0xFFu8; 32];
-    // vec![0u8, 253u8, 1u8, 252u8, 2u8, 251u8, 3u8, 250u8, 4u8, 249u8, 5u8, 248u8,
-    // 6u8, 247u8, 7u8, 246u8, 8u8, 245u8, 9u8, 244u8, 10u8, 243u8, 11u8, 242u8,
-    // 12u8, 241u8, 13u8, 248u8, 14u8, 247u8, 15u8, 246u8];
+    // vec![0u8, 253u8, 1u8, 252u8, 2u8, 251u8, 3u8, 250u8, 4u8, 249u8, 5u8,
+    // 248u8, 6u8, 247u8, 7u8, 246u8, 8u8, 245u8, 9u8, 244u8, 10u8, 243u8,
+    // 11u8, 242u8, 12u8, 241u8, 13u8, 248u8, 14u8, 247u8, 15u8, 246u8];
     let digest = poseidon_bytes_flat(&data_to_hash).unwrap();
     println!("digest {:?}", digest);
     let etalon_res = [

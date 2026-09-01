@@ -603,8 +603,8 @@ pub trait HashmapAugType<
         let bit_len = self.bit_len();
         Self::check_key_fail(bit_len, &key)?;
         // ahme_empty$0 {n:#} {X:Type} {Y:Type} extra:Y = HashmapAugE n X Y;
-        // ahme_root$1 {n:#} {X:Type} {Y:Type} root:^(HashmapAug n X Y) extra:Y =
-        // HashmapAugE n X Y;
+        // ahme_root$1 {n:#} {X:Type} {Y:Type} root:^(HashmapAug n X Y) extra:Y
+        // = HashmapAugE n X Y;
         let result = if let Some(mut root) = self.data().cloned() {
             let (result, extra) = Self::put_to_node(&mut root, bit_len, key, leaf, extra)?;
             self.set_root_extra(extra);

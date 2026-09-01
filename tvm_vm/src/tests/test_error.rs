@@ -45,8 +45,8 @@ fn test_update_error() {
     // TODO: make fail! more informative
     // let err = || -> Result<()> { fail!(ExceptionCode::RangeCheckError, "lost
     // description {}", 0) }().unwrap_err(); println!("{:?}", err);
-    // let err = update_error_description(err, |d| format!("additional: {}", d));
-    // println!("{:?}", err);
+    // let err = update_error_description(err, |d| format!("additional: {}",
+    // d)); println!("{:?}", err);
     // assert_eq!(tvm_exception_code(&err).unwrap(),
     // ExceptionCode::RangeCheckError);
 

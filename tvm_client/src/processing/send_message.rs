@@ -317,9 +317,9 @@ mod test {
     use crate::processing::send_message::SendingMessage;
     use crate::processing::send_message::send_message as public_send_message;
 
-    // This helper function gets the external IP address of the host, for example
-    // 192.168.1.20. For our test, we can use this address in addition to the
-    // loopback interface.
+    // This helper function gets the external IP address of the host, for
+    // example 192.168.1.20. For our test, we can use this address in
+    // addition to the loopback interface.
     fn get_ext_ip() -> Option<IpAddr> {
         let addrs = get_if_addrs().ok()?;
         for iface in addrs {

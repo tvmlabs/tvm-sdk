@@ -63,7 +63,8 @@ impl Message {
 
     // Returns message's identifier
     pub fn id(&self) -> MessageId {
-        // On client side id is ready allways. It is never be calculated, just returned.
+        // On client side id is ready allways. It is never be calculated, just
+        // returned.
         self.id.clone()
     }
 

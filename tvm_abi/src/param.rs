@@ -59,12 +59,13 @@ impl<'a> Deserialize<'a> for Param {
     where
         D: Deserializer<'a>,
     {
-        // A little trick: tuple parameters is described in JSON as addition field
-        // `components` but struct `Param` doesn't have such a field and tuple
-        // components is stored inside of `ParamType::Tuple` enum. To use
-        // automated deserialization instead of manual parameters recognizing we
-        // first deserialize parameter into temp struct `SerdeParam` and then if
-        // parameter is a tuple repack tuple components from `SerdeParam::components`
+        // A little trick: tuple parameters is described in JSON as addition
+        // field `components` but struct `Param` doesn't have such a
+        // field and tuple components is stored inside of
+        // `ParamType::Tuple` enum. To use automated deserialization
+        // instead of manual parameters recognizing we first deserialize
+        // parameter into temp struct `SerdeParam` and then if parameter
+        // is a tuple repack tuple components from `SerdeParam::components`
         // into `ParamType::Tuple`
         let value = serde_json::Value::deserialize(deserializer)?;
         if value.is_string() {

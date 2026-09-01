@@ -48,12 +48,14 @@ pub struct Cursor {
 
 impl From<SliceData> for Cursor {
     fn from(slice: SliceData) -> Self {
-        // Account for bits already consumed from the first cell (e.g. the 4-byte
-        // function/event id read before `decode_params`, or external-message header
-        // bits). Starting at 0 under-counts the first cell, so `check_layout` wrongly
-        // rejects a legit ref-spill of the last field near the 1023-bit boundary
-        // (off-by-32 -> `WrongDataLayout`). `slice.pos()` is 0 for a fresh cell, so
-        // single-cell bodies and the `decode_header` path are unaffected.
+        // Account for bits already consumed from the first cell (e.g. the
+        // 4-byte function/event id read before `decode_params`, or
+        // external-message header bits). Starting at 0 under-counts the
+        // first cell, so `check_layout` wrongly rejects a legit
+        // ref-spill of the last field near the 1023-bit boundary
+        // (off-by-32 -> `WrongDataLayout`). `slice.pos()` is 0 for a fresh
+        // cell, so single-cell bodies and the `decode_header` path are
+        // unaffected.
         let used_bits = slice.pos();
         Self { used_bits, used_refs: 0, slice }
     }
@@ -162,9 +164,10 @@ impl TokenValue {
                 }
             }
         } else if new_cell != orig_cell {
-            // following error will never appear because SliceData::cell_opt function
-            // returns None only if slice contains just data without refs.
-            // And if there is no refs then cursor cell can not change
+            // following error will never appear because SliceData::cell_opt
+            // function returns None only if slice contains just
+            // data without refs. And if there is no refs then
+            // cursor cell can not change
             let orig_cell = orig_cell.ok_or_else(|| AbiError::DeserializationError {
                 msg: "No original cell in layout check",
                 cursor: cursor.slice.clone(),

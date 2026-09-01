@@ -26,8 +26,8 @@ fn bitsize(value: &BigInt) -> usize {
     if value.sign() == Sign::Plus {
         return res + 1;
     }
-    // For negative values value.bits() returns correct result only when value is
-    // power of 2.
+    // For negative values value.bits() returns correct result only when value
+    // is power of 2.
     let mut modpow2 = -value;
     modpow2 &= &modpow2 - 1;
     if modpow2.sign() == Sign::NoSign {

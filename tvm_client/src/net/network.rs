@@ -118,7 +118,8 @@ impl NetworkContext {
         let handle = rand::thread_rng().next_u32();
         self.add_subscription_handle(handle, sender).await;
 
-        // spawn thread which reads subscription stream and calls callback with data
+        // spawn thread which reads subscription stream and calls callback with
+        // data
         self.env.spawn(Box::pin(async move {
             let mut data_stream = subscription.data_stream.fuse();
             let wait_action = receiver.recv().fuse();

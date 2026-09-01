@@ -576,7 +576,8 @@ async fn subscribe_for_transactions_with_addresses() {
     // give some time for subscription to receive all data
     std::thread::sleep(std::time::Duration::from_millis(500));
     {
-        // check that second transaction is not received when subscription suspended
+        // check that second transaction is not received when subscription
+        // suspended
         let transactions = transactions.lock().await;
         assert_eq!(transactions.len(), 1);
         // and both subscriptions received notification about suspend
@@ -1684,7 +1685,8 @@ async fn query_http_no_retry_on_400() {
 async fn query_http_retry_exhausted_503() {
     let client = make_retry_test_client();
     NetworkMock::build().url("test-endpoint").repeat(3).status(503, "").reset_client(&client).await;
-    // All 3 attempts return 503 → last attempt falls through to response processing
+    // All 3 attempts return 503 → last attempt falls through to response
+    // processing
     let result = call_query_http(&client).await;
     // Empty body → JSON parse error
     assert!(result.is_err());

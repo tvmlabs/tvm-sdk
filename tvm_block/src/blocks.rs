@@ -354,8 +354,8 @@ impl BlockInfo {
         self.flags
     }
 
-    // For now flags is related only on gen_software, so it is set automatically if
-    // need pub fn set_flags(&mut self, flags) { self.flags = flags }
+    // For now flags is related only on gen_software, so it is set automatically
+    // if need pub fn set_flags(&mut self, flags) { self.flags = flags }
 
     pub fn seq_no(&self) -> u32 {
         self.seq_no

@@ -1235,7 +1235,8 @@ fn test_default_values() {
     // ParamType::Int(10)
     second.append_raw(&[0u8; 2], 10).unwrap();
 
-    // ParamType::Map(Box::new(ParamType::Address), Box::new(ParamType::VarInt(6)))
+    // ParamType::Map(Box::new(ParamType::Address),
+    // Box::new(ParamType::VarInt(6)))
     second.append_bit_zero().unwrap();
 
     // ParamType::Optional(Box::new(ParamType::Address))

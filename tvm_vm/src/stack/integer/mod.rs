@@ -359,8 +359,8 @@ pub mod utils {
         if value.is_positive() {
             return res + 1;
         }
-        // For negative values value.bits() returns correct result only when value is
-        // power of 2.
+        // For negative values value.bits() returns correct result only when
+        // value is power of 2.
         let mut modpow2 = value.abs();
         modpow2 &= &modpow2 - 1;
         if modpow2.is_zero() {

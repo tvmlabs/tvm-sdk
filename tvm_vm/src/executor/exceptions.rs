@@ -63,8 +63,8 @@ fn init_try_catch(engine: &mut Engine, keep: bool) -> Status {
         copy_to_var(engine, ctrl!(2))?;
         swap(engine, savelist!(CC, 2), var!(3))?;
     }
-    // special swapping for callx: it calls a cont from var0, but at this point var0
-    // holds catch cont
+    // special swapping for callx: it calls a cont from var0, but at this point
+    // var0 holds catch cont
     swap(engine, var!(0), var!(1))?;
     swap(engine, ctrl!(2), var!(1))?;
     callx(engine, 0, false)?;

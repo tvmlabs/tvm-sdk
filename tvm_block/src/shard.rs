@@ -400,8 +400,8 @@ impl ShardIdent {
 
     // pub fn is_ancestor_prefix(prefix: u64, descendant: u64) -> bool {
     //     prefix == SHARD_FULL ||
-    //         ((descendant & !((Self::lower_bits(prefix) << 1) - 1)) == prefix -
-    // Self::lower_bits(prefix)) }
+    //         ((descendant & !((Self::lower_bits(prefix) << 1) - 1)) == prefix
+    // - Self::lower_bits(prefix)) }
 
     pub fn contains(parent: u64, child: u64) -> bool {
         let x = Self::lower_bits(parent);

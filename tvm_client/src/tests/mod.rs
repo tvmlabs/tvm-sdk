@@ -457,17 +457,19 @@ impl TestClient {
 
     fn on_result(request_id: u32, params_json: String, response_type: u32, finished: bool) {
         // we have to process callback in another thread because:
-        // 1. processing must be async because sender which resolves function result is
-        //    async
-        // 2. `rt_handle.enter` function processes task in background without ability to
-        //    wait for its completion.
-        //  But we need to preserve the order of `on_result` calls processing, otherwise
-        // call with  `finished` = true can be processed before previous call
-        // and remove callback handler  while it's still needed
-        // 3. `rt_handle.block_on` function can't be used in current thread because
-        //    thread is in async
-        //  context so we have to spawn another thread and use `rt_handle.block_on`
-        // function there  and then wait for thread completion
+        // 1. processing must be async because sender which resolves function
+        //    result is async
+        // 2. `rt_handle.enter` function processes task in background without
+        //    ability to wait for its completion.
+        //  But we need to preserve the order of `on_result` calls processing,
+        // otherwise call with  `finished` = true can be processed
+        // before previous call and remove callback handler  while it's
+        // still needed
+        // 3. `rt_handle.block_on` function can't be used in current thread
+        //    because thread is in async
+        //  context so we have to spawn another thread and use
+        // `rt_handle.block_on` function there  and then wait for thread
+        // completion
         let rt_handle = tokio::runtime::Handle::current();
         std::thread::spawn(move || {
             rt_handle.block_on(Self::on_result_async(
@@ -487,8 +489,8 @@ impl TestClient {
         response_type: u32,
         finished: bool,
     ) {
-        // log::debug!("on_result response-type: {} params_json: {}", response_type,
-        // params_json);
+        // log::debug!("on_result response-type: {} params_json: {}",
+        // response_type, params_json);
         let requests = &mut TEST_RUNTIME.lock().await.requests;
         let request = requests.get_mut(&request_id).unwrap();
 

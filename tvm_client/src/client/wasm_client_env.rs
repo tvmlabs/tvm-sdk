@@ -224,8 +224,8 @@ impl ClientEnv {
         ws.set_onerror(Some(onerror_callback.as_ref().unchecked_ref()));
         onerror_callback.forget();
 
-        // sending messages in another task to encapsulate non-`Send` `WebSocket`
-        // instance there
+        // sending messages in another task to encapsulate non-`Send`
+        // `WebSocket` instance there
         let (send_sink, mut send_stream) = futures::channel::mpsc::channel::<(
             String,
             tokio::sync::oneshot::Sender<ClientResult<()>>,
@@ -246,16 +246,17 @@ impl ClientEnv {
             log::trace!("End websocket sending loop");
         });
 
-        // to check result of sending message to websocket we send string via channel to
-        // spawned sending task and then wait for the result from oneshot
-        // channel
+        // to check result of sending message to websocket we send string via
+        // channel to spawned sending task and then wait for the result
+        // from oneshot channel
         let send_sink = futures::sink::drain()
             .sink_map_err(|err| Error::websocket_send_error(err))
             .with(move |string: String| {
                 let mut send_sink = send_sink.clone();
                 async move {
                     let (sender, receiver) = tokio::sync::oneshot::channel();
-                    // send string along with oneshot sender which will receive sending result
+                    // send string along with oneshot sender which will receive
+                    // sending result
                     send_sink.send((string, sender)).await.map_err(|err| {
                         Error::websocket_send_error(format!(
                             "can not send data to websocket sending task: {}",

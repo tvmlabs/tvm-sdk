@@ -262,12 +262,12 @@ impl Tokenizer {
 
     /// Checks if given number can be fit into given bits count
     fn check_int_size(number: &BigInt, size: usize) -> bool {
-        // `BigInt::bits` returns fewest bits necessary to express the number, not
-        // including the sign and it works well for all values except `-2^n`.
-        // Such values can be encoded using `n` bits, but `bits` function
-        // returns `n` (and plus one bit for sign) so we have to explicitly
-        // check such situation by comparing bits sizes of given number
-        // and increased number
+        // `BigInt::bits` returns fewest bits necessary to express the number,
+        // not including the sign and it works well for all values
+        // except `-2^n`. Such values can be encoded using `n` bits, but
+        // `bits` function returns `n` (and plus one bit for sign) so we
+        // have to explicitly check such situation by comparing bits
+        // sizes of given number and increased number
         if number.sign() == Sign::Minus && number.bits() != (number + BigInt::from(1)).bits() {
             (number.bits() as usize) <= size
         } else {
