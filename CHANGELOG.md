@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [3.0.6] - 2026-09-03
 
 ### Removed
 - `tvm_client`: support for pre-1.0.0 servers. There is one wire format; `dapp_id` is required on every send and account read, and an empty value is now always an error rather than a legacy-node allowance.
