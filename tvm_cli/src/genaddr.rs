@@ -13,6 +13,8 @@ use std::fs::OpenOptions;
 use serde_json::json;
 
 use crate::config::Config;
+use crate::crypto::KeySource;
+use crate::crypto::classify;
 use crate::crypto::gen_seed_phrase;
 use crate::crypto::generate_keypair_from_mnemonic;
 use crate::helpers::calc_acc_address;
@@ -53,8 +55,8 @@ pub async fn generate_address(
 
     let phrase = if new_keys {
         gen_seed_phrase()?
-    } else if keys_file.is_some() && keys_file.unwrap().find(' ').is_some() && !new_keys {
-        keys_file.unwrap().to_owned()
+    } else if keys_file.is_some_and(|keys| classify(keys) == KeySource::Phrase) {
+        keys_file.unwrap().trim().to_owned()
     } else {
         "".to_owned()
     };

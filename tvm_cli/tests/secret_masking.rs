@@ -58,11 +58,16 @@ fn getkeypair_does_not_echo_a_raw_secret_key() -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+/// The config file is written by hand because `config --keys` no longer
+/// accepts a phrase -- see `tests/config_key_source.rs`. A file written before
+/// that refusal existed still holds one, and printing it is exactly when the
+/// phrase must not reappear.
 #[test]
-fn config_keys_does_not_echo_the_phrase() -> Result<(), Box<dyn std::error::Error>> {
+fn a_phrase_stored_in_the_config_is_not_echoed() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = testdir!().join("masking.config");
+    std::fs::write(&config_path, format!(r#"{{"retries": 1, "keys_path": "{PHRASE}"}}"#))?;
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config").arg(&config_path).arg("config").arg("--keys").arg(PHRASE);
+    cmd.arg("--config").arg(&config_path).arg("config").arg("--list");
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(PHRASE).not())
@@ -71,25 +76,39 @@ fn config_keys_does_not_echo_the_phrase() -> Result<(), Box<dyn std::error::Erro
 }
 
 #[test]
-fn config_alias_add_does_not_echo_the_phrase() -> Result<(), Box<dyn std::error::Error>> {
+fn a_phrase_stored_in_an_alias_is_not_echoed() -> Result<(), Box<dyn std::error::Error>> {
     let config_path = testdir!().join("masking_alias.config");
+    std::fs::write(
+        &config_path,
+        format!(
+            r#"{{"config": {{"retries": 1}}, "aliases": {{"msig": {{"address": "{ADDRESS}", "abi_path": "{ABI}", "key_path": "{PHRASE}"}}}}}}"#
+        ),
+    )?;
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    cmd.arg("--config")
-        .arg(&config_path)
-        .arg("config")
-        .arg("alias")
-        .arg("add")
-        .arg("msig")
-        .arg("--addr")
-        .arg(ADDRESS)
-        .arg("--abi")
-        .arg(ABI)
-        .arg("--keys")
-        .arg(PHRASE);
+    cmd.arg("--config").arg(&config_path).arg("config").arg("alias").arg("print");
     cmd.assert()
         .success()
         .stdout(predicate::str::contains(PHRASE).not())
         .stdout(predicate::str::contains(r#""key_path": "<seed phrase>""#));
+    Ok(())
+}
+
+/// `config --keys` accepts a path with a space in it, and a stored value its
+/// owner cannot read back is worse than a masked diagnostic. A path separator
+/// settles what the value is: no wordlist holds a word with one.
+#[test]
+fn a_path_with_a_space_is_not_masked_as_a_phrase() -> Result<(), Box<dyn std::error::Error>> {
+    let config_path = testdir!().join("spaced_path.config");
+    std::fs::write(&config_path, r#"{"retries": 1}"#)?;
+    let mut cmd = Command::cargo_bin(BIN_NAME)?;
+    cmd.arg("--config")
+        .arg(&config_path)
+        .arg("config")
+        .arg("--keys")
+        .arg("./My Wallets/msig.keys.json");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains(r#""keys_path": "./My Wallets/msig.keys.json""#));
     Ok(())
 }
 
