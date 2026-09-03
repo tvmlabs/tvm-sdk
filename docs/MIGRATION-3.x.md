@@ -298,15 +298,33 @@ unexpected before anything runs.
 > tvm-cli deployx --abi X.abi.json --dst-dapp-id <hex> contract.tvc '{}'
 > ```
 > does **not** get a clean "unexpected argument" error. `--dst-dapp-id` is
-> taken as the TVC filename; the command prints `Deploying...` and then
-> fails with:
+> taken as the TVC filename, and everything after it shifts one place. What
+> you see then depends on the constructor. With one that takes no
+> arguments, the real TVC path becomes the only `PARAMS` token and the
+> command prints `Deploying...` before failing on the file it was told to
+> read:
 > ```
 > Error: failed to read smart contract file --dst-dapp-id: No such file or directory
 > ```
-> If you hit that message while migrating a `deployx` script, look for a
-> stray `--dst-dapp-id` on the command line before you go looking for a
-> file problem — there isn't one. `deploy` doesn't have this trap: it has
-> no `trailing_var_arg`, so the same mistake there is rejected immediately
+> With a constructor that takes arguments, the arguments are resolved
+> first, and the shifted command line no longer looks like a single JSON
+> object, so the CLI goes looking for each declared input by name:
+> ```
+> Error: argument "owners_pubkey" of type "uint256[]" not found
+> ```
+> **Delete the flag's value along with its name.** Removing only
+> `--dst-dapp-id` and leaving the `<hex>` behind moves the same trap one
+> step along: the bare hex becomes the TVC path, the real `.tvc` becomes
+> the lone `PARAMS` token, and because that token holds no `{`, the CLI
+> reads it as the name of a file holding the arguments:
+> ```
+> Error: failed to load params from file contract.tvc: stream did not contain valid UTF-8
+> ```
+> All three messages point at a file or an ABI argument, and none of them
+> names the flag as the cause. If you hit one while migrating a `deployx`
+> script, look at the command line before you go looking for a file or ABI
+> problem — there isn't one. `deploy` doesn't have this trap: it has no
+> `trailing_var_arg`, so the same mistake there is rejected immediately
 > instead.
 
 The `deployed_at` field and any saved alias use the extended
@@ -416,7 +434,7 @@ destinations. Omitting it fails.
 
 ## Common pitfalls
 
-### "argument 'X' of type 'Y' not found" / a file that doesn't exist
+### "argument 'X' of type 'Y' not found", or a file the command should not be reading
 
 `deployx`, `callx` and `runx` accept an alternative `--name value`
 constructor syntax, which needs `allow_hyphen_values` + `trailing_var_arg`.
@@ -428,9 +446,22 @@ section above) doesn't produce "unrecognized argument". It surfaces
 downstream instead: as `argument 'X' of type 'Y' not
 found` when it displaces a constructor argument, or as `failed to read
 smart contract file <flag>: No such file or directory` when it displaces
-the TVC path. `deploy` doesn't have this trap — no `trailing_var_arg` —
-so the same mistake there is rejected immediately as an unexpected
-argument.
+the TVC path.
+
+A half-finished removal surfaces a third way. Delete `--dst-dapp-id` but
+leave its `<hex>` on the line and the hex takes the TVC's place, which
+pushes the real `.tvc` into `PARAMS`; a lone `PARAMS` token with no `{`
+in it is read as the name of a file holding the arguments, so the CLI
+tries to parse the compiled contract as text:
+
+```
+Error: failed to load params from file contract.tvc: stream did not contain valid UTF-8
+```
+
+Whichever of the three you get, the fix is on the command line, not in
+the file or the ABI it blames. `deploy` doesn't have this trap — no
+`trailing_var_arg` — so the same mistake there is rejected immediately
+as an unexpected argument.
 
 ### "Invalid address [Invalid argument: 0]"
 
@@ -495,10 +526,12 @@ emit `null` when the string is empty.
       `--dst-dapp-id` (hyphens, not underscores), it is now required in
       every case including self-rooted destinations, and pass a real
       64-hex value (not the extended `dapp::acc` form) to the flag itself.
-- [ ] Remove `--dst-dapp-id` from any script calling `deploy`, `deployx`,
-      `deploy_message` or `fee deploy` — the flag no longer exists on
-      those commands. On `deployx` a leftover flag is silently absorbed
-      as a positional rather than rejected; see the parser trap above.
+- [ ] Remove `--dst-dapp-id` **and the value after it** from any script
+      calling `deploy`, `deployx`, `deploy_message` or `fee deploy` — the
+      flag no longer exists on those commands. On `deployx` a leftover
+      flag is silently absorbed as a positional rather than rejected, and
+      so is a leftover value once its flag is gone; see the parser trap
+      above.
 - [ ] If you store contract addresses in a database / config, migrate
       stored values to the extended `dapp::acc` form. The CLI now
       requires this form on every command; legacy `0:<hex>` stored
