@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2026-09-03
+
+### Fixed
+- Refusing an `address` argument now says which form belongs there. A canonical `dapp_id::account_id` passed inside ABI arguments used to fail with an unrelated parser complaint; the message now states that this form names a contract for a command to act on, that ABI arguments take the on-chain `<workchain>:<account_id>` form, and what to pass instead. Every other malformed address is refused with the reason plus the expected form. Which form belongs where is documented in [`docs/MIGRATION-3.x.md`](../docs/MIGRATION-3.x.md).
+- `AbiError::InvalidVersion` reported `0` instead of the version it was built with. Its `#[error]` attribute interpolated a bare integer literal rather than the variant's own field.
+
 ## Version 2.4.10
 
 ### Fixed

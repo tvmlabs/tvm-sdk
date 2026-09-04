@@ -4,11 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [3.0.6] - 2026-09-03
 
-### Removed
-
-- `--dst-dapp-id` on `deploy`, `deployx`, `deploy_message` and `fee deploy`. The dapp_id of a contract deployed through the CLI equals its own account_id, so it is derived rather than supplied. This reverses the 3.0.0 change that made the flag mandatory on these commands.
-
-### Changed (breaking)
+### Breaking Changes
 
 - `send` and `sendfile` still take `--dst-dapp-id`, and it is now required in every case, including self-rooted destinations. Its help text said the flag was only needed for non-root dapps, which stopped being true when support for pre-1.0.0 servers was removed.
 - `tvm_client`: sending a message and reading an account no longer probe GraphQL. Both go straight to REST. The probe was cached per client, so against a normal node this removes one round-trip per client rather than one per call; against a node that serves no GraphQL, where the probe failed and cached nothing, it removes one per call and the node needs no special handling.
@@ -50,6 +46,10 @@ All notable changes to this project will be documented in this file.
 - Giving `--config` no longer renames a `tonos-cli.conf.json` found in the current directory. The default config path was computed even when one was supplied, and computing it performs that migration.
 - `debug call --update` and `debug message --update` no longer claim to have updated the account when nothing executed. The write-back sat outside the branch on the execution result, so a message the contract rejected still had the account file rewritten -- with the state the run had started from -- and announced as `successfully updated`.
 - `body` no longer aborts immediately in debug builds. It asked for an `--output` it does not register — the command writes the message body to standard output — and printed it among the input arguments as `output: None`. That line is gone; release builds were otherwise unaffected.
+
+### Removed
+
+- `--dst-dapp-id` on `deploy`, `deployx`, `deploy_message` and `fee deploy`. The dapp_id of a contract deployed through the CLI equals its own account_id, so it is derived rather than supplied. This reverses the 3.0.0 change that made the flag mandatory on these commands.
 
 ## [3.0.2] - 2026-06-15
 

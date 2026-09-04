@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2026-09-03
+
+### Fixed
+- Four `ExecutorError` variants reported `0` in place of the value they were built with, their `#[error]` attributes interpolating a bare integer literal rather than the variant's own field: `Transaction executor internal error`, `VM Exception, code: <n>`, `Contract did not accept message, exit code: <n>` and `Compute phase skipped ... with reason <r>`. The exit code a contract refused a message with, and the VM exception code behind a failed transaction, are now reported as themselves.
+
 ## Version 1.16.85
 
 - Deny ChangeLibrary action when CapSetLibCode is unset
