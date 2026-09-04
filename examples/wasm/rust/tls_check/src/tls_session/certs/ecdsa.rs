@@ -35,10 +35,11 @@ impl Curve {
 
     // CurveParams operates, internally, on Jacobian coordinates. For a given
     // (x, y) position on the curve, the Jacobian coordinates are (x1, y1, z1)
-    // where x = x1/z1² and y = y1/z1³. The greatest speedups come when the whole
-    // calculation can be performed within the transform (as in ScalarMult and
-    // ScalarBaseMult). But even for Add and Double, it's faster to apply and
-    // reverse the transform than to operate in affine coordinates.
+    // where x = x1/z1² and y = y1/z1³. The greatest speedups come when the
+    // whole calculation can be performed within the transform (as in
+    // ScalarMult and ScalarBaseMult). But even for Add and Double, it's
+    // faster to apply and reverse the transform than to operate in affine
+    // coordinates.
 
     // polynomial returns x³ - 3x + b.
     pub fn polynomial(&self, x: &BigInt) -> BigInt {
@@ -265,8 +266,8 @@ impl Curve {
         self.scalar_mult(&self.gx, &self.gy, k)
     }
 
-    // pub fn point_from_affine(&self, x: &BigUint, y: &BigUint) -> Option<Point> {
-    // Reject values that cannot be encoded correctly.
+    // pub fn point_from_affine(&self, x: &BigUint, y: &BigUint) ->
+    // Option<Point> { Reject values that cannot be encoded correctly.
     // if x.is_negative() || y.is_negative() {
     // return None; // Err("negative coordinate".into());
     // }

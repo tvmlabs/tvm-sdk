@@ -331,8 +331,8 @@ impl BitString {
         (self.bytes[x] >> y) & 1
     }
 
-    // right_align returns a slice where the padding bits are at the beginning. The
-    // slice may share memory with the BitString.
+    // right_align returns a slice where the padding bits are at the beginning.
+    // The slice may share memory with the BitString.
     pub fn right_align(&self) -> Vec<u8> {
         let shift = (8 - (self.bit_length % 8)) as u8;
         if shift == 8 || self.bytes.is_empty() {
@@ -385,9 +385,9 @@ impl ASN1String {
         true
     }
 
-    // ReadASN1Element reads the contents of a DER-encoded ASN.1 element (including
-    // tag and length bytes) into out, and advances. The element must match the
-    // given tag. It reports whether the read was successful.
+    // ReadASN1Element reads the contents of a DER-encoded ASN.1 element
+    // (including tag and length bytes) into out, and advances. The element
+    // must match the given tag. It reports whether the read was successful.
     //
     // Tags greater than 30 are not supported (i.e. low-tag-number format only).
     pub fn read_asn1_element(&mut self, out: &mut ASN1String, tag: u8) -> bool {
@@ -500,8 +500,8 @@ impl ASN1String {
 
     pub fn read_asn1_i64(&mut self, out: &mut i64) -> bool {
         let mut bytes = ASN1String { 0: Vec::new() };
-        // if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(bytes) ||
-        // !asn1_signed(out, &bytes) {
+        // if !self.read_asn1(&mut bytes, INTEGER) || !check_asn1_integer(bytes)
+        // || !asn1_signed(out, &bytes) {
         if !self.read_asn1(&mut bytes, INTEGER)
             || !check_asn1_integer(&bytes.0)
             || !asn1_signed(out, &bytes.0)
@@ -512,9 +512,9 @@ impl ASN1String {
     }
 
     // Reading of ASN.1 INTEGER to out
-    // pub fn read_asn1_integer(&mut self, out: &mut dyn std::any::Any) -> bool { //
-    // pub fn read_asn1_integer(&mut self, out: &mut dyn std::any::Any) -> bool {
-    // Tey to get pointer ob number type.
+    // pub fn read_asn1_integer(&mut self, out: &mut dyn std::any::Any) -> bool
+    // { // pub fn read_asn1_integer(&mut self, out: &mut dyn std::any::Any)
+    // -> bool { Tey to get pointer ob number type.
     // if let Some(out_int) = out.downcast_mut::<i64>() {
     // let mut i: i64 = 0;
     // if !self.read_asn1_int64(&mut i) {
@@ -562,9 +562,9 @@ impl ASN1String {
     }
 
     // pub fn read_asn1_big_int(&mut self, out: &mut BigInt) -> bool {
-    // let mut bytes = ASN1String{ 0: Vec::new()}; // It is assumed that there will
-    // be processing to fill bytes if !self.read_asn1(&mut bytes, INTEGER) ||
-    // !check_asn1_integer(&bytes.0) { return false;
+    // let mut bytes = ASN1String{ 0: Vec::new()}; // It is assumed that there
+    // will be processing to fill bytes if !self.read_asn1(&mut bytes,
+    // INTEGER) || !check_asn1_integer(&bytes.0) { return false;
     //}
 
     // if bytes.0[0] & 0x80 == 0x80 {
@@ -604,8 +604,8 @@ impl ASN1String {
             return false;
         }
 
-        // In the worst case, we get two elements from the first byte (which is encoded
-        // differently), and then each varint is one byte.
+        // In the worst case, we get two elements from the first byte (which is
+        // encoded differently), and then each varint is one byte.
         let mut components = vec![0; bytes.0.len() + 1];
 
         // The first varint is 40*value1 + value2:
@@ -666,8 +666,9 @@ impl ASN1String {
             let b: u8 = self.read(1).unwrap()[0]; // Reading one byte
 
             // ITU-T X.690, section 8.19.2:
-            // The sub-identifier must be encoded in the minimum possible number of octets,
-            // i.e. the leading octet of the sub-identifier must not have the value 0x80.
+            // The sub-identifier must be encoded in the minimum possible number
+            // of octets, i.e. the leading octet of the
+            // sub-identifier must not have the value 0x80.
             if i == 0 && b == 0x80 {
                 return false;
             }
@@ -768,7 +769,8 @@ impl ASN1String {
         }
     }
 
-    // fn read_asn1_generalized_time(&mut self) -> Result<DateTime<Utc>, String> {
+    // fn read_asn1_generalized_time(&mut self) -> Result<DateTime<Utc>, String>
+    // {
     fn read_asn1_generalized_time(&mut self) -> Option<DateTime<Utc>> {
         let mut bytes = ASN1String { 0: Vec::new() };
         if !self.read_asn1(&mut bytes, TAG_GENERALIZED_TIME) {
@@ -1060,8 +1062,8 @@ impl Certificate {
             return false; //return ErrUnsupportedAlgorithm
         }
 
-        // return checkSignature(c.SignatureAlgorithm, c.RawTBSCertificate, c.Signature,
-        // parent.PublicKey, false);
+        // return checkSignature(c.SignatureAlgorithm, c.RawTBSCertificate,
+        // c.Signature, parent.PublicKey, false);
         return check_signature(
             &self.signature_algorithm,
             &self.raw_tbs_certificate,
@@ -1256,7 +1258,8 @@ fn check_signature(
                     &pss_options,
                 );
             } else {
-                // return rsa::verify_pkcs1v15(rsa_pub_key, hash_type, signed, signature);
+                // return rsa::verify_pkcs1v15(rsa_pub_key, hash_type, signed,
+                // signature);
                 return rsa::verify_pkcs1v15(rsa_pub_key, hash_len_in_bits, &hashed, signature);
             }
         }
@@ -1442,7 +1445,8 @@ pub fn parse_name_constraints_extension(out: &mut Certificate, e: &Extension) ->
                             // Otherwise it's a domain name.
                             let domain = constraint.trim_start_matches('.').to_string();
                             // let mut domain = constraint.clone();
-                            // if domain.len() > 0 && domain.get(0).unwrap() == '.' {
+                            // if domain.len() > 0 && domain.get(0).unwrap() ==
+                            // '.' {
                             // domain = domain[1..].to_string();
                             //}
                             if domain_to_reverse_labels(&domain).is_none() {
@@ -1537,16 +1541,20 @@ fn process_extensions(out: &mut Certificate) -> bool {
                     // Handle CRLDistributionPoints
                     // RFC 5280, 4.2.1.13
 
-                    // CRLDistributionPoints ::= SEQUENCE SIZE (1..MAX) OF DistributionPoint
+                    // CRLDistributionPoints ::= SEQUENCE SIZE (1..MAX) OF
+                    // DistributionPoint
                     //
                     // DistributionPoint ::= SEQUENCE {
-                    //     distributionPoint       [0]     DistributionPointName OPTIONAL,
-                    //     reasons                 [1]     ReasonFlags OPTIONAL,
-                    //     cRLIssuer               [2]     GeneralNames OPTIONAL }
+                    //     distributionPoint       [0]     DistributionPointName
+                    // OPTIONAL,     reasons
+                    // [1]     ReasonFlags OPTIONAL,
+                    //     cRLIssuer               [2]     GeneralNames OPTIONAL
+                    // }
                     //
                     // DistributionPointName ::= CHOICE {
                     //     fullName                [0]     GeneralNames,
-                    //     nameRelativeToCRLIssuer [1]     RelativeDistinguishedName }
+                    //     nameRelativeToCRLIssuer [1]
+                    // RelativeDistinguishedName }
                     let mut val_ = ASN1String { 0: e.value.clone() }; // Convert to a suitable type for ASN.1 reading
                     let mut val = ASN1String { 0: Vec::new() };
 
@@ -1818,8 +1826,8 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
 
     if outer_sig_ai_seq.0 != sig_ai_seq.0 {
         // if outer_sig_ai_seq != sig_ai_seq {
-        // return Err("x509: inner and outer signature algorithm identifiers don't
-        // match".into());
+        // return Err("x509: inner and outer signature algorithm identifiers
+        // don't match".into());
         return Err(vec![0u8, 21u8, 8u8]); // panic!("x509: inner and outer signature algorithm identifiers don't match");
     }
 
@@ -1928,7 +1936,8 @@ pub fn parse_certificate(der: &[u8]) -> Result<Certificate, Vec<u8>> {
                         return Err(vec![0u8, 21u8, 15u8]); // panic!("x509: certificate contains duplicate extensions");
                     }
                     // if seenExts[oidStr] {
-                    // return nil, errors.New("x509: certificate contains duplicate extensions")
+                    // return nil, errors.New("x509: certificate contains
+                    // duplicate extensions")
                     //}
                     seen_exts.insert(oid_str, true); //seenExts[oidStr] = true
                     cert.extensions.push(ext);
@@ -2396,8 +2405,8 @@ fn get_signature_algorithm_from_ai(ai: AlgorithmIdentifier) -> SignatureAlgorith
     // default value.
 
     // if (!params.hash.parameters.unwrap().full_bytes.is_empty() &&
-    // !params.hash.parameters.unwrap().full_bytes.to_vec()==NULL_BYTES.to_vec() )
-    // || params.mgf.algorithm != oidMGF1 ||
+    // !params.hash.parameters.unwrap().full_bytes.to_vec()==NULL_BYTES.to_vec()
+    // ) || params.mgf.algorithm != oidMGF1 ||
     // mgf1_hash_func.algorithm != params.hash.algorithm ||
     //( mgf1_hash_func.parameters.unwrap().full_bytes.len() != 0 &&
     //( mgf1_hash_func.parameters.unwrap().full_bytes != NULL_BYTES ) ||
@@ -2804,7 +2813,8 @@ pub fn parse_san_extension(
                 //})?;
                 // if !uri.host_str().map_or(false, |host|
                 // domain_to_reverse_labels(host).is_ok()) { return false;
-                // //return Err(format!("cannot parse URI {}: invalid domain", uri_str).into());
+                // //return Err(format!("cannot parse URI {}: invalid domain",
+                // uri_str).into());
                 //}
                 // uris.push(uri);
                 uris.push(uri_str);
@@ -2903,8 +2913,8 @@ impl OID {
         for (i, &v) in der.iter().enumerate() {
             // ITU-T X.690, section 8.19.2:
             // The subidentifier shall be encoded in the fewest possible octets,
-            // that is, the leading octet of the subidentifier shall not have the value
-            // 0x80.
+            // that is, the leading octet of the subidentifier shall not have
+            // the value 0x80.
             if i == start && v == 0x80 {
                 return None;
             }
@@ -3080,34 +3090,37 @@ pub fn check_certs(
         return Err(vec![0u8, 3u8, 80u8]); // "root cert has expired" // return None;
     }
 
-    // let context: [u8; 98] = [32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-    // 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-    // 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
-    // 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 84, 76,
-    // 83, 32, 49, 46, 51, 44, 32, 115, 101, 114, 118, 101, 114, 32, 67, 101, 114,
-    // 116, 105, 102, 105, 99, 97, 116, 101, 86, 101, 114, 105, 102, 121, 0];
+    // let context: [u8; 98] = [32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+    // 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+    // 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+    // 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+    // 84, 76, 83, 32, 49, 46, 51, 44, 32, 115, 101, 114, 118, 101, 114, 32,
+    // 67, 101, 114, 116, 105, 102, 105, 99, 97, 116, 101, 86, 101, 114,
+    // 105, 102, 121, 0];
 
     // let check_sum_extend = format::concatenate( &[ &context, &check_sum]);
     // let check_prepared = hkdf_sha256::sum256(&check_sum_extend).to_vec();
 
-    // let check_prepared: [u8; 32] = [147, 105, 160, 151, 89, 237, 59, 225, 198,
-    // 46, 54, 194, 177, 254, 192, 149, 23, 103, 164, 206, 97, 92, 159, 53, 75, 225,
-    // 227, 148, 11, 232, 183, 107]; let sig: [u8; 256] =  [12, 8, 221, 42, 77,
-    // 195, 200, 100, 161, 125, 104, 108, 13, 7, 154, 72, 251, 91, 96, 30, 221, 24,
-    // 214, 117, 114, 47, 207, 151, 211, 81, 234, 75, 51, 247, 238, 9, 156, 164, 72,
-    // 201, 33, 48, 85, 216, 212, 106, 160, 244, 136, 144, 43, 215, 98, 247, 190,
-    // 125, 104, 205, 211, 204, 223, 200, 142, 145, 13, 129, 131, 123, 63, 170, 130,
-    // 147, 238, 25, 143, 102, 81, 253, 114, 37, 42, 200, 208, 181, 156, 128,
+    // let check_prepared: [u8; 32] = [147, 105, 160, 151, 89, 237, 59, 225,
+    // 198, 46, 54, 194, 177, 254, 192, 149, 23, 103, 164, 206, 97, 92, 159,
+    // 53, 75, 225, 227, 148, 11, 232, 183, 107]; let sig: [u8; 256] =  [12,
+    // 8, 221, 42, 77, 195, 200, 100, 161, 125, 104, 108, 13, 7, 154, 72,
+    // 251, 91, 96, 30, 221, 24, 214, 117, 114, 47, 207, 151, 211, 81, 234,
+    // 75, 51, 247, 238, 9, 156, 164, 72, 201, 33, 48, 85, 216, 212, 106,
+    // 160, 244, 136, 144, 43, 215, 98, 247, 190, 125, 104, 205, 211, 204,
+    // 223, 200, 142, 145, 13, 129, 131, 123, 63, 170, 130, 147, 238, 25,
+    // 143, 102, 81, 253, 114, 37, 42, 200, 208, 181, 156, 128,
     // 202, 82, 254, 58, 112, 7, 110, 255, 207, 111, 10, 221, 219, 33, 127, 153,
     // 107, 107, 171, 50, 119, 8, 76, 20, 78, 233, 60, 93, 136, 185, 107, 2,
-    // 209, 105, 167, 206, 99, 242, 189, 51, 35, 203, 118, 129, 7, 214, 243, 240,
-    // 87, 205, 13, 42, 43, 158, 133, 255, 62, 160, 83, 175, 55, 236, 160, 201, 19,
-    // 121, 162, 238, 58, 202, 33, 192, 109, 64, 161, 24, 242, 150, 209, 15, 63, 13,
-    // 68, 31, 123, 183, 220, 230, 83, 40, 110, 5, 186, 255, 203, 175, 139, 102, 24,
-    // 17, 83, 117, 44, 246, 24, 82, 58, 131, 217, 136, 177, 140, 164, 234, 25,
-    // 143, 182, 243, 41, 220, 83, 144, 225, 190, 120, 82, 102, 133, 95, 81, 122,
-    // 246, 161, 162, 128, 189, 0, 195, 247, 2, 240, 210, 69, 17, 217, 92, 217, 12,
-    // 86, 15, 46, 150, 233, 97, 35, 201, 235, 108, 194, 134, 245, 202, 164, 37,
+    // 209, 105, 167, 206, 99, 242, 189, 51, 35, 203, 118, 129, 7, 214, 243,
+    // 240, 87, 205, 13, 42, 43, 158, 133, 255, 62, 160, 83, 175, 55, 236,
+    // 160, 201, 19, 121, 162, 238, 58, 202, 33, 192, 109, 64, 161, 24, 242,
+    // 150, 209, 15, 63, 13, 68, 31, 123, 183, 220, 230, 83, 40, 110, 5,
+    // 186, 255, 203, 175, 139, 102, 24, 17, 83, 117, 44, 246, 24, 82, 58,
+    // 131, 217, 136, 177, 140, 164, 234, 25, 143, 182, 243, 41, 220, 83,
+    // 144, 225, 190, 120, 82, 102, 133, 95, 81, 122, 246, 161, 162, 128,
+    // 189, 0, 195, 247, 2, 240, 210, 69, 17, 217, 92, 217, 12, 86, 15, 46,
+    // 150, 233, 97, 35, 201, 235, 108, 194, 134, 245, 202, 164, 37,
     // 79, 5, 163, 96, 180, 148];
 
     if !leaf_cert.check_signature_from(&internal_cert) {
@@ -3192,8 +3205,8 @@ pub fn check_certs(
                 let pss_options =
                     rsa::PSSOptions { salt_length: rsa::PSS_SALT_LENGTH_EQUALS_HASH, hash: 0 };
                 if !rsa::verify_pss(&pub_key, 256, check_sum, signature, &pss_options) {
-                    // if !rsa::verify_pss(&pub_key, 256, &check_prepared, &sig, &pss_options) {
-                    // return None;
+                    // if !rsa::verify_pss(&pub_key, 256, &check_prepared, &sig,
+                    // &pss_options) { return None;
                     return Err(vec![0u8, 3u8, 86u8]); // panic!("verify pss panic");
                 }
 

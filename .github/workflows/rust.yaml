@@ -20,14 +20,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@nightly
+      # Pinned, not floating `nightly`. rustfmt.toml turns on unstable options
+      # (`wrap_comments` in particular), whose output changes between nightlies:
+      # a rustfmt change between 2026-08-23 and 2026-09-02 started re-wrapping
+      # comments at `comment_width` (80) instead of `max_width` (100), which
+      # turned this job red without a single commit touching the code. Bump the
+      # date deliberately and reformat in the same commit.
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly-2026-09-03
           components: clippy, rustfmt
       - run: |
-          cargo +nightly fmt --all -- --check
+          cargo +nightly-2026-09-03 fmt --all -- --check
           # Check formatting for each example
           for manifest in $(find examples -name Cargo.toml); do
-            cargo +nightly fmt --manifest-path "$manifest" -- --check
+            cargo +nightly-2026-09-03 fmt --manifest-path "$manifest" -- --check
           done
 
       ## clippy is currently broken, require big refactor
