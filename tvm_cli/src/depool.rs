@@ -39,6 +39,7 @@ use crate::helpers::now;
 use crate::helpers::print_message;
 use crate::multisig::CallArgs;
 use crate::multisig::MultisigArgs;
+use crate::multisig::WalletArgs;
 use crate::print_args;
 
 pub fn create_depool_command<'b>() -> Command<'b> {
@@ -375,7 +376,7 @@ impl<'a> DepoolCmd<'a> {
         let call_args =
             CallArgs::submit_with_args(self.m, self.depool, &format!("{}", self.value), true, body)
                 .await?;
-        let msig_args = MultisigArgs::new(self.m, self.config, call_args)?;
+        let msig_args = MultisigArgs::new(self.m, self.config, call_args, WalletArgs::AddrAndSign)?;
 
         let since = now();
         let depool = self.depool.to_owned();

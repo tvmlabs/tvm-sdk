@@ -21,16 +21,16 @@ use crate::types::Exception;
 #[derive(Debug, Error)]
 pub enum TvmError {
     /// Fatal error.
-    #[error("Fatal error: {}", 0)]
+    #[error("Fatal error: {0}")]
     FatalError(String),
     /// Invalid argument.
-    #[error("Invalid argument: {}", 0)]
+    #[error("Invalid argument: {0}")]
     InvalidArg(usize),
     /// Invalid data.
-    #[error("Invalid data: {}", 0)]
+    #[error("Invalid data: {0}")]
     InvalidData(String),
     /// TVM Exception description
-    #[error("VM Exception: {} {}", 0, 1)]
+    #[error("VM Exception: {0} {1}")]
     TvmExceptionFull(Exception, String),
     /// Termination deadline reached
     #[error("Termination deadline reached")]

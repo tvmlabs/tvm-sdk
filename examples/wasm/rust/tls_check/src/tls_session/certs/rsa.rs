@@ -261,19 +261,19 @@ fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, h
         return false; // ErrVerification
     }
 
-    // 4. If the rightmost octet of EM does not have hexadecimal value 0xbc, output
-    //    "inconsistent" and stop.
+    // 4. If the rightmost octet of EM does not have hexadecimal value 0xbc,
+    //    output "inconsistent" and stop.
     if em[em_len - 1] != 0xbc {
         return false; // ErrVerification
     }
 
-    // 5. Let maskedDB be the leftmost emLen - hLen - 1 octets of EM, and let H be
-    //    the next hLen octets.
+    // 5. Let maskedDB be the leftmost emLen - hLen - 1 octets of EM, and let H
+    //    be the next hLen octets.
     let mut db: Vec<u8> = Vec::from(&em[..em_len - h_len - 1]);
     let h = &em[em_len - h_len - 1..em_len - 1];
 
-    // 6. If the leftmost 8 * emLen - emBits bits of the leftmost octet in maskedDB
-    //    are not all equal to zero, output "inconsistent" and stop.
+    // 6. If the leftmost 8 * emLen - emBits bits of the leftmost octet in
+    //    maskedDB are not all equal to zero, output "inconsistent" and stop.
     let bit_mask: u8 = 0xff >> (8 * em_len - em_bits);
     if em[0] & !bit_mask != 0 {
         return false; // ErrVerification
@@ -285,8 +285,8 @@ fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, h
     let mut hash_ = Digest::new(); // sha256
     mgf1_xor(&mut db, &mut hash_, &h); // mgf1_xor(db, hash, h);
 
-    // 9. Set the leftmost 8 * emLen - emBits bits of the leftmost octet in DB to
-    //    zero.
+    // 9. Set the leftmost 8 * emLen - emBits bits of the leftmost octet in DB
+    //    to zero.
     db[0] &= bit_mask;
 
     // If we don't know the salt length, look for the 0x01 delimiter.
@@ -306,10 +306,10 @@ fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, h
         s_len = db.len() - (ps_len as usize) - 1;
     }
 
-    // 10. If the emLen - hLen - sLen - 2 leftmost octets of DB are not zero or if
-    //     the octet at position emLen - hLen - sLen - 1 (the leftmost position is
-    //     "position 1") does not have hexadecimal value 0x01, output "inconsistent"
-    //     and stop.
+    // 10. If the emLen - hLen - sLen - 2 leftmost octets of DB are not zero or
+    //     if the octet at position emLen - hLen - sLen - 1 (the leftmost
+    //     position is "position 1") does not have hexadecimal value 0x01,
+    //     output "inconsistent" and stop.
     let ps_len = em_len - h_len - s_len - 2;
     for i in 0..ps_len {
         // for _, e := range db[:psLen] {
@@ -324,8 +324,9 @@ fn emsa_pss_verify(m_hash: &[u8], em: &[u8], em_bits: usize, mut s_len: isize, h
     // 11. Let salt be the last sLen octets of DB.
     let salt = &db[db.len() - s_len..];
 
-    // 12. Let M' = (0x)00 00 00 00 00 00 00 00 || mHash || salt ; M' is an octet
-    //     string of length 8 + hLen + sLen with eight initial zero octets.
+    // 12. Let M' = (0x)00 00 00 00 00 00 00 00 || mHash || salt ; M' is an
+    //     octet string of length 8 + hLen + sLen with eight initial zero
+    //     octets.
     //
     // 13. Let H' = Hash(M'), an octet string of length hLen.
     let prefix = [0u8; 8];

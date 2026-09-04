@@ -69,25 +69,6 @@ pub struct PostRequest {
 
 #[derive(Debug, Clone, Serialize)]
 #[allow(non_snake_case)]
-pub struct ExtMessageV2 {
-    pub id: String,
-    pub body: String,
-    pub expire_at: Option<f64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub thread_id: Option<String>,
-    pub ext_message_token: Option<Value>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dst_dapp_id: Option<String>,
-}
-
-impl ExtMessageV2 {
-    pub fn set_thread_id(&mut self, thread_id: Option<String>) {
-        self.thread_id = thread_id;
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[allow(non_snake_case)]
 pub struct ExtMessageV3 {
     pub id: String,
     pub body: String,
@@ -340,7 +321,7 @@ impl QueryOperationBuilder {
 
     fn add_info(&mut self) {
         self.start_op("info");
-        self.end_op("version time latency rempEnabled");
+        self.end_op("time latency rempEnabled");
     }
 
     fn add_agg_op_params(
@@ -561,40 +542,7 @@ pub enum GraphQLQueryEvent {
 mod ext_message_tests {
     use serde_json::json;
 
-    use super::ExtMessageV2;
     use super::ExtMessageV3;
-
-    #[test]
-    fn v2_serializes_with_dst_dapp_id() {
-        let m = ExtMessageV2 {
-            id: "abc".into(),
-            body: "Zm9v".into(),
-            expire_at: None,
-            thread_id: Some("ttt".into()),
-            ext_message_token: None,
-            dst_dapp_id: Some("dd".into()),
-        };
-        let v = serde_json::to_value(&m).unwrap();
-        assert_eq!(v["id"], json!("abc"));
-        assert_eq!(v["dst_dapp_id"], json!("dd"));
-        assert!(v.get("dapp_id").is_none());
-        assert!(v.get("account_id").is_none());
-    }
-
-    #[test]
-    fn v2_skips_dst_dapp_id_when_none() {
-        let m = ExtMessageV2 {
-            id: "abc".into(),
-            body: "Zm9v".into(),
-            expire_at: None,
-            thread_id: None,
-            ext_message_token: None,
-            dst_dapp_id: None,
-        };
-        let v = serde_json::to_value(&m).unwrap();
-        assert!(v.get("dst_dapp_id").is_none());
-        assert!(v.get("thread_id").is_none());
-    }
 
     #[test]
     fn v3_serializes_with_dapp_id_and_account_id() {
@@ -611,5 +559,49 @@ mod ext_message_tests {
         assert_eq!(v["dapp_id"], json!("dapp_hex"));
         assert_eq!(v["account_id"], json!("acc_hex"));
         assert!(v.get("dst_dapp_id").is_none());
+        assert_eq!(v["thread_id"], json!("ttt"));
+    }
+
+    /// `thread_id` carries `skip_serializing_if = "Option::is_none"`, and it is
+    /// reachable: `ServerLink::send_message` calls `set_thread_id(None)` when a
+    /// node answers with a malformed thread_id, then re-serializes the message
+    /// for the retry. Without the attribute that retry would put
+    /// `"thread_id": null` on the wire. The only test that covered a `None`
+    /// thread_id was the v2 one deleted with `ExtMessageV2`.
+    #[test]
+    fn v3_omits_thread_id_when_none() {
+        let m = ExtMessageV3 {
+            id: "abc".into(),
+            body: "Zm9v".into(),
+            expire_at: None,
+            thread_id: None,
+            ext_message_token: None,
+            dapp_id: "dapp_hex".into(),
+            account_id: "acc_hex".into(),
+        };
+        let v = serde_json::to_value(&m).unwrap();
+        assert!(v.get("thread_id").is_none(), "thread_id must be omitted, not null: {v}");
+        // The fields that are always present stay present.
+        assert_eq!(v["dapp_id"], json!("dapp_hex"));
+        assert_eq!(v["account_id"], json!("acc_hex"));
+    }
+}
+
+#[cfg(test)]
+mod info_query_tests {
+    use super::GraphQLQuery;
+
+    #[test]
+    fn info_selection_set_does_not_request_version() {
+        // `GraphQLQuery::build(_, include_info = true, _)` is the only public
+        // way `add_info` is reached (tvm_gql.rs:442-455), so no server is
+        // needed to assert on the emitted selection set.
+        let query = GraphQLQuery::build(&[], true, 60_000).query;
+        assert!(query.contains("info"), "unexpected query: {query}");
+        assert!(query.contains("time"), "unexpected info query: {query}");
+        assert!(
+            !query.contains("version"),
+            "info query must not request a field nothing parses: {query}"
+        );
     }
 }

@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2026-09-03
+
+Crate-level detail is in the per-crate changelogs — [`tvm_cli`](tvm_cli/CHANGELOG.md),
+[`tvm_abi`](tvm_abi/CHANGELOG.md), [`tvm_block`](tvm_block/CHANGELOG.md),
+[`tvm_vm`](tvm_vm/CHANGELOG.md), [`tvm_executor`](tvm_executor/CHANGELOG.md) and
+[`tvm_block_json`](tvm_block_json/CHANGELOG.md).
+
+### Breaking Changes
+- `tvm_client`: pre-1.0.0 servers are no longer supported. `dapp_id` is required on every send and account read, and an empty value is always an error. `ClientContext::supports_dapp_id()`, `ServerLink::supports_dapp_id()` and `ServerLink::server_version()` are gone — drop any version gate built on them.
+- `tvm_client`: sends and account reads go straight to REST and no longer probe GraphQL. A node that serves no GraphQL needs no special handling.
+- `tvm-cli`: `--dst-dapp-id` is gone from `deploy`, `deployx`, `deploy_message` and `fee deploy` — the dapp_id is derived from the contract's own address. `send` and `sendfile` keep the flag, and it is now required there in every case.
+- `tvm-cli`: config files take a keypair path only, never a seed phrase or secret key — `config --keys`, `config alias add --keys`, and `--alias` on `deploy`/`deployx`. Convert an existing value with `getkeypair --phrase`. A config that still holds a secret is reported on every run.
+- `tvm-cli`: writing a config in a directory that inherits a signing key from the global config now fails instead of copying that key into a new local file.
+- `tvm-cli`: a file that does not parse as a config is no longer overwritten. A malformed file, or `--config` pointed at the wrong one, used to cost the url, the wallet or the aliases with exit code 0.
+- `tvm-cli`: `config --depool_fee` rejects `inf` and `NaN`; `config clear --keys` and `config clear --api-token` no longer take a value. Scripts passing either now fail instead of silently doing the wrong thing.
+
+### New / Improvements
+- `tvm-cli`: `deploy`, `deploy_message`, `fee deploy` and `deployx` accept a filename for the constructor arguments, as the help has always promised.
+- `tvm-debugger`: `run` no longer stops at the first event a method emits, and writes the resulting state back to the `.tvc`. JSON `messages` entries gained a `type` of `internal` or `external` and a filled-in source address.
+- `tvm-cli`: `multisig deploy` reports a missing wallet or `--keys` before downloading the wallet image, not after.
+- Docs: migration guide retargeted at 3.x ([`docs/MIGRATION-3.x.md`](docs/MIGRATION-3.x.md)), two ADRs added under `docs/adr/`, and the unpublished duplicate of the SDK reference removed.
+
+### Fixes
+- `tvm-cli`: seed phrases and secret keys are no longer echoed — masked in `Input arguments:`, in `genaddr` output and in `config` listings. A keypair path is still shown in full.
+- `tvm_client` / `tvm-cli`: an invalid seed phrase is no longer quoted back in `Invalid bip39 phrase`, and a mistyped phrase from a non-Latin wordlist no longer panics.
+- `tvm-cli`: keypair paths containing spaces work again, and are no longer masked as a seed phrase.
+- `tvm-cli`: many commands aborted on startup in debug builds — `account`, `body`, `call`, `deploy`, `genaddr`, `runx`, the `multisig` and `depool` senders, every `debug` subcommand and others. Release builds were unaffected except `debug call`, which ran as a getter instead of tracing the call.
+- `tvm-cli`: `debug call --update` and `debug message --update` no longer report the account as updated when nothing executed.
+- `tvm-cli`: `config alias add` keeps fields it is not given; an older bare-form global config is read instead of taken for empty; an unusable global config no longer breaks every command; `config` no longer prints settings it failed to save; `--config` no longer renames a `tonos-cli.conf.json`.
+- `tvm-cli`: `proposal --help` lists `create`, `vote` and `decode` again.
+- `tvm_client`: a malformed account response names the field the parser tripped on.
+- `tvm_abi`: an `address` argument error states the expected form — ABI arguments take `<workchain>:<account_id>`, not `dapp_id::account_id`.
+- Error messages across `tvm_block`, `tvm_vm`, `tvm_executor`, `tvm_abi` and `tvm_block_json` reported `0` instead of the real VM exception code, exit code or invalid-argument reason (20 variants).
+
 ## [3.0.5] - 2026-08-11
 
 ### Changed
@@ -35,7 +69,7 @@ All notable changes to this project will be documented in this file.
 
 ## [3.0.0] - 2026-06-05
 
-> **Upgrading from 2.x?** See [`docs/MIGRATION-3.0.md`](docs/MIGRATION-3.0.md)
+> **Upgrading from 2.x?** See [`docs/MIGRATION-3.x.md`](docs/MIGRATION-3.x.md)
 > for a step-by-step migration guide covering the dapp_id changes below.
 
 ### Changed (breaking)
@@ -750,7 +784,7 @@ State init should be finalized and ready to be used in message as is.
 - `send_event` parameter is now optional with default value `false`.
 
 ### Deprecated
-- Debot module is [DEPRECATED](./docs/reference/types-and-methods/DEPRECATED.md)
+- Debot module is [DEPRECATED](./docs/acki-nacki-sdk/types-and-methods/DEPRECATED.md)
 
 ## [1.44.0] – 2023-07-12
 
@@ -1154,19 +1188,19 @@ connection
   Crypto box provides signing and encryption boxes.
 
   Functions:
-  [`create_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#create_crypto_box) -
+  [`create_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#create_crypto_box) -
   initializes cryptobox with secret
-  [`remove_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#remove_crypto_box) -
+  [`remove_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#remove_crypto_box) -
   removes cryptobox and overwrites all secrets with zeroes
-  [`get_crypto_box_seed_phrase`](./docs/reference/types-and-methods/mod_crypto.md#get_crypto_box_seed_phrase)
+  [`get_crypto_box_seed_phrase`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_crypto_box_seed_phrase)
   - returns decrypted seed phrase
-  [`get_crypto_box_info`](./docs/reference/types-and-methods/mod_crypto.md#get_crypto_box_info) -
+  [`get_crypto_box_info`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_crypto_box_info) -
   returns encrypted cryptobox secret for next cryptobox initializations
-  [`get_signing_box_from_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#get_signing_box_from_crypto_box)
+  [`get_signing_box_from_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_signing_box_from_crypto_box)
   - derives signing box from secret
-  [`get_encryption_box_from_crypto_box`](./docs/reference/types-and-methods/mod_crypto.md#get_encryption_box_from_crypto_box)
+  [`get_encryption_box_from_crypto_box`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#get_encryption_box_from_crypto_box)
   - derives encryption box from secret
-  [`clear_crypto_box_secret_cache`](./docs/reference/types-and-methods/mod_crypto.md#clear_crypto_box_secret_cache)
+  [`clear_crypto_box_secret_cache`](./docs/acki-nacki-sdk/types-and-methods/mod_crypto.md#clear_crypto_box_secret_cache)
   - forces secret cache (signing and encryption) clean up (overwrites all secrets with zeroes).
 
 - Support of `initCodeHash` in tvm: `X-Evernode-Expected-Account-Boc-Version`=2 http header added to
@@ -1239,7 +1273,7 @@ done to avoid breaking changes in existing applications and give time to migrate
 ### New
 
 -
-Function [`abi.encode_initial_data`](./docs/reference/types-and-methods/mod_abi.md#encode_initial_data)
+Function [`abi.encode_initial_data`](./docs/acki-nacki-sdk/types-and-methods/mod_abi.md#encode_initial_data)
 which
 encodes initial account data with initial values for the contract's static variables and owner's
 public key.
@@ -1268,7 +1302,7 @@ This function is analogue of `tvm.buildDataInit` function in Solidity.
       for completion of async external calls.
     - Added support for DeBots with ABI 2.2.
 -
-Function [`proofs.proof_message_data`](./docs/reference/types-and-methods/mod_proofs.md#proof_message_data)
+Function [`proofs.proof_message_data`](./docs/acki-nacki-sdk/types-and-methods/mod_proofs.md#proof_message_data)
 which proves message data, retrieved
 from Graphql API.
 

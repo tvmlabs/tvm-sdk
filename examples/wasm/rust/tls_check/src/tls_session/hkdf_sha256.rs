@@ -249,7 +249,8 @@ impl Digest {
     }
 
     pub fn sum(&self, in_bytes: &[u8]) -> Vec<u8> {
-        // make a copy of self so that the caller can continue writing and summing.
+        // make a copy of self so that the caller can continue writing and
+        // summing.
         let mut d0 = self.clone();
         let hash = d0.check_sum();
         // if d0.is224 {
@@ -525,8 +526,8 @@ impl Hkdf {
 
         let mut p = vec![0u8; need];
         if remains < need {
-            // return Err(io::Error::new(io::ErrorKind::Other, "hkdf: entropy limit
-            // reached")); return 0;
+            // return Err(io::Error::new(io::ErrorKind::Other, "hkdf: entropy
+            // limit reached")); return 0;
             // return p;
             return Err(vec![0u8, 8u8, 1u8]);
         }

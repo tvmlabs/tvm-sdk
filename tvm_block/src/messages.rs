@@ -1721,10 +1721,11 @@ impl Deserializable for Message {
         }
 
         // read body
-        // A message is always serialized inside the blockchain as the last field in
-        // a cell. Therefore, the blockchain software may assume that whatever bits
-        // and references left unparsed after parsing the fields of a Message preceding
-        // body belong to the payload body : X, without knowing anything about the
+        // A message is always serialized inside the blockchain as the last
+        // field in a cell. Therefore, the blockchain software may
+        // assume that whatever bits and references left unparsed after
+        // parsing the fields of a Message preceding body belong to the
+        // payload body : X, without knowing anything about the
         // serialization of the type X.
 
         self.body = if cell.get_next_bit()? {

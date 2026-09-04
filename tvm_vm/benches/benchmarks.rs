@@ -438,7 +438,8 @@ fn bench_wasmadd(c: &mut Criterion) {
                 .into_cell()
                 .unwrap();
                 // let cell = split_to_chain_of_cells(wasm_dict);
-                // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+                // let cell = pack_data_to_cell(&wasm_dict, &mut
+                // engine).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
 
                 let mut res = Vec::<u8>::with_capacity(3);
@@ -539,7 +540,8 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
                 .into_cell()
                 .unwrap();
                 // let cell = split_to_chain_of_cells(wasm_dict);
-                // let cell = pack_data_to_cell(&wasm_dict, &mut engine).unwrap();
+                // let cell = pack_data_to_cell(&wasm_dict, &mut
+                // engine).unwrap();
                 stack.push(StackItem::cell(cell.clone()));
 
                 let mut res = Vec::<u8>::with_capacity(3);
@@ -558,7 +560,8 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
                 );
                 engine.wasm_engine_init_cached().unwrap();
                 engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
-                // let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
+                // let mut engine =
+                // engine.precompile_all_wasm_by_hash().unwrap();
 
                 let start = std::time::Instant::now();
                 let _ = engine.execute();

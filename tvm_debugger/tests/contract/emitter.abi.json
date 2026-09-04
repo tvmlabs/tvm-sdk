@@ -1,0 +1,89 @@
+{
+	"ABI version": 2,
+	"version": "2.4",
+	"header": ["pubkey", "time", "expire"],
+	"functions": [
+		{
+			"name": "constructor",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "bump",
+			"inputs": [
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "bumpQuiet",
+			"inputs": [
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "boom",
+			"inputs": [
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "bumpFromSender",
+			"inputs": [
+				{"name":"expected","type":"address"},
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "bumpAndForward",
+			"inputs": [
+				{"name":"to","type":"address"},
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "readAndEmit",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"total","type":"uint128"}
+			]
+		},
+		{
+			"name": "counter",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"counter","type":"uint128"}
+			]
+		}
+	],
+	"events": [
+		{
+			"name": "Bumped",
+			"inputs": [
+				{"name":"total","type":"uint128"},
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		}
+	],
+	"fields": [
+		{"init":true,"name":"_pubkey","type":"uint256"},
+		{"init":false,"name":"_timestamp","type":"uint64"},
+		{"init":false,"name":"_constructorFlag","type":"bool"},
+		{"init":false,"name":"counter","type":"uint128"}
+	]
+}

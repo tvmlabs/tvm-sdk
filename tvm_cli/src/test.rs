@@ -42,6 +42,7 @@ use crate::config::Config;
 use crate::crypto::load_keypair;
 use crate::crypto::{self};
 use crate::debug::DEFAULT_TRACE_PATH;
+use crate::debug::TraceArgs;
 use crate::debug::decode_messages;
 use crate::debug::execute_debug;
 use crate::debug::init_debug_logger;
@@ -235,7 +236,10 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
     let keys = matches.value_of("KEYS").map(load_keypair).transpose()?;
     let address_opt = matches.value_of("ACCOUNT_ADDRESS");
     let balance = matches.value_of("INITIAL_BALANCE").unwrap();
-    let workchain_id = matches.value_of("WC").and_then(|wc| wc.parse().ok());
+    // `test deploy` registers no `--wc`: this named an id clap does not know,
+    // which aborts debug builds and resolves to `None` everywhere else. Add the
+    // argument first if the workchain is ever meant to be selectable here.
+    let workchain_id: Option<i32> = None;
     let now = matches.value_of("NOW").and_then(|now| now.parse().ok()).unwrap_or(now_ms());
     let trace_path = matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH);
 
@@ -255,7 +259,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         initial_pubkey,
         ..Default::default()
     });
-    let params = serde_json::from_str(&load_params(&params)?)
+    let params = serde_json::from_str(&params)
         .map_err(|e| format!("function arguments is not a json: {}", e))?;
     let header = Some(FunctionHeader { time: Some(now), ..Default::default() });
     let call_set =
@@ -306,7 +310,7 @@ async fn test_deploy(matches: &ArgMatches, config: &Config) -> Result<(), String
         bc_config,
         &mut account_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: Some(abi_path.to_owned()) }),
         now,
         0,
         0,
@@ -349,7 +353,18 @@ async fn test_ticktock(matches: &ArgMatches, config: &Config) -> Result<(), Stri
     let bc_config = get_blockchain_config(config, bc_config).await?;
     let mut account_root = account.serialize().unwrap();
     let result =
-        execute_debug(bc_config, &mut account_root, None, Some(matches), now, 0, 0, false, config)
+        // `test ticktock` defines no `--abi`.
+        execute_debug(
+            bc_config,
+            &mut account_root,
+            None,
+            Some(TraceArgs { matches, abi: None }),
+            now,
+            0,
+            0,
+            false,
+            config,
+        )
             .await;
 
     match result {

@@ -743,8 +743,9 @@ impl Gcm {
 
         if nonce_size <= 0 {
             // return Err(Box::new(GcmError {
-            // details: String::from("The nonce can't have zero length, or the security of
-            // the key will be immediately compromised"),
+            // details: String::from("The nonce can't have zero length, or the
+            // security of the key will be immediately
+            // compromised"),
             //}));
             panic!(
                 "The nonce can't have zero length, or the security of the key will be immediately compromised"
@@ -826,8 +827,8 @@ impl Gcm {
         ret
     }
 
-    // fn open(&self, dst: &[u8], nonce: &[u8], ciphertext: &[u8], data: &[u8]) ->
-    // Result<Vec<u8>, &'static str> {
+    // fn open(&self, dst: &[u8], nonce: &[u8], ciphertext: &[u8], data: &[u8])
+    // -> Result<Vec<u8>, &'static str> {
     pub fn open(&self, dst: &[u8], nonce: &[u8], ciphertext: &[u8], data: &[u8]) -> Vec<u8> {
         if nonce.len() != self.nonce_size {
             panic!("crypto/cipher: incorrect nonce length given to GCM");
@@ -892,8 +893,9 @@ impl Gcm {
         }
     }
 
-    // update extends y with more polynomial terms from the data. If the data is not
-    // a multiple of gcm_block_size bytes, the remainder is filled with zeros.
+    // update extends y with more polynomial terms from the data. If the data is
+    // not a multiple of gcm_block_size bytes, the remainder is filled with
+    // zeros.
     fn update(&self, y: &mut GcmFieldElement, data: &[u8]) {
         let full_blocks = (data.len() >> 4) << 4;
         self.update_blocks(y, &data[0..full_blocks]);
@@ -929,7 +931,8 @@ impl Gcm {
         }
     }
 
-    // mul sets y to y*H, where H is the GCM key fixed during NewGCMWithNonceSize.
+    // mul sets y to y*H, where H is the GCM key fixed during
+    // NewGCMWithNonceSize.
     fn mul(&self, y: &mut GcmFieldElement) {
         let mut z = GcmFieldElement { low: 0, high: 0 };
 
@@ -959,8 +962,8 @@ impl Gcm {
         *y = z;
     }
 
-    // derive_counter computes the initial state of the GCM counter from the given
-    // nonce.
+    // derive_counter computes the initial state of the GCM counter from the
+    // given nonce.
     fn derive_counter(&self, counter: &mut [u8; GCM_BLOCK_SIZE], nonce: &[u8]) {
         if nonce.len() == GCM_STANDARD_NONCE_SIZE {
             counter[..nonce.len()].copy_from_slice(nonce);

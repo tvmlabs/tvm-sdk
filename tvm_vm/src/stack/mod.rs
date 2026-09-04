@@ -915,7 +915,8 @@ impl Stack {
     }
 
     // Swaps blocks (0...j-1) and (j...j+i-1)
-    // e.g. block_swap(i=2, j=4): (8 7 6 {5 4} {3 2 1 0} -> 8 7 6 {3 2 1 0} {5 4})
+    // e.g. block_swap(i=2, j=4): (8 7 6 {5 4} {3 2 1 0} -> 8 7 6 {3 2 1 0} {5
+    // 4})
     pub fn block_swap(&mut self, i: usize, j: usize) -> Status {
         if self.depth() < j + i {
             err!(ExceptionCode::StackUnderflow)

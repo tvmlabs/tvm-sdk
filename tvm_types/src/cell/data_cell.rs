@@ -318,8 +318,8 @@ impl DataCell {
                 // all checks were performed before finalization
             }
             CellType::External => {
-                // type + hash + depth + (tree cells count len | tree bits count len) + tree
-                // cells count + tree bits count
+                // type + hash + depth + (tree cells count len | tree bits count
+                // len) + tree cells count + tree bits count
                 let min_required_len = 8 * (EXTERNAL_CELL_MIN_SIZE);
                 if bit_len < min_required_len {
                     fail!("fail creating external cell: bit_len {} < {}", bit_len, min_required_len)
@@ -393,8 +393,9 @@ impl DataCell {
         let mut d1d2: [u8; 2] = self.raw_data()?[..2].try_into()?;
 
         // Hashes are calculated started from the smallest indexes.
-        // Representation hash is calculated last and "includes" all previous hashes
-        // For pruned branch cell only representation hash is calculated
+        // Representation hash is calculated last and "includes" all previous
+        // hashes For pruned branch cell only representation hash is
+        // calculated
         let mut hash_array_index = 0;
         for i in 0..=3 {
             // Hash is calculated only for "1" bits of level mask.

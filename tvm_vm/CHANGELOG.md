@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2026-09-03
+
+### Fixed
+- Four `TvmError` variants reported `0` in place of the value they were built with, their `#[error]` attributes interpolating bare integer literals rather than the variants' own fields: `Fatal error`, `Invalid argument`, `Invalid data`, and `VM Exception`, which rendered both its exception code and its description as zero. A VM exception now names the code it carries.
+
 ## Version 2.7.0
 
 Added VM execution time control parameters:

@@ -54,10 +54,13 @@ use clap::ArgMatches;
 use clap::Command;
 use config::Config;
 use config::clear_config;
+use config::reject_inline_secret;
 use config::set_config;
 use crypto::extract_pubkey;
 use crypto::generate_keypair;
 use crypto::generate_mnemonic;
+use crypto::mask_key_source;
+use crypto::mask_secret;
 use debot::create_debot_command;
 use debot::debot_command;
 use debug::create_debug_command;
@@ -99,10 +102,10 @@ use crate::getconfig::gen_update_config_message;
 use crate::helpers::AccountSource;
 use crate::helpers::SdkAddress;
 use crate::helpers::abi_from_matches_or_config;
-use crate::helpers::default_config_name;
 use crate::helpers::global_config_path;
 use crate::helpers::load_abi_from_tvc;
 use crate::helpers::load_params;
+use crate::helpers::migrated_default_config_name;
 use crate::helpers::parse_lifetime;
 use crate::helpers::unpack_alternative_params;
 use crate::helpers::wc_from_matches_or_config;
@@ -172,6 +175,13 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Seed phrase or path to the file with keypair used to sign the message. Can be specified in the config file.");
 
+    // `--keys` whose value is stored rather than used and forgotten. The config
+    // file is written in clear text, so only a path belongs here.
+    let stored_keys_arg = Arg::new("KEYS")
+        .long("--keys")
+        .takes_value(true)
+        .help("Path to the file with keypair used to sign the message. A seed phrase or a secret key is refused here: this value is written to the config file in clear text.");
+
     let sign_arg = Arg::new("SIGN")
         .long("--sign")
         .takes_value(true)
@@ -185,7 +195,9 @@ async fn main_internal() -> Result<(), String> {
     let dst_dapp_id_arg = Arg::new("DST_DAPP_ID")
         .long("--dst-dapp-id")
         .takes_value(true)
-        .help("Destination DApp identifier (64-char hex). Required for sending ext messages to accounts in non-root dapps.");
+        .help(
+            "Destination DApp identifier (64-char hex). Required: a prepared message carries no dapp_id to derive from.",
+        );
 
     let method_opt_arg = Arg::new("METHOD")
         .takes_value(true)
@@ -199,7 +211,7 @@ async fn main_internal() -> Result<(), String> {
         .help("Contract address. Can be specified in the config file.");
 
     let multi_params_arg = Arg::new("PARAMS")
-        .help("Function arguments. Must be a list of `--name value` pairs or a json string with all arguments.")
+        .help("Function arguments. Must be a list of `--name value` pairs, a json string with all arguments or path to the file with parameters.")
         .multiple(true);
 
     let author = "TVM Labs";
@@ -232,7 +244,7 @@ async fn main_internal() -> Result<(), String> {
     let alias_arg_long = Arg::new("ALIAS")
         .long("--alias")
         .takes_value(true)
-        .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address.");
+        .help("Saves contract address and abi to the aliases list to be able to call this contract with alias instaed of address. The signing key is saved with them, so it has to be a path to a keypair file.");
 
     let deployx_cmd = Command::new("deployx")
         .about("Deploys a smart contract to the blockchain (alternative syntax).")
@@ -246,8 +258,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(wc_arg.clone())
         .arg(tvc_arg.clone())
         .arg(alias_arg_long.clone())
-        .arg(multi_params_arg.clone())
-        .arg(dst_dapp_id_arg.clone());
+        .arg(multi_params_arg.clone());
 
     let address_boc_tvc_arg = Arg::new("ADDRESS").takes_value(true).help(
         "Contract address or path to the saved account state if --boc or --tvc flag is specified.",
@@ -258,9 +269,11 @@ async fn main_internal() -> Result<(), String> {
         .takes_value(true)
         .help("Name of the function being called.");
 
+    // The conflict with `--tvc` is attached per command rather than here:
+    // `account` takes `--boc` without `--tvc`, and clap asserts when a
+    // `conflicts_with` names an argument the command does not register.
     let boc_flag = Arg::new("BOC")
         .long("--boc")
-        .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tvc_flag = Arg::new("TVC")
@@ -285,7 +298,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(abi_arg.clone())
         .arg(method_opt_arg.clone())
         .arg(multi_params_arg.clone())
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -303,7 +316,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(Arg::new("PARAMS")
             .help("Function arguments.")
             .multiple(true))
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -374,21 +387,27 @@ async fn main_internal() -> Result<(), String> {
             .long("--save")
             .help("If this flag is specified, modifies the tvc file with the keypair and initial data"));
 
-    let deploy_cmd = Command::new("deploy")
-        .allow_negative_numbers(true)
-        .allow_hyphen_values(true)
-        .about("Deploys a smart contract to the blockchain.")
-        .version(version_string)
-        .author(author)
-        .arg(tvc_arg.clone())
-        .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
-            "Constructor arguments. Can be specified with a filename, which contains json data.",
-        ))
-        .arg(abi_arg.clone())
-        .arg(sign_arg.clone())
-        .arg(keys_arg.clone())
-        .arg(wc_arg.clone())
-        .arg(dst_dapp_id_arg.clone());
+    // `deploy` and `deploy_message` take the same arguments, but each has to be
+    // built from its own name: clap keeps the id assigned by `Command::new`, so
+    // a renamed clone stays addressable only under the original name and any
+    // lookup by the new one fails.
+    let deploy_args = |name: &'static str| {
+        Command::new(name)
+            .allow_negative_numbers(true)
+            .allow_hyphen_values(true)
+            .version(version_string)
+            .author(author)
+            .arg(tvc_arg.clone())
+            .arg(Arg::new("PARAMS").required(true).takes_value(true).help(
+                "Constructor arguments. Can be specified with a filename, which contains json data.",
+            ))
+            .arg(abi_arg.clone())
+            .arg(sign_arg.clone())
+            .arg(keys_arg.clone())
+            .arg(wc_arg.clone())
+    };
+
+    let deploy_cmd = deploy_args("deploy").about("Deploys a smart contract to the blockchain.");
 
     let output_arg = Arg::new("OUTPUT")
         .short('o')
@@ -398,9 +417,7 @@ async fn main_internal() -> Result<(), String> {
 
     let raw_arg = Arg::new("RAW").long("--raw").help("Creates raw message boc.");
 
-    let deploy_message_cmd = deploy_cmd
-        .clone()
-        .name("deploy_message")
+    let deploy_message_cmd = deploy_args("deploy_message")
         .about("Generates a signed message to deploy a smart contract to the blockchain.")
         .arg(output_arg.clone())
         .arg(raw_arg.clone());
@@ -486,7 +503,7 @@ async fn main_internal() -> Result<(), String> {
         .arg(method_arg.clone())
         .arg(params_arg.clone())
         .arg(abi_arg.clone())
-        .arg(boc_flag.clone())
+        .arg(boc_flag.clone().conflicts_with("TVC"))
         .arg(tvc_flag.clone())
         .arg(bc_config_arg.clone());
 
@@ -498,12 +515,13 @@ async fn main_internal() -> Result<(), String> {
             .help("Url to connect."))
         .arg(Arg::new("API_TOKEN")
             .long("--api-token")
-            .takes_value(true)
-            .help("Rest API token."))
+            .help("Removes the stored REST API token."))
         .arg(Arg::new("ABI")
             .long("--abi")
             .help("Path or link to the contract ABI file or pure json ABI data."))
-        .arg(keys_arg.clone())
+        .arg(Arg::new("KEYS")
+            .long("--keys")
+            .help("Removes the stored path to the file with keypair."))
         .arg(Arg::new("ADDR")
             .long("--addr")
             .help("Contract address."))
@@ -573,7 +591,7 @@ async fn main_internal() -> Result<(), String> {
                 .about("Add alias to the aliases map.")
                 .arg(alias_arg.clone())
                 .arg(Arg::new("ADDRESS").long("--addr").takes_value(true).help("Contract address."))
-                .arg(keys_arg.clone())
+                .arg(stored_keys_arg.clone())
                 .arg(
                     Arg::new("ABI")
                         .long("--abi")
@@ -626,7 +644,7 @@ async fn main_internal() -> Result<(), String> {
             .long("--abi")
             .takes_value(true)
             .help("Path or link to the contract ABI file or pure json ABI data."))
-        .arg(keys_arg.clone())
+        .arg(stored_keys_arg.clone())
         .arg(Arg::new("ADDR")
             .long("--addr")
             .takes_value(true)
@@ -787,7 +805,10 @@ async fn main_internal() -> Result<(), String> {
         ));
 
     let proposal_cmd = Command::new("proposal")
-        .help("Proposal control commands.")
+        // `.about`, not `.help`: the latter is clap's `override_help`, which
+        // replaces the whole page. `proposal --help` printed this one line and
+        // never listed `create`, `vote` or `decode`.
+        .about("Proposal control commands.")
         .subcommand(
             Command::new("create")
                 .about("Submits a proposal transaction in the multisignature wallet with a text comment.")
@@ -1054,9 +1075,19 @@ async fn command_parser(matches: &ArgMatches, is_json: bool) -> Result<(), Strin
         .value_of("CONFIG")
         .map(|v| v.to_string())
         .or(env::var("TONOSCLI_CONFIG").ok())
-        .unwrap_or(default_config_name());
+        // The only place the deprecated config is migrated: this is the one
+        // caller that falls back to the default path and then uses it.
+        .unwrap_or_else(migrated_default_config_name);
 
-    let mut full_config = FullConfig::from_file(&config_file);
+    let mut full_config = FullConfig::from_file(&config_file)?;
+    // `config --global` replaces this config with the global one before doing
+    // anything and warns about that one instead, so warning here as well would
+    // only name a file the command is not touching.
+    let global_config_command =
+        matches.subcommand_matches("config").is_some_and(|m| m.is_present("GLOBAL"));
+    if !global_config_command {
+        full_config.warn_about_the_config_file();
+    }
 
     if let Some(m) = matches.subcommand_matches("config") {
         return config_command(m, full_config, is_json);
@@ -1236,6 +1267,7 @@ fn getkeypair_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
     let key_file = matches.value_of("KEY_FILE");
     let phrase = matches.value_of("PHRASE");
     if !config.is_json {
+        let phrase = phrase.map(mask_secret);
         print_args!(key_file, phrase);
     }
     generate_keypair(key_file, phrase, config)
@@ -1256,11 +1288,13 @@ async fn send_command(matches: &ArgMatches, config: &Config) -> Result<(), Strin
 async fn body_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
-    let output = matches.value_of("OUTPUT");
+    // `body` writes to stdout and registers no `--output`, so the argument it
+    // used to print here could only ever be absent -- and naming an id the
+    // command does not define aborts debug builds.
     let abi = Some(abi_from_matches_or_config(matches, config)?);
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
-        print_args!(method, params, abi, output);
+        print_args!(method, params, abi);
     }
 
     let params = serde_json::from_str(&params.unwrap())
@@ -1296,9 +1330,14 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
     let address = matches.value_of("ADDRESS");
     let method = matches.value_of("METHOD");
     let params = matches.value_of("PARAMS");
-    let lifetime = matches.value_of("LIFETIME");
-    let raw = matches.is_present("RAW");
-    let output = matches.value_of("OUTPUT");
+    // Only `message` defines `--lifetime` and `--output`; `call` and `fee call`
+    // share this handler without them, and clap aborts when asked for an id the
+    // running command lacks. `--raw` and `--timestamp` are read inside the
+    // `CallType::Msg` arm for the same reason.
+    let (lifetime, output) = match call {
+        CallType::Msg => (matches.value_of("LIFETIME"), matches.value_of("OUTPUT")),
+        CallType::Call | CallType::Fee => (None, None),
+    };
 
     let abi = Some(abi_from_matches_or_config(matches, config)?);
 
@@ -1310,6 +1349,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
 
     let params = Some(load_params(params.unwrap())?);
     if !config.is_json {
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(address, method, params, abi, keys, lifetime, output);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
@@ -1338,6 +1378,7 @@ async fn call_command(matches: &ArgMatches, config: &Config, call: CallType) -> 
             .await
         }
         CallType::Msg => {
+            let raw = matches.is_present("RAW");
             let lifetime = lifetime
                 .map(|val| {
                     u32::from_str_radix(val, 10)
@@ -1379,13 +1420,15 @@ async fn callx_command(matches: &ArgMatches, full_config: &FullConfig) -> Result
             .or(config.method.as_deref())
             .ok_or("Method is not defined. Supply it in the config file or command line.")?,
     );
-    let (address, abi, keys) = contract_data_from_matches_or_config_alias(matches, full_config)?;
-    let params =
-        unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?;
-    let params = Some(load_params(&params)?);
+    let (address, abi, keys) =
+        contract_data_from_matches_or_config_alias(matches, full_config, matches.value_of("KEYS"))?;
+    let params = Some(
+        unpack_alternative_params(matches, abi.as_ref().unwrap(), method.unwrap(), config).await?,
+    );
     let thread_id = matches.value_of("THREAD");
 
     if !config.is_json {
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(address, method, params, abi, keys);
     }
 
@@ -1439,21 +1482,36 @@ async fn deploy_command(
     let config = &full_config.config;
     let tvc = matches.value_of("TVC");
     let wc = wc_from_matches_or_config(matches, config)?;
-    let raw = matches.is_present("RAW");
-    let output = matches.value_of("OUTPUT");
     let abi = Some(abi_from_matches_or_config(matches, config)?);
     let keys = matches
         .value_of("KEYS")
         .or(matches.value_of("SIGN"))
         .map(|s| s.to_string())
         .or(config.keys_path.clone());
-    let alias = matches.value_of("ALIAS");
+    // Only `deploy` defines `--alias`; `deploy_message` and `fee deploy` share
+    // this handler without it and have no use for it either.
+    let alias = match deploy_type {
+        DeployType::Full => matches.value_of("ALIAS"),
+        DeployType::MsgOnly | DeployType::Fee => None,
+    };
+    // `--alias` writes the signing key into the config file, and that key may
+    // come from the config rather than the command line. Refusing here rather
+    // than where the alias is saved keeps a deploy from being broadcast, and
+    // paid for, only to fail afterwards.
+    if alias.is_some() {
+        if let Some(keys) = keys.as_deref() {
+            reject_inline_secret(keys, &full_config.path, "--alias")?;
+        }
+        // Whether the alias can be saved is more than whether its key is a
+        // path: the config the alias goes into has to be writable at all.
+        full_config.check_writable()?;
+    }
     let params = Some(
         unpack_alternative_params(matches, abi.as_ref().unwrap(), "constructor", config).await?,
     );
-    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(tvc, params, abi, keys, opt_wc, alias);
     }
     match deploy_type {
@@ -1467,11 +1525,15 @@ async fn deploy_command(
                 wc,
                 false,
                 alias,
-                dst_dapp_id,
             )
             .await
         }
         DeployType::MsgOnly => {
+            // `--raw` and `--output` are defined by `deploy_message` alone:
+            // `deploy` and `fee deploy` share this handler without them, and
+            // clap aborts when asked for an id the running command lacks.
+            let raw = matches.is_present("RAW");
+            let output = matches.value_of("OUTPUT");
             generate_deploy_message(
                 tvc.unwrap(),
                 &abi.unwrap(),
@@ -1494,7 +1556,6 @@ async fn deploy_command(
                 wc,
                 true,
                 None,
-                dst_dapp_id,
             )
             .await
         }
@@ -1512,9 +1573,20 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
     let keys = matches.value_of("KEYS").map(|s| s.to_string()).or(config.keys_path.clone());
 
     let alias = matches.value_of("ALIAS");
-    let dst_dapp_id = matches.value_of("DST_DAPP_ID");
+    // See the note on the same guard in `deploy_command`: refusing here keeps
+    // the deploy from being broadcast, and paid for, only to fail where the
+    // alias is saved.
+    if alias.is_some() {
+        if let Some(keys) = keys.as_deref() {
+            reject_inline_secret(keys, &full_config.path, "--alias")?;
+        }
+        // Whether the alias can be saved is more than whether its key is a
+        // path: the config the alias goes into has to be writable at all.
+        full_config.check_writable()?;
+    }
     if !config.is_json {
         let opt_wc = Some(format!("{}", wc));
+        let keys = keys.as_deref().map(mask_key_source);
         print_args!(tvc, params, abi, keys, opt_wc, alias);
     }
     deploy_contract(
@@ -1526,7 +1598,6 @@ async fn deployx_command(matches: &ArgMatches, full_config: &mut FullConfig) -> 
         wc,
         false,
         alias,
-        dst_dapp_id,
     )
     .await
 }
@@ -1536,13 +1607,13 @@ fn config_command(
     mut full_config: FullConfig,
     is_json: bool,
 ) -> Result<(), String> {
-    let mut result = Ok(());
     if matches.is_present("GLOBAL") {
-        full_config = FullConfig::from_file(&global_config_path());
+        full_config = FullConfig::from_file(&global_config_path())?;
+        full_config.warn_about_the_config_file();
     }
     if !matches.is_present("LIST") {
         if let Some(clear_matches) = matches.subcommand_matches("clear") {
-            result = clear_config(&mut full_config, clear_matches, is_json);
+            clear_config(&mut full_config, clear_matches, is_json)?;
         } else if let Some(endpoint_matches) = matches.subcommand_matches("endpoint") {
             if let Some(endpoint_matches) = endpoint_matches.subcommand_matches("add") {
                 let url = endpoint_matches.value_of("URL").unwrap();
@@ -1554,7 +1625,7 @@ fn config_command(
             } else if endpoint_matches.subcommand_matches("reset").is_some() {
                 FullConfig::reset_endpoints(full_config.path.as_str())?;
             }
-            FullConfig::print_endpoints(full_config.path.as_str());
+            FullConfig::print_endpoints(full_config.path.as_str())?;
             return Ok(());
         } else if let Some(alias_matches) = matches.subcommand_matches("alias") {
             if let Some(alias_matches) = alias_matches.subcommand_matches("add") {
@@ -1577,15 +1648,15 @@ fn config_command(
                 return Err("At least one option must be specified".to_string());
             }
 
-            result = set_config(&mut full_config, matches, is_json);
+            set_config(&mut full_config, matches, is_json)?;
         }
     }
     println!(
         "{}",
-        serde_json::to_string_pretty(&full_config.config)
+        serde_json::to_string_pretty(&full_config.config.masked_for_display())
             .map_err(|e| format!("failed to print config parameters: {}", e))?
     );
-    result
+    Ok(())
 }
 
 async fn genaddr_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
@@ -1604,6 +1675,7 @@ async fn genaddr_command(matches: &ArgMatches, config: &Config) -> Result<(), St
     };
     let is_update_tvc = if update_tvc { Some("true") } else { None };
     if !config.is_json {
+        let keys = keys.map(mask_key_source);
         print_args!(tvc, abi, wc, keys, init_data, is_update_tvc);
     }
     generate_address(config, tvc.unwrap(), &abi.unwrap(), wc, keys, new_keys, init_data, update_tvc)
@@ -1712,6 +1784,7 @@ async fn proposal_create_command(matches: &ArgMatches, config: &Config) -> Resul
     let lifetime = matches.value_of("LIFETIME");
     let offline = matches.is_present("OFFLINE");
     if !config.is_json {
+        let keys = keys.map(mask_key_source);
         print_args!(address, comment, keys, lifetime);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
@@ -1740,6 +1813,7 @@ async fn proposal_vote_command(matches: &ArgMatches, config: &Config) -> Result<
     let lifetime = matches.value_of("LIFETIME");
     let offline = matches.is_present("OFFLINE");
     if !config.is_json {
+        let keys = keys.map(mask_key_source);
         print_args!(address, id, keys, lifetime);
     }
     let sdk_addr = SdkAddress::from_str(address.unwrap())?;
@@ -1813,6 +1887,7 @@ fn nodeid_command(matches: &ArgMatches, config: &Config) -> Result<(), String> {
     let key = matches.value_of("KEY");
     let keypair = matches.value_of("KEY_PAIR");
     if !config.is_json {
+        let keypair = keypair.map(mask_key_source);
         print_args!(key, keypair);
     }
     let nodeid = if let Some(key) = key {

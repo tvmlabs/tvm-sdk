@@ -794,8 +794,8 @@ fn test_override_config_path() -> Result<(), Box<dyn std::error::Error>> {
         .arg("0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94");
     cmd.assert().failure().stdout(predicate::str::contains("Url: https://test.ton.dev"));
 
-    // if there is neither --config nor env variable then config file is searched in
-    // current working dir
+    // if there is neither --config nor env variable then config file is
+    // searched in current working dir
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("account").arg("0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94");
     cmd.assert().success().stdout(predicate::str::contains(format!("Url: {}", &*NETWORK)));

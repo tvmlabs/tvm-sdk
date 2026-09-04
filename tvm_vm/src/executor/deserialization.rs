@@ -869,8 +869,9 @@ fn datasize(engine: &mut Engine, name: &'static str, how: u8) -> Status {
                     break false;
                 }
                 cells += 1;
-                // Version 34 contains bug with cell loading without gas calculation. Some
-                // blocks with the bug were applied in mainnet, so we have to support it.
+                // Version 34 contains bug with cell loading without gas
+                // calculation. Some blocks with the bug were
+                // applied in mainnet, so we have to support it.
                 let slice = if engine.block_version() == 34 {
                     SliceData::load_cell(cell)?
                 } else {

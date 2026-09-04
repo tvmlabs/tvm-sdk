@@ -769,6 +769,19 @@ async fn test_signing_box() {
 }
 
 #[test]
+fn bip39_invalid_phrase_error_does_not_carry_the_phrase() {
+    const PHRASE: &str =
+        "multiply extra monitor fog rocket defy attack right night jaguar hollow enlistX";
+
+    let error = crate::crypto::Error::bip39_invalid_phrase(PHRASE);
+    let message = error.message();
+
+    assert!(!message.contains(PHRASE), "the phrase reached the error: {message}");
+    assert!(!message.contains("extra monitor fog"), "phrase words reached the error: {message}");
+    assert!(message.starts_with("Invalid bip39 phrase"), "unexpected message: {message}");
+}
+
+#[test]
 fn test_strip_secret() {
     assert_eq!(strip_secret(""), r#""""#);
     assert_eq!(strip_secret("0123456"), r#""0123456""#);
@@ -779,6 +792,28 @@ fn test_strip_secret() {
         strip_secret("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"),
         r#""01234567..." (64 chars)"#
     );
+}
+
+/// The BIP-39 dictionaries include Japanese, Korean and both Chinese
+/// wordlists, so a mistyped phrase reaching `strip_secret` is routinely
+/// multi-byte. Truncating by bytes panicked whenever the cut fell inside a
+/// code point -- `tvm-cli genpubkey 'あああ'` aborted instead of reporting an
+/// invalid phrase -- and the length it reported was bytes labelled as chars.
+#[test]
+fn test_strip_secret_counts_characters_not_bytes() {
+    // Nine bytes, three characters: short enough to be shown in full, and the
+    // byte-based check used to send it down the truncating path.
+    assert_eq!(strip_secret("あああ"), r#""あああ""#);
+
+    // Ten characters, thirty bytes. The old code sliced at byte 8, which lands
+    // inside the third character.
+    assert_eq!(strip_secret("ああああああああああ"), r#""ああああああああ..." (10 chars)"#);
+
+    // A cut that would fall inside a multi-byte character in a mixed string.
+    assert_eq!(strip_secret("abcdefgあああ"), r#""abcdefgあ..." (10 chars)"#);
+
+    // Characters outside the BMP are four bytes each.
+    assert_eq!(strip_secret("🔑🔑🔑🔑🔑🔑🔑🔑🔑"), r#""🔑🔑🔑🔑🔑🔑🔑🔑..." (9 chars)"#);
 }
 
 #[test]

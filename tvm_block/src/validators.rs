@@ -531,11 +531,12 @@ impl ValidatorSet {
 
             for _ in 0..count {
                 debug_assert!(weight_remainder > 0);
-                // 1. take pseudo random weight less (or equal) than weight_remainder
+                // 1. take pseudo random weight less (or equal) than
+                //    weight_remainder
                 let mut p = prng.next_ranged(weight_remainder);
 
-                // 2. find p which >= start p value >= prev_weight_sum of some number of first
-                //    validators
+                // 2. find p which >= start p value >= prev_weight_sum of some
+                //    number of first validators
                 for vw in weights.iter() {
                     if p < vw.prev_weight_sum {
                         break;
@@ -555,7 +556,8 @@ impl ValidatorSet {
                 debug_assert!(weight_remainder >= next_validator.weight);
                 weight_remainder -= next_validator.weight;
 
-                // 4. put validator's weight into sorted list of previous weights
+                // 4. put validator's weight into sorted list of previous
+                //    weights
                 let new_weight = IncludedValidatorWeight {
                     prev_weight_sum: next_validator.prev_weight_sum,
                     weight: next_validator.weight,
