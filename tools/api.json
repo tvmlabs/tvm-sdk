@@ -1,5 +1,5 @@
 {
-  "version": "2.18.5",
+  "version": "3.0.0",
   "modules": [
     {
       "name": "client",
@@ -268,28 +268,12 @@
         },
         {
           "name": "ClientError",
-          "type": "Struct",
-          "struct_fields": [
+          "type": "Generic",
+          "generic_name": "Box",
+          "generic_args": [
             {
-              "name": "code",
-              "type": "Number",
-              "number_type": "UInt",
-              "number_size": 32,
-              "summary": null,
-              "description": null
-            },
-            {
-              "name": "message",
-              "type": "String",
-              "summary": null,
-              "description": null
-            },
-            {
-              "name": "data",
               "type": "Ref",
-              "ref_name": "Value",
-              "summary": null,
-              "description": null
+              "ref_name": "ClientErrorInner"
             }
           ],
           "summary": null,
@@ -651,7 +635,7 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "Derivation path that will be used by default in crypto functions. If not specified `m/44'/396'/0'/0/0` will be used.",
+              "summary": "Derivation path that will be used by default in crypto functions. If not specified `m/44'/1331'/0'/0/0` will be used.",
               "description": null
             }
           ],
@@ -1328,9 +1312,15 @@
           "type": "Struct",
           "struct_fields": [
             {
-              "name": "address",
+              "name": "account_id",
               "type": "String",
-              "summary": null,
+              "summary": "Account ID as a 64-character hex string (no 0x, no workchain).",
+              "description": null
+            },
+            {
+              "name": "dapp_id",
+              "type": "String",
+              "summary": "Dapp ID as a 64-character hex string (no 0x). Required when the server supports the v3 API (info.version >= \"1.0.0\").",
               "description": null
             }
           ],
@@ -1343,6 +1333,29 @@
           "struct_fields": [
             {
               "name": "boc",
+              "type": "String",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "dapp_id",
+              "type": "String",
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "state_timestamp",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "BigInt",
+                "number_type": "UInt",
+                "number_size": 64
+              },
+              "summary": null,
+              "description": null
+            },
+            {
+              "name": "account_id",
               "type": "String",
               "summary": null,
               "description": null
@@ -1656,7 +1669,7 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "Derivation path, for instance \"m/44'/396'/0'/0/0\"",
+              "summary": "Derivation path, for instance \"m/44'/1331'/0'/0/0\"",
               "description": null
             },
             {
@@ -3003,7 +3016,7 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "Derivation path, for instance \"m/44'/396'/0'/0/0\"",
+              "summary": "Derivation path, for instance \"m/44'/1331'/0'/0/0\"",
               "description": null
             },
             {
@@ -3135,7 +3148,7 @@
             {
               "name": "path",
               "type": "String",
-              "summary": "Derivation path, for instance \"m/44'/396'/0'/0/0\"",
+              "summary": "Derivation path, for instance \"m/44'/1331'/0'/0/0\"",
               "description": null
             }
           ],
@@ -10005,6 +10018,13 @@
               "value": "517",
               "summary": null,
               "description": null
+            },
+            {
+              "name": "DappIdRequired",
+              "type": "Number",
+              "value": "518",
+              "summary": null,
+              "description": null
             }
           ],
           "summary": null,
@@ -10520,7 +10540,7 @@
               "type": "Number",
               "number_type": "Int",
               "number_size": 32,
-              "summary": "Compute phase exit code.",
+              "summary": null,
               "description": null
             }
           ],
@@ -10537,13 +10557,13 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "Hash of the transaction. Present if transaction was included into the blocks. When then transaction was emulated this field will be missing.",
+              "summary": null,
               "description": null
             },
             {
               "name": "aborted",
               "type": "Boolean",
-              "summary": "Aborted field of the transaction.",
+              "summary": null,
               "description": null
             },
             {
@@ -10553,7 +10573,7 @@
                 "type": "Ref",
                 "ref_name": "processing.MessageMonitoringTransactionCompute"
               },
-              "summary": "Optional information about the compute phase of the transaction.",
+              "summary": null,
               "description": null
             }
           ],
@@ -10568,7 +10588,7 @@
               "name": "message",
               "type": "Ref",
               "ref_name": "processing.MonitoredMessage",
-              "summary": "Monitored message identification. Can be provided as a message's BOC or (hash, address) pair. BOC is a preferable way because it helps to determine possible error reason (using TVM execution of the message).",
+              "summary": null,
               "description": null
             },
             {
@@ -10576,7 +10596,7 @@
               "type": "Number",
               "number_type": "UInt",
               "number_size": 32,
-              "summary": "Block time Must be specified as a UNIX timestamp in seconds",
+              "summary": null,
               "description": null
             },
             {
@@ -10586,7 +10606,7 @@
                 "type": "Ref",
                 "ref_name": "Value"
               },
-              "summary": "User defined data associated with this message. Helps to identify this message when user received `MessageMonitoringResult`.",
+              "summary": null,
               "description": null
             }
           ],
@@ -10600,14 +10620,14 @@
             {
               "name": "hash",
               "type": "String",
-              "summary": "Hash of the message.",
+              "summary": null,
               "description": null
             },
             {
               "name": "status",
               "type": "Ref",
               "ref_name": "processing.MessageMonitoringStatus",
-              "summary": "Processing status.",
+              "summary": null,
               "description": null
             },
             {
@@ -10617,7 +10637,7 @@
                 "type": "Ref",
                 "ref_name": "processing.MessageMonitoringTransaction"
               },
-              "summary": "In case of `Finalized` the transaction is extracted from the block. In case of `Timeout` the transaction is emulated using the last known account state.",
+              "summary": null,
               "description": null
             },
             {
@@ -10626,7 +10646,7 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "In case of `Timeout` contains possible error reason.",
+              "summary": null,
               "description": null
             },
             {
@@ -10636,7 +10656,7 @@
                 "type": "Ref",
                 "ref_name": "Value"
               },
-              "summary": "User defined data related to this message. This is the same value as passed before with `MessageMonitoringParams` or `SendMessageParams`.",
+              "summary": null,
               "description": null
             }
           ],
@@ -10650,13 +10670,13 @@
             {
               "name": "AtLeastOne",
               "type": "None",
-              "summary": "If there are no resolved results yet, then monitor awaits for the next resolved result.",
+              "summary": null,
               "description": null
             },
             {
               "name": "All",
               "type": "None",
-              "summary": "Monitor waits until all unresolved messages will be resolved. If there are no unresolved messages then monitor will wait.",
+              "summary": null,
               "description": null
             },
             {
@@ -10684,7 +10704,7 @@
                   "description": null
                 }
               ],
-              "summary": "BOC of the message.",
+              "summary": null,
               "description": null
             },
             {
@@ -10694,17 +10714,17 @@
                 {
                   "name": "hash",
                   "type": "String",
-                  "summary": "Hash of the message.",
+                  "summary": null,
                   "description": null
                 },
                 {
                   "name": "address",
                   "type": "String",
-                  "summary": "Destination address of the message.",
+                  "summary": null,
                   "description": null
                 }
               ],
-              "summary": "Message's hash and destination address.",
+              "summary": null,
               "description": null
             }
           ],
@@ -10718,20 +10738,20 @@
             {
               "name": "Finalized",
               "type": "None",
-              "summary": "Returned when the messages was processed and included into finalized block before `wait_until` block time.",
+              "summary": null,
               "description": null
             },
             {
               "name": "Timeout",
               "type": "None",
-              "summary": "Returned when the message was not processed until `wait_until` block time.",
+              "summary": null,
               "description": null
             },
             {
               "name": "Reserved",
               "type": "None",
-              "summary": "Reserved for future statuses.",
-              "description": "Is never returned. Application should wait for one of the `Finalized` or `Timeout`\nstatuses. All other statuses are intermediate."
+              "summary": null,
+              "description": null
             }
           ],
           "summary": null,
@@ -10816,7 +10836,7 @@
               "type": "Number",
               "number_type": "UInt",
               "number_size": 32,
-              "summary": "Count of the unresolved messages.",
+              "summary": null,
               "description": null
             },
             {
@@ -10824,7 +10844,7 @@
               "type": "Number",
               "number_type": "UInt",
               "number_size": 32,
-              "summary": "Count of resolved results.",
+              "summary": null,
               "description": null
             }
           ],
@@ -10969,6 +10989,15 @@
               },
               "summary": "Flag for requesting events sending. Default is `false`.",
               "description": null
+            },
+            {
+              "name": "dapp_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty (sent as legacy `dst_dapp_id: null`).",
+              "description": null
             }
           ],
           "summary": null,
@@ -11061,6 +11090,24 @@
               },
               "summary": "The timestamp of generating this response.",
               "description": null
+            },
+            {
+              "name": "account_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "Destination account_id (64-hex, no workchain).",
+              "description": "Always populated: taken from the server response on v>=1.0.0, derived locally\nfrom the message destination on v<1.0.0."
+            },
+            {
+              "name": "dapp_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "Destination dapp_id (64-hex).",
+              "description": "Always populated: taken from the server response on v>=1.0.0, mirrored from the request on v<1.0.0."
             }
           ],
           "summary": null,
@@ -11088,9 +11135,12 @@
             },
             {
               "name": "shard_block_id",
-              "type": "String",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
               "summary": "The last generated block id of the destination account shard before the message was sent.",
-              "description": "You must provide the same value as the `send_message` has returned."
+              "description": "Deprecated: no longer used. Block walking has been removed."
             },
             {
               "name": "send_events",
@@ -11112,6 +11162,18 @@
               },
               "summary": "The list of endpoints to which the message was sent.",
               "description": "Use this field to get more informative errors.\nProvide the same value as the `send_message` has returned.\nIf the message was not delivered (expired), SDK will log the endpoint\nURLs, used for its sending."
+            },
+            {
+              "name": "tx_hash",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "Optional",
+                "optional_inner": {
+                  "type": "String"
+                }
+              },
+              "summary": "Transaction hash returned by `send_message`. Used to poll for the transaction directly by hash.",
+              "description": null
             }
           ],
           "summary": null,
@@ -11135,6 +11197,15 @@
                 "type": "Boolean"
               },
               "summary": "Flag for requesting events sending. Default is `false`.",
+              "description": null
+            },
+            {
+              "name": "dapp_id",
+              "type": "Optional",
+              "optional_inner": {
+                "type": "String"
+              },
+              "summary": "Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty.",
               "description": null
             }
           ],

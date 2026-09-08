@@ -156,3 +156,86 @@ impl Deserializable for IhrPendingSince {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::IBitstring;
+
+    use super::*;
+
+    fn processed_prefix(last_msg_lt: u64, last_msg_hash: UInt256) -> BuilderData {
+        let mut builder = BuilderData::new();
+        last_msg_lt.write_to(&mut builder).unwrap();
+        last_msg_hash.write_to(&mut builder).unwrap();
+        builder
+    }
+
+    #[test]
+    fn processed_info_key_roundtrip_and_seq_no() {
+        let key = ProcessedInfoKey::with_params(0x0123_4567_89ab_cdef, 77);
+        let parsed = ProcessedInfoKey::construct_from_cell(key.serialize().unwrap()).unwrap();
+
+        assert_eq!(parsed, key);
+        assert_eq!(parsed.seq_no(), 77);
+    }
+
+    #[test]
+    fn processed_upto_roundtrip_with_and_without_original_shard() {
+        let with_shard = ProcessedUpto::with_params(15, UInt256::from([7; 32]), Some(42));
+        let without_shard = ProcessedUpto::with_params(16, UInt256::from([8; 32]), None);
+
+        assert_eq!(
+            ProcessedUpto::construct_from_cell(with_shard.serialize().unwrap()).unwrap(),
+            with_shard
+        );
+        assert_eq!(
+            ProcessedUpto::construct_from_cell(without_shard.serialize().unwrap()).unwrap(),
+            without_shard
+        );
+    }
+
+    #[test]
+    fn processed_upto_reads_compatibility_forms_and_rejects_invalid_tail_sizes() {
+        let hash = UInt256::from([9; 32]);
+
+        let no_original = ProcessedUpto::construct_from(
+            &mut SliceData::load_builder(processed_prefix(1, hash.clone())).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(no_original.original_shard, None);
+
+        let mut old_compat = processed_prefix(2, hash.clone());
+        old_compat.append_bit_zero().unwrap();
+        let old_compat =
+            ProcessedUpto::construct_from(&mut SliceData::load_builder(old_compat).unwrap())
+                .unwrap();
+        assert_eq!(old_compat.original_shard, None);
+
+        let mut maybe_some = processed_prefix(3, hash.clone());
+        maybe_some.append_bit_one().unwrap();
+        0xfeed_beef_u64.write_to(&mut maybe_some).unwrap();
+        let maybe_some =
+            ProcessedUpto::construct_from(&mut SliceData::load_builder(maybe_some).unwrap())
+                .unwrap();
+        assert_eq!(maybe_some.original_shard, Some(0xfeed_beef));
+
+        let mut invalid = processed_prefix(4, hash);
+        invalid.append_raw(&[0b1100_0000], 2).unwrap();
+        assert!(
+            ProcessedUpto::construct_from(&mut SliceData::load_builder(invalid).unwrap()).is_err()
+        );
+    }
+
+    #[test]
+    fn ihr_pending_since_constructors_and_roundtrip() {
+        let default_value = IhrPendingSince::new();
+        let explicit = IhrPendingSince::with_import_lt(123456);
+
+        assert_eq!(default_value.import_lt(), 0);
+        assert_eq!(explicit.import_lt(), 123456);
+        assert_eq!(
+            IhrPendingSince::construct_from_cell(explicit.serialize().unwrap()).unwrap(),
+            explicit
+        );
+    }
+}

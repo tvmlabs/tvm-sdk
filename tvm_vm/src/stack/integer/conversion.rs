@@ -280,3 +280,54 @@ auto_from_int! {
     usize: to_usize,
     isize: to_isize
 }
+
+#[cfg(test)]
+mod tests {
+    use num::BigInt;
+    use num::bigint::Sign;
+    use tvm_types::ExceptionCode;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+
+    #[test]
+    fn fast_constructors_preserve_sign_and_zero() {
+        assert_eq!(IntegerData::from_u32(0), IntegerData::zero());
+        assert_eq!(IntegerData::from_i32(0), IntegerData::zero());
+        assert_eq!(IntegerData::into(&IntegerData::from_u32(42), 0u32..=100).unwrap(), 42);
+        assert_eq!(IntegerData::into(&IntegerData::from_i32(-42), -100i32..=100).unwrap(), -42);
+        assert_eq!(IntegerData::into(&IntegerData::from_u64(77), 0u64..=100).unwrap(), 77);
+        assert_eq!(IntegerData::into(&IntegerData::from_i64(-77), -100i64..=100).unwrap(), -77);
+        assert_eq!(IntegerData::into(&IntegerData::from_u128(91), 0u128..=100).unwrap(), 91);
+        assert_eq!(IntegerData::into(&IntegerData::from_i128(-91), -100i128..=100).unwrap(), -91);
+    }
+
+    #[test]
+    fn checked_constructors_and_parsing_validate_input() {
+        let parsed = IntegerData::from_str_radix("ff", 16).unwrap();
+        assert_eq!(IntegerData::into(&parsed, 0u16..=255).unwrap(), 255);
+
+        let invalid = IntegerData::from_str_radix("zz", 16).unwrap_err();
+        assert_eq!(tvm_exception_code(&invalid), Some(ExceptionCode::TypeCheckError));
+
+        let overflow = IntegerData::from(BigInt::from(1u8) << 300).unwrap_err();
+        assert_eq!(tvm_exception_code(&overflow), Some(ExceptionCode::IntegerOverflow));
+
+        let overflow = IntegerData::from_vec_le(Sign::Plus, vec![u32::MAX; 16]).unwrap_err();
+        assert_eq!(tvm_exception_code(&overflow), Some(ExceptionCode::IntegerOverflow));
+    }
+
+    #[test]
+    fn range_checks_and_value_extraction_return_expected_errors() {
+        let value = IntegerData::from_i32(12);
+        let range = IntegerData::into(&value, 0u8..=10).unwrap_err();
+        assert_eq!(tvm_exception_code(&range), Some(ExceptionCode::RangeCheckError));
+
+        let nan = IntegerData::nan();
+        let err = nan.take_value_of::<u8>(|_| Some(0)).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::IntegerOverflow));
+
+        let err = value.take_value_of::<u8>(|_| None).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::RangeCheckError));
+    }
+}

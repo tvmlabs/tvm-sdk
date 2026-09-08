@@ -373,6 +373,7 @@ fn bench_massive_cell_finalize(c: &mut Criterion) {
 }
 
 // Run  `cargo bench -p tvm_vm --bench benchmarks wasmadd`
+#[cfg(feature = "wasmtime")]
 fn bench_wasmadd(c: &mut Criterion) {
     c.bench_function("wasmadd", |b| {
         let mut total_duration = Duration::default();
@@ -469,7 +470,11 @@ fn bench_wasmadd(c: &mut Criterion) {
     });
 }
 
+#[cfg(not(feature = "wasmtime"))]
+fn bench_wasmadd(_c: &mut Criterion) {}
+
 // Run  `cargo bench -p tvm_vm --bench benchmarks wasmadd`
+#[cfg(feature = "wasmtime")]
 fn bench_wasmadd_no_precompile(c: &mut Criterion) {
     c.bench_function("wasmadd", |b| {
         let mut total_duration = Duration::default();
@@ -566,6 +571,9 @@ fn bench_wasmadd_no_precompile(c: &mut Criterion) {
     });
 }
 
+#[cfg(not(feature = "wasmtime"))]
+fn bench_wasmadd_no_precompile(_c: &mut Criterion) {}
+
 const WASM_TLS_CHECK_HASH_STR: &str =
     "343268736f6dbb5a075a477fb1146b3c25c114d341b41c142e6609a7d1a90a2c";
 
@@ -640,6 +648,7 @@ fn bench_wasmtls_without_whitelist(c: &mut Criterion) {
 }
 
 // Run  `cargo bench -p tvm_vm --bench benchmarks wasmtls_with_whitelist`
+#[cfg(feature = "wasmtime")]
 fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
     c.bench_function("wasmtls_with_whitelist", |b| {
         let mut total_duration = Duration::default();
@@ -706,7 +715,7 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
                     vec![],
                 );
                 engine.wasm_engine_init_cached().unwrap();
-                engine.add_wasm_hash_to_whitelist_by_str(hash_str.to_owned()).unwrap();
+                engine.add_wasm_hash_to_whitelist_by_str(WASM_TLS_CHECK_HASH_STR.to_owned()).unwrap();
                 let mut engine = engine.precompile_all_wasm_by_hash().unwrap();
 
                 let start = std::time::Instant::now();
@@ -718,6 +727,9 @@ fn bench_wasmtls_with_whitelist(c: &mut Criterion) {
         })
     });
 }
+
+#[cfg(not(feature = "wasmtime"))]
+fn bench_wasmtls_with_whitelist(_c: &mut Criterion) {}
 
 // Run  `cargo bench -p tvm_vm --bench benchmarks poseidon`
 fn bench_poseidon(c: &mut Criterion) {

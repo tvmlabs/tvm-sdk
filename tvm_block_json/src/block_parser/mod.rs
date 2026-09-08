@@ -118,3 +118,76 @@ pub(crate) fn is_account_none(hash: &UInt256) -> bool {
 pub(crate) fn is_minter_address(address: &MsgAddressInt) -> bool {
     *address == *MINTER_ADDRESS
 }
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+    use std::time::SystemTime;
+
+    use serde_json::Map;
+    use serde_json::Value;
+    use tvm_block::MsgAddrStd;
+    use tvm_block::MsgAddressInt;
+    use tvm_types::BuilderData;
+    use tvm_types::IBitstring;
+    use tvm_types::SliceData;
+    use tvm_types::UInt256;
+
+    use super::JsonReducer;
+    use super::NoReduce;
+    use super::NoTrace;
+    use super::ParserTraceEvent;
+    use super::ParserTracer;
+    use super::get_partition;
+    use super::is_account_none;
+    use super::is_minter_address;
+    use super::unix_time_to_system_time;
+
+    #[test]
+    fn no_reduce_and_no_trace_are_noops() {
+        let mut json = Map::new();
+        json.insert("id".to_owned(), Value::String("doc".to_owned()));
+        assert_eq!(NoReduce().reduce(json.clone()).unwrap(), json);
+
+        NoTrace().trace(
+            &UInt256::default(),
+            None,
+            SystemTime::UNIX_EPOCH,
+            ParserTraceEvent::BlockParsed,
+        );
+    }
+
+    #[test]
+    fn unix_time_and_partition_helpers_cover_edge_cases() {
+        assert_eq!(
+            unix_time_to_system_time(12).unwrap(),
+            SystemTime::UNIX_EPOCH + Duration::from_secs(12)
+        );
+        assert!(unix_time_to_system_time(u64::MAX).is_err());
+
+        let mut full_builder = BuilderData::new();
+        full_builder.append_u32(0xA000_0000).unwrap();
+        let full = SliceData::load_builder(full_builder).unwrap();
+        assert_eq!(get_partition(4, full).unwrap(), Some(0xA));
+
+        let mut partial_builder = BuilderData::new();
+        partial_builder.append_raw(&[0b1010_0000], 4).unwrap();
+        let partial = SliceData::load_builder(partial_builder).unwrap();
+        assert_eq!(get_partition(4, partial).unwrap(), Some(0xA));
+
+        let empty = SliceData::load_builder(BuilderData::new()).unwrap();
+        assert_eq!(get_partition(4, empty).unwrap(), None);
+
+        let mut zero_depth_builder = BuilderData::new();
+        zero_depth_builder.append_u32(0xF000_0000).unwrap();
+        let zero_depth = SliceData::load_builder(zero_depth_builder).unwrap();
+        assert_eq!(get_partition(0, zero_depth).unwrap(), None);
+    }
+
+    #[test]
+    fn minter_and_account_none_helpers_match_known_values() {
+        let minter = MsgAddressInt::AddrStd(MsgAddrStd::with_address(None, -1, [0; 32].into()));
+        assert!(is_minter_address(&minter));
+        assert!(!is_account_none(&UInt256::default()));
+    }
+}

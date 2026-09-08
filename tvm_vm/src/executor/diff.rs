@@ -349,3 +349,66 @@ pub(super) fn execute_diff_patch_binary_zip_quiet(engine: &mut Engine) -> Status
 pub(super) fn execute_diff_patch_binary_zip_not_quiet(engine: &mut Engine) -> Status {
     execute_patch_with_options("DIFF_PATCH_BINARY_ZIP", engine, ZIP + BINARY)
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::ExceptionCode;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+
+    fn engine() -> Engine {
+        Engine::with_capabilities(0).setup(SliceData::default(), None, None, None)
+    }
+
+    #[test]
+    fn ignore_error_preserves_critical_exceptions_and_masks_regular_ones() {
+        let mut engine = engine();
+        ignore_error(&mut engine, Err(exception!(ExceptionCode::RangeCheckError))).unwrap();
+        assert_eq!(engine.cc.stack.get(0), &StackItem::None);
+
+        let err = ignore_error(&mut engine, Err(exception!(ExceptionCode::OutOfGas))).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::OutOfGas));
+
+        let err = ignore_error(&mut engine, Err(exception!(ExceptionCode::ExecutionTimeout)))
+            .unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::ExecutionTimeout));
+    }
+
+    #[test]
+    fn zip_and_unzip_roundtrip_payloads() {
+        let mut engine = engine();
+        assert_eq!(zip(&mut engine, &[]).unwrap(), Vec::<u8>::new());
+        assert_eq!(unzip(&mut engine, &[]).unwrap(), Vec::<u8>::new());
+
+        let payload = b"hello hello hello hello".to_vec();
+        let zipped = zip(&mut engine, &payload).unwrap();
+        let unzipped = unzip(&mut engine, &zipped).unwrap();
+        assert_eq!(unzipped, payload);
+    }
+
+    #[test]
+    fn diff_and_patch_helpers_cover_success_and_error_paths() {
+        let mut engine = engine();
+        let diff = diff_similar_lib(&mut engine, "a\nb\n", "a\nc\n").unwrap();
+        assert!(diff.contains("@@"));
+        assert!(diff.contains("-b"));
+        assert!(diff.contains("+c"));
+
+        let patch = diffy::create_patch("hello\n", "hullo\n").to_string();
+        let result = patch_diffy_lib(&mut engine, "hello\n", &patch).unwrap();
+        assert_eq!(result, "hullo\n");
+
+        let err = patch_diffy_lib(
+            &mut engine,
+            "hello\n",
+            &diffy::create_patch("bye\n", "cye\n").to_string(),
+        )
+        .unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::TypeCheckError));
+
+        let binary_patch = diffy::create_patch("hello\n", "hullo\n").to_string().into_bytes();
+        let result = patch_binary_diffy_lib(&mut engine, b"hello\n", &binary_patch).unwrap();
+        assert_eq!(result, b"hullo\n");
+    }
+}

@@ -30,6 +30,54 @@ mod tokenize_tests {
     use crate::token::Tokenizer;
 
     #[test]
+    fn test_tokenize_params_require_object_and_validate_array_shape() {
+        let params = vec![Param::new("items", ParamType::FixedArray(Box::new(ParamType::Bool), 2))];
+
+        let err = Tokenizer::tokenize_all_params(&params, &serde_json::json!(["not-an-object"]))
+            .unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("Contract function parameters should be passed as a JSON object")
+        );
+
+        let err =
+            Tokenizer::tokenize_optional_params(&params, &serde_json::json!(["not-an-object"]))
+                .unwrap_err();
+        assert!(err.to_string().contains("Contract parameters should be passed as a JSON object"));
+
+        let err = Tokenizer::tokenize_parameter(
+            &ParamType::Array(Box::new(ParamType::Bool)),
+            &serde_json::json!(true),
+            "items",
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("array"));
+
+        let err = Tokenizer::tokenize_parameter(
+            &ParamType::FixedArray(Box::new(ParamType::Bool), 2),
+            &serde_json::json!([true]),
+            "items",
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("array of 2 elements"));
+    }
+
+    #[test]
+    fn test_tokenize_optional_params_reports_unknown_names() {
+        let params = vec![Param::new("known", ParamType::Bool)];
+        let err = Tokenizer::tokenize_optional_params(
+            &params,
+            &serde_json::json!({
+                "known": true,
+                "extra": false
+            }),
+        )
+        .unwrap_err();
+
+        assert!(err.to_string().contains("Contract doesn't have following parameters: extra"));
+    }
+
+    #[test]
     fn test_tokenize_ints() {
         let max_gram = 0x007F_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFFu128; // 2^120 - 1
         let input = r#"{
@@ -870,6 +918,39 @@ mod tokenize_tests {
             Tokenizer::tokenize_optional_params(&params, &serde_json::from_str(input).unwrap(),)
                 .is_err(),
         );
+    }
+}
+
+mod display_tests {
+    use crate::Int;
+    use crate::ParamType;
+    use crate::Token;
+    use crate::TokenValue;
+    use crate::Uint;
+
+    #[test]
+    fn token_and_token_value_display_cover_compound_variants() {
+        let tuple = TokenValue::Tuple(vec![
+            Token::new("a", TokenValue::Uint(Uint::new(1, 8))),
+            Token::new("b", TokenValue::Int(Int::new(-2, 8))),
+        ]);
+        assert_eq!(format!("{}", tuple), "(a : 1,b : -2)");
+
+        let array = TokenValue::Array(
+            ParamType::Bool,
+            vec![TokenValue::Bool(true), TokenValue::Bool(false)],
+        );
+        assert_eq!(format!("{}", array), "[true,false]");
+
+        let fixed = TokenValue::FixedArray(
+            ParamType::Uint(8),
+            vec![TokenValue::Uint(Uint::new(3, 8)), TokenValue::Uint(Uint::new(4, 8))],
+        );
+        assert_eq!(format!("{}", fixed), "[3,4]");
+
+        assert_eq!(format!("{}", TokenValue::VarUint(16, 15u32.into())), "15");
+        assert_eq!(format!("{}", TokenValue::VarInt(16, (-7i32).into())), "-7");
+        assert_eq!(format!("{}", Token::new("field", TokenValue::Bool(true))), "field : true");
     }
 }
 

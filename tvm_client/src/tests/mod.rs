@@ -60,6 +60,8 @@ use crate::tc_create_context;
 use crate::tc_destroy_context;
 
 mod common;
+mod mock_blockchain;
+mod mock_blockchain_support;
 
 const ROOT_CONTRACTS_PATH: &str = "src/tests/contracts/";
 const LOG_CGF_PATH: &str = "src/tests/log_cfg.yaml";
@@ -682,7 +684,7 @@ impl TestClient {
                     ..Default::default()
                 },
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             Self::default_callback,
         )
@@ -793,7 +795,7 @@ impl TestClient {
                 ParamsOfProcessMessage {
                     message_encode_params: params,
                     send_events: false,
-                    dst_dapp_id: None,
+                    dapp_id: String::new(),
                 },
                 Self::default_callback,
             )

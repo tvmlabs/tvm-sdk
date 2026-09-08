@@ -349,3 +349,85 @@ impl CellData {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use super::*;
+    use crate::Cell;
+    use crate::cell::BuilderData;
+
+    fn byte_cell(value: u8) -> Cell {
+        BuilderData::with_raw(vec![value], 8).unwrap().into_cell().unwrap()
+    }
+
+    #[test]
+    fn local_and_external_cell_data_cover_buffer_access_paths() {
+        let cell = byte_cell(0xab);
+        let raw = cell.raw_data().unwrap().to_vec();
+        let local = CellData::with_raw_data(raw.clone()).unwrap();
+
+        assert_eq!(local.cell_type(), CellType::Ordinary);
+        assert_eq!(local.bit_length(), 8);
+        assert_eq!(local.data(), &[0xab]);
+        assert_eq!(local.references_count(), 0);
+
+        let buffer = Arc::new(raw.clone());
+        let external = CellData::with_external_data(&buffer, 0).unwrap();
+        assert_eq!(external.raw_data(), raw.as_slice());
+        assert_eq!(external.data(), &[0xab]);
+
+        let mut local_buf = local.buf.clone();
+        assert_eq!(local_buf.unbounded_data_mut().unwrap().len(), raw.len());
+
+        let mut external_buf = external.buf.clone();
+        assert!(external_buf.unbounded_data_mut().is_err());
+    }
+
+    #[test]
+    fn with_params_and_hash_depth_cover_validation_and_cached_hash_paths() {
+        let cell = byte_cell(0xcd);
+        let raw = cell.raw_data().unwrap().to_vec();
+
+        let invalid = std::panic::catch_unwind(|| {
+            CellData::with_params(
+                CellType::Ordinary,
+                &raw,
+                0,
+                0,
+                false,
+                Some([UInt256::ZERO; 4]),
+                None,
+            )
+        });
+        assert!(matches!(invalid, Ok(Err(_)) | Err(_)));
+
+        let mut data =
+            CellData::with_params(CellType::Ordinary, &raw, 0, 0, false, None, None).unwrap();
+        data.set_hash_depth(0, &[7u8; 32], 13).unwrap();
+
+        assert_eq!(data.hash(0), UInt256::from([7u8; 32]));
+        assert_eq!(data.depth(0), 13);
+    }
+
+    #[test]
+    fn serialize_deserialize_roundtrip_and_reject_invalid_markers() {
+        let cell = byte_cell(0xef);
+        let mut local = CellData::with_raw_data(cell.raw_data().unwrap().to_vec()).unwrap();
+        local.set_hash_depth(0, &[1u8; 32], 0).unwrap();
+
+        let mut serialized = Vec::new();
+        local.serialize(&mut serialized).unwrap();
+        let roundtrip = CellData::deserialize(&mut serialized.as_slice()).unwrap();
+        assert_eq!(roundtrip, local);
+
+        let mut invalid_bool = serialized.clone();
+        invalid_bool[6] = 2;
+        assert!(CellData::deserialize(&mut invalid_bool.as_slice()).is_err());
+
+        let mut invalid_count = serialized;
+        invalid_count[8] = 5;
+        assert!(CellData::deserialize(&mut invalid_count.as_slice()).is_err());
+    }
+}

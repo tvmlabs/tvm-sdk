@@ -281,3 +281,63 @@ pub mod utils {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use num::BigInt;
+    use tvm_types::ExceptionCode;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+    use crate::stack::integer::behavior::Quiet;
+    use crate::stack::integer::behavior::Signaling;
+
+    #[test]
+    fn divmod_rounding_modes_match_documented_examples() {
+        let (q, r) = utils::divmod(&BigInt::from(5), &BigInt::from(2), Round::Ceil);
+        assert_eq!((q, r), (BigInt::from(3), BigInt::from(-1)));
+
+        let (q, r) = utils::divmod(&BigInt::from(-5), &BigInt::from(2), Round::Nearest);
+        assert_eq!((q, r), (BigInt::from(-2), BigInt::from(-1)));
+
+        let (q, r) =
+            utils::divmod(&BigInt::from(-5), &BigInt::from(-2), Round::FloorToNegativeInfinity);
+        assert_eq!((q, r), (BigInt::from(2), BigInt::from(-1)));
+    }
+
+    #[test]
+    fn div_by_shift_respects_rounding_modes() {
+        let (q, r) = utils::div_by_shift(&BigInt::from(13), 2, Round::FloorToZero);
+        assert_eq!((q, r), (BigInt::from(3), BigInt::from(1)));
+
+        let (q, r) = utils::div_by_shift(&BigInt::from(-13), 2, Round::Ceil);
+        assert_eq!((q, r), (BigInt::from(-3), BigInt::from(-1)));
+
+        let (q, r) = utils::div_by_shift(&BigInt::from(-13), 2, Round::FloorToNegativeInfinity);
+        assert_eq!((q, r), (BigInt::from(-4), BigInt::from(3)));
+    }
+
+    #[test]
+    fn quiet_division_by_zero_returns_nan_pair() {
+        let (q, r) = IntegerData::from_i32(10)
+            .div::<Quiet>(&IntegerData::zero(), Round::FloorToZero)
+            .unwrap();
+        assert!(q.is_nan());
+        assert!(r.is_nan());
+    }
+
+    #[test]
+    fn signaling_division_by_zero_returns_integer_overflow() {
+        let err = IntegerData::from_i32(10)
+            .div::<Signaling>(&IntegerData::zero(), Round::FloorToZero)
+            .unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::IntegerOverflow));
+    }
+
+    #[test]
+    fn quiet_add_assign_with_nan_keeps_nan() {
+        let mut value = IntegerData::nan();
+        value.add_assign::<Quiet>(&IntegerData::from_i32(1)).unwrap();
+        assert!(value.is_nan());
+    }
+}

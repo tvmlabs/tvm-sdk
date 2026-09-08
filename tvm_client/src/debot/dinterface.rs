@@ -226,3 +226,123 @@ pub fn get_array_strings(args: &Value, name: &str) -> Result<Vec<String>, String
     }
     Ok(strings)
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use serde_json::json;
+
+    use super::*;
+
+    struct TestInterface;
+
+    #[async_trait::async_trait]
+    impl DebotInterface for TestInterface {
+        fn get_id(&self) -> String {
+            "test".into()
+        }
+
+        fn get_abi(&self) -> Abi {
+            Abi::Json(
+                r#"{
+                    "ABI version": 2,
+                    "functions": [
+                        {
+                            "name": "foo",
+                            "id": "0x1234",
+                            "inputs": [],
+                            "outputs": [{"name":"value","type":"string"}]
+                        }
+                    ],
+                    "data": [],
+                    "events": []
+                }"#
+                .into(),
+            )
+        }
+
+        async fn call(&self, _func: &str, _args: &Value) -> InterfaceResult {
+            Ok((1, json!({ "value": "ok" })))
+        }
+    }
+
+    #[test]
+    fn target_abi_keeps_or_strips_function_ids() {
+        let iface = TestInterface;
+
+        let abi_20 = iface.get_target_abi("2.0").json_string().unwrap();
+        assert!(abi_20.contains("\"id\""));
+
+        let abi_23 = iface.get_target_abi("2.3").json_string().unwrap();
+        assert!(!abi_23.contains("\"id\""));
+        assert!(abi_23.contains("\"foo\""));
+    }
+
+    #[test]
+    fn helper_extractors_validate_arguments() {
+        let args = json!({
+            "answerId": "15",
+            "count": "42",
+            "flag": true,
+            "name": "alice",
+            "items": ["a", "b"],
+        });
+
+        assert_eq!(decode_answer_id(&args).unwrap(), 15);
+        assert_eq!(get_arg(&args, "name").unwrap(), "alice");
+        assert_eq!(get_num_arg::<u32>(&args, "count").unwrap(), 42);
+        assert!(get_bool_arg(&args, "flag").unwrap());
+        assert_eq!(get_array_strings(&args, "items").unwrap(), vec!["a", "b"]);
+
+        assert_eq!(
+            decode_answer_id(&json!({})).unwrap_err(),
+            "answer id not found in argument list"
+        );
+        assert_eq!(get_arg(&args, "missing").unwrap_err(), "\"missing\" not found");
+        assert!(
+            get_num_arg::<u32>(&json!({ "count": "nan" }), "count")
+                .unwrap_err()
+                .contains("failed to parse integer")
+        );
+        assert_eq!(
+            get_bool_arg(&json!({ "flag": "true" }), "flag").unwrap_err(),
+            "\"flag\" not found"
+        );
+        assert_eq!(
+            get_array_strings(&json!({ "items": {} }), "items").unwrap_err(),
+            "\"items\" is invalid: must be array"
+        );
+        assert_eq!(
+            get_array_strings(&json!({ "items": ["ok", 1] }), "items").unwrap_err(),
+            "array element is invalid: must be string"
+        );
+    }
+
+    #[test]
+    fn convert_return_args_reports_unknown_function() {
+        let err = convert_return_args(
+            r#"{
+                "ABI version": 2,
+                "functions": [{"name":"known","inputs":[],"outputs":[]}],
+                "data": [],
+                "events": []
+            }"#,
+            "missing",
+            &mut json!({}),
+        )
+        .unwrap_err();
+        assert!(err.contains("function with name 'missing' not found"));
+    }
+
+    #[test]
+    fn builtin_interfaces_add_registers_custom_interface() {
+        let client = Arc::new(crate::ClientContext::new(crate::ClientConfig::default()).unwrap());
+        let mut interfaces = BuiltinInterfaces::new(client);
+        let iface: Arc<dyn DebotInterface + Send + Sync> = Arc::new(TestInterface);
+
+        interfaces.add(iface);
+
+        assert!(interfaces.get_interfaces().contains_key("test"));
+    }
+}

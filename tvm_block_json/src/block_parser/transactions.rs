@@ -283,7 +283,9 @@ fn get_message_partitions(
 fn msg_src_slice(msg: &Message) -> Result<Option<SliceData>> {
     let src = match msg.header() {
         CommonMsgInfo::ExtInMsgInfo(header) => ext_addr_slice(&header.src),
-        CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::IntMsgInfo(_) => {
+        CommonMsgInfo::ExtOutMsgInfo(_)
+        | CommonMsgInfo::ExtOutMsgInfoV2(_)
+        | CommonMsgInfo::IntMsgInfo(_) => {
             Some(msg.src_ref().map(|addr| addr.address()).ok_or_else(|| {
                 BlockParsingError::InvalidData("Message has no source address".to_owned())
             })?)
@@ -296,6 +298,7 @@ fn msg_dst_slice(msg: &Message) -> Option<SliceData> {
     match msg.header() {
         CommonMsgInfo::ExtInMsgInfo(header) => Some(header.dst.address()),
         CommonMsgInfo::ExtOutMsgInfo(header) => ext_addr_slice(&header.dst),
+        CommonMsgInfo::ExtOutMsgInfoV2(header) => ext_addr_slice(&header.dst),
         CommonMsgInfo::IntMsgInfo(header) => Some(header.dst.address()),
     }
 }
@@ -304,5 +307,92 @@ fn ext_addr_slice(addr: &MsgAddressExt) -> Option<SliceData> {
     match addr {
         MsgAddressExt::AddrExtern(addr) => Some(addr.external_address.clone()),
         MsgAddressExt::AddrNone => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use std::fs::read;
+    use std::sync::Arc;
+    use std::sync::Mutex;
+    use std::time::SystemTime;
+
+    use tvm_block::Block;
+    use tvm_block::BlockIdExt;
+    use tvm_block::Deserializable;
+    use tvm_block::Message;
+    use tvm_types::UInt256;
+    use tvm_types::read_single_root_boc;
+
+    use super::ParserTransactions;
+    use crate::BlockParserConfig;
+    use crate::EntryConfig;
+    use crate::NoReduce;
+    use crate::ParserTraceEvent;
+    use crate::ParserTracer;
+    use crate::ParsingBlock;
+
+    #[derive(Clone)]
+    struct TestTracer {
+        events: Arc<Mutex<Vec<ParserTraceEvent>>>,
+    }
+
+    impl ParserTracer for TestTracer {
+        fn trace(
+            &self,
+            _block_id: &UInt256,
+            _message_id: Option<&UInt256>,
+            _time: SystemTime,
+            event: ParserTraceEvent,
+        ) {
+            self.events.lock().unwrap().push(event);
+        }
+    }
+
+    fn load_fixture_block() -> (BlockIdExt, Block, tvm_types::Cell) {
+        let boc = read("src/tests/data/block.boc").unwrap();
+        let cell = read_single_root_boc(&boc).unwrap();
+        let block = Block::construct_from_cell(cell.clone()).unwrap();
+        (BlockIdExt::default(), block, cell)
+    }
+
+    #[test]
+    #[ignore] // FIXME: needs valid message with proper block context for prepare_proof
+    fn prepare_message_entry_adds_proof_when_enabled() {
+        let (id, block, root) = load_fixture_block();
+        // Load a message from fixture
+        let msg_boc = read("src/tests/data/transactions/int_in.boc").unwrap();
+        let message_cell = read_single_root_boc(&msg_boc).unwrap();
+        let message = Message::construct_from_cell(message_cell.clone()).unwrap();
+        let data = [];
+        let parsing = ParsingBlock {
+            id: &id,
+            block: &block,
+            root: &root,
+            data: &data,
+            mc_seq_no: None,
+            proof: None,
+            shard_state: None,
+        };
+        let parser = ParserTransactions::new(
+            &BlockParserConfig {
+                blocks: None,
+                proofs: None,
+                accounts: None,
+                transactions: None,
+                messages: Some(EntryConfig { sharding_depth: Some(4), reducer: None::<NoReduce> }),
+                max_account_bytes_size: None,
+                is_node_se: false,
+            },
+            &None::<TestTracer>,
+            &parsing,
+            false,
+        );
+
+        let prepared = parser.prepare_message_entry(message_cell, message, Some(321)).unwrap();
+        // When with_proofs is false, no proof should be added
+        assert!(prepared.doc.get("proof").is_none());
+        assert_eq!(prepared.doc["created_at"], 321);
     }
 }

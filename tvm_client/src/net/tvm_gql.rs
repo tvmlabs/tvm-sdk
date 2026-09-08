@@ -69,7 +69,7 @@ pub struct PostRequest {
 
 #[derive(Debug, Clone, Serialize)]
 #[allow(non_snake_case)]
-pub struct ExtMessage {
+pub struct ExtMessageV2 {
     pub id: String,
     pub body: String,
     pub expire_at: Option<f64>,
@@ -80,7 +80,26 @@ pub struct ExtMessage {
     pub dst_dapp_id: Option<String>,
 }
 
-impl ExtMessage {
+impl ExtMessageV2 {
+    pub fn set_thread_id(&mut self, thread_id: Option<String>) {
+        self.thread_id = thread_id;
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[allow(non_snake_case)]
+pub struct ExtMessageV3 {
+    pub id: String,
+    pub body: String,
+    pub expire_at: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thread_id: Option<String>,
+    pub ext_message_token: Option<Value>,
+    pub dapp_id: String,
+    pub account_id: String,
+}
+
+impl ExtMessageV3 {
     pub fn set_thread_id(&mut self, thread_id: Option<String>) {
         self.thread_id = thread_id;
     }
@@ -536,4 +555,61 @@ pub enum GraphQLQueryEvent {
     Error(ClientError),
     Complete,
     Started,
+}
+
+#[cfg(test)]
+mod ext_message_tests {
+    use serde_json::json;
+
+    use super::ExtMessageV2;
+    use super::ExtMessageV3;
+
+    #[test]
+    fn v2_serializes_with_dst_dapp_id() {
+        let m = ExtMessageV2 {
+            id: "abc".into(),
+            body: "Zm9v".into(),
+            expire_at: None,
+            thread_id: Some("ttt".into()),
+            ext_message_token: None,
+            dst_dapp_id: Some("dd".into()),
+        };
+        let v = serde_json::to_value(&m).unwrap();
+        assert_eq!(v["id"], json!("abc"));
+        assert_eq!(v["dst_dapp_id"], json!("dd"));
+        assert!(v.get("dapp_id").is_none());
+        assert!(v.get("account_id").is_none());
+    }
+
+    #[test]
+    fn v2_skips_dst_dapp_id_when_none() {
+        let m = ExtMessageV2 {
+            id: "abc".into(),
+            body: "Zm9v".into(),
+            expire_at: None,
+            thread_id: None,
+            ext_message_token: None,
+            dst_dapp_id: None,
+        };
+        let v = serde_json::to_value(&m).unwrap();
+        assert!(v.get("dst_dapp_id").is_none());
+        assert!(v.get("thread_id").is_none());
+    }
+
+    #[test]
+    fn v3_serializes_with_dapp_id_and_account_id() {
+        let m = ExtMessageV3 {
+            id: "abc".into(),
+            body: "Zm9v".into(),
+            expire_at: None,
+            thread_id: Some("ttt".into()),
+            ext_message_token: None,
+            dapp_id: "dapp_hex".into(),
+            account_id: "acc_hex".into(),
+        };
+        let v = serde_json::to_value(&m).unwrap();
+        assert_eq!(v["dapp_id"], json!("dapp_hex"));
+        assert_eq!(v["account_id"], json!("acc_hex"));
+        assert!(v.get("dst_dapp_id").is_none());
+    }
 }

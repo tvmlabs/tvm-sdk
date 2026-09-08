@@ -183,7 +183,7 @@ pub fn default_mnemonic_word_count() -> u8 {
 }
 
 pub fn default_hdkey_derivation_path() -> String {
-    "m/44'/396'/0'/0/0".into()
+    "m/44'/1331'/0'/0/0".into()
 }
 
 fn deserialize_mnemonic_dictionary<'de, D: Deserializer<'de>>(
@@ -224,7 +224,7 @@ pub struct CryptoConfig {
     pub mnemonic_word_count: u8,
 
     /// Derivation path that will be used by default in crypto functions.
-    /// If not specified `m/44'/396'/0'/0/0` will be used.
+    /// If not specified `m/44'/1331'/0'/0/0` will be used.
     #[serde(
         default = "default_hdkey_derivation_path",
         deserialize_with = "deserialize_hdkey_derivation_path"

@@ -234,3 +234,61 @@ pub(super) fn execute_sdcnttrail1(engine: &mut Engine) -> Status {
         })
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::BuilderData;
+
+    use super::*;
+    use crate::stack::Stack;
+
+    fn engine_with_stack(stack: Stack) -> Engine {
+        Engine::with_capabilities(0).setup(SliceData::default(), None, Some(stack), None)
+    }
+
+    fn bool_result(engine: &Engine) -> bool {
+        !engine.cc.stack.get(0).as_integer().unwrap().is_zero()
+    }
+
+    #[test]
+    fn unary_binary_and_common_prefix_paths_execute() {
+        let mut unary_stack = Stack::new();
+        unary_stack.push(StackItem::slice(SliceData::default()));
+        let mut engine = engine_with_stack(unary_stack);
+        execute_sempty(&mut engine).unwrap();
+        assert!(bool_result(&engine));
+
+        let mut binary_stack = Stack::new();
+        binary_stack.push(StackItem::slice(SliceData::from_string("01_").unwrap()));
+        binary_stack.push(StackItem::slice(SliceData::from_string("101_").unwrap()));
+        let mut engine = engine_with_stack(binary_stack);
+        execute_sdsfx(&mut engine).unwrap();
+        assert!(bool_result(&engine));
+
+        let mut common_prefix_stack = Stack::new();
+        common_prefix_stack.push(StackItem::slice(SliceData::from_string("101_").unwrap()));
+        common_prefix_stack.push(StackItem::slice(SliceData::from_string("101_").unwrap()));
+        let mut engine = engine_with_stack(common_prefix_stack);
+        execute_sdeq(&mut engine).unwrap();
+        assert!(bool_result(&engine));
+    }
+
+    #[test]
+    fn first_bit_and_reference_checks_return_expected_booleans() {
+        let mut first_bit = Stack::new();
+        let bit_cell = BuilderData::with_raw(vec![0x80], 1).unwrap().into_cell().unwrap();
+        first_bit.push(StackItem::slice(SliceData::load_cell(bit_cell).unwrap()));
+        let mut engine = engine_with_stack(first_bit);
+        execute_sdfirst(&mut engine).unwrap();
+        assert!(bool_result(&engine));
+
+        let child = BuilderData::with_raw(vec![0xaa], 8).unwrap().into_cell().unwrap();
+        let root =
+            BuilderData::with_raw_and_refs(vec![], 0, vec![child]).unwrap().into_cell().unwrap();
+        let mut stack = Stack::new();
+        stack.push(StackItem::slice(SliceData::load_cell(root).unwrap()));
+        let mut engine = engine_with_stack(stack);
+        execute_srempty(&mut engine).unwrap();
+        assert!(!bool_result(&engine));
+    }
+}

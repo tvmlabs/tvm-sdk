@@ -362,3 +362,93 @@ impl KeyOptionJson {
         &self.type_id
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn private_key_bytes() -> [u8; Ed25519KeyOption::PVT_KEY_SIZE] {
+        [7u8; Ed25519KeyOption::PVT_KEY_SIZE]
+    }
+
+    #[test]
+    fn ed25519_key_option_constructors_roundtrip_and_sign() {
+        let private = private_key_bytes();
+        let from_private = Ed25519KeyOption::from_private_key(&private).unwrap();
+        let expanded = ed25519_expand_private_key(&ed25519_create_private_key(&private).unwrap())
+            .unwrap()
+            .to_bytes();
+        let from_expanded = Ed25519KeyOption::from_expanded_key(&expanded).unwrap();
+
+        assert_eq!(from_private.pub_key().unwrap(), from_expanded.pub_key().unwrap());
+
+        let message = b"tvm-types-ed25519";
+        let signature = from_private.sign(message).unwrap();
+        from_expanded.verify(message, &signature).unwrap();
+    }
+
+    #[test]
+    fn ed25519_private_key_json_roundtrip_and_errors() {
+        let private = private_key_bytes();
+        let (json, key) = Ed25519KeyOption::from_private_key_with_json(&private).unwrap();
+        let from_json = Ed25519KeyOption::from_private_key_json(&json).unwrap();
+        assert_eq!(key.pub_key().unwrap(), from_json.pub_key().unwrap());
+
+        let wrong_type = KeyOptionJson { type_id: 1, pub_key: None, pvt_key: json.pvt_key.clone() };
+        assert!(Ed25519KeyOption::from_private_key_json(&wrong_type).is_err());
+
+        let no_private =
+            KeyOptionJson { type_id: Ed25519KeyOption::KEY_TYPE, pub_key: None, pvt_key: None };
+        assert!(Ed25519KeyOption::from_private_key_json(&no_private).is_err());
+
+        let bad_private = KeyOptionJson {
+            type_id: Ed25519KeyOption::KEY_TYPE,
+            pub_key: None,
+            pvt_key: Some(base64_encode([1u8; 31])),
+        };
+        assert!(Ed25519KeyOption::from_private_key_json(&bad_private).is_err());
+
+        let unexpected_public = KeyOptionJson {
+            type_id: Ed25519KeyOption::KEY_TYPE,
+            pub_key: Some(base64_encode([2u8; Ed25519KeyOption::PUB_KEY_SIZE])),
+            pvt_key: json.pvt_key.clone(),
+        };
+        assert!(Ed25519KeyOption::from_private_key_json(&unexpected_public).is_err());
+    }
+
+    #[test]
+    fn ed25519_public_key_json_roundtrip_and_errors() {
+        let private = private_key_bytes();
+        let key = Ed25519KeyOption::from_private_key(&private).unwrap();
+        let public = key.pub_key().unwrap();
+        let json = KeyOptionJson {
+            type_id: Ed25519KeyOption::KEY_TYPE,
+            pub_key: Some(base64_encode(public)),
+            pvt_key: None,
+        };
+
+        let from_json = Ed25519KeyOption::from_public_key_json(&json).unwrap();
+        assert_eq!(from_json.pub_key().unwrap(), public);
+
+        let wrong_type = KeyOptionJson { type_id: 2, pub_key: json.pub_key.clone(), pvt_key: None };
+        assert!(Ed25519KeyOption::from_public_key_json(&wrong_type).is_err());
+
+        let no_public =
+            KeyOptionJson { type_id: Ed25519KeyOption::KEY_TYPE, pub_key: None, pvt_key: None };
+        assert!(Ed25519KeyOption::from_public_key_json(&no_public).is_err());
+
+        let bad_public = KeyOptionJson {
+            type_id: Ed25519KeyOption::KEY_TYPE,
+            pub_key: Some(base64_encode([3u8; 31])),
+            pvt_key: None,
+        };
+        assert!(Ed25519KeyOption::from_public_key_json(&bad_public).is_err());
+
+        let unexpected_private = KeyOptionJson {
+            type_id: Ed25519KeyOption::KEY_TYPE,
+            pub_key: json.pub_key,
+            pvt_key: Some(base64_encode(private)),
+        };
+        assert!(Ed25519KeyOption::from_public_key_json(&unexpected_private).is_err());
+    }
+}

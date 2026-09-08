@@ -585,3 +585,163 @@ async fn emulate_transaction(
         signing_box_handle,
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use tvm_block::ExtOutMessageHeader;
+    use tvm_block::InternalMessageHeader;
+    use tvm_block::Message;
+    use tvm_block::MsgAddressInt;
+    use tvm_types::base64_encode;
+
+    use super::*;
+    use crate::boc::internal::deserialize_object_from_base64;
+    use crate::error::ClientError;
+
+    fn meta_src_address(
+        answer_id: u32,
+        onerror_id: u32,
+        abi_ver: u8,
+        is_timestamp: bool,
+        is_expire: bool,
+        is_pubkey: bool,
+        signing_box: Option<u32>,
+        ctrl_flags: u8,
+    ) -> MsgAddressExt {
+        let mut builder = BuilderData::new();
+        builder.append_u32(answer_id).unwrap();
+        builder.append_u32(onerror_id).unwrap();
+        builder.append_u8(abi_ver).unwrap();
+        if is_timestamp {
+            builder.append_bit_one().unwrap();
+        } else {
+            builder.append_bit_zero().unwrap();
+        }
+        if is_expire {
+            builder.append_bit_one().unwrap();
+        } else {
+            builder.append_bit_zero().unwrap();
+        }
+        if is_pubkey {
+            builder.append_bit_one().unwrap();
+        } else {
+            builder.append_bit_zero().unwrap();
+        }
+        if let Some(handle) = signing_box {
+            builder.append_bit_one().unwrap();
+            builder.append_u32(handle).unwrap();
+        } else {
+            builder.append_bit_zero().unwrap();
+        }
+        builder.append_u8(ctrl_flags).unwrap();
+        MsgAddressExt::with_extern(SliceData::load_builder(builder).unwrap()).unwrap()
+    }
+
+    fn decode_body_words(message_boc: &str) -> Vec<u32> {
+        let message: Message =
+            deserialize_object_from_base64(message_boc, "message").unwrap().object;
+        let mut body = message.body().unwrap();
+        let mut words = vec![];
+        while body.remaining_bits() >= 32 {
+            words.push(body.get_next_u32().unwrap());
+        }
+        words
+    }
+
+    fn ext_out_message(func_id: u32) -> String {
+        let mut body = BuilderData::new();
+        body.append_u32(func_id | (1u32 << 31)).unwrap();
+        body.append_u32(0xfeed_beef).unwrap();
+
+        let header = ExtOutMessageHeader::with_addresses(
+            MsgAddressInt::from_str(
+                "0:1111111111111111111111111111111111111111111111111111111111111111",
+            )
+            .unwrap(),
+            MsgAddressExt::with_extern(SliceData::default()).unwrap(),
+        );
+        let mut message = Message::with_ext_out_header(header);
+        message.set_body(SliceData::load_builder(body).unwrap());
+        base64_encode(tvm_types::boc::write_boc(&message.serialize().unwrap()).unwrap())
+    }
+
+    #[test]
+    fn metadata_reads_flags_from_external_address() {
+        let meta =
+            Metadata::try_from(meta_src_address(1, 2, ABI_2_3, true, false, true, Some(77), 0b111))
+                .unwrap();
+
+        assert_eq!(meta.answer_id, 1);
+        assert_eq!(meta.onerror_id, 2);
+        assert_eq!(meta.abi_ver, ABI_2_3);
+        assert!(meta.is_timestamp);
+        assert!(!meta.is_expire);
+        assert!(meta.is_pubkey);
+        assert_eq!(meta.signing_box_handle.map(|h| h.0), Some(77));
+        assert!(meta.override_ts);
+        assert!(meta.override_exp);
+        assert!(meta.async_call);
+    }
+
+    #[test]
+    fn metadata_rejects_empty_or_unsupported_source() {
+        assert!(
+            Metadata::try_from(MsgAddressExt::AddrNone)
+                .err()
+                .unwrap()
+                .message()
+                .contains("src address is empty")
+        );
+
+        let err = Metadata::try_from(meta_src_address(1, 2, 0x31, false, false, false, None, 0))
+            .err()
+            .unwrap();
+        assert!(err.message().contains("unsupported major ABI version"));
+    }
+
+    #[test]
+    fn build_onerror_body_reads_nested_and_plain_exit_codes() {
+        let mut err = ClientError::with_code_message(100, "failed".into());
+        err.data_mut()["local_error"]["data"]["exit_code"] = 13.into();
+        let body = build_onerror_body(7, err).unwrap();
+        let mut body = body;
+        assert_eq!(body.get_next_u32().unwrap(), 7);
+        assert_eq!(body.get_next_u32().unwrap(), 100);
+        assert_eq!(body.get_next_u32().unwrap(), 13);
+
+        let err = ClientError::with_code_message(101, "failed".into());
+        let body = build_onerror_body(8, err).unwrap();
+        let mut body = body;
+        assert_eq!(body.get_next_u32().unwrap(), 8);
+        assert_eq!(body.get_next_u32().unwrap(), 101);
+        assert_eq!(body.get_next_u32().unwrap(), 0);
+    }
+
+    #[test]
+    fn build_answer_msg_skips_internal_and_mismatched_messages() {
+        let internal = Message::with_int_header(InternalMessageHeader::default());
+        let internal_boc =
+            base64_encode(tvm_types::boc::write_boc(&internal.serialize().unwrap()).unwrap());
+        assert!(build_answer_msg(&internal_boc, 1, 2, "0:1", "0:2").is_none());
+
+        let out_msg = ext_out_message(42);
+        assert!(build_answer_msg(&out_msg, 7, 43, "0:1", "0:2").is_none());
+    }
+
+    #[test]
+    fn build_answer_msg_wraps_matching_external_body() {
+        let out_msg = ext_out_message(42);
+        let wrapped = build_answer_msg(
+            &out_msg,
+            7,
+            42,
+            "0:1111111111111111111111111111111111111111111111111111111111111111",
+            "0:2222222222222222222222222222222222222222222222222222222222222222",
+        )
+        .unwrap();
+
+        assert_eq!(decode_body_words(&wrapped), vec![7, 0xfeed_beef]);
+    }
+}

@@ -24,8 +24,10 @@ pub struct ParamsOfProcessMessage {
     #[serde(default)]
     pub send_events: bool,
 
+    /// Destination dapp_id (64-character hex, no 0x).
+    /// Required for v>=1.0.0 servers; for v<1.0.0 may be empty.
     #[serde(default)]
-    pub dst_dapp_id: Option<String>,
+    pub dapp_id: String,
 }
 
 pub async fn process_message<F: futures::Future<Output = ()> + Send>(
@@ -50,7 +52,7 @@ pub async fn process_message<F: futures::Future<Output = ()> + Send>(
                 abi: Some(abi.clone()),
                 thread_id: None,
                 send_events: params.send_events,
-                dst_dapp_id: params.dst_dapp_id.clone(),
+                dapp_id: params.dapp_id.clone(),
             },
             &callback,
         )

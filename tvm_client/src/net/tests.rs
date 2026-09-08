@@ -19,7 +19,6 @@ use crate::processing::ParamsOfProcessMessage;
 use crate::tests::HELLO;
 use crate::tests::TestClient;
 
-#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn bad_request() {
     let client = TestClient::new_with_config(json!({
@@ -111,7 +110,6 @@ async fn not_authorized_response_text() {
     }
 }
 
-#[ignore]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn not_authorized() {
     let client = TestClient::new_with_config(json!({
@@ -568,7 +566,7 @@ async fn subscribe_for_transactions_with_addresses() {
             ParamsOfProcessMessage {
                 message_encode_params: deploy_params,
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )
@@ -603,7 +601,7 @@ async fn subscribe_for_transactions_with_addresses() {
                     ..Default::default()
                 },
                 send_events: false,
-                dst_dapp_id: None,
+                dapp_id: String::new(),
             },
             TestClient::default_callback,
         )

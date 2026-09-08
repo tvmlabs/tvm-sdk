@@ -210,6 +210,13 @@ fn print_msg_header(header: &CommonMsgInfo) -> String {
                 + &format!("   created_lt  : {}\n", header.created_lt)
                 + &format!("   created_at  : {}\n", header.created_at)
         }
+        CommonMsgInfo::ExtOutMsgInfoV2(header) => {
+            format!("   source      : {}\n", &header.src)
+                + &format!("   destination : {}\n", &header.dst)
+                + &format!("   created_lt  : {}\n", header.created_lt)
+                + &format!("   created_at  : {}\n", header.created_at)
+                + &format!("   src_dapp_id : {:?}\n", &header.src_dapp_id)
+        }
     }
 }
 

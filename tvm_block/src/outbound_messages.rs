@@ -1239,3 +1239,125 @@ impl Deserializable for OutMsgTransitRequeued {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::envelope_message::MsgEnvelope;
+    use crate::transactions::Transaction;
+    use crate::types::Grams;
+
+    fn sample_message_with_lt(lt: u64) -> Message {
+        let mut msg = Message::default();
+        msg.set_at_and_lt(10, lt);
+        msg
+    }
+
+    fn sample_envelope() -> MsgEnvelope {
+        MsgEnvelope::with_message_and_fee(&sample_message_with_lt(22), Grams::from(3)).unwrap()
+    }
+
+    #[test]
+    fn enqueued_msg_helpers_roundtrip_and_created_lt() {
+        let env = sample_envelope();
+        let enqueued = EnqueuedMsg::with_param(44, &env).unwrap();
+
+        assert_eq!(enqueued.enqueued_lt(), 44);
+        assert_eq!(enqueued.created_lt().unwrap(), 22);
+        assert_eq!(
+            EnqueuedMsg::construct_from_cell(enqueued.serialize().unwrap()).unwrap(),
+            enqueued
+        );
+    }
+
+    #[test]
+    fn out_msg_constructors_cover_variant_helpers_and_dequeue_validation() {
+        let message = sample_message_with_lt(55);
+        let message_cell = message.serialize().unwrap();
+        let transaction_cell = Transaction::default().serialize().unwrap();
+        let envelope = MsgEnvelope::with_message_and_fee(&message, Grams::from(7)).unwrap();
+        let envelope_cell = envelope.serialize().unwrap();
+        let in_msg = InMsg::external(message_cell.clone(), transaction_cell.clone());
+        let in_msg_cell = in_msg.serialize().unwrap();
+
+        let external = OutMsg::external(message_cell.clone(), transaction_cell.clone());
+        assert_eq!(external.tag(), OUT_MSG_EXT);
+        assert_eq!(external.message_cell().unwrap(), Some(message_cell));
+        assert_eq!(external.transaction_cell(), Some(transaction_cell.clone()));
+
+        let new_msg = OutMsg::new(envelope_cell.clone(), transaction_cell);
+        assert_eq!(new_msg.tag(), OUT_MSG_NEW);
+        assert_eq!(new_msg.out_message_cell(), Some(envelope_cell.clone()));
+        assert_eq!(new_msg.envelope_message_hash(), Some(envelope_cell.repr_hash()));
+        assert_eq!(OutMsg::construct_from_cell(new_msg.serialize().unwrap()).unwrap(), new_msg);
+
+        let transit = OutMsg::transit(envelope_cell.clone(), in_msg_cell.clone(), false);
+        assert_eq!(transit.tag(), OUT_MSG_TR);
+        assert_eq!(transit.reimport_cell(), Some(in_msg_cell.clone()));
+
+        let transit_requeued = OutMsg::transit(envelope_cell.clone(), in_msg_cell.clone(), true);
+        assert_eq!(transit_requeued.tag(), OUT_MSG_TRDEQ);
+        assert_eq!(transit_reimport_cell(&transit_requeued), Some(in_msg_cell));
+
+        let dequeue = OutMsg::dequeue_long(envelope_cell.clone(), 17);
+        assert_eq!(dequeue.tag(), OUT_MSG_DEQ);
+        assert_eq!(dequeue.read_message_hash().unwrap(), envelope.message_hash());
+
+        let mut dequeue_inner = OutMsgDequeue::with_cells(envelope_cell, 1);
+        assert!(dequeue_inner.set_import_block_lt(0x8000_0000_0000_0000).is_err());
+        dequeue_inner.set_import_block_lt(33).unwrap();
+        assert_eq!(dequeue_inner.import_block_lt(), 33);
+    }
+
+    fn transit_reimport_cell(value: &OutMsg) -> Option<Cell> {
+        value.reimport_cell()
+    }
+
+    #[test]
+    fn out_msg_helpers_cover_immediate_dequeue_short_and_error_paths() {
+        let message = sample_message_with_lt(66);
+        let message_cell = message.serialize().unwrap();
+        let transaction = Transaction::default();
+        let transaction_cell = transaction.serialize().unwrap();
+        let envelope = MsgEnvelope::with_message_and_fee(&message, Grams::from(5)).unwrap();
+        let envelope_cell = envelope.serialize().unwrap();
+        let in_msg = InMsg::external(message_cell.clone(), transaction_cell.clone());
+        let in_msg_cell = in_msg.serialize().unwrap();
+
+        let immediate =
+            OutMsg::immediate(envelope_cell.clone(), transaction_cell.clone(), in_msg_cell.clone());
+        assert_eq!(immediate.tag(), OUT_MSG_IMM);
+        assert_eq!(immediate.read_reimport_message().unwrap().unwrap(), in_msg);
+        assert_eq!(immediate.at_and_lt().unwrap(), Some((10, 66)));
+
+        let dequeue_immediate =
+            OutMsg::dequeue_immediate(envelope_cell.clone(), in_msg_cell.clone());
+        assert_eq!(dequeue_immediate.tag(), OUT_MSG_DEQ_IMM);
+        assert_eq!(dequeue_immediate.reimport_cell(), Some(in_msg_cell.clone()));
+
+        let next_prefix = AccountIdPrefixFull::workchain(-1, 0xABCD_0000_0000_0000);
+        let dequeue_short = OutMsg::dequeue_short(UInt256::from([7; 32]), &next_prefix, 555);
+        assert_eq!(dequeue_short.tag(), OUT_MSG_DEQ_SHORT);
+        assert_eq!(dequeue_short.transaction_cell(), None);
+        assert!(dequeue_short.read_message_hash().is_err());
+        assert_eq!(
+            OutMsg::construct_from_cell(dequeue_short.serialize().unwrap()).unwrap(),
+            dequeue_short
+        );
+
+        let transit = OutMsg::transit(envelope_cell, in_msg_cell, false);
+        assert_eq!(transit.exported_value().unwrap().grams, Grams::from(5));
+
+        assert!(OutMsg::None.read_message().is_err());
+        assert!(OutMsg::None.read_out_message().is_err());
+        assert!(OutMsg::None.message_cell().is_err());
+        assert!(OutMsg::None.serialize().is_err());
+    }
+
+    #[test]
+    fn out_msg_rejects_invalid_constructor_tag() {
+        let mut invalid = BuilderData::new();
+        invalid.append_bits(0b101, 3).unwrap();
+        assert!(OutMsg::construct_from_cell(invalid.into_cell().unwrap()).is_err());
+    }
+}

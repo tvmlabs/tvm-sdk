@@ -38,6 +38,7 @@ pub enum ErrorCode {
     InvalidRempStatus = 515,
     NextRempStatusTimeout = 516,
     InvalidThread = 517,
+    DappIdRequired = 518,
 }
 
 pub struct Error;
@@ -231,5 +232,12 @@ impl Error {
 
     pub fn invalid_thread<E: std::fmt::Display>(err: E) -> ClientError {
         error(ErrorCode::InvalidThread, format!("Invalid thread id: {}", err))
+    }
+
+    pub fn dapp_id_required() -> ClientError {
+        error(
+            ErrorCode::DappIdRequired,
+            "`dapp_id` is required when connected to a v>=1.0.0 server".into(),
+        )
     }
 }

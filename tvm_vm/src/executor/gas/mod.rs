@@ -107,3 +107,115 @@ pub fn execute_gas_remaining(engine: &mut Engine) -> Status {
     engine.cc.stack.push(StackItem::int(engine.gas_remaining()));
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_block::GlobalCapabilities;
+    use tvm_types::BuilderData;
+    use tvm_types::ExceptionCode;
+    use tvm_types::SliceData;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+    use crate::executor::gas::gas_state::Gas;
+    use crate::stack::Stack;
+
+    fn engine_with_stack(capabilities: u64, stack: Option<Stack>) -> Engine {
+        Engine::with_capabilities(capabilities).setup(SliceData::default(), None, stack, None)
+    }
+
+    #[test]
+    fn accept_and_commit_update_gas_and_committed_state() {
+        let mut engine = engine_with_stack(0, None);
+        engine.set_gas(Gas::new(20, 5, 100, 10));
+
+        execute_accept(&mut engine).unwrap();
+
+        assert_eq!(engine.get_gas().get_gas_limit(), 100);
+        assert_eq!(engine.gas_remaining(), 90);
+
+        let root = BuilderData::with_raw(vec![0xaa], 8).unwrap().into_cell().unwrap();
+        let actions = BuilderData::with_raw(vec![0xbb], 8).unwrap().into_cell().unwrap();
+        *engine.ctrl_mut(4).unwrap() = StackItem::cell(root.clone());
+        *engine.ctrl_mut(5).unwrap() = StackItem::cell(actions.clone());
+
+        execute_commit(&mut engine).unwrap();
+
+        let committed = engine.get_committed_state();
+        assert!(committed.is_committed());
+        assert_eq!(committed.get_root(), &StackItem::cell(root));
+        assert_eq!(committed.get_actions(), &StackItem::cell(actions));
+    }
+
+    #[test]
+    fn setgaslimit_and_buygas_cover_success_and_out_of_gas_paths() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(50));
+        let mut engine = engine_with_stack(0, Some(stack));
+        engine.set_gas(Gas::test());
+        engine.use_gas(30);
+
+        execute_setgaslimit(&mut engine).unwrap();
+
+        assert_eq!(engine.get_gas().get_gas_limit(), 50);
+        assert_eq!(engine.gas_remaining(), 10);
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(20));
+        let mut engine = engine_with_stack(0, Some(stack));
+        engine.set_gas(Gas::test());
+        engine.use_gas(30);
+        let err = execute_setgaslimit(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::OutOfGas));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(500));
+        let mut engine = engine_with_stack(0, Some(stack));
+        engine.set_gas(Gas::new(0, 50, 500, 10));
+
+        execute_buygas(&mut engine).unwrap();
+
+        assert_eq!(engine.get_gas().get_gas_limit(), 50);
+        assert_eq!(engine.gas_remaining(), 40);
+    }
+
+    #[test]
+    fn gramtogas_gastogram_and_gas_remaining_cover_conversion_paths() {
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(-1));
+        let mut engine = engine_with_stack(0, Some(stack));
+        engine.set_gas(Gas::new(0, 0, 500, 10));
+
+        execute_gramtogas(&mut engine).unwrap();
+
+        assert_eq!(engine.stack().get(0), &StackItem::int(0));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(95));
+        let mut engine = engine_with_stack(0, Some(stack));
+        engine.set_gas(Gas::new(0, 0, 500, 10));
+
+        execute_gramtogas(&mut engine).unwrap();
+
+        assert_eq!(engine.stack().get(0), &StackItem::int(9));
+
+        let mut stack = Stack::new();
+        stack.push(StackItem::int(7));
+        let mut engine = engine_with_stack(0, Some(stack));
+        engine.set_gas(Gas::new(0, 0, 500, 10));
+
+        execute_gastogram(&mut engine).unwrap();
+
+        assert_eq!(engine.stack().get(0), &StackItem::int(70));
+
+        let mut engine = engine_with_stack(0, None);
+        engine.set_gas(Gas::new(17, 0, 500, 10));
+        let err = execute_gas_remaining(&mut engine).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::InvalidOpcode));
+
+        let mut engine = engine_with_stack(GlobalCapabilities::CapsTvmBugfixes2022 as u64, None);
+        engine.set_gas(Gas::new(17, 0, 500, 10));
+        execute_gas_remaining(&mut engine).unwrap();
+        assert_eq!(engine.stack().get(0), &StackItem::int(7));
+    }
+}

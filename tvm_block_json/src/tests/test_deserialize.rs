@@ -19,6 +19,7 @@ use tvm_block::Serializable;
 use tvm_block::VarUInteger32;
 use tvm_types::BuilderData;
 use tvm_types::IBitstring;
+use tvm_types::base64_encode;
 
 use super::*;
 use crate::SerializationMode;
@@ -71,6 +72,47 @@ fn test_parse_errors() {
     check_err(obj.get_num("a1"), "root/obj/a1 must be the integer or a string with the integer");
     check_err(obj.get_num("a2"), "root/obj/a2 must be the integer or a string with the integer");
     check_err(obj.get_num("a3"), "root/obj/a3 must be the integer or a string with the integer");
+}
+
+#[test]
+fn test_parse_json_helper_success_paths() {
+    let hash = UInt256::from([0x11; 32]);
+    let json = serde_json::json!({
+        "child": {
+            "hash": hash.as_hex_string(),
+            "blob": base64_encode([1u8, 2, 3, 4]),
+            "value": "0x10",
+            "grams_dec": "25",
+            "items": [{ "name": "ok" }]
+        }
+    });
+
+    let root = PathMap::new(json.as_object().unwrap());
+    let child = root.get_obj("child").unwrap();
+    let nested = PathMap::cont(&root, "child", root.get_item("child").unwrap()).unwrap();
+    let mut out = 0u32;
+
+    assert_eq!(nested.get_str("hash").unwrap(), hash.as_hex_string());
+    assert_eq!(child.get_uint256("hash").unwrap(), hash);
+    assert_eq!(child.get_base64("blob").unwrap(), vec![1, 2, 3, 4]);
+    assert_eq!(child.get_num("value").unwrap(), 16);
+    assert_eq!(child.get_grams("grams").unwrap(), Grams::from(25u64));
+    assert_eq!(child.get_vec("items").unwrap().len(), 1);
+
+    child.get_u32("value", &mut out);
+    assert_eq!(out, 16);
+}
+
+#[test]
+fn test_parse_json_value_trait_conversions_cover_defaults_and_errors() {
+    let hash = UInt256::from([0x22; 32]);
+    assert_eq!(serde_json::json!(hash.as_hex_string()).as_uint256().unwrap(), hash);
+    assert_eq!(serde_json::json!(base64_encode([9u8, 8, 7])).as_base64().unwrap(), vec![9, 8, 7]);
+    assert_eq!(serde_json::json!(17).as_int().unwrap(), 17);
+    assert_eq!(serde_json::json!("18").as_uint().unwrap(), 18);
+    assert_eq!(serde_json::json!(null).as_long().unwrap(), 0);
+    assert_eq!(serde_json::json!(null).as_ulong().unwrap(), 0);
+    assert!(serde_json::json!(123).as_base64().is_err());
 }
 
 fn get_config_param0() -> ConfigParam0 {

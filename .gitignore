@@ -35,3 +35,8 @@ build/
 /tools/**/*.tsbuildinfo
 /tools/package-lock.json
 /**/clion-log.txt
+
+# Producer-only Halo2 artefacts (belong in deposit-prover, not consumer tests)
+tvm_vm/halo2_test_data/**/*.srs
+tvm_vm/halo2_test_data/**/input.json
+tvm_vm/halo2_test_data/deposit_10proofs/deposit_eth_circuit_params.json

@@ -204,11 +204,11 @@ mod tests {
         let keypair = generate_keypair_from_mnemonic(mnemonic).unwrap();
         assert_eq!(
             &keypair.public,
-            "757221fe3d4992e44632e75e700aaf205d799cb7373ee929273daf26adf29e56"
+            "04ad311dadcbf7fe4bc20d62e0fbfa195ab5f099009b40045632b997daf4b3b1"
         );
         assert_eq!(
             &keypair.secret,
-            "30e3bc5e67af2b0a72971bcc11256e83d052c6cb861a69a19a8af88922fadf3a"
+            "c4415c03aa9d824e89ff4555cd12497aef1d5123f839803b0268e27ba6052354"
         );
 
         let mnemonic =
@@ -216,11 +216,11 @@ mod tests {
         let keypair = generate_keypair_from_mnemonic(mnemonic).unwrap();
         assert_eq!(
             &keypair.public,
-            "8cf557aab2666867a1174e3147d89ddf28c2041a7322522276cd1cf1df47ae73"
+            "3d79dd47d7c09e38bdee00de578eb480142b8bb1456f1aa82e0ff0a85096a72d"
         );
         assert_eq!(
             &keypair.secret,
-            "f63d3d11e0dc91f730f22d5397f269e01f1a5f984879c8581ac87f099bfd3b3a"
+            "d50dc3fc9bea78b9b582573403905f3c4da3de85a6d1635ff40a77d770fb8864"
         );
     }
 

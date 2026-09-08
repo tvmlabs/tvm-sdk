@@ -13,7 +13,6 @@ use tvm_block::VarUInteger32;
 use tvm_block::*;
 use tvm_types::*;
 mod common;
-use common::write_read_and_assert;
 
 #[test]
 fn test_out_action_create() {

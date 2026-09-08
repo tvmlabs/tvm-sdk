@@ -76,3 +76,65 @@ pub(crate) fn bytes_to_string(data: Vec<u8>) -> Result<String> {
 pub fn unpack_string_from_cell(cell: SliceData, engine: &mut dyn GasConsumer) -> Result<String> {
     bytes_to_string(unpack_data_from_cell(cell, engine)?)
 }
+
+#[cfg(test)]
+mod tests {
+    use tvm_types::BuilderData;
+
+    use super::*;
+    use crate::error::tvm_exception_code;
+    use crate::executor::Engine;
+
+    fn new_engine() -> Engine {
+        Engine::with_capabilities(0).setup(SliceData::default(), None, None, None)
+    }
+
+    #[test]
+    fn pack_and_unpack_roundtrip_small_and_large_payloads() {
+        let mut engine = new_engine();
+        let small = b"hello".to_vec();
+        let cell = pack_data_to_cell(&small, &mut engine).unwrap();
+        assert_eq!(
+            unpack_data_from_cell(SliceData::load_cell(cell).unwrap(), &mut engine).unwrap(),
+            small
+        );
+
+        let mut engine = new_engine();
+        let large = vec![0x5a; 300];
+        let cell = pack_data_to_cell(&large, &mut engine).unwrap();
+        assert_eq!(
+            unpack_data_from_cell(SliceData::load_cell(cell).unwrap(), &mut engine).unwrap(),
+            large
+        );
+    }
+
+    #[test]
+    fn unpack_rejects_non_byte_aligned_cells_and_multiple_references() {
+        let mut engine = new_engine();
+        let cell = BuilderData::with_raw(vec![0b1010_0000], 4).unwrap().into_cell().unwrap();
+        assert!(unpack_data_from_cell(SliceData::load_cell(cell).unwrap(), &mut engine).is_err());
+
+        let mut engine = new_engine();
+        let child = BuilderData::with_raw(vec![0xaa], 8).unwrap().into_cell().unwrap();
+        let root = BuilderData::with_raw_and_refs(vec![0xbb], 8, vec![child.clone(), child])
+            .unwrap()
+            .into_cell()
+            .unwrap();
+        let err =
+            unpack_data_from_cell(SliceData::load_cell(root).unwrap(), &mut engine).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::TypeCheckError));
+    }
+
+    #[test]
+    fn string_helpers_roundtrip_and_report_invalid_utf8() {
+        let mut engine = new_engine();
+        let cell = pack_string_to_cell("hello", &mut engine).unwrap();
+        assert_eq!(
+            unpack_string_from_cell(SliceData::load_cell(cell).unwrap(), &mut engine).unwrap(),
+            "hello"
+        );
+
+        let err = bytes_to_string(vec![0xff]).unwrap_err();
+        assert_eq!(tvm_exception_code(&err), Some(ExceptionCode::TypeCheckError));
+    }
+}

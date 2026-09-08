@@ -22,7 +22,11 @@ fn assert_json_eq(json: &str, expected: &str, name: &str) {
         expected
     };
     if json != expected {
-        std::fs::write(format!("target/{}.json", name), json).unwrap();
+        let path = format!("target/{}.json", name);
+        if let Some(parent) = std::path::Path::new(&path).parent() {
+            std::fs::create_dir_all(parent).unwrap();
+        }
+        std::fs::write(path, json).unwrap();
         panic!("json != expected")
     }
 }
