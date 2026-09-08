@@ -335,7 +335,7 @@ Before deployment, its state must be `Uninit`, and its `balance` must be greater
 
 ### Mainnet
 
-The giver is not available on Mainnet. Purchase SHELL through the dedicated Mainnet pool, fund the precomputed address, and convert enough SHELL into VMSHELL to cover the deployment fee. Before deploying, query the account through `mainnet.ackinacki.org` and verify that its state is `Uninit` and its VMSHELL `balance` is greater than zero.
+The giver is not available on Mainnet. Obtain SHELL as described in [Buying SHELL](https://docs.ackinacki.com/for-users/buy-sell-shell/buying-shell). Then send it to the precomputed address with exchange flag `16` or combined flag `17` using either a previously deployed and funded Multisig Wallet as described in [Fund an undeployed account](#fund-an-undeployed-account), or [Acki Nacki Wallet](https://ackinacki.com/wallet) with Developer Mode enabled. Before deploying, query the account through `mainnet.ackinacki.org` and verify that its state is `Uninit` and its VMSHELL `balance` is greater than zero.
 
 ## Deploy the Multisig wallet
 
