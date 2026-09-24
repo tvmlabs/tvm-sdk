@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Internal VMShell transfers within the destination DApp can now create an
+  uninitialized account instead of treating the missing account as a
+  cross-DApp recipient and burning the transferred value.
+
 ## Version 1.16.85
 
 - Deny ChangeLibrary action when CapSetLibCode is unset

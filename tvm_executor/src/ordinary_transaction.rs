@@ -143,7 +143,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut exchanged = false;
         let mut is_cross_dapp_capped = false;
         if let Some(h) = in_msg.int_header() {
-            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
+            if h.src_dapp_id() != &params.dapp_id
                 && !(in_msg.have_state_init()
                     && account
                         .state()
@@ -740,26 +740,30 @@ mod tests {
     }
 
     #[test]
-    fn execute_internal_message_to_nonexistent_account_without_state_init_records_aborted_result() {
+    fn execute_internal_message_to_nonexistent_account_without_state_init_creates_uninit() {
         let executor = OrdinaryTransactionExecutor::new(Default::default());
         let mut account = Account::default();
         let dst = address(8);
         let msg_value = CurrencyCollection::with_grams(1_000_000_000);
-        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+        let dapp_id = UInt256::from([9; 32]);
+        let mut header = InternalMessageHeader::with_addresses_and_bounce(
             address(1),
             dst.clone(),
             msg_value.clone(),
             false,
-        ));
+        );
+        header.set_src_dapp_id(Some(dapp_id.clone()));
+        let msg = Message::with_int_header(header);
+        let mut params = build_actions_execute_params();
+        params.dapp_id = Some(dapp_id);
 
-        let tx = executor
-            .execute_with_params(Some(&msg), &mut account, build_actions_execute_params(), &mut 0)
-            .unwrap();
+        let tx = executor.execute_with_params(Some(&msg), &mut account, params, &mut 0).unwrap();
 
         assert_eq!(tx.account_id(), &dst.address());
         assert_eq!(tx.orig_status, AccountStatus::AccStateNonexist);
-        assert_eq!(tx.end_status, AccountStatus::AccStateNonexist);
-        assert!(account.is_none());
+        assert_eq!(tx.end_status, AccountStatus::AccStateUninit);
+        assert_eq!(account.status(), AccountStatus::AccStateUninit);
+        assert_eq!(account.balance(), Some(&msg_value));
         assert_eq!(tx.total_fees().grams.as_u128(), 0);
 
         let description = match tx.read_description().unwrap() {
