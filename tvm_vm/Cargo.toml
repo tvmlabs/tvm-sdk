@@ -9,6 +9,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+tiny-keccak = { version = "2.0", features = ["keccak"] }
 anyhow.workspace = true
 chrono.workspace = true
 diffy = { workspace = true, optional = true }

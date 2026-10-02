@@ -51,6 +51,8 @@ use crate::executor::zk::*;
 use crate::executor::zk_halo2::*;
 #[cfg(feature = "gosh")]
 use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
+#[cfg(feature = "gosh")]
+use crate::executor::keccak256::execute_keccak256;
 use crate::stack::integer::behavior::Quiet;
 use crate::stack::integer::behavior::Signaling;
 use crate::types::Exception;
@@ -421,6 +423,7 @@ impl Handlers {
                 // tvm_vm/src/executor/zk_halo2_with_vk.rs and
                 // docs/zkhalo2verifywithvk_design.md.
                 .set(0x4A, execute_zkhalo2_verify_with_vk)
+                .set(0x4B, execute_keccak256)
                 .set(0x50, execute_chk_hist_proof);
             // Pre-build VK + KZG params in background so the first
             // ZKHALO2VERIFY call doesn't block for seconds.
