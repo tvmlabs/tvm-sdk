@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixes
+
+- Cross-DApp funding with `bounce=false` no longer transfers original VMShell
+  into the receiving DApp. Incoming ECC SHELL can be exchanged into local
+  VMShell with flag 16; VMShell-only funding leaves missing accounts nonexistent.
+
 ## [3.1.0] - 2026-XX-XX
 ## New
 - Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapps.
