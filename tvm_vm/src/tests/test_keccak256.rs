@@ -10,8 +10,13 @@ use crate::utils::pack_data_to_cell;
 
 fn setup_engine() -> Engine {
     let code = SliceData::new_empty();
-    Engine::with_capabilities(DEFAULT_CAPABILITIES)
-        .setup_with_libraries(code, None, Some(Stack::new()), None, vec![])
+    Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        code,
+        None,
+        Some(Stack::new()),
+        None,
+        vec![],
+    )
 }
 
 fn keccak_of(data: &[u8]) -> IntegerData {
@@ -23,8 +28,10 @@ fn keccak_of(data: &[u8]) -> IntegerData {
 }
 
 fn digest(hex: &str) -> IntegerData {
-    let bytes: Vec<u8> =
-        (0..hex.len()).step_by(2).map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap()).collect();
+    let bytes: Vec<u8> = (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+        .collect();
     IntegerData::from_unsigned_bytes_be(bytes)
 }
 

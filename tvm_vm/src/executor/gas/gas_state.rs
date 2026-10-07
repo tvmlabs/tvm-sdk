@@ -20,11 +20,11 @@ use crate::error::TvmError;
 #[cfg(feature = "gosh")]
 use crate::executor::chk_hist_proof::CHKHISTPROOF_GAS_PRICE;
 #[cfg(feature = "gosh")]
+use crate::executor::keccak256::KECCAK256_GAS_PRICE;
+#[cfg(feature = "gosh")]
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
-#[cfg(feature = "gosh")]
-use crate::executor::keccak256::KECCAK256_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk_halo2_with_vk::ZKHALO2_VERIFY_WITH_VK_GAS_PRICE;
 use crate::types::Exception;
