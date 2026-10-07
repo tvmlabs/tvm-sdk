@@ -200,7 +200,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
         // Funding without bounce has no return path. Original cross-DApp
         // VMShell is not local currency and must not fund receiver execution.
-        // Exchange only the incoming ECC; the account's old funds are untouched.
+        // Exchange only the incoming ECC; the account's old funds are
+        // untouched.
         if let Some(h) = in_msg.cross_dapp_header() {
             if !h.bounce && !h.bounced {
                 msg_balance.grams = Grams::zero();
@@ -211,8 +212,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                             exchanged_shell.value().iter_u64_digits().next().unwrap_or(0);
                         msg_balance.grams += Grams::from(converted);
                         shell.sub(&exchanged_shell)?;
-                        // Preserve the complete VarUInteger32 remainder, including
-                        // ECC amounts larger than u128::MAX.
+                        // Preserve the complete VarUInteger32 remainder,
+                        // including ECC amounts larger
+                        // than u128::MAX.
                         msg_balance.set_other_ex(2, &shell)?;
                     }
                 }

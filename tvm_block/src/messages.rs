@@ -1294,8 +1294,9 @@ impl Deserializable for CommonMsgInfo {
         } else {
             cell.move_by(2)?;
             // tag: 1101
-            // 01 is an invalid sequence for the src field of the ext out header,
-            // so we use it as a part of the constructor for new message types
+            // 01 is an invalid sequence for the src field of the ext out
+            // header, so we use it as a part of the constructor for
+            // new message types
             match cell.get_next_tag(2)? {
                 0b01 => {
                     // tag: 110101

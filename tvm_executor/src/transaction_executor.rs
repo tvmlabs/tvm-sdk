@@ -484,7 +484,8 @@ pub trait TransactionExecutor {
                                 0
                             });
 
-                            // if there was a balance in message (not bounce), then account state at
+                            // if there was a balance in message (not bounce),
+                            // then account state at
                             // least become uninit
                             result_acc.uninit_account();
                             *acc = result_acc.clone();
@@ -503,7 +504,8 @@ pub trait TransactionExecutor {
                                 0
                             });
 
-                            // if there was a balance in message (not bounce), then account state at
+                            // if there was a balance in message (not bounce),
+                            // then account state at
                             // least become uninit
                             result_acc.uninit_account();
                             *acc = result_acc.clone();
@@ -3086,8 +3088,17 @@ mod tests {
     }
 
     macro_rules! delivery_funding_test {
-        ($name:ident, $cross:expr, $existing:expr, $vm:expr, $ecc:expr,
-         $exchange:expr, $status:ident, $out_vm:expr, $out_ecc:expr) => {
+        (
+            $name:ident,
+            $cross:expr,
+            $existing:expr,
+            $vm:expr,
+            $ecc:expr,
+            $exchange:expr,
+            $status:ident,
+            $out_vm:expr,
+            $out_ecc:expr
+        ) => {
             #[test]
             fn $name() {
                 assert_delivery_funding(

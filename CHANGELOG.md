@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixes
 
+- `tvm-debugger` builds again; outbound contract responses and events use the
+  external-message ABI decoder.
+
 - Cross-DApp funding with `bounce=false` no longer transfers original VMShell
   into the receiving DApp. Incoming ECC SHELL can be exchanged into local
   VMShell with flag 16; VMShell-only funding leaves missing accounts nonexistent.
