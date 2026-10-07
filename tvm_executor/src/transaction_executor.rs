@@ -491,10 +491,7 @@ pub trait TransactionExecutor {
                 CommonMsgInfo::CrossDappMessageInfo(header) => {
                     log::debug!(target: "executor", "msg cross-dapp, bounce: {}, bounced: {}", header.bounce, header.bounced);
                     if result_acc.is_none() {
-                        if let Some(new_acc) = account_from_cross_dapp_message(
-                            msg,
-                            msg_balance,
-                        ) {
+                        if let Some(new_acc) = account_from_cross_dapp_message(msg, msg_balance) {
                             result_acc = new_acc;
                             result_acc.set_last_paid(if !is_special {
                                 smc_info.unix_time()
@@ -2296,7 +2293,6 @@ fn account_from_message(
     }
 }
 
-
 /// Calculate new account according to inbound message.
 /// If message has no value, account will not created.
 fn account_from_cross_dapp_message(
@@ -2304,6 +2300,12 @@ fn account_from_cross_dapp_message(
     msg_remaining_balance: &CurrencyCollection,
 ) -> Option<Account> {
     let hdr = msg.cross_dapp_header()?;
+    // Only retained value can create an account. In particular, zeroed
+    // cross-DApp VMShell alone must leave a missing destination nonexistent.
+    if msg_remaining_balance.is_zero().ok()? {
+        return None;
+    }
+
     if msg.state_init().is_some() {
         log::error!("Cross-dapp message should not be able to deploy account");
         return None;
@@ -2319,7 +2321,6 @@ fn account_from_cross_dapp_message(
         Some(Account::uninit(hdr.dst.clone(), 0, 0, msg_remaining_balance.clone()))
     }
 }
-
 
 fn balance_to_string(balance: &CurrencyCollection) -> String {
     let value = balance.grams.as_u128();
@@ -2361,7 +2362,7 @@ mod tests {
         UInt256::from([value; 32])
     }
 
-    fn internal_message(dst_dapp_id: Option<UInt256>) -> Message {
+    fn internal_message_with_dst_dapp_id(dst_dapp_id: Option<UInt256>) -> Message {
         let mut header = InternalMessageHeader::default();
         header.set_dst_dapp_id(dst_dapp_id);
         Message::with_int_header(header)
@@ -2377,7 +2378,7 @@ mod tests {
     #[test]
     fn normalizes_internal_out_message_src_dapp_id() {
         let effective_src_dapp_id = Some(dapp_id(2));
-        let mut msg = internal_message(effective_src_dapp_id.clone());
+        let mut msg = internal_message_with_dst_dapp_id(effective_src_dapp_id.clone());
 
         normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap();
 
@@ -2387,7 +2388,7 @@ mod tests {
     #[test]
     fn rejects_internal_out_message_to_other_dapp() {
         let effective_src_dapp_id = Some(dapp_id(1));
-        let mut msg = internal_message(Some(dapp_id(2)));
+        let mut msg = internal_message_with_dst_dapp_id(Some(dapp_id(2)));
 
         let err =
             normalize_and_validate_out_msg_dapp_ids(&mut msg, &effective_src_dapp_id).unwrap_err();
@@ -2397,7 +2398,7 @@ mod tests {
 
     #[test]
     fn allows_internal_out_message_without_dst_dapp_id() {
-        let mut msg = internal_message(None);
+        let mut msg = internal_message_with_dst_dapp_id(None);
 
         normalize_and_validate_out_msg_dapp_ids(&mut msg, &Some(dapp_id(1))).unwrap();
 
@@ -2915,6 +2916,375 @@ mod tests {
             return 0;
         };
         value.value().iter_u64_digits().next().unwrap_or(0)
+    }
+
+    fn execute_delivery_funding(
+        cross_dapp: bool,
+        initial: Account,
+        value: CurrencyCollection,
+        exchange: bool,
+    ) -> (Transaction, Account) {
+        let dst = address(7);
+        let src_dapp = dapp_id(1);
+        let dst_dapp = if cross_dapp { dapp_id(2) } else { src_dapp.clone() };
+        let msg = if cross_dapp {
+            Message::with_cross_dapp_header(CrossDappMessageHeader {
+                src: tvm_block::MsgAddressIntOrNone::Some(address(1)),
+                dst,
+                src_dapp_id: src_dapp,
+                dst_dapp_id: dst_dapp.clone(),
+                value,
+                bounce: false,
+                is_exchange: exchange,
+                ..Default::default()
+            })
+        } else {
+            let mut header =
+                InternalMessageHeader::with_addresses_and_bounce(address(1), dst, value, false);
+            header.set_src_dapp_id(Some(src_dapp));
+            header.set_exchange(exchange);
+            Message::with_int_header(header)
+        };
+        let mut root = initial.serialize().unwrap();
+        let config = if initial.status() == AccountStatus::AccStateActive {
+            executor_config()
+        } else {
+            BlockchainConfig::default()
+        };
+        let executor = OrdinaryTransactionExecutor::new(config);
+        let (tx, minted) = executor
+            .execute_with_libs_and_params(
+                Some(&msg),
+                &mut root,
+                ExecuteParams {
+                    dapp_id: Some(dst_dapp),
+                    engine_version: semver::Version::new(1, 0, 3),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        assert_eq!(minted, 0, "funding without code cannot mint");
+        let update = tx.read_state_update().unwrap();
+        assert_eq!(update.old_hash, initial.serialize().unwrap().repr_hash());
+        assert_eq!(update.new_hash, root.repr_hash());
+        (tx, Account::construct_from_cell(root).unwrap())
+    }
+
+    fn assert_delivery_funding(
+        cross: bool,
+        existing: bool,
+        native: u64,
+        ecc: u64,
+        exchange: bool,
+        expected_status: AccountStatus,
+        expected_vm: u64,
+        expected_ecc: u128,
+    ) {
+        let initial = if existing {
+            let mut balance = CurrencyCollection::with_grams(2_000_000_000);
+            balance.set_other(2, 7_000_000_000).unwrap();
+            balance.set_other(3, 777).unwrap();
+            Account::uninit(address(7), 0, 0, balance)
+        } else {
+            Account::default()
+        };
+        let mut value = CurrencyCollection::with_grams(native);
+        value.set_other(2, ecc.into()).unwrap();
+        let (tx, account) = execute_delivery_funding(cross, initial.clone(), value, exchange);
+        assert_eq!(tx.orig_status, initial.status());
+        assert_eq!(tx.end_status, expected_status);
+        assert_eq!(account.status(), expected_status);
+        let balance = account.balance().cloned().unwrap_or_default();
+        assert_eq!(balance.grams, Grams::from(expected_vm));
+        assert_eq!(
+            balance.get_other(2).unwrap().unwrap_or_default(),
+            VarUInteger32::from(expected_ecc)
+        );
+        assert_eq!(
+            balance.get_other(3).unwrap().unwrap_or_default(),
+            VarUInteger32::from(if existing { 777u64 } else { 0 })
+        );
+        let description = tx.read_description().unwrap();
+        assert!(matches!(description.compute_phase_ref(), Some(TrComputePhase::Skipped(_))));
+        assert!(tx.total_fees().is_zero().unwrap(), "no code or storage fees");
+        assert_eq!(tx.msg_count(), 0);
+    }
+
+    macro_rules! delivery_funding_test {
+        ($name:ident, $cross:expr, $existing:expr, $vm:expr, $ecc:expr,
+         $exchange:expr, $status:ident, $out_vm:expr, $out_ecc:expr) => {
+            #[test]
+            fn $name() {
+                assert_delivery_funding(
+                    $cross,
+                    $existing,
+                    $vm,
+                    $ecc,
+                    $exchange,
+                    AccountStatus::$status,
+                    $out_vm,
+                    $out_ecc,
+                );
+            }
+        };
+    }
+
+    // Matrix row 1.
+    delivery_funding_test!(
+        delivery_funding_internal_new_vmshell,
+        false,
+        false,
+        10000000000,
+        0,
+        false,
+        AccStateUninit,
+        10000000000,
+        0
+    );
+    // Matrix row 2.
+    delivery_funding_test!(
+        delivery_funding_internal_new_ecc,
+        false,
+        false,
+        0,
+        10000000000,
+        false,
+        AccStateUninit,
+        0,
+        10000000000
+    );
+    // Matrix row 3.
+    delivery_funding_test!(
+        delivery_funding_internal_new_mixed,
+        false,
+        false,
+        10000000000,
+        10000000000,
+        false,
+        AccStateUninit,
+        10000000000,
+        10000000000
+    );
+    // Matrix row 4.
+    delivery_funding_test!(
+        delivery_funding_internal_new_mixed_exchange,
+        false,
+        false,
+        10000000000,
+        10000000000,
+        true,
+        AccStateUninit,
+        20000000000,
+        0
+    );
+    // Matrix row 5.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_new_vmshell,
+        true,
+        false,
+        10000000000,
+        0,
+        false,
+        AccStateNonexist,
+        0,
+        0
+    );
+    // Matrix row 6.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_new_ecc,
+        true,
+        false,
+        0,
+        10000000000,
+        false,
+        AccStateUninit,
+        0,
+        10000000000
+    );
+    // Matrix row 7.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_new_mixed,
+        true,
+        false,
+        10000000000,
+        10000000000,
+        false,
+        AccStateUninit,
+        0,
+        10000000000
+    );
+    // Matrix row 8.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_new_mixed_exchange,
+        true,
+        false,
+        10000000000,
+        10000000000,
+        true,
+        AccStateUninit,
+        10000000000,
+        0
+    );
+    // Matrix row 9.
+    delivery_funding_test!(
+        delivery_funding_internal_repeat_ecc,
+        false,
+        true,
+        0,
+        10000000000,
+        false,
+        AccStateUninit,
+        2000000000,
+        17000000000
+    );
+    // Matrix row 10.
+    delivery_funding_test!(
+        delivery_funding_internal_repeat_vmshell,
+        false,
+        true,
+        10000000000,
+        0,
+        false,
+        AccStateUninit,
+        12000000000,
+        7000000000
+    );
+    // Matrix row 11.
+    delivery_funding_test!(
+        delivery_funding_internal_repeat_mixed,
+        false,
+        true,
+        10000000000,
+        10000000000,
+        false,
+        AccStateUninit,
+        12000000000,
+        17000000000
+    );
+    // Matrix row 12.
+    delivery_funding_test!(
+        delivery_funding_internal_repeat_mixed_exchange,
+        false,
+        true,
+        10000000000,
+        10000000000,
+        true,
+        AccStateUninit,
+        22000000000,
+        7000000000
+    );
+    // Matrix row 13.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_repeat_ecc,
+        true,
+        true,
+        0,
+        10000000000,
+        false,
+        AccStateUninit,
+        2000000000,
+        17000000000
+    );
+    // Matrix row 14.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_repeat_vmshell,
+        true,
+        true,
+        10000000000,
+        0,
+        false,
+        AccStateUninit,
+        2000000000,
+        7000000000
+    );
+    // Matrix row 15.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_repeat_mixed,
+        true,
+        true,
+        10000000000,
+        10000000000,
+        false,
+        AccStateUninit,
+        2000000000,
+        17000000000
+    );
+    // Matrix row 16.
+    delivery_funding_test!(
+        delivery_funding_cross_dapp_repeat_mixed_exchange,
+        true,
+        true,
+        10000000000,
+        10000000000,
+        true,
+        AccStateUninit,
+        12000000000,
+        7000000000
+    );
+
+    #[test]
+    fn delivery_funding_cross_dapp_exchange_keeps_full_ecc_remainder() {
+        let mut value = CurrencyCollection::with_grams(10_000_000_000);
+        let original = VarUInteger32::from_two_u128(1, 123).unwrap();
+        value.set_other_ex(2, &original).unwrap();
+        value.set_other(3, 456).unwrap();
+        let (tx, account) = execute_delivery_funding(true, Account::default(), value, true);
+        assert_eq!(tx.end_status, AccountStatus::AccStateUninit);
+        let balance = account.balance().unwrap();
+        assert_eq!(balance.grams, Grams::from(u64::MAX));
+        let mut expected = original;
+        expected.sub(&VarUInteger32::from(u64::MAX)).unwrap();
+        assert_eq!(balance.get_other(2).unwrap().unwrap(), expected);
+        assert_eq!(balance.get_other(3).unwrap().unwrap(), VarUInteger32::from(456u64));
+    }
+
+    #[test]
+    fn delivery_funding_cross_dapp_retains_other_currency_without_shell() {
+        let mut value = CurrencyCollection::with_grams(10_000_000_000);
+        value.set_other(3, 456).unwrap();
+        let (tx, account) = execute_delivery_funding(true, Account::default(), value, true);
+        assert_eq!(tx.end_status, AccountStatus::AccStateUninit);
+        let balance = account.balance().unwrap();
+        assert!(balance.grams.is_zero());
+        assert_eq!(balance.get_other(3).unwrap().unwrap(), VarUInteger32::from(456u64));
+    }
+
+    #[test]
+    fn delivery_funding_cross_dapp_native_does_not_buy_active_execution() {
+        let code = tvm_assembler::compile_code_to_cell("PUSHINT 1\n").unwrap();
+        let initial = active_account_with_code(7, code);
+        let original = initial.balance().unwrap().clone();
+        let (tx, account) = execute_delivery_funding(
+            true,
+            initial,
+            CurrencyCollection::with_grams(10_000_000_000),
+            false,
+        );
+        assert!(matches!(tx.read_description().unwrap().compute_phase_ref(),
+            Some(TrComputePhase::Skipped(phase)) if phase.reason == ComputeSkipReason::NoGas));
+        assert_eq!(account.status(), AccountStatus::AccStateActive);
+        assert_eq!(account.balance().unwrap(), &original);
+        assert!(tx.total_fees().is_zero().unwrap());
+    }
+
+    #[test]
+    fn delivery_funding_cross_dapp_exchange_pays_active_execution() {
+        let code = tvm_assembler::compile_code_to_cell("PUSHINT 1\n").unwrap();
+        let mut initial = active_account_with_code(7, code);
+        let mut original = initial.balance().unwrap().clone();
+        original.set_other(2, 7_000_000_000).unwrap();
+        initial.set_balance(original.clone());
+        let mut value = CurrencyCollection::with_grams(10_000_000_000);
+        value.set_other(2, 10_000_000_000).unwrap();
+        let (tx, account) = execute_delivery_funding(true, initial, value, true);
+        let phase = vm_phase(&tx);
+        assert!(phase.success, "{phase:?}");
+        assert!(!phase.gas_fees.is_zero());
+        let balance = account.balance().unwrap();
+        let expected = original.grams.as_u128() + 10_000_000_000 - phase.gas_fees.as_u128();
+        assert_eq!(balance.grams.as_u128(), expected);
+        assert_eq!(balance.get_other(2).unwrap().unwrap(), VarUInteger32::from(7_000_000_000u64));
+        assert_eq!(account.status(), AccountStatus::AccStateActive);
     }
 
     fn cross_dapp_exchange_balance(engine_version: semver::Version) -> CurrencyCollection {

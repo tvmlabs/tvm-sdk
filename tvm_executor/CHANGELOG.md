@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Cross-DApp funding messages with `bounce=false` now discard original incoming
+  VMShell before credit and execution. Incoming ECC SHELL is retained, or
+  converted 1:1 to receiver-local VMShell when exchange flag 16 is set (including
+  send flag 17). Existing receiver funds are preserved. VMShell-only funding
+  no longer creates an empty uninitialized destination account.
+
+- Internal VMShell transfers within the destination DApp can now create an
+  uninitialized account instead of treating the missing account as a
+  cross-DApp recipient and burning the transferred value.
+
 ## Version 1.16.85
 
 - Deny ChangeLibrary action when CapSetLibCode is unset
