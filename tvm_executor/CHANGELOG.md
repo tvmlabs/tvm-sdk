@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Engine `1.0.8` enables State V2 execution rules. Earlier engines, including
+  `1.0.7`, retain SDK 3.0.6 balance import, outbound internal-message DApp
+  handling and bounceable timeout behavior, and reject new cross-DApp headers.
+  `ExecuteParams::default()` selects `1.0.8`; callers replaying old blocks must
+  supply their source engine version explicitly.
+
+### Fixed
+
+- Cross-DApp funding messages with `bounce=false` now discard original incoming
+  VMShell before credit and execution. Incoming ECC SHELL is retained, or
+  converted 1:1 to receiver-local VMShell when exchange flag 16 is set (including
+  send flag 17). Existing receiver funds are preserved. VMShell-only funding
+  no longer creates an empty uninitialized destination account.
+
+- Internal VMShell transfers within the destination DApp can now create an
+  uninitialized account instead of treating the missing account as a
+  cross-DApp recipient and burning the transferred value.
+
 ## [3.0.6] - 2026-09-03
 
 ### Fixed

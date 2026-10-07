@@ -185,10 +185,8 @@ pub(crate) fn bypass_json(
         try_replace_hyphens(obj, top_pointer, &p.name)?;
     }
     match p.kind {
-        ParamType::Bytes | ParamType::String => {
-            if p.kind == string_or_bytes {
-                string_to_hex(obj, &pointer).map_err(|e| format!("{}: \"{}\"", e, p.name))?;
-            }
+        ParamType::Bytes | ParamType::String if p.kind == string_or_bytes => {
+            string_to_hex(obj, &pointer).map_err(|e| format!("{}: \"{}\"", e, p.name))?;
         }
         ParamType::Tuple(params) => {
             for p in params {

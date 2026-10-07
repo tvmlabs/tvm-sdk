@@ -141,10 +141,12 @@ pub const TEST_DEBOT: &str = "testDebot";
 pub const TEST_DEBOT_TARGET: &str = "testDebotTarget";
 pub const EXCEPTION: &str = "Exception";
 
+type RequestCallback =
+    dyn Fn(String, u32) -> Pin<Box<dyn Future<Output = ()> + Send + Sync>> + Send + Sync;
+
 struct RequestData {
     sender: Option<Sender<ClientResult<Value>>>,
-    callback:
-        Box<dyn Fn(String, u32) -> Pin<Box<dyn Future<Output = ()> + Send + Sync>> + Send + Sync>,
+    callback: Box<RequestCallback>,
 }
 
 struct TestRuntime {

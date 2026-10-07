@@ -34,7 +34,7 @@ mod tests {
         let state_init = read_file_as_base64("tests/contract/contract.tvc").unwrap();
 
         // Encode
-        let result = encode(&&AccountEncodeArgs {
+        let result = encode(&AccountEncodeArgs {
             state_init: state_init.clone(),
             balance: Some(100000000000),
             last_paid: Some(5000000),

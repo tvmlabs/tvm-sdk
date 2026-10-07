@@ -85,6 +85,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         params: ExecuteParams,
         minted_shell: &mut i128,
     ) -> Result<Transaction> {
+        let state_v2 = crate::uses_state_v2_rules(&params.engine_version);
+        if !state_v2 && in_msg.is_some_and(|message| message.is_cross_dapp()) {
+            fail!(ExecutorError::InvalidExtMessage);
+        }
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
         let mut binding = in_msg.cloned();
@@ -110,6 +114,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 fail!(ExecutorError::InvalidExtMessage)
             }
             CommonMsgInfo::IntMsgInfo(ref hdr) => (hdr.bounce, false),
+            CommonMsgInfo::CrossDappMessageInfo(ref hdr) => (hdr.bounce, false),
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
 
@@ -142,7 +147,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut exchanged = false;
         let mut is_cross_dapp_capped = false;
         if let Some(h) = in_msg.int_header() {
-            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
+            let same_dapp = if state_v2 {
+                h.src_dapp_id() == &params.dapp_id
+            } else {
+                // SDK 3.0.6 treats a missing account as a cross-DApp recipient.
+                Some(h.src_dapp_id()) == account.stuff().is_some().then_some(&params.dapp_id)
+            };
+            if !same_dapp
                 && !(in_msg.have_state_init()
                     && account
                         .state()
@@ -184,6 +195,28 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         msg_balance.set_other(2, new_balance)?;
                     }
                     exchanged = true;
+                }
+            }
+        }
+        // Funding without bounce has no return path. Original cross-DApp
+        // VMShell is not local currency and must not fund receiver execution.
+        // Exchange only the incoming ECC; the account's old funds are
+        // untouched.
+        if let Some(h) = in_msg.cross_dapp_header() {
+            if !h.bounce && !h.bounced {
+                msg_balance.grams = Grams::zero();
+                if h.is_exchange {
+                    if let Some(mut shell) = msg_balance.get_other(2)? {
+                        let exchanged_shell = min(shell.clone(), VarUInteger32::from(u64::MAX));
+                        let converted =
+                            exchanged_shell.value().iter_u64_digits().next().unwrap_or(0);
+                        msg_balance.grams += Grams::from(converted);
+                        shell.sub(&exchanged_shell)?;
+                        // Preserve the complete VarUInteger32 remainder,
+                        // including ECC amounts larger
+                        // than u128::MAX.
+                        msg_balance.set_other_ex(2, &shell)?;
+                    }
                 }
             }
         }
@@ -328,12 +361,19 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &account_address.address().get_bytestring(0),
         );
         let mut stack = Stack::new();
+        let msg_type = int!(match in_msg.header() {
+            CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) =>
+                fail!(ExecutorError::InvalidExtMessage),
+            CommonMsgInfo::IntMsgInfo(_) => 0,
+            CommonMsgInfo::CrossDappMessageInfo(_) => -3,
+            CommonMsgInfo::ExtInMsgInfo(_) => -1,
+        });
         stack
             .push(int!(acc_balance.grams.as_u128()))
             .push(int!(msg_balance.grams.as_u128()))
             .push(StackItem::Cell(in_msg_cell.clone()))
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
-            .push(boolean!(is_ext_msg));
+            .push(msg_type);
         log::debug!(target: "executor", "compute_phase");
         let (compute_ph, actions, new_data) = match self.compute_phase(
             Some(in_msg),
@@ -383,13 +423,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            params.dapp_id
+                            params.dapp_id.clone()
                         }
                     } else {
                         None
                     };
                     let minted_shell_orig = *minted_shell;
-                    match self.action_phase_with_copyleft(
+                    match self.action_phase_with_copyleft_versioned(
                         &mut tr,
                         account,
                         &original_acc_balance,
@@ -404,6 +444,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         minted_shell,
                         need_to_burn,
                         message_src_dapp_id,
+                        &params.engine_version,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             if !phase.success {
@@ -573,7 +614,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         self.timings[2].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
         tr.set_copyleft_reward(copyleft);
-        // tr.write_to_new_cell().unwrap().finalize(max_depth)
         Ok(tr)
     }
 
@@ -637,6 +677,66 @@ mod tests {
 
     fn body(byte: u8) -> SliceData {
         SliceData::load_builder(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn engine_1_0_7_preserves_source_sdk_funding_hashes() {
+        let mut header = InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            address(8),
+            CurrencyCollection::with_grams(1_000_000_000),
+            false,
+        );
+        header.set_src_dapp_id(Some(UInt256::from([9; 32])));
+        let message = Message::with_int_header(header);
+        let mut account = Account::default();
+        let params = crate::ExecuteParams {
+            dapp_id: Some(UInt256::from([9; 32])),
+            engine_version: semver::Version::new(1, 0, 7),
+            ..Default::default()
+        };
+        let tx = OrdinaryTransactionExecutor::new(Default::default())
+            .execute_with_params(Some(&message), &mut account, params, &mut 0)
+            .unwrap();
+        assert_eq!(
+            account.serialize().unwrap().repr_hash().to_hex_string(),
+            "90aec8965afabb16ebc3cb9b408ebae71b618d78788bc80d09843593cac98da4"
+        );
+        assert_eq!(
+            tx.serialize().unwrap().repr_hash().to_hex_string(),
+            "605537b261b2957c49ef6280ec4bc23b7a4260333b5f8ba20541d0bf4efcd171"
+        );
+    }
+
+    #[test]
+    fn cross_dapp_funding_is_accepted_only_by_state_v2_engine() {
+        let mut header = tvm_block::CrossDappMessageHeader::default();
+        header.set_src(address(1));
+        header.set_dst(address(8));
+        header.set_src_dapp_id(UInt256::from([9; 32]));
+        header.set_dst_dapp_id(UInt256::from([10; 32]));
+        header.value.set_other(2, 123).unwrap();
+        let message = Message::with_cross_dapp_header(header);
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        for engine_version in [semver::Version::new(1, 0, 7), crate::STATE_V2_ENGINE_VERSION] {
+            let params = crate::ExecuteParams {
+                engine_version: engine_version.clone(),
+                dapp_id: Some(UInt256::from([10; 32])),
+                ..Default::default()
+            };
+            let mut account = Account::default();
+            let result = executor.execute_with_params(Some(&message), &mut account, params, &mut 0);
+            if engine_version == crate::STATE_V2_ENGINE_VERSION {
+                assert!(result.is_ok(), "{result:?}");
+                assert!(!account.is_none());
+            } else {
+                assert!(matches!(
+                    result.unwrap_err().downcast_ref::<LocalExecutorError>(),
+                    Some(LocalExecutorError::InvalidExtMessage)
+                ));
+                assert!(account.is_none());
+            }
+        }
     }
 
     #[test]
@@ -734,26 +834,30 @@ mod tests {
     }
 
     #[test]
-    fn execute_internal_message_to_nonexistent_account_without_state_init_records_aborted_result() {
+    fn execute_internal_message_to_nonexistent_account_without_state_init_creates_uninit() {
         let executor = OrdinaryTransactionExecutor::new(Default::default());
         let mut account = Account::default();
         let dst = address(8);
         let msg_value = CurrencyCollection::with_grams(1_000_000_000);
-        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+        let dapp_id = UInt256::from([9; 32]);
+        let mut header = InternalMessageHeader::with_addresses_and_bounce(
             address(1),
             dst.clone(),
             msg_value.clone(),
             false,
-        ));
+        );
+        header.set_src_dapp_id(Some(dapp_id.clone()));
+        let msg = Message::with_int_header(header);
+        let mut params = build_actions_execute_params();
+        params.dapp_id = Some(dapp_id);
 
-        let tx = executor
-            .execute_with_params(Some(&msg), &mut account, build_actions_execute_params(), &mut 0)
-            .unwrap();
+        let tx = executor.execute_with_params(Some(&msg), &mut account, params, &mut 0).unwrap();
 
         assert_eq!(tx.account_id(), &dst.address());
         assert_eq!(tx.orig_status, AccountStatus::AccStateNonexist);
-        assert_eq!(tx.end_status, AccountStatus::AccStateNonexist);
-        assert!(account.is_none());
+        assert_eq!(tx.end_status, AccountStatus::AccStateUninit);
+        assert_eq!(account.status(), AccountStatus::AccStateUninit);
+        assert_eq!(account.balance(), Some(&msg_value));
         assert_eq!(tx.total_fees().grams.as_u128(), 0);
 
         let description = match tx.read_description().unwrap() {

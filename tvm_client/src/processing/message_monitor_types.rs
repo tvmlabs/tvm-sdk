@@ -52,17 +52,12 @@ impl From<MessageMonitoringParams> for tvm_client_processing::MessageMonitoringP
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, ApiType, Default)]
 pub enum MessageMonitoringStatus {
     Finalized,
     Timeout,
+    #[default]
     Reserved,
-}
-
-impl Default for MessageMonitoringStatus {
-    fn default() -> Self {
-        Self::Reserved
-    }
 }
 
 impl From<tvm_client_processing::MessageMonitoringStatus> for MessageMonitoringStatus {

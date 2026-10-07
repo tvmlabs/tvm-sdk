@@ -73,7 +73,7 @@ impl ExecutionResult {
         let body = tree_of_cells_into_base64(message.body().map(|s| s.into_cell()).as_ref());
         let boc = base64_encode(message.write_to_bytes().unwrap());
         match message.header() {
-            CommonMsgInfo::IntMsgInfo(_) => {
+            CommonMsgInfo::IntMsgInfo(_) | CommonMsgInfo::CrossDappMessageInfo(_) => {
                 let state_init = message
                     .state_init()
                     .map(|state_init| base64_encode(state_init.write_to_bytes().unwrap()));
