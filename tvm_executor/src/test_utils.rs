@@ -133,7 +133,7 @@ impl Default for BuildActionsExecuteParamsFixture {
             #[cfg(feature = "wasmtime")]
             wasm_cache: BuildActionsWasmCache::default(),
             mvconfig: MVConfig::default(),
-            engine_version: semver::Version::new(1, 0, 3),
+            engine_version: crate::STATE_V2_ENGINE_VERSION,
         }
     }
 }
@@ -232,7 +232,7 @@ mod tests {
         fixture.termination_deadline = termination_deadline;
         fixture.execution_timeout = execution_timeout;
         fixture.mvconfig = mvconfig.clone();
-        fixture.engine_version = semver::Version::new(1, 0, 3);
+        fixture.engine_version = crate::STATE_V2_ENGINE_VERSION;
 
         let params = fixture.build();
 
@@ -272,7 +272,7 @@ mod tests {
             );
         }
         assert_eq!(params.mvconfig, mvconfig);
-        assert_eq!(params.engine_version, semver::Version::new(1, 0, 3));
+        assert_eq!(params.engine_version, crate::STATE_V2_ENGINE_VERSION);
     }
 
     #[cfg(feature = "wasmtime")]

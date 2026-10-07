@@ -85,6 +85,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         params: ExecuteParams,
         minted_shell: &mut i128,
     ) -> Result<Transaction> {
+        let state_v2 = crate::uses_state_v2_rules(&params.engine_version);
+        if !state_v2 && in_msg.is_some_and(|message| message.is_cross_dapp()) {
+            fail!(ExecutorError::InvalidExtMessage);
+        }
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
         let mut binding = in_msg.cloned();
@@ -143,7 +147,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut exchanged = false;
         let mut is_cross_dapp_capped = false;
         if let Some(h) = in_msg.int_header() {
-            if h.src_dapp_id() != &params.dapp_id
+            let same_dapp = if state_v2 {
+                h.src_dapp_id() == &params.dapp_id
+            } else {
+                // SDK 3.0.6 treats a missing account as a cross-DApp recipient.
+                Some(h.src_dapp_id()) == account.stuff().is_some().then_some(&params.dapp_id)
+            };
+            if !same_dapp
                 && !(in_msg.have_state_init()
                     && account
                         .state()
@@ -417,7 +427,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         None
                     };
                     let minted_shell_orig = *minted_shell;
-                    match self.action_phase_with_copyleft(
+                    match self.action_phase_with_copyleft_versioned(
                         &mut tr,
                         account,
                         &original_acc_balance,
@@ -432,6 +442,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         minted_shell,
                         need_to_burn,
                         message_src_dapp_id,
+                        &params.engine_version,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             if !phase.success {
@@ -664,6 +675,66 @@ mod tests {
 
     fn body(byte: u8) -> SliceData {
         SliceData::load_builder(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn engine_1_0_7_preserves_source_sdk_funding_hashes() {
+        let mut header = InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            address(8),
+            CurrencyCollection::with_grams(1_000_000_000),
+            false,
+        );
+        header.set_src_dapp_id(Some(UInt256::from([9; 32])));
+        let message = Message::with_int_header(header);
+        let mut account = Account::default();
+        let params = crate::ExecuteParams {
+            dapp_id: Some(UInt256::from([9; 32])),
+            engine_version: semver::Version::new(1, 0, 7),
+            ..Default::default()
+        };
+        let tx = OrdinaryTransactionExecutor::new(Default::default())
+            .execute_with_params(Some(&message), &mut account, params, &mut 0)
+            .unwrap();
+        assert_eq!(
+            account.serialize().unwrap().repr_hash().to_hex_string(),
+            "90aec8965afabb16ebc3cb9b408ebae71b618d78788bc80d09843593cac98da4"
+        );
+        assert_eq!(
+            tx.serialize().unwrap().repr_hash().to_hex_string(),
+            "605537b261b2957c49ef6280ec4bc23b7a4260333b5f8ba20541d0bf4efcd171"
+        );
+    }
+
+    #[test]
+    fn cross_dapp_funding_is_accepted_only_by_state_v2_engine() {
+        let mut header = tvm_block::CrossDappMessageHeader::default();
+        header.set_src(address(1));
+        header.set_dst(address(8));
+        header.set_src_dapp_id(UInt256::from([9; 32]));
+        header.set_dst_dapp_id(UInt256::from([10; 32]));
+        header.value.set_other(2, 123).unwrap();
+        let message = Message::with_cross_dapp_header(header);
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        for engine_version in [semver::Version::new(1, 0, 7), crate::STATE_V2_ENGINE_VERSION] {
+            let params = crate::ExecuteParams {
+                engine_version: engine_version.clone(),
+                dapp_id: Some(UInt256::from([10; 32])),
+                ..Default::default()
+            };
+            let mut account = Account::default();
+            let result = executor.execute_with_params(Some(&message), &mut account, params, &mut 0);
+            if engine_version == crate::STATE_V2_ENGINE_VERSION {
+                assert!(result.is_ok(), "{result:?}");
+                assert!(!account.is_none());
+            } else {
+                assert!(matches!(
+                    result.unwrap_err().downcast_ref::<LocalExecutorError>(),
+                    Some(LocalExecutorError::InvalidExtMessage)
+                ));
+                assert!(account.is_none());
+            }
+        }
     }
 
     #[test]

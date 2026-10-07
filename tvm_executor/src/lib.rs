@@ -11,6 +11,9 @@
 
 #![cfg_attr(feature = "ci_run", deny(warnings))]
 
+pub mod engine_version;
+pub use engine_version::{STATE_V2_ENGINE_VERSION, uses_state_v2_rules};
+
 pub mod transaction_executor;
 pub use transaction_executor::*;
 

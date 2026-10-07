@@ -202,7 +202,7 @@ impl Default for ExecuteParams {
             #[cfg(feature = "wasmtime")]
             wasm_component_cache: HashMap::new(),
             mvconfig: MVConfig::default(),
-            engine_version: "1.0.0".parse().unwrap(),
+            engine_version: crate::STATE_V2_ENGINE_VERSION,
             check_history_proof_hash: None,
         }
     }
@@ -466,6 +466,9 @@ pub trait TransactionExecutor {
             match msg.header() {
                 CommonMsgInfo::IntMsgInfo(header) => {
                     log::debug!(target: "executor", "msg internal, bounce: {}", header.bounce);
+                    if !crate::uses_state_v2_rules(&params.engine_version) {
+                        is_bounceable_internal = header.bounce;
+                    }
                     if result_acc.is_none() {
                         if let Some(new_acc) = account_from_message(
                             msg,
@@ -816,6 +819,44 @@ pub trait TransactionExecutor {
         need_to_burn: Grams,
         message_src_dapp_id: Option<UInt256>,
     ) -> Result<ActionPhaseResult> {
+        self.action_phase_with_copyleft_versioned(
+            tr,
+            acc,
+            original_acc_balance,
+            acc_balance,
+            msg_remaining_balance,
+            compute_phase_fees,
+            actions_cell,
+            new_data,
+            my_addr,
+            is_special,
+            available_credit,
+            minted_shell,
+            need_to_burn,
+            message_src_dapp_id,
+            &crate::STATE_V2_ENGINE_VERSION,
+        )
+    }
+
+    fn action_phase_with_copyleft_versioned(
+        &self,
+        tr: &mut Transaction,
+        acc: &mut Account,
+        original_acc_balance: &CurrencyCollection,
+        acc_balance: &mut CurrencyCollection,
+        msg_remaining_balance: &mut CurrencyCollection,
+        compute_phase_fees: &Grams,
+        actions_cell: Cell,
+        new_data: Option<Cell>,
+        my_addr: &MsgAddressInt,
+        is_special: bool,
+        available_credit: i128,
+        minted_shell: &mut i128,
+        need_to_burn: Grams,
+        message_src_dapp_id: Option<UInt256>,
+        engine_version: &semver::Version,
+    ) -> Result<ActionPhaseResult> {
+        let state_v2 = crate::uses_state_v2_rules(engine_version);
         let mut need_to_reserve = need_to_burn.as_u64_quiet();
         let mut out_msgs = vec![];
         let mut acc_copy = acc.clone();
@@ -902,6 +943,9 @@ pub trait TransactionExecutor {
             );
             let mut init_balance = acc_remaining_balance.clone();
             let err_code = match std::mem::replace(action, OutAction::None) {
+                OutAction::SendMsg { mode: _, out_msg } if !state_v2 && out_msg.is_cross_dapp() => {
+                    RESULT_CODE_UNKNOWN_OR_INVALID_ACTION
+                }
                 OutAction::SendMsg { mode, mut out_msg } => {
                     if (mode & SENDMSG_ALL_BALANCE) != 0 {
                         out_msgs0.push((i, mode, out_msg));
@@ -1108,12 +1152,16 @@ pub trait TransactionExecutor {
             }
         }
         for (i, mode, mut out_msg) in out_msgs0.into_iter() {
-            if let Err(err_code) =
-                normalize_and_validate_out_msg_dapp_ids(&mut out_msg, &message_src_dapp_id)
-            {
-                if process_err_code(err_code, i, &mut phase)? {
-                    return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+            if state_v2 {
+                if let Err(err_code) =
+                    normalize_and_validate_out_msg_dapp_ids(&mut out_msg, &message_src_dapp_id)
+                {
+                    if process_err_code(err_code, i, &mut phase)? {
+                        return Ok(ActionPhaseResult::new(phase, vec![], copyleft_reward));
+                    }
                 }
+            } else if let Some(header) = out_msg.int_header_mut() {
+                header.set_src_dapp_id(message_src_dapp_id.clone());
             }
             if let Some(header) = out_msg.ext_out_header_v2_mut() {
                 header.set_src_dapp_id(message_src_dapp_id.clone());
@@ -2985,7 +3033,7 @@ mod tests {
                 &mut root,
                 ExecuteParams {
                     dapp_id: Some(dst_dapp),
-                    engine_version: semver::Version::new(1, 0, 3),
+                    engine_version: crate::STATE_V2_ENGINE_VERSION,
                     ..Default::default()
                 },
             )
@@ -3364,7 +3412,90 @@ mod tests {
         stack
     }
 
+    #[test]
+    fn legacy_internal_send_preserves_source_sdk_message_hash() {
+        let address = |wc, byte| {
+            MsgAddressInt::with_standart(None, wc, UInt256::from([byte; 32]).into()).unwrap()
+        };
+        for engine_version in [semver::Version::new(1, 0, 7), crate::STATE_V2_ENGINE_VERSION] {
+            let sender = address(0, 8);
+            let balance = CurrencyCollection::with_grams(1_000_000_000);
+            let mut account = Account::uninit(sender.clone(), 0, 0, balance.clone());
+            let mut tx = Transaction::with_address_and_status(sender.address(), account.status());
+            let mut header = InternalMessageHeader::with_addresses(
+                sender.clone(),
+                address(-1, 2),
+                CurrencyCollection::with_grams(100_000_000),
+            );
+            header.set_dst_dapp_id(Some(UInt256::from([0x99; 32])));
+            let mut actions = OutActions::default();
+            actions.push_back(OutAction::new_send(0, Message::with_int_header(header)));
+            let result = OrdinaryTransactionExecutor::new(Default::default())
+                .action_phase_with_copyleft_versioned(
+                    &mut tx,
+                    &mut account,
+                    &balance,
+                    &mut balance.clone(),
+                    &mut CurrencyCollection::default(),
+                    &Grams::zero(),
+                    actions.serialize().unwrap(),
+                    None,
+                    &sender,
+                    false,
+                    0,
+                    &mut 0,
+                    Grams::zero(),
+                    Some(UInt256::from([0x31; 32])),
+                    &engine_version,
+                )
+                .unwrap();
+            if engine_version == crate::STATE_V2_ENGINE_VERSION {
+                assert!(!result.phase.success);
+                assert_eq!(result.phase.result_code, RESULT_CODE_INCORRECT_DST_ADDRESS);
+                assert!(result.messages.is_empty());
+            } else {
+                assert!(result.phase.success);
+                assert_eq!(result.phase.result_code, 0);
+                assert_eq!(result.messages.len(), 1);
+                assert_eq!(
+                    result.messages[0].serialize().unwrap().repr_hash().to_hex_string(),
+                    "da33c0225bb172df375ced10fe3b6edcf2b7d9756ec3700dd44e6f36a05ffe2f"
+                );
+            }
+        }
+    }
+
     fn run_single_send_action(out_msg: Message, mode: u8) -> ActionPhaseResult {
+        run_single_send_action_versioned(out_msg, mode, &crate::STATE_V2_ENGINE_VERSION)
+    }
+
+    #[test]
+    fn legacy_action_phase_rejects_cross_dapp_headers_including_send_all() {
+        let mut header = CrossDappMessageHeader::default();
+        header.set_src(address(8));
+        header.set_dst(masterchain_address(2));
+        header.set_src_dapp_id(UInt256::from([0x31; 32]));
+        header.set_dst_dapp_id(UInt256::from([0x32; 32]));
+        header.value = CurrencyCollection::with_grams(100_000_000);
+        let message = Message::with_cross_dapp_header(header);
+        assert!(run_single_send_action(message.clone(), 0).phase.success);
+        for mode in [0, SENDMSG_ALL_BALANCE] {
+            let result = run_single_send_action_versioned(
+                message.clone(),
+                mode,
+                &semver::Version::new(1, 0, 7),
+            );
+            assert!(!result.phase.success);
+            assert_eq!(result.phase.result_code, RESULT_CODE_UNKNOWN_OR_INVALID_ACTION);
+            assert!(result.messages.is_empty());
+        }
+    }
+
+    fn run_single_send_action_versioned(
+        out_msg: Message,
+        mode: u8,
+        engine_version: &semver::Version,
+    ) -> ActionPhaseResult {
         let executor = DummyExecutor::new();
         let mut account = active_account_with_code(8, byte_cell(0xaa));
         let mut tx = Transaction::with_address_and_status(address(8).address(), account.status());
@@ -3377,7 +3508,7 @@ mod tests {
         actions.push_back(OutAction::new_send(mode, out_msg));
 
         executor
-            .action_phase_with_copyleft(
+            .action_phase_with_copyleft_versioned(
                 &mut tx,
                 &mut account,
                 &original_balance,
@@ -3392,6 +3523,7 @@ mod tests {
                 &mut minted_shell,
                 Grams::zero(),
                 Some(UInt256::with_array([0x31; 32])),
+                engine_version,
             )
             .unwrap()
     }
@@ -3447,7 +3579,7 @@ mod tests {
         fixture.vm_execution_is_block_related = vm_execution_is_block_related.clone();
         fixture.block_collation_was_finished = block_collation_was_finished.clone();
         fixture.mvconfig = mvconfig;
-        fixture.engine_version = semver::Version::new(1, 0, 3);
+        fixture.engine_version = crate::STATE_V2_ENGINE_VERSION;
         let params = fixture.build();
 
         let code = tvm_assembler::compile_code_to_cell(
@@ -3663,6 +3795,7 @@ mod tests {
             executor.build_contract_info(&acc_balance, &address(7), 0, 0, 0, UInt256::default());
         let stack = executor.build_stack(Some(&msg), &account);
         let mut fixture = BuildActionsExecuteParamsFixture::regular();
+        fixture.engine_version = semver::Version::new(1, 0, 7);
         fixture.execution_timeout = Some(Duration::ZERO);
 
         let (phase, _, _) = executor
@@ -3710,12 +3843,8 @@ mod tests {
 
     #[test]
     fn node_params_engine_version_reaches_cross_dapp_exchange() {
-        let pre_1_0_3_balance = cross_dapp_exchange_balance(semver::Version::new(1, 0, 2));
-        let post_1_0_3_balance = cross_dapp_exchange_balance(semver::Version::new(1, 0, 3));
-
-        assert_eq!(currency_other_u64(&pre_1_0_3_balance, 2), 123);
-        assert_eq!(currency_other_u64(&post_1_0_3_balance, 2), 0);
-        assert_eq!(post_1_0_3_balance.grams.as_u128() - pre_1_0_3_balance.grams.as_u128(), 123);
+        let balance = cross_dapp_exchange_balance(crate::STATE_V2_ENGINE_VERSION);
+        assert_eq!(currency_other_u64(&balance, 2), 0);
     }
 
     #[test]

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Engine `1.0.8` enables State V2 execution rules. Earlier engines, including
+  `1.0.7`, retain SDK 3.0.6 balance import, outbound internal-message DApp
+  handling and bounceable timeout behavior, and reject new cross-DApp headers.
+  `ExecuteParams::default()` selects `1.0.8`; callers replaying old blocks must
+  supply their source engine version explicitly.
+
 ### Fixed
 
 - Cross-DApp funding messages with `bounce=false` now discard original incoming
