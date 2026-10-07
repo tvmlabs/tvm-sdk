@@ -89,8 +89,14 @@ impl Error {
         error(ErrorCode::Bip39InvalidEntropy, format!("Invalid bip39 entropy: {}", err))
     }
 
-    pub fn bip39_invalid_phrase<E: Display>(err: E) -> ClientError {
-        error(ErrorCode::Bip39InvalidPhrase, format!("Invalid bip39 phrase: {}", err))
+    /// Takes the phrase itself rather than a rendered reason, so that the
+    /// wallet behind it can never be spelled out in the message: like a secret
+    /// key, it is stripped down to a recognisable stub.
+    pub fn bip39_invalid_phrase(phrase: &str) -> ClientError {
+        error(
+            ErrorCode::Bip39InvalidPhrase,
+            format!("Invalid bip39 phrase [{}]", strip_secret(phrase)),
+        )
     }
 
     pub fn bip32_invalid_key<E: Display>(err: E) -> ClientError {

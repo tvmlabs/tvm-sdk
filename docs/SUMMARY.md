@@ -31,6 +31,7 @@
 ## Acki Nacki SDK
 
 * [About Acki Nacki SDK](acki-nacki-sdk/untitled.md)
+* [Migrating to 3.x (dapp_id)](MIGRATION-3.x.md)
 * [Quick Start TVM SDK JavaScript](acki-nacki-sdk/quick-start-tvm-sdk-javascript.md)
 * [Client Libraries JS Examples](https://github.com/tvmlabs/sdk-examples)
 * [Core Library Reference](acki-nacki-sdk/types-and-methods/README.md)
@@ -107,6 +108,11 @@
 
 * [How to work with Application Objects in binding generators](for-binding-developers/app_objects.md)
 * [JSON Interface to TVM Client](for-binding-developers/json_interface.md)
+
+## Design decisions
+
+* [One wire format (v3), no version probing](adr/v3-only-wire-format.md)
+* [Endpoint version probing and v2/v3 fallback (superseded)](adr/endpoint-probing.md)
 
 ## Links
 

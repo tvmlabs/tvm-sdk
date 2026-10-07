@@ -344,10 +344,10 @@ impl StateParser {
     }
 
     fn for_zero_state() -> Self {
-        // let mandatory_params = [0, 1, 2, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18,
-        //     20, 21, 22, 23, 24, 25, 28, 29, 31, 34];
-        // let mandatory_params = mandatory_params.iter().fold(0, |s, p| a |= 1 << p);
-        // println!("0x{:X}", mandatory_params);
+        // let mandatory_params = [0, 1, 2, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17,
+        // 18,     20, 21, 22, 23, 24, 25, 28, 29, 31, 34];
+        // let mandatory_params = mandatory_params.iter().fold(0, |s, p| a |= 1
+        // << p); println!("0x{:X}", mandatory_params);
         Self {
             state: ShardStateUnsplit::with_ident(ShardIdent::masterchain()),
             extra: McStateExtra::default(),

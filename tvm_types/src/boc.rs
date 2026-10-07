@@ -313,8 +313,8 @@ impl BocWriterStack {
         let mut stack: Vec<(u32, StackItem)> = Vec::with_capacity(32);
 
         // vec of cell sizes
-        // todo we can write cell size after cell. So at the end of file we will have
-        // the size of last cell
+        // todo we can write cell size after cell. So at the end of file we will
+        // have the size of last cell
         let mut cell_sizes: Vec<u16> = Vec::<u16>::with_capacity(FILE_BUFFER_LEN);
         // total size of all cells and its references
         let mut total_size: u64 = 0;
@@ -616,8 +616,9 @@ impl<'a, S: OrderedCellsStorage> BocWriter<'a, S> {
                     if cell.virtualization() != 0 {
                         fail!("Virtual cells serialization is prohibited");
                     }
-                    // self.cells may change at some point between pushing pre-phase
-                    // and popping it off the stack, so repeat the check
+                    // self.cells may change at some point between pushing
+                    // pre-phase and popping it off the
+                    // stack, so repeat the check
                     if self.cells.contains_hash(&cell.repr_hash())? {
                         continue;
                     }
@@ -935,8 +936,8 @@ impl<'a> BocReader<'a> {
 
         Self::precheck_cells_tree_len(&header, src.position(), data.len() as u64, false)?;
 
-        // Index processing - read existing index or traverse all vector to create own
-        // index2
+        // Index processing - read existing index or traverse all vector to
+        // create own index2
         #[cfg(not(target_family = "wasm"))]
         let now1 = std::time::Instant::now();
         let mut index2 = vec![];
@@ -1191,8 +1192,8 @@ impl<'a> BocReader<'a> {
             MAX_DATA_BYTES +
             MAX_REFERENCES_COUNT * ref_size;
         let min_cell_size = 2; // descr bytes only
-        // every raw cell except roots must be referenced at least once, hence the
-        // formula
+        // every raw cell except roots must be referenced at least once, hence
+        // the formula
         let tot_cells_size_minimal =
             (cells_count - big_cells_count) * (min_cell_size + ref_size) - ref_size * roots_count;
         if tot_cells_size - big_cells_size < tot_cells_size_minimal {

@@ -28,13 +28,23 @@ use crate::encoding::base64_decode;
 use crate::encoding::hex_decode;
 use crate::error::ClientResult;
 
+/// Reduces a secret to a stub short enough not to give the secret away but
+/// long enough to recognise which one it was.
+///
+/// Counts and truncates by characters, not bytes: seed phrases come from the
+/// BIP-39 dictionaries, which include Japanese, Korean and both Chinese
+/// wordlists, so the input is routinely multi-byte. Slicing on a byte index
+/// panicked whenever the cut fell inside a code point, turning a mistyped
+/// phrase into an abort instead of an `Invalid bip39 phrase` error.
 pub(crate) fn strip_secret(secret: &str) -> String {
     const SECRET_SHOW_LEN: usize = 8;
-    if secret.len() <= SECRET_SHOW_LEN {
+    let char_count = secret.chars().count();
+    if char_count <= SECRET_SHOW_LEN {
         return format!(r#""{}""#, secret);
     }
 
-    format!(r#""{}..." ({} chars)"#, &secret[..SECRET_SHOW_LEN], secret.len(),)
+    let shown: String = secret.chars().take(SECRET_SHOW_LEN).collect();
+    format!(r#""{}..." ({} chars)"#, shown, char_count)
 }
 
 //----------------------------------------------------------------------------------------- KeyPair

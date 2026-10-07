@@ -53,7 +53,10 @@ pub async fn run_command(
 ) -> Result<(), String> {
     let config = &full_config.config;
     let (address, abi_path) = if is_alternative {
-        let (address, abi, _) = contract_data_from_matches_or_config_alias(matches, full_config)?;
+        // `runx` has no `--keys`, and the keys this returns are discarded
+        // here anyway.
+        let (address, abi, _) =
+            contract_data_from_matches_or_config_alias(matches, full_config, None)?;
         (address.unwrap(), abi.unwrap())
     } else {
         (
@@ -142,10 +145,8 @@ async fn run(
     let params = if is_alternative {
         unpack_alternative_params(matches, &abi_path, method, config).await?
     } else {
-        matches.value_of("PARAMS").unwrap().to_string()
+        load_params(matches.value_of("PARAMS").unwrap())?
     };
-
-    let params = load_params(&params)?;
 
     let expire_at = config.lifetime + now();
     let header = FunctionHeader { expire: Some(expire_at), ..Default::default() };

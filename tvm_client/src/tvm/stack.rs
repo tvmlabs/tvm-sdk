@@ -106,17 +106,19 @@ pub fn deserialize_items(values: Iter<Value>) -> ClientResult<Vec<StackItem>> {
 
 fn serialize_integer_data(data: &IntegerData) -> String {
     let hex = data.to_str_radix(16);
-    // all negative numbers and positive numbers less than u128::MAX are encoded as
-    // decimal
+    // all negative numbers and positive numbers less than u128::MAX are encoded
+    // as decimal
     if hex.starts_with('-') || hex.len() <= 32 {
         data.to_str_radix(10)
     } else {
-        // positive numbers between u128::MAX and u256::MAX are padded to 64 hex symbols
+        // positive numbers between u128::MAX and u256::MAX are padded to 64 hex
+        // symbols
         if hex.len() <= 64 {
             format!("0x{:0>64}", hex)
         } else {
-            // positive numbers between u256::MAX and u512::MAX are padded to 128 symbols
-            // positive numbers above u512::MAX are not padded
+            // positive numbers between u256::MAX and u512::MAX are padded to
+            // 128 symbols positive numbers above u512::MAX are not
+            // padded
             format!("0x{:0>128}", hex)
         }
     }

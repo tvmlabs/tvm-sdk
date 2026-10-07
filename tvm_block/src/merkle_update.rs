@@ -462,9 +462,10 @@ impl MerkleUpdate {
         new_update_cell.into_cell()
     }
 
-    // If old_cell's child contains in new_cells - it transformed to pruned branch
-    // cell,   else - recursion call for the child.
-    // If any child is pruned branch (or contains pruned branch among their subtree)
+    // If old_cell's child contains in new_cells - it transformed to pruned
+    // branch cell,   else - recursion call for the child.
+    // If any child is pruned branch (or contains pruned branch among their
+    // subtree)
     //   - all other skipped childs are transformed to pruned branches
     //   else - skip this cell (return None)
     fn traverse_old_on_create(

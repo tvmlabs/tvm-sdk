@@ -388,9 +388,9 @@ impl Contract {
         Ok(SdkMessage { id, serialized_message: body, message: msg, address: dst_address })
     }
 
-    // Packs given inputs by abi into Message struct without sign and returns data
-    // to sign. Sign should be then added with `add_sign_to_message` function
-    // Works with json representation of input and abi.
+    // Packs given inputs by abi into Message struct without sign and returns
+    // data to sign. Sign should be then added with `add_sign_to_message`
+    // function Works with json representation of input and abi.
     pub fn get_call_message_bytes_for_signing(
         dst_address: MsgAddressInt,
         src_address: MsgAddressExt,
@@ -488,9 +488,10 @@ impl Contract {
         Self::create_int_deploy_message(src, None, image, workchain_id, ihr_disabled, bounce, value)
     }
 
-    // Packs given image and input into Message struct without signature and returns
-    // data to sign. Signature should be then added with `add_sign_to_message`
-    // function Works with json representation of input and abi.
+    // Packs given image and input into Message struct without signature and
+    // returns data to sign. Signature should be then added with
+    // `add_sign_to_message` function Works with json representation of
+    // input and abi.
     pub fn get_deploy_message_bytes_for_signing(
         params: &FunctionCallSet,
         image: ContractImage,
@@ -546,8 +547,8 @@ impl Contract {
         Self::serialize_message(&msg).map(|(msg_data, _id)| msg_data)
     }
 
-    // Add sign to message, returned by `get_deploy_message_bytes_for_signing` or
-    // `get_run_message_bytes_for_signing` function.
+    // Add sign to message, returned by `get_deploy_message_bytes_for_signing`
+    // or `get_run_message_bytes_for_signing` function.
     // Returns serialized message and identifier.
     pub fn add_sign_to_message(
         abi: &str,
@@ -582,8 +583,8 @@ impl Contract {
         Ok(SdkMessage { id, address, serialized_message: body, message })
     }
 
-    // Add sign to message, returned by `get_deploy_message_bytes_for_signing` or
-    // `get_run_message_bytes_for_signing` function.
+    // Add sign to message, returned by `get_deploy_message_bytes_for_signing`
+    // or `get_run_message_bytes_for_signing` function.
     // Returns serialized message and identifier.
     pub fn attach_signature(
         abi: &AbiContract,

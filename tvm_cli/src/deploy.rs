@@ -8,6 +8,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
+use std::str::FromStr;
+
+use tvm_block::MsgAddressInt;
 use tvm_client::abi::Abi;
 use tvm_client::abi::CallSet;
 use tvm_client::abi::DeploySet;
@@ -41,15 +44,9 @@ pub async fn deploy_contract(
     wc: i32,
     is_fee: bool,
     alias: Option<&str>,
-    dst_dapp_id: Option<&str>,
 ) -> Result<(), String> {
     let config = &full_config.config;
     let tvm_client = create_client_verbose(config)?;
-
-    // dapp_id is always required on the CLI (including --fee). The SDK
-    // ignores it on the wire for legacy v2 servers, but it must be
-    // supplied explicitly here.
-    require_dst_dapp_id(dst_dapp_id)?;
 
     if !is_fee && !config.is_json {
         println!("Deploying...");
@@ -72,18 +69,29 @@ pub async fn deploy_contract(
         }
     }
 
-    let result = send_message(tvm_client.clone(), msg, None, config, None, dst_dapp_id).await?;
+    // dst_dapp_id (== account_id for a self-rooted deploy) must reach the wire
+    // before `--wc != 0` is ever checked, so this parses `addr` with
+    // `MsgAddressInt` rather than calling `strip_workchain` here: unlike
+    // `strip_workchain`, it never rejects a non-zero workchain, so the send
+    // below still happens first. See
+    // `deploy_with_non_zero_workchain_still_sends_before_failing` in
+    // `tvm_cli/tests/deploy_dapp_id.rs`, which guards this ordering.
+    let account_id = MsgAddressInt::from_str(&addr)
+        .map_err(|e| format!("failed to parse deploy address {addr}: {e}"))?
+        .address()
+        .as_hex_string();
+    let result =
+        send_message(tvm_client.clone(), msg, None, config, None, Some(&account_id)).await?;
 
     let mut map: serde_json::Map<String, serde_json::Value> =
         serde_json::from_value(result.clone())
             .map_err(|e| format!("failed to convert result: {e}"))?;
 
     // For tvm-cli deploys the new contract roots its own dapp, so the
-    // dapp_id equals the account_id. Surface this in `deployed_at` using
-    // the extended `dapp_id::account_id` form (both halves are the same
-    // bare 64-hex account id, with the workchain prefix stripped).
-    let account_id = strip_workchain(&addr)?;
-    let deployed_at = format!("{account_id}::{account_id}");
+    // dapp_id equals the account_id. `strip_workchain` also enforces
+    // workchain 0, which the `dapp_id::account_id` form requires.
+    let printable_account_id = strip_workchain(&addr)?;
+    let deployed_at = format!("{printable_account_id}::{printable_account_id}");
 
     if !config.is_json {
         if !config.async_call {
@@ -165,17 +173,6 @@ pub async fn prepare_deploy_message(
     .await
 }
 
-/// Validates that `--dst-dapp-id` was supplied as a 64-character hex
-/// dapp_id. Required for every deploy regardless of node version (use all
-/// zeros for a self-rooted dapp).
-fn require_dst_dapp_id(dst_dapp_id: Option<&str>) -> Result<String, String> {
-    let dapp_id = dst_dapp_id.unwrap_or("");
-    if !crate::helpers::is_hex64(dapp_id) {
-        return Err("--dst-dapp-id is required (pass a 64-character hex dapp_id)".to_string());
-    }
-    Ok(dapp_id.to_string())
-}
-
 pub async fn prepare_deploy_message_params(
     tvc_bytes: &[u8],
     abi: Abi,
@@ -221,58 +218,4 @@ pub async fn prepare_deploy_message_params(
         },
         address,
     ))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::require_dst_dapp_id;
-
-    const VALID: &str = "0000000000000000000000000000000000000000000000000000000000000000";
-
-    #[test]
-    fn require_dst_dapp_id_accepts_64_hex() {
-        assert_eq!(require_dst_dapp_id(Some(VALID)).unwrap(), VALID);
-    }
-
-    #[test]
-    fn require_dst_dapp_id_accepts_uppercase_hex() {
-        let upper = "A".repeat(64);
-        assert_eq!(require_dst_dapp_id(Some(&upper)).unwrap(), upper);
-    }
-
-    #[test]
-    fn require_dst_dapp_id_rejects_missing() {
-        assert!(require_dst_dapp_id(None).is_err());
-    }
-
-    #[test]
-    fn require_dst_dapp_id_rejects_empty() {
-        assert!(require_dst_dapp_id(Some("")).is_err());
-    }
-
-    #[test]
-    fn require_dst_dapp_id_rejects_short() {
-        assert!(require_dst_dapp_id(Some("dead")).is_err());
-    }
-
-    #[test]
-    fn require_dst_dapp_id_rejects_non_hex() {
-        // Exactly 64 chars but non-hex content, so the hex check (not the
-        // length check) is what rejects it.
-        let bad = "z".repeat(64);
-        assert_eq!(bad.len(), 64);
-        assert!(require_dst_dapp_id(Some(&bad)).is_err());
-    }
-
-    #[test]
-    fn require_dst_dapp_id_rejects_63_chars() {
-        let short = "a".repeat(63);
-        assert!(require_dst_dapp_id(Some(&short)).is_err());
-    }
-
-    #[test]
-    fn require_dst_dapp_id_rejects_65_chars() {
-        let long = "a".repeat(65);
-        assert!(require_dst_dapp_id(Some(&long)).is_err());
-    }
 }

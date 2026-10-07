@@ -217,8 +217,8 @@ fn test_pinned_cache() {
         .boc_ref;
     assert_eq!(ref3, ref1);
 
-    // unpin pin1 and check that boc2 which had only this pin is removed from cache
-    // but boc1 which had both pins is still in cache
+    // unpin pin1 and check that boc2 which had only this pin is removed from
+    // cache but boc1 which had both pins is still in cache
     cache_unpin.call(ParamsOfBocCacheUnpin { boc_ref: None, pin: pin1.clone() }).unwrap();
 
     let boc = cache_get.call(ParamsOfBocCacheGet { boc_ref: ref1.clone() }).unwrap();
@@ -235,7 +235,8 @@ fn test_pinned_cache() {
         .unwrap()
         .boc_ref;
 
-    // unpin pin2 with particular ref and that only this ref is removed from cache
+    // unpin pin2 with particular ref and that only this ref is removed from
+    // cache
     cache_unpin
         .call(ParamsOfBocCacheUnpin { boc_ref: Some(ref4.clone()), pin: pin2.clone() })
         .unwrap();

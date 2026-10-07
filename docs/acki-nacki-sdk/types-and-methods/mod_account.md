@@ -41,7 +41,8 @@ function get_account_sync(
 NOTE: Sync version is available only for `lib-node` binding.
 ### Parameters
 - `account_id`: _string_ – Account ID as a 64-character hex string (no 0x, no workchain).
-- `dapp_id`: _string_ – Dapp ID as a 64-character hex string (no 0x). Required when the server supports the v3 API (info.version >= "1.0.0").
+- `dapp_id`: _string_ – Dapp ID as a 64-character hex string (no 0x).
+<br>Required.
 
 
 ### Result
@@ -142,7 +143,8 @@ type ParamsOfGetAccount = {
 }
 ```
 - `account_id`: _string_ – Account ID as a 64-character hex string (no 0x, no workchain).
-- `dapp_id`: _string_ – Dapp ID as a 64-character hex string (no 0x). Required when the server supports the v3 API (info.version >= "1.0.0").
+- `dapp_id`: _string_ – Dapp ID as a 64-character hex string (no 0x).
+<br>Required.
 
 
 ## ResultOfGetAccount

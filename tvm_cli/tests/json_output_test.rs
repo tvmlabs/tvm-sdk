@@ -143,8 +143,8 @@ fn test_json_output_3() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     fs::remove_file("tests/json_test1.key")?;
     run_command_and_decode_json(r#"genphrase"#)?;
-    // run_command_and_decode_json(r#"genpubkey "jar denial ozone coil heart tattoo
-    // science stay wire about act equip""#)?;
+    // run_command_and_decode_json(r#"genpubkey "jar denial ozone coil heart
+    // tattoo science stay wire about act equip""#)?;
     let key_path = "json3_test.key";
     let _ = generate_phrase_and_key(key_path)?;
     run_command_and_decode_json(
@@ -251,8 +251,8 @@ fn test_json_output_5() -> Result<(), Box<dyn std::error::Error>> {
         "genaddr tests/account.boc --abi tests/samples/wallet.abi.json --setkey {}",
         GIVER_V2_KEY
     ))?;
-    // run_command_and_decode_json(r#"genpubkey "jar denial ozone coil heart tattoo
-    // science stay wire about act""#)?;
+    // run_command_and_decode_json(r#"genpubkey "jar denial ozone coil heart
+    // tattoo science stay wire about act""#)?;
     run_command_and_decode_json(r#"getconfig 1"#)?;
     run_command_and_decode_json(
         r#"message 0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94 sendansaction {"dest":"0:841288ed3b55d9cdafa806807f02a0ae0c169aa5edfe88a789a6482429756a94","value":1000000000,"bounce":true} --abi tests/samples/wallet.abi.json --raw"#,
@@ -261,8 +261,11 @@ fn test_json_output_5() -> Result<(), Box<dyn std::error::Error>> {
     run_command_and_decode_json(&format!("multisig deploy -k {} -l 1000000000", GIVER_V2_KEY))?;
     run_command_and_decode_json(r#"nodeid --pubkey cde8fbf86c"#)?;
     run_command_and_decode_json(r#"nodeid --keypair tests/account.boc"#)?;
-    // run_command_and_decode_json(&format!("proposal vote 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313 {}", GIVER_V2_KEY))?;
-    // run_command_and_decode_json(r#"proposal decode 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313"#)?;
+    // run_command_and_decode_json(&format!("proposal vote
+    // 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1 12313
+    // {}", GIVER_V2_KEY))?; run_command_and_decode_json(r#"proposal decode
+    // 0:28a3738f08f5b3410e92aab20f702d64160e2891aaaed881f27d59ff518078d1
+    // 12313"#)?;
     let command = format!("run --abi tests/samples/fakeDepool.abi.json {} getDat {{}}", GIVER_ADDR);
     run_command_and_decode_json(&command)?;
     let command =

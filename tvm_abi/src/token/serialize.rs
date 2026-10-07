@@ -97,9 +97,10 @@ impl TokenValue {
                 // if not enough bits or refs - continue chain
                 packed_cells.push(value);
             } else if value_refs > 0 && remaining_refs == value_refs {
-                // if refs strictly fit into cell we should decide if we can put them into
-                // current cell or to the next cell: if all remaining values can
-                // fit into current cell, then use current, if not - continue
+                // if refs strictly fit into cell we should decide if we can put
+                // them into current cell or to the next cell:
+                // if all remaining values can fit into current
+                // cell, then use current, if not - continue
                 // chain
                 let (refs, bits) = Self::get_remaining(&values, abi_version);
                 // in ABI v1 last ref is always used for chaining
@@ -270,8 +271,8 @@ impl TokenValue {
         Ok(builder)
     }
 
-    // creates dictionary with indexes of an array items as keys and items as values
-    // and prepends dictionary to cell
+    // creates dictionary with indexes of an array items as keys and items as
+    // values and prepends dictionary to cell
     fn put_array_into_dictionary(
         param_type: &ParamType,
         array: &[TokenValue],

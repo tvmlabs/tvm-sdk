@@ -81,20 +81,29 @@ const GLOBAL_CONFIG_PATH: &str = ".tvm-cli.global.conf.json";
 
 // todo: rewrite `config.url`, `config.endpoints[]`, `endpoints_map{}` and
 // `path`
+/// Where the config lives when none was named. Pure: it is also the serde
+/// default for `FullConfig::path`, so it runs for a config file the caller
+/// chose, and computing a path is not a licence to move a file.
 pub fn default_config_name() -> String {
     match env::current_dir() {
-        Ok(dir) => {
-            let new = dir.join(PathBuf::from(CONFIG_BASE_NAME));
-            let old = dir.join(PathBuf::from(DEPRECATED_CONFIG_BASE_NAME));
-
-            if !new.exists() && old.exists() {
-                let _ = std::fs::rename(&old, &new);
-            }
-
-            new.to_string_lossy().into_owned()
-        }
+        Ok(dir) => dir.join(PathBuf::from(CONFIG_BASE_NAME)).to_string_lossy().into_owned(),
         Err(_) => CONFIG_BASE_NAME.to_string(),
     }
+}
+
+/// The same path, having renamed a `tonos-cli.conf.json` left in the current
+/// directory to the current name. Only for the one caller that is about to use
+/// the default: no other run has any business migrating it.
+pub fn migrated_default_config_name() -> String {
+    let name = default_config_name();
+    if let Ok(dir) = env::current_dir() {
+        let new = dir.join(PathBuf::from(CONFIG_BASE_NAME));
+        let old = dir.join(PathBuf::from(DEPRECATED_CONFIG_BASE_NAME));
+        if !new.exists() && old.exists() {
+            let _ = std::fs::rename(&old, &new);
+        }
+    }
+    name
 }
 
 pub fn global_config_path() -> String {
@@ -1119,24 +1128,28 @@ macro_rules! print_args {
 pub fn load_params(params: &str) -> Result<String, String> {
     if params.find('{').is_none() {
         std::fs::read_to_string(params)
-            .map_err(|e| format!("failed to load params from file: {}", e))
+            .map_err(|e| format!("failed to load params from file {}: {}", params, e))
     } else {
         Ok(params.to_string())
     }
 }
 
+/// Resolves `<PARAMS>` to the json the command will encode. Every form the
+/// help promises is accepted: the json itself, a list of `--name value` pairs,
+/// or the name of a file holding the json -- on the command line and in the
+/// `parameters` config field alike.
 pub async fn unpack_alternative_params(
     matches: &ArgMatches,
     abi_path: &str,
     method: &str,
     config: &Config,
 ) -> Result<String, String> {
-    if let Some(params) = matches.values_of("PARAMS") {
-        let params = params.collect();
-        parse_params(params, abi_path, method, config).await
+    let params = if let Some(params) = matches.values_of("PARAMS") {
+        parse_params(params.collect(), abi_path, method, config).await?
     } else {
-        Ok(config.parameters.clone().unwrap_or("{}".to_string()))
-    }
+        config.parameters.clone().unwrap_or("{}".to_string())
+    };
+    load_params(&params)
 }
 
 pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Result<i32, String> {
@@ -1148,9 +1161,15 @@ pub fn wc_from_matches_or_config(matches: &ArgMatches, config: &Config) -> Resul
         .unwrap_or(config.wc))
 }
 
+/// `keys` is the running command's `--keys`, or `None` where it defines none:
+/// `callx` and `debug call` have one, `runx` and `debug run` share this
+/// resolution without it, and clap aborts in debug builds when asked for an id
+/// the running command does not register. Keys from the config file or the
+/// alias are unaffected.
 pub fn contract_data_from_matches_or_config_alias(
     matches: &ArgMatches,
     full_config: &FullConfig,
+    keys: Option<&str>,
 ) -> Result<(Option<String>, Option<String>, Option<String>), String> {
     let address = matches
         .value_of("ADDRESS")
@@ -1159,7 +1178,7 @@ pub fn contract_data_from_matches_or_config_alias(
         .ok_or(
             "ADDRESS is not defined. Supply it in the config file or command line.".to_string(),
         )?;
-    let (address, abi, keys) = if full_config.aliases.contains_key(&address) {
+    let (address, abi, alias_keys) = if full_config.aliases.contains_key(&address) {
         let alias = full_config.aliases.get(&address).unwrap();
         (alias.address.clone(), alias.abi_path.clone(), alias.key_path.clone())
     } else {
@@ -1173,11 +1192,7 @@ pub fn contract_data_from_matches_or_config_alias(
         .ok_or(
             "ABI file is not defined. Supply it in the config file or command line.".to_string(),
         )?;
-    let keys = matches
-        .value_of("KEYS")
-        .map(|s| s.to_string())
-        .or(full_config.config.keys_path.clone())
-        .or(keys);
+    let keys = keys.map(|s| s.to_string()).or(full_config.config.keys_path.clone()).or(alias_keys);
     Ok((address, Some(abi), keys))
 }
 

@@ -75,8 +75,8 @@ pub(crate) fn fetch_target_abi_version(
     let code = json_value["code"].as_str().ok_or(Error::debot_has_no_code())?.to_owned();
     let result = get_compiler_version(ton.clone(), ParamsOfGetCompilerVersion { code });
 
-    // If If DeBot's code does not contain version or SDK failed to read version,
-    // then set empty string.
+    // If If DeBot's code does not contain version or SDK failed to read
+    // version, then set empty string.
     let version = result.map(|r| r.version.unwrap_or_default()).unwrap_or_default();
     let mut iter = version.split(' ');
     let dabi_version = if let Some("sol") = iter.next() {

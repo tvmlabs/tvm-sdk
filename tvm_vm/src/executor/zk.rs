@@ -155,7 +155,8 @@ impl Bn254FrElementWrapper {
             buf = &buf[1..];
         }
 
-        // If the value is '0' then just return a slice of length 1 of the final byte
+        // If the value is '0' then just return a slice of length 1 of the final
+        // byte
         if buf.is_empty() { &self.0[31..] } else { buf }
     }
 

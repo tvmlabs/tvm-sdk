@@ -16,7 +16,6 @@
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::AtomicI64;
-use std::sync::atomic::AtomicU32;
 use std::sync::atomic::AtomicU64;
 use std::sync::atomic::Ordering;
 
@@ -37,7 +36,6 @@ pub(crate) struct Endpoint {
     pub query_url: String,
     pub subscription_url: String,
     pub ip_address: Option<String>,
-    pub server_version: AtomicU32,
     pub server_time_delta: AtomicI64,
     pub server_latency: AtomicU64,
     pub next_latency_detection_time: AtomicU64,
@@ -50,7 +48,6 @@ impl Clone for Endpoint {
             query_url: self.query_url.clone(),
             subscription_url: self.subscription_url.clone(),
             ip_address: self.ip_address.clone(),
-            server_version: AtomicU32::new(self.server_version.load(Ordering::Relaxed)),
             server_time_delta: AtomicI64::new(self.server_time_delta.load(Ordering::Relaxed)),
             server_latency: AtomicU64::new(self.server_latency.load(Ordering::Relaxed)),
             next_latency_detection_time: AtomicU64::new(
@@ -61,7 +58,7 @@ impl Clone for Endpoint {
     }
 }
 
-const QUERY_INFO: &str = "?query=%7Binfo%7Bversion%20time%20latency%20rempEnabled%7D%7D";
+const QUERY_INFO: &str = "?query=%7Binfo%7Btime%20latency%20rempEnabled%7D%7D";
 
 const HTTP_PROTOCOL: &str = "http://";
 const HTTPS_PROTOCOL: &str = "https://";
@@ -155,7 +152,6 @@ impl Endpoint {
             subscription_url,
             ip_address,
             server_time_delta: AtomicI64::default(),
-            server_version: AtomicU32::default(),
             server_latency: AtomicU64::default(),
             next_latency_detection_time: AtomicU64::default(),
             remp_enabled: AtomicBool::default(),
@@ -189,22 +185,6 @@ impl Endpoint {
         info_request_time: u64,
         info: &Value,
     ) -> ClientResult<()> {
-        if let Some(version) = info["version"].as_str() {
-            let mut parts: Vec<&str> = version.split('.').collect();
-            parts.resize(3, "0");
-            let parse_part = |i: usize| {
-                parts[i].parse::<u32>().map_err(|err| {
-                    Error::invalid_server_response(format!(
-                        "Can not parse version {}: {}",
-                        version, err
-                    ))
-                })
-            };
-            self.server_version.store(
-                parse_part(0)? * 1000000 + parse_part(1)? * 1000 + parse_part(2)?,
-                Ordering::Relaxed,
-            );
-        }
         if let Some(server_time) = info["time"].as_i64() {
             let now = client_env.now_ms();
             self.server_time_delta

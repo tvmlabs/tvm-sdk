@@ -85,7 +85,8 @@ pub fn prepare_message_params(
     // the SDK's message encoder. The dapp_id is consumed only by the
     // SDK call layer; the on-chain destination address never carries it.
     let sdk = SdkAddress::from_str(addr).map_err(|e| format!("invalid address `{addr}`: {e}"))?;
-    // The strict parser guarantees account_id is bare 64-hex; prepend workchain 0.
+    // The strict parser guarantees account_id is bare 64-hex; prepend workchain
+    // 0.
     let dst = format!("0:{}", sdk.account_id);
 
     Ok(ParamsOfEncodeMessage {
@@ -253,7 +254,8 @@ mod tests {
 
     // Minimal valid ABI JSON. prepare_message_params only stores the Abi and
     // does not parse it (the encoder, which we never call here, would), so a
-    // trivial document is sufficient and keeps the test free of file/network IO.
+    // trivial document is sufficient and keeps the test free of file/network
+    // IO.
     const MINIMAL_ABI: &str = r#"{"ABI version":2,"functions":[],"events":[],"data":[]}"#;
 
     #[test]

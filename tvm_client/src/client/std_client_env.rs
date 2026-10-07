@@ -230,7 +230,8 @@ impl ClientEnv {
             request = request.body(body);
         }
 
-        // let response = request.send().await.map_err(Error::http_request_send_error)?;
+        // let response =
+        // request.send().await.map_err(Error::http_request_send_error)?;
         let result = request.send().await;
         if let Err(e) = result {
             return Err(Error::http_request_send_error(Self::flatten_error(e, url)));

@@ -65,6 +65,7 @@ use crate::FullConfig;
 use crate::config::Config;
 use crate::contract_data_from_matches_or_config_alias;
 use crate::crypto::load_keypair;
+use crate::crypto::mask_key_source;
 use crate::decode::msg_printer::serialize_msg;
 use crate::deploy::prepare_deploy_message;
 use crate::helpers::SdkAddress;
@@ -78,7 +79,6 @@ use crate::helpers::has_log_file;
 use crate::helpers::is_json_mode;
 use crate::helpers::load_abi;
 use crate::helpers::load_debug_info;
-use crate::helpers::load_params;
 use crate::helpers::now_ms;
 use crate::helpers::query_account_field;
 use crate::helpers::query_with_limit;
@@ -235,9 +235,13 @@ pub fn create_debug_command<'b>() -> Command<'b> {
         .long("--full_trace")
         .help("Flag that changes trace to full version.");
 
+    // No conflict with `--tvc` here: `debug message` takes `--boc` without
+    // `--tvc`, and clap asserts in debug builds when a `conflicts_with` names
+    // an argument the command does not register. `debug run` and `debug call`
+    // are the two that define both, and their `--tvc` states the conflict from
+    // its own side.
     let boc_arg = Arg::new("BOC")
         .long("--boc")
-        .conflicts_with("TVC")
         .help("Flag that changes behavior of the command to work with the saved account state (account BOC).");
 
     let tx_id_arg = Arg::new("TX_ID")
@@ -307,28 +311,35 @@ pub fn create_debug_command<'b>() -> Command<'b> {
                 .help("Message in Base64 or path to file with message."),
         );
 
-    let run_cmd = Command::new("run")
-        .about("Play getter locally with trace")
-        .arg(output_arg.clone())
-        .arg(dbg_info_arg.clone())
-        .arg(address_arg.clone())
-        .arg(method_arg.clone())
-        .arg(params_arg.clone())
-        .arg(abi_arg.clone())
-        .arg(full_trace_arg.clone())
-        .arg(decode_abi_arg.clone())
-        .arg(boc_arg.clone())
-        .arg(Arg::new("TVC")
-            .long("--tvc")
-            .conflicts_with("BOC")
-            .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC)."))
-        .arg(Arg::new("ACCOUNT_ADDRESS")
-            .takes_value(true)
-            .long("--tvc_address")
-            .help("Account address for account constructed from TVC.")
-            .requires("TVC"))
-        .arg(now_arg.clone())
-        .arg(config_path_arg.clone());
+    // `run` and `call` take the same arguments, but each has to be built from
+    // its own name: clap keeps the id assigned by `Command::new`, so a renamed
+    // clone stays addressable only under the original name and every lookup by
+    // the new one fails.
+    let debug_run_args = |name: &'static str| {
+        Command::new(name)
+            .arg(output_arg.clone())
+            .arg(dbg_info_arg.clone())
+            .arg(address_arg.clone())
+            .arg(method_arg.clone())
+            .arg(params_arg.clone())
+            .arg(abi_arg.clone())
+            .arg(full_trace_arg.clone())
+            .arg(decode_abi_arg.clone())
+            .arg(boc_arg.clone())
+            .arg(Arg::new("TVC")
+                .long("--tvc")
+                .conflicts_with("BOC")
+                .help("Flag that changes behavior of the command to work with the saved contract state (stateInit TVC)."))
+            .arg(Arg::new("ACCOUNT_ADDRESS")
+                .takes_value(true)
+                .long("--tvc_address")
+                .help("Account address for account constructed from TVC.")
+                .requires("TVC"))
+            .arg(now_arg.clone())
+            .arg(config_path_arg.clone())
+    };
+
+    let run_cmd = debug_run_args("run").about("Play getter locally with trace");
 
     let deploy_cmd = Command::new("deploy")
         .about("Play deploy locally with trace")
@@ -365,9 +376,7 @@ pub fn create_debug_command<'b>() -> Command<'b> {
             "Do not fetch account from the network, but create dummy account with big balance.",
         ));
 
-    let call_cmd = run_cmd
-        .clone()
-        .name("call")
+    let call_cmd = debug_run_args("call")
         .about("Play call locally with trace")
         .arg(sign_arg.clone())
         .arg(update_arg.clone());
@@ -544,7 +553,8 @@ async fn debug_transaction_command(
         contract_path,
         config_path,
         &tx_id,
-        Some(generate_callback(Some(matches), config)),
+        // `debug transaction` and `debug account` define no `--abi`.
+        Some(generate_callback(Some(TraceArgs { matches, abi: None }), config)),
         || init_debug_logger(trace_path),
         dump_mask,
         config,
@@ -552,7 +562,7 @@ async fn debug_transaction_command(
     )
     .await?;
 
-    decode_messages(&tr, load_decode_abi(matches, config), config).await?;
+    decode_messages(&tr, load_decode_abi(matches, None, config), config).await?;
     if !config.is_json {
         println!("Log saved to {}.", trace_path);
     }
@@ -622,7 +632,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
         get_blockchain_config(config, config_path).await?,
         &mut account,
         msg.as_ref(),
-        Some(matches),
+        Some(TraceArgs { matches, abi: None }),
         trans.now() as u64 * 1000,
         block_lt,
         trans.logical_time(),
@@ -643,7 +653,7 @@ async fn replay_transaction_command(matches: &ArgMatches, config: &Config) -> Re
 
     match result_trans {
         Ok(result_trans) => {
-            decode_messages(&result_trans, load_decode_abi(matches, config), config).await?;
+            decode_messages(&result_trans, load_decode_abi(matches, None, config), config).await?;
             if !config.is_json {
                 println!("Execution finished.");
             }
@@ -667,11 +677,16 @@ fn parse_now(matches: &ArgMatches) -> Result<u64, String> {
     })
 }
 
-fn load_decode_abi(matches: &ArgMatches, config: &Config) -> Option<String> {
+/// `abi` is the running command's `--abi`, or `None` where it defines none:
+/// `debug transaction`, `debug account`, `debug replay` and `debug message`
+/// decode with `--decode_abi` or the config file alone, and clap aborts in
+/// debug builds when asked for an id the running command does not define.
+fn load_decode_abi(matches: &ArgMatches, abi: Option<String>, config: &Config) -> Option<String> {
     let abi = matches
         .value_of("DECODE_ABI")
         .map(|s| s.to_owned())
-        .or(abi_from_matches_or_config(matches, config).ok());
+        .or(abi)
+        .or_else(|| config.abi_path.clone());
     match abi {
         Some(path) => match std::fs::read_to_string(path) {
             Ok(res) => Some(res),
@@ -691,7 +706,14 @@ async fn debug_call_command(
     full_config: &FullConfig,
     is_getter: bool,
 ) -> Result<(), String> {
-    let (input, opt_abi, sign) = contract_data_from_matches_or_config_alias(matches, full_config)?;
+    // Of the two commands this handler serves, only `debug call` defines
+    // `--keys` and `--update`; `debug run` has neither, and clap aborts in
+    // debug builds when asked for an id the running command does not define.
+    // `is_getter` is what tells the two apart.
+    let call_only_args = !is_getter;
+    let keys = call_only_args.then(|| matches.value_of("KEYS")).flatten();
+    let (input, opt_abi, sign) =
+        contract_data_from_matches_or_config_alias(matches, full_config, keys)?;
     let input = input.as_ref();
     let output = Some(matches.value_of("LOG_PATH").unwrap_or(DEFAULT_TRACE_PATH));
     let method = Some(
@@ -714,6 +736,7 @@ async fn debug_call_command(
     );
 
     if !full_config.config.is_json {
+        let sign = sign.as_deref().map(mask_key_source);
         print_args!(input, method, params, sign, opt_abi, output);
     }
 
@@ -736,7 +759,7 @@ async fn debug_call_command(
     let now = parse_now(matches)?;
 
     let addr = account.get_addr().unwrap().to_string();
-    let params = load_params(&params.unwrap())?;
+    let params = params.unwrap();
     let message = if false {
         prepare_message(
             ton_client.clone(),
@@ -800,7 +823,7 @@ async fn debug_call_command(
         bc_config,
         &mut acc_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: matches.value_of("ABI").map(|s| s.to_owned()) }),
         now,
         now,
         now,
@@ -809,12 +832,17 @@ async fn debug_call_command(
     )
     .await;
 
+    let executed = trans.is_ok();
     let mut out_res = vec![];
     let msg_string = match trans {
         Ok(trans) => {
             out_res = decode_messages(
                 &trans,
-                load_decode_abi(matches, &full_config.config),
+                load_decode_abi(
+                    matches,
+                    matches.value_of("ABI").map(|s| s.to_owned()),
+                    &full_config.config,
+                ),
                 &full_config.config,
             )
             .await?;
@@ -831,7 +859,10 @@ async fn debug_call_command(
         }
     };
 
-    if matches.is_present("UPDATE_BOC") {
+    // Only what executed is worth writing back: on the failure path the
+    // account state is the one this run started from, and announcing it as
+    // updated is worse than not writing it.
+    if executed && call_only_args && matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
             .map_err(|e| format!("Failed to construct account: {}", e))?
             .write_to_file(input)
@@ -895,7 +926,7 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
         get_blockchain_config(config, matches.value_of("CONFIG_PATH")).await?,
         &mut acc_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: None }),
         now,
         now,
         now,
@@ -906,13 +937,14 @@ async fn debug_message_command(matches: &ArgMatches, config: &Config) -> Result<
 
     let (msg_string, error) = match result {
         Ok(trans) => {
-            decode_messages(&trans, load_decode_abi(matches, config), config).await?;
+            decode_messages(&trans, load_decode_abi(matches, None, config), config).await?;
             ("Execution finished.".to_string(), None)
         }
         Err(e) => (format!("Execution failed: {}", e), Some(e)),
     };
 
-    if matches.is_present("UPDATE_BOC") {
+    // As in `debug call`: nothing executed, nothing to write back.
+    if error.is_none() && matches.is_present("UPDATE_BOC") {
         Account::construct_from_cell(acc_root)
             .map_err(|e| format!("Failed to construct account: {}", e))?
             .write_to_file(input)
@@ -947,13 +979,14 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
     );
     let wc = wc_from_matches_or_config(matches, config)?;
     if !config.is_json {
+        let sign = sign.as_deref().map(mask_key_source);
         print_args!(tvc, params, sign, opt_abi, output, debug_info);
     }
 
     let (msg, address) = prepare_deploy_message(
         tvc.unwrap(),
         opt_abi.as_ref().unwrap(),
-        &load_params(&params.unwrap())?,
+        &params.unwrap(),
         sign,
         wc,
         config,
@@ -999,7 +1032,7 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
         get_blockchain_config(config, matches.value_of("CONFIG_PATH")).await?,
         &mut acc_root,
         Some(&message),
-        Some(matches),
+        Some(TraceArgs { matches, abi: matches.value_of("ABI").map(|s| s.to_owned()) }),
         now,
         now,
         now,
@@ -1018,7 +1051,12 @@ async fn debug_deploy_command(matches: &ArgMatches, config: &Config) -> Result<(
                     format!("Failed to serialize account after debug deploy {:?}: {e}", output)
                 })?;
             }
-            decode_messages(&trans, load_decode_abi(matches, config), config).await?;
+            decode_messages(
+                &trans,
+                load_decode_abi(matches, matches.value_of("ABI").map(|s| s.to_owned()), config),
+                config,
+            )
+            .await?;
             "Execution finished.".to_string()
         }
         Err(e) => {
@@ -1075,7 +1113,8 @@ pub async fn decode_messages(
         //     Err(err) => err.to_string().into()
         // };
         // let _in_msg = match tr.read_in_msg() {
-        //     Ok(Some(in_msg)) => base64_encode(in_msg.write_to_bytes().unwrap()),
+        //     Ok(Some(in_msg)) =>
+        // base64_encode(in_msg.write_to_bytes().unwrap()),
         //     _ => String::new()
         // };
         let result = json!({
@@ -1203,7 +1242,7 @@ pub async fn execute_debug_params(debug_params: &DebugParams<'_>) -> Result<Tran
         debug_params.bc_config.clone(),
         &mut account_root,
         message.as_ref(),
-        debug_params.matches,
+        None,
         debug_params.time_in_ms,
         debug_params.block_lt,
         debug_params.last_tr_lt,
@@ -1217,7 +1256,7 @@ pub async fn execute_debug(
     bc_config: BlockchainConfig,
     account_root: &mut Cell,
     message: Option<&Message>,
-    matches: Option<&ArgMatches>,
+    trace: Option<TraceArgs<'_>>,
     time_in_ms: u64,
     block_lt: u64,
     last_tr_lt: u64,
@@ -1256,7 +1295,7 @@ pub async fn execute_debug(
         block_lt,
         last_tr_lt: Arc::new(AtomicU64::new(last_tr_lt)),
         debug: true,
-        trace_callback: Some(generate_callback(matches, tonos_config)),
+        trace_callback: Some(generate_callback(trace, tonos_config)),
         ..ExecuteParams::default()
     };
     let tr = executor.execute_with_libs_and_params(message, account_root, params).map_err(|e| {
@@ -1316,6 +1355,18 @@ fn trace_callback_minimal(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) 
     log::info!(target: "tvm", "{} {} {} {} {}", info.step, info.gas_used, info.gas_cmd, info.cmd_str, position);
 }
 
+/// What the tracing callback is allowed to read from the running command. It
+/// reads `--dbg_info` and `--full_trace`, which every command that traces
+/// registers, out of `matches`; the ABI it also wants comes from the caller,
+/// because `debug transaction`, `debug account`, `debug replay`,
+/// `debug message` and `test ticktock` share the callback without registering
+/// `--abi`, and clap aborts in debug builds when asked for an id the running
+/// command does not define.
+pub struct TraceArgs<'a> {
+    pub matches: &'a ArgMatches,
+    pub abi: Option<String>,
+}
+
 fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<String, String> {
     let debug_info = debug_info.ok_or_else(String::new)?;
     let cell_hash = info.cmd_code.cell().repr_hash();
@@ -1330,15 +1381,15 @@ fn get_position(info: &EngineTraceInfo, debug_info: Option<&DbgInfo>) -> Result<
 }
 
 fn generate_callback(
-    matches: Option<&ArgMatches>,
+    trace: Option<TraceArgs<'_>>,
     config: &Config,
 ) -> Arc<dyn Fn(&Engine, &EngineTraceInfo) + Send + Sync> {
-    if let Some(matches) = matches {
-        let opt_abi = abi_from_matches_or_config(matches, config);
+    if let Some(TraceArgs { matches, abi }) = trace {
+        let opt_abi = abi.or_else(|| config.abi_path.clone());
         let debug_info = matches
             .value_of("DBG_INFO")
             .map(|s| s.to_string())
-            .or(if opt_abi.is_ok() { load_debug_info(opt_abi.as_ref().unwrap()) } else { None });
+            .or_else(|| opt_abi.as_deref().and_then(load_debug_info));
         let debug_info = if let Some(dbg_path) = debug_info {
             match File::open(&dbg_path) {
                 Ok(file) => match serde_json::from_reader(file) {
@@ -1629,7 +1680,8 @@ async fn make_sequence_diagram(
                             own_index, out_index, out_id, out_name, tr_id, tr_name).unwrap();
                         last_tr_id = Some(tr_id);
                     } else {
-                        // transaction spawned by the message is out of the scope
+                        // transaction spawned by the message is out of the
+                        // scope
                         writeln!(
                             output,
                             "{} ->> {} : m:[[{url_message_prefix}{} {}]]",
@@ -1671,9 +1723,12 @@ async fn make_sequence_diagram(
     Ok("{{}}".to_owned())
 }
 
+/// No `matches`: the tracing callback reads `--dbg_info` and `--full_trace`
+/// from the running command, and the only caller that builds these params is
+/// `run()` in run.rs, serving `run` and `runx`. Neither registers either
+/// argument, so filling the field in would abort them in debug builds.
 pub struct DebugParams<'a> {
     pub config: &'a Config,
-    pub matches: Option<&'a ArgMatches>,
     pub bc_config: BlockchainConfig,
     pub account: &'a str,
     pub message: Option<&'a str>,
@@ -1688,7 +1743,6 @@ impl<'a> DebugParams<'a> {
         DebugParams {
             config,
             bc_config,
-            matches: None,
             account: "",
             message: None,
             time_in_ms: 0,
@@ -1720,4 +1774,90 @@ pub async fn debug_error(e: &ClientError, debug_params: DebugParams<'_>) -> Resu
         println!("Debug finished.");
     }
     Err(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use clap::ArgMatches;
+    use clap::Command;
+    use testdir::testdir;
+
+    use super::create_debug_command;
+    use super::load_decode_abi;
+    use crate::config::Config;
+
+    /// The matches of `debug message`, which registers `--decode_abi` and no
+    /// `--abi`. `argv` continues `["tvm-cli", "debug", "message"]`.
+    fn debug_message_matches(argv: &[&str]) -> ArgMatches {
+        let mut full = vec!["tvm-cli", "debug", "message"];
+        full.extend_from_slice(argv);
+        let matches = Command::new("tvm-cli")
+            .subcommand(create_debug_command())
+            .try_get_matches_from(full)
+            .expect("debug message takes a message");
+        matches
+            .subcommand_matches("debug")
+            .and_then(|m| m.subcommand_matches("message"))
+            .expect("message is a debug subcommand")
+            .clone()
+    }
+
+    fn abi_file(dir: &Path, name: &str) -> String {
+        let path = dir.join(name);
+        std::fs::write(&path, format!("{{\"marker\": \"{name}\"}}")).unwrap();
+        path.to_string_lossy().into_owned()
+    }
+
+    /// `debug message` registers no `--abi`. Asking clap for an id the running
+    /// command does not define aborts, so a regression there fails by panicking
+    /// rather than by returning the wrong value. The CLI test
+    /// `debug_message_does_not_look_up_an_abi_it_does_not_define` covers the
+    /// call site; this pins what the resolution itself does.
+    #[test]
+    fn load_decode_abi_reads_nothing_when_no_abi_is_named() {
+        let matches = debug_message_matches(&["msg"]);
+
+        assert_eq!(load_decode_abi(&matches, None, &Config::default()), None);
+    }
+
+    #[test]
+    fn load_decode_abi_prefers_decode_abi_to_every_other_source() {
+        let dir = testdir!();
+        let decode_abi = abi_file(&dir, "decode.abi.json");
+        let command_abi = abi_file(&dir, "command.abi.json");
+        let config =
+            Config { abi_path: Some(abi_file(&dir, "config.abi.json")), ..Config::default() };
+        let matches = debug_message_matches(&["--decode_abi", &decode_abi, "msg"]);
+
+        let loaded = load_decode_abi(&matches, Some(command_abi), &config);
+
+        assert_eq!(loaded, Some(r#"{"marker": "decode.abi.json"}"#.to_owned()));
+    }
+
+    #[test]
+    fn load_decode_abi_prefers_the_command_abi_to_the_config() {
+        let dir = testdir!();
+        let command_abi = abi_file(&dir, "command.abi.json");
+        let config =
+            Config { abi_path: Some(abi_file(&dir, "config.abi.json")), ..Config::default() };
+        let matches = debug_message_matches(&["msg"]);
+
+        let loaded = load_decode_abi(&matches, Some(command_abi), &config);
+
+        assert_eq!(loaded, Some(r#"{"marker": "command.abi.json"}"#.to_owned()));
+    }
+
+    #[test]
+    fn load_decode_abi_falls_back_to_the_config() {
+        let dir = testdir!();
+        let config =
+            Config { abi_path: Some(abi_file(&dir, "config.abi.json")), ..Config::default() };
+        let matches = debug_message_matches(&["msg"]);
+
+        let loaded = load_decode_abi(&matches, None, &config);
+
+        assert_eq!(loaded, Some(r#"{"marker": "config.abi.json"}"#.to_owned()));
+    }
 }

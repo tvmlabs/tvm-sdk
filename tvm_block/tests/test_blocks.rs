@@ -309,7 +309,8 @@ fn test_real_block(in_path: &Path) -> Block {
     let block = Block::construct_from_cell(root_cell.clone()).unwrap();
 
     // TODO: Restore output
-    // println!("Block:\n{}\n\n", serde_json::to_string_pretty(&block).unwrap());
+    // println!("Block:\n{}\n\n",
+    // serde_json::to_string_pretty(&block).unwrap());
 
     // block.extra().in_msg_descr().iterate(|mut in_msg| {
     //     if let Some(msg) = in_msg.message_mut() {

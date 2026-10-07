@@ -232,7 +232,8 @@ impl LabelReader {
 
     pub fn read_label(cursor: &mut SliceData, mut max: usize) -> Result<SliceData> {
         // note: in case of max is 0 it is normal to read bits from the slice
-        // but if you mistakely pass 0 to this function it causes undefined behavoiur
+        // but if you mistakely pass 0 to this function it causes undefined
+        // behavoiur
         if cursor.is_empty() {
             Ok(SliceData::default())
         } else if !cursor.get_next_bit()? {
@@ -255,7 +256,8 @@ impl LabelReader {
         self.already_read = true;
         let mut len = 0;
         // note: in case of max is 0 it is normal to read bits from the slice
-        // but if you mistakely pass 0 to this function it causes undefined behavoiur
+        // but if you mistakely pass 0 to this function it causes undefined
+        // behavoiur
         if self.cursor.is_empty() {
         } else if !self.cursor.get_next_bit()? {
             while self.cursor.get_next_bit()? {
@@ -790,7 +792,8 @@ fn merge_nodes<T: HashmapType + ?Sized>(
     let mut data = loop {
         // find next common segment
         let (prefix, key1, key2) = SliceData::common_prefix(&label1, &label2);
-        // segment could be empty so next branch starts after previous in next bit
+        // segment could be empty so next branch starts after previous in next
+        // bit
         let prefix = prefix.unwrap_or_default();
         // calculate new_bit_len for next level
         // note: fork gets one bit
@@ -927,7 +930,8 @@ fn dict_combine_with<T: HashmapType + ?Sized>(
                 // second should not stop here
                 fail!(ExceptionCode::DictionaryError)
             } else {
-                // slice edge of first and add items from first to second, then make new fork
+                // slice edge of first and add items from first to second, then
+                // make new fork
                 let mut next = cursor2.reference(next_index)?;
                 let other = cursor2.reference(1 - next_index)?;
                 dict_combine_with::<T>(&mut next, bit_len2 - 1, cursor1, rem1, bit_len1)?;
@@ -1694,7 +1698,8 @@ where
     if result == &HashmapFilterSplitResult::Cancel {
         return Ok((0, None, None));
     }
-    // load edge to slice or cancel operation if fail (it is only can be root case)
+    // load edge to slice or cancel operation if fail (it is only can be root
+    // case)
     let mut cursor = SliceData::load_cell_ref(&cell)?;
     // current key length
     let key_length = key.length_in_bits();
@@ -1709,13 +1714,15 @@ where
         match func(&key, cursor)? {
             // item stay in original tree
             HashmapFilterSplitResult::Stay => {
-                // println!("stay with key: {:x}", SliceData::load_bitstring(key.clone())?);
+                // println!("stay with key: {:x}",
+                // SliceData::load_bitstring(key.clone())?);
                 let next = ForkComponent { cell, key, remainder };
                 return Ok((SPLIT_RESULT_CHANGED_SECOND, Some(next), None));
             }
             // item moved to the new tree
             HashmapFilterSplitResult::Move => {
-                // println!("move with key: {:x}", SliceData::load_bitstring(key1.clone())?);
+                // println!("move with key: {:x}",
+                // SliceData::load_bitstring(key1.clone())?);
                 let next = ForkComponent { cell, key, remainder };
                 return Ok((SPLIT_RESULT_CHANGED_FIRST, None, Some(next)));
             }

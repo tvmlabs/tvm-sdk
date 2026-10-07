@@ -254,8 +254,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     let external_root_cert = &raw[start_cert + 2..start_cert + 2 + certificate_len]; // let external_root_cert = &raw[26..26+certificate_len];
     let data = &raw[start_cert + 2 + certificate_len..]; // let data = &raw[26+certificate_len..];
 
-    // the first output byte indicates the success of the process: if it equals to 1
-    // then success then follows the public keys from json
+    // the first output byte indicates the success of the process: if it equals
+    // to 1 then success then follows the public keys from json
     // if the first bytes equals to 0 then unsuccess and the error code follows
     let timestamp_shortened = aes256gcm::uint32(&timestamp_bytes);
     let timestamp = timestamp_shortened as i64;
@@ -304,8 +304,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
     let app_request_len =
         256 * data[handshake_end_index + 3] as usize + data[handshake_end_index + 4] as usize + 5;
-    // let application_request = &data[handshake_end_index..handshake_end_index +
-    // app_request_len]; // let application_request:[u8;100] =
+    // let application_request = &data[handshake_end_index..handshake_end_index
+    // + app_request_len]; // let application_request:[u8;100] =
     // data[handshake_end_index..handshake_end_index+100].try_into().unwrap();
 
     let mut records_received: u8 = 1;
@@ -331,7 +331,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         ..handshake_end_index + app_request_len + encr_ticket_len]; // let encrypted_ticket: &[u8] = &data[handshake_end_index + app_request_len..handshake_end_index + app_request_len +540];// let encrypted_ticket:[u8;540] = data[handshake_end_index+100..handshake_end_index+100+540].try_into().unwrap(); // len of ticket is 524
 
     // if ... {
-    // return vec![0u8, 3u8, 42u8]; // some trouble with encrypted session ticket
+    // return vec![0u8, 3u8, 42u8]; // some trouble with encrypted session
+    // ticket
     //}
 
     // let http_response:[u8;1601] =
@@ -385,7 +386,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
     let derived_secret = derive_secret_result.unwrap();
 
-    // let handshake_secret = hkdf_sha256::extract(&shared_secret, &derived_secret);
+    // let handshake_secret = hkdf_sha256::extract(&shared_secret,
+    // &derived_secret);
     let handshake_extract_result = hkdf_sha256::extract(&shared_secret, &derived_secret);
     if handshake_extract_result.is_err() {
         return handshake_extract_result.err().unwrap();
@@ -409,8 +411,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
     let s_hs_secret = s_hs_secret_result.unwrap();
 
-    // let server_handshake_key: [u8; 16] = hkdf_expand_label(&s_hs_secret, "key",
-    // &[], 16).try_into().unwrap();
+    // let server_handshake_key: [u8; 16] = hkdf_expand_label(&s_hs_secret,
+    // "key", &[], 16).try_into().unwrap();
     let handshake_key_result = hkdf_expand_label(&s_hs_secret, "key", &[], 16);
     if handshake_key_result.is_err() {
         return handshake_key_result.err().unwrap();
@@ -442,7 +444,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
     let decrypted_server_handshake = DecryptedRecord { 0: server_handshake_message };
 
-    // ============= begin make application keys ===================================
+    // ============= begin make application keys
+    // ===================================
     let handshake_messages = format::concatenate(&[
         &client_hello[5..],
         &server_hello[5..],
@@ -466,8 +469,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     // let c_ap_secret = derive_secret(&master_secret, "c ap traffic",
     // &handshake_messages); let client_application_key: [u8;16] =
     // hkdf_expand_label(&c_ap_secret, "key", &[], 16).try_into().unwrap();
-    // let client_application_iv: [u8;12] = hkdf_expand_label(&c_ap_secret, "iv",
-    // &[], 12).try_into().unwrap();
+    // let client_application_iv: [u8;12] = hkdf_expand_label(&c_ap_secret,
+    // "iv", &[], 12).try_into().unwrap();
 
     // let s_ap_secret = derive_secret(&master_secret, "s ap traffic",
     // &handshake_messages);
@@ -477,8 +480,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
     let s_ap_secret = s_ap_secret_result.unwrap();
 
-    // let server_application_key: [u8; 16] = hkdf_expand_label(&s_ap_secret, "key",
-    // &[], 16).try_into().unwrap();
+    // let server_application_key: [u8; 16] = hkdf_expand_label(&s_ap_secret,
+    // "key", &[], 16).try_into().unwrap();
 
     let application_key_res = hkdf_expand_label(&s_ap_secret, "key", &[], 16);
     if application_key_res.is_err() {
@@ -486,8 +489,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
     }
     let server_application_key: [u8; 16] = application_key_res.unwrap().try_into().unwrap();
 
-    // let server_application_iv: [u8; 12] = hkdf_expand_label(&s_ap_secret, "iv",
-    // &[], 12).try_into().unwrap();
+    // let server_application_iv: [u8; 12] = hkdf_expand_label(&s_ap_secret,
+    // "iv", &[], 12).try_into().unwrap();
     let application_iv_res = hkdf_expand_label(&s_ap_secret, "iv", &[], 12);
     if application_iv_res.is_err() {
         return application_iv_res.err().unwrap();
@@ -535,7 +538,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
 
     // if sign_type!=SHA256WITH_RSAE && sign_type!=SHA256WITH_RSA &&
     // sign_type!=ECDSA_WITH_SHA256 && sign_type!=SHA256WITH_RSAPSS {
-    // return vec![0u8, 3u8, 38u8];// "not supported (not sha256) type of signature"
+    // return vec![0u8, 3u8, 38u8];// "not supported (not sha256) type of
+    // signature"
     //}
     let check_sum = hkdf_sha256::sum256(&client_server_hello).to_vec();
 
@@ -638,7 +642,8 @@ pub fn extract_json_public_key_from_tls(raw: Vec<u8>) -> Vec<u8> {
         decryption_res = decrypt(&server_application_key, &iv2.try_into().unwrap(), &ciphertext2);
 
         // let mut plaintext2 =
-        // decrypt(&server_application_key, &iv2.try_into().unwrap(), &ciphertext2);
+        // decrypt(&server_application_key, &iv2.try_into().unwrap(),
+        // &ciphertext2);
         if decryption_res.is_err() {
             return decryption_res.err().unwrap();
         }

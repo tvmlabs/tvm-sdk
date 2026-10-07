@@ -652,7 +652,8 @@ impl Engine {
     ) -> HashMap<[u8; 32], wasmtime::component::Component> {
         let hashmap = wasm_hash_whitelist.clone();
         let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
-        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+        // let mut cache = HashMap::<[u8; 32],
+        // wasmtime::component::Component>::new();
 
         for hash in hashmap {
             let res = match Self::extern_get_wasm_binary_by_hash(
@@ -674,7 +675,8 @@ impl Engine {
 
                 Err(e) => Err(e),
             };
-            // We catch errors to allow a partial precompilation in case of missing files
+            // We catch errors to allow a partial precompilation in case of
+            // missing files
             match res {
                 Ok(comp) => {
                     cache.insert(hash, comp);
@@ -689,7 +691,8 @@ impl Engine {
     #[cfg(feature = "wasmtime")]
     pub fn precompile_all_wasm_by_hash(mut self) -> Result<Engine> {
         let hashmap = self.wasm_hash_whitelist.clone();
-        // let mut cache = HashMap::<[u8; 32], wasmtime::component::Component>::new();
+        // let mut cache = HashMap::<[u8; 32],
+        // wasmtime::component::Component>::new();
 
         for hash in hashmap {
             let binary = self.get_wasm_binary_by_hash(hash.into())?;
@@ -900,7 +903,8 @@ impl Engine {
 
     fn trace_info(&self, info_type: EngineTraceInfoType, gas: i64, log_string: Option<String>) {
         if let Some(trace_callback) = self.trace_callback.as_ref() {
-            // bigint param has been withdrawn during execution, so take it from the stack
+            // bigint param has been withdrawn during execution, so take it from
+            // the stack
             let cmd_str = if self.cmd.biginteger_raw().is_some() {
                 format!(
                     "{}{} {}",
@@ -1844,8 +1848,8 @@ impl Engine {
             }
             Some(InstructionOptions::LengthAndIndex) => {
                 self.basic_use_gas(0);
-                // This is currently needed only for special-case BLKPUSH command and works the
-                // same way
+                // This is currently needed only for special-case BLKPUSH
+                // command and works the same way
                 // as InstructionOptions::StackRegisterPair(WhereToGetParams::GetFromLastByte)
                 let params = self.last_cmd();
                 let (length, index) = (params >> 4, params & 0x0F);
@@ -1951,10 +1955,12 @@ impl Engine {
                         ((last >> 4) & 0x03, (last >> 2) & 0x03, last & 0x03)
                     }
                     _ => {
-                        // Three-arguments functions are 2-byte 4ijk XCHG3 instructions
-                        // And 54[0-7]ijk long-form XCHG3 - PUSH3
-                        // We assume that in the second case 0x54 byte is already consumed,
-                        // and we have to deal with *ijk layout for arguments
+                        // Three-arguments functions are 2-byte 4ijk XCHG3
+                        // instructions And 54[0-7]ijk
+                        // long-form XCHG3 - PUSH3
+                        // We assume that in the second case 0x54 byte is
+                        // already consumed, and we have
+                        // to deal with *ijk layout for arguments
                         let rb_rc = self.next_cmd()?;
                         (last & 0x0F, rb_rc >> 4, rb_rc & 0x0F)
                     }

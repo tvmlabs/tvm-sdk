@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2026-09-03
+
+### Fixed
+- `BlockParsingError::InvalidData` reported `0` instead of the reason the data was rejected. Its `#[error]` attribute interpolated a bare integer literal rather than the variant's own field.
+
 ## Version 0.7.196
 
 - BLS structures support

@@ -45,8 +45,8 @@ fn test_update_error() {
     // TODO: make fail! more informative
     // let err = || -> Result<()> { fail!(ExceptionCode::RangeCheckError, "lost
     // description {}", 0) }().unwrap_err(); println!("{:?}", err);
-    // let err = update_error_description(err, |d| format!("additional: {}", d));
-    // println!("{:?}", err);
+    // let err = update_error_description(err, |d| format!("additional: {}",
+    // d)); println!("{:?}", err);
     // assert_eq!(tvm_exception_code(&err).unwrap(),
     // ExceptionCode::RangeCheckError);
 
@@ -57,4 +57,21 @@ fn test_update_error() {
     println!("{:?}", err);
     assert_eq!(tvm_exception_code(&err), None);
     assert_eq!(tvm_exception_or_custom_code(&err), 112);
+}
+
+// See the note in `tvm_block::error`: a `#[error]` attribute whose trailing
+// argument is a bare `0` interpolates that integer literal, not the variant's
+// field.
+
+#[test]
+fn invalid_arg_error_carries_its_argument() {
+    let error = TvmError::InvalidArg(42);
+    assert_eq!(error.to_string(), "Invalid argument: 42");
+}
+
+#[test]
+fn tvm_exception_full_carries_both_of_its_fields() {
+    let exception = Exception::from(ExceptionCode::StackUnderflow);
+    let error = TvmError::TvmExceptionFull(exception.clone(), "in DROP".to_string());
+    assert_eq!(error.to_string(), format!("VM Exception: {} in DROP", exception));
 }

@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.0.5",
   "modules": [
     {
       "name": "client",
@@ -1320,8 +1320,8 @@
             {
               "name": "dapp_id",
               "type": "String",
-              "summary": "Dapp ID as a 64-character hex string (no 0x). Required when the server supports the v3 API (info.version >= \"1.0.0\").",
-              "description": null
+              "summary": "Dapp ID as a 64-character hex string (no 0x).",
+              "description": "Required."
             }
           ],
           "summary": null,
@@ -10996,8 +10996,8 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty (sent as legacy `dst_dapp_id: null`).",
-              "description": null
+              "summary": "Destination dapp_id (64-character hex, no 0x).",
+              "description": "Required."
             }
           ],
           "summary": null,
@@ -11098,7 +11098,7 @@
                 "type": "String"
               },
               "summary": "Destination account_id (64-hex, no workchain).",
-              "description": "Always populated: taken from the server response on v>=1.0.0, derived locally\nfrom the message destination on v<1.0.0."
+              "description": "Always populated: from the server response, or derived from the message destination if the\nserver omits it."
             },
             {
               "name": "dapp_id",
@@ -11107,7 +11107,7 @@
                 "type": "String"
               },
               "summary": "Destination dapp_id (64-hex).",
-              "description": "Always populated: taken from the server response on v>=1.0.0, mirrored from the request on v<1.0.0."
+              "description": "Always populated: from the server response, or mirrored from the request if the server omits it."
             }
           ],
           "summary": null,
@@ -11205,8 +11205,8 @@
               "optional_inner": {
                 "type": "String"
               },
-              "summary": "Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty.",
-              "description": null
+              "summary": "Destination dapp_id (64-character hex, no 0x).",
+              "description": "Required."
             }
           ],
           "summary": null,

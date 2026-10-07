@@ -13,6 +13,8 @@ use std::fs::OpenOptions;
 use serde_json::json;
 
 use crate::config::Config;
+use crate::crypto::KeySource;
+use crate::crypto::classify;
 use crate::crypto::gen_seed_phrase;
 use crate::crypto::generate_keypair_from_mnemonic;
 use crate::helpers::calc_acc_address;
@@ -26,6 +28,14 @@ use crate::helpers::read_keys;
 fn self_rooted_form(addr: &str) -> String {
     let account_hex = addr.split_once(':').map_or(addr, |(_, rest)| rest);
     format!("{account_hex}::{account_hex}")
+}
+
+/// The seed phrase worth printing: only one this command generated itself,
+/// because the keypair file it writes holds keys and not the phrase, so
+/// nothing else records it. A phrase handed in through `--setkey` is the
+/// caller's secret and is never echoed back.
+fn phrase_to_show(new_keys: bool, phrase: &str) -> Option<&str> {
+    (new_keys && !phrase.is_empty()).then_some(phrase)
 }
 
 pub async fn generate_address(
@@ -45,8 +55,8 @@ pub async fn generate_address(
 
     let phrase = if new_keys {
         gen_seed_phrase()?
-    } else if keys_file.is_some() && keys_file.unwrap().find(' ').is_some() && !new_keys {
-        keys_file.unwrap().to_owned()
+    } else if keys_file.is_some_and(|keys| classify(keys) == KeySource::Phrase) {
+        keys_file.unwrap().trim().to_owned()
     } else {
         "".to_owned()
     };
@@ -97,9 +107,11 @@ pub async fn generate_address(
             .map_err(|e| format!("failed to save the keypair: {}", e))?;
     }
 
+    let shown_phrase = phrase_to_show(new_keys, &phrase);
+
     if !config.is_json {
         println!();
-        if !phrase.is_empty() {
+        if let Some(phrase) = shown_phrase {
             println!(r#"Seed phrase: "{}""#, phrase);
         }
         println!("Raw address: {}", addr);
@@ -107,7 +119,7 @@ pub async fn generate_address(
         println!("Succeeded");
     } else {
         let mut res = json!({});
-        if !phrase.is_empty() {
+        if let Some(phrase) = shown_phrase {
             res["seed_phrase"] = json!(phrase);
         }
         res["raw_address"] = json!(addr);
@@ -180,6 +192,7 @@ fn update_contract_state(
 
 #[cfg(test)]
 mod tests {
+    use super::phrase_to_show;
     use super::self_rooted_form;
 
     const ACC: &str = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -197,5 +210,24 @@ mod tests {
     #[test]
     fn self_rooted_form_handles_masterchain_prefix() {
         assert_eq!(self_rooted_form(&format!("-1:{ACC}")), format!("{ACC}::{ACC}"));
+    }
+
+    const PHRASE: &str =
+        "multiply extra monitor fog rocket defy attack right night jaguar hollow enlist";
+
+    #[test]
+    fn a_generated_phrase_is_shown_because_nothing_else_records_it() {
+        assert_eq!(phrase_to_show(true, PHRASE), Some(PHRASE));
+    }
+
+    #[test]
+    fn a_phrase_supplied_with_setkey_is_not_echoed_back() {
+        assert_eq!(phrase_to_show(false, PHRASE), None);
+    }
+
+    #[test]
+    fn no_phrase_at_all_shows_nothing() {
+        assert_eq!(phrase_to_show(true, ""), None);
+        assert_eq!(phrase_to_show(false, ""), None);
     }
 }

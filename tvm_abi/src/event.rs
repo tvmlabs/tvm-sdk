@@ -156,13 +156,14 @@ mod tests {
         assert!(err.to_string().contains("Wrong function ID"));
     }
 
-    // Regression: an event whose last field spills into a continuation cell near
-    // the 1023-bit boundary must decode. Real ext-out `OrderBook.OrderPlaced` body
-    // captured from a live shellnet OrderBook (event-id 0x1b9c6957): its 9 fields
-    // are 1033 (id+data) bits, so `opNonce` correctly spills to a ref
-    // (cell0 = 969 bits + ref, ref = 64 bits). Before seeding `Cursor.used_bits`
-    // with `slice.pos()`, `check_layout` computed 937 + 64 = 1001 <= 1023 and
-    // rejected this legit spill with `WrongDataLayout` (ton-client error 304).
+    // Regression: an event whose last field spills into a continuation cell
+    // near the 1023-bit boundary must decode. Real ext-out
+    // `OrderBook.OrderPlaced` body captured from a live shellnet OrderBook
+    // (event-id 0x1b9c6957): its 9 fields are 1033 (id+data) bits, so
+    // `opNonce` correctly spills to a ref (cell0 = 969 bits + ref, ref = 64
+    // bits). Before seeding `Cursor.used_bits` with `slice.pos()`,
+    // `check_layout` computed 937 + 64 = 1001 <= 1023 and rejected this
+    // legit spill with `WrongDataLayout` (ton-client error 304).
     #[test]
     fn decodes_multicell_event_with_last_field_spilled_to_ref() {
         use tvm_types::read_single_root_boc;

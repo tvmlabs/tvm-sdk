@@ -781,7 +781,8 @@ impl OldMcBlocksInfo {
             let y = req_seqno >> (d - 1);
             match y.cmp(&(2 * x)) {
                 std::cmp::Ordering::Less => {
-                    // (x << d) > req_seqno <=> x > (req_seqno >> d) = (y >> 1) <=> 2 * x > y
+                    // (x << d) > req_seqno <=> x > (req_seqno >> d) = (y >> 1)
+                    // <=> 2 * x > y
                     Ok(TraverseNextStep::Stop) // all nodes in subtree have
                     // block.seqno > req_seqno =>
                     // skip
@@ -831,8 +832,9 @@ impl OldMcBlocksInfo {
             let y = req_seqno >> (d - 1);
             match y.cmp(&(2 * x + 1)) {
                 std::cmp::Ordering::Greater => {
-                    // ((x + 1) << d) <= req_seqno <=> (x+1) <= (req_seqno >> d) = (y >> 1) <=>
-                    // 2*x+2 <= y <=> y > 2*x+1
+                    // ((x + 1) << d) <= req_seqno <=> (x+1) <= (req_seqno >> d)
+                    // = (y >> 1) <=> 2*x+2 <= y <=> y >
+                    // 2*x+1
                     Ok(TraverseNextStep::Stop) // all nodes in subtree have
                     // block.seqno < req_seqno =>
                     // skip
@@ -1018,12 +1020,12 @@ impl Counters {
         }
         let dt = now.saturating_sub(self.last_updated);
         if dt != 0 {
-            // more precise version of cnt2048 = llround(cnt2048 * exp(-dt / 2048.));
-            // (rounding error has absolute value < 1)
+            // more precise version of cnt2048 = llround(cnt2048 * exp(-dt /
+            // 2048.)); (rounding error has absolute value < 1)
             self.cnt2048 =
                 if dt >= 48 * 2048 { 0 } else { umulnexps32(self.cnt2048, dt << 5, false) };
-            // more precise version of cnt65536 = llround(cnt65536 * exp(-dt / 65536.));
-            // (rounding error has absolute value < 1)
+            // more precise version of cnt65536 = llround(cnt65536 * exp(-dt /
+            // 65536.)); (rounding error has absolute value < 1)
             self.cnt65536 = umulnexps32(self.cnt65536, dt, false);
         }
         self.total += count;

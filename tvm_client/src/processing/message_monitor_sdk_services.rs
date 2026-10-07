@@ -96,7 +96,8 @@ impl MessageMonitorSdkServices for SdkServices {
         + Sync
         + 'static,
     ) -> tvm_client_processing::Result<NetSubscription> {
-        // We have to wrap callback into Arc because it will move out of closure scope
+        // We have to wrap callback into Arc because it will move out of closure
+        // scope
         let callback = Arc::new(callback);
         let (query, vars) = Self::subscription(messages.into_iter().map(Into::into).collect());
         let retry_start = Arc::new(AtomicU64::new(0));
@@ -104,7 +105,8 @@ impl MessageMonitorSdkServices for SdkServices {
         let subscription = self
             .net
             .subscribe(query, vars, move |evt: ClientResult<ResultOfSubscription>| {
-                // We have to clone callback because it will move out of closure scope
+                // We have to clone callback because it will move out of closure
+                // scope
                 let callback = callback.clone();
                 let net_state = net_state.clone();
                 let retry_start = retry_start.clone();

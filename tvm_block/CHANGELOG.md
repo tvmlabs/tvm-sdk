@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2026-09-03
+
+### Fixed
+- Ten `BlockError` variants reported `0` in place of the value they were built with, their `#[error]` attributes interpolating a bare integer literal rather than the variant's own field: `Fatal error`, `Invalid argument`, `Invalid data`, `Invalid index`, `Invalid operation`, `<x> is not found`, the bare pass-through variant, `Attempting to read <x> from pruned branch cell`, `Wrong merkle proof` and `Wrong merkle update`. The reason a value was rejected is now carried in the message.
+
 ## Version 1.9.119
 
 - HashMapAug and OutMsgQueue insertion API extended

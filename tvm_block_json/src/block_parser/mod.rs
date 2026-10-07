@@ -191,3 +191,17 @@ mod tests {
         assert!(!is_account_none(&UInt256::default()));
     }
 }
+
+#[cfg(test)]
+mod block_parsing_error_tests {
+    use super::BlockParsingError;
+
+    // See the note in `tvm_block::error`: a `#[error]` attribute whose trailing
+    // argument is a bare `0` interpolates that integer literal, not the
+    // variant's field.
+    #[test]
+    fn invalid_data_error_carries_its_reason() {
+        let error = BlockParsingError::InvalidData("no such field".to_string());
+        assert_eq!(error.to_string(), "Invalid data: no such field");
+    }
+}

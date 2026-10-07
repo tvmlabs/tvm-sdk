@@ -474,8 +474,8 @@ impl DEngine {
 
     async fn enumerate_actions(&mut self, ctx: DContext) -> Result<bool, String> {
         // find, execute and remove instant action from context.
-        // if instant action returns new actions then execute them and insert into
-        // context.
+        // if instant action returns new actions then execute them and insert
+        // into context.
         for action in &ctx.actions {
             let mut sub_actions = VecDeque::new();
             sub_actions.push_back(action.clone());
@@ -487,7 +487,8 @@ impl DEngine {
                     if let Some(vec) = self.handle_action(&act).await? {
                         vec.iter().for_each(|a| sub_actions.push_back(a.clone()));
                     }
-                    // if instant action wants to switch context then exit and do switch.
+                    // if instant action wants to switch context then exit and
+                    // do switch.
                     let to = if act.to == STATE_CURRENT {
                         self.curr_state
                     } else if act.to == STATE_PREV {

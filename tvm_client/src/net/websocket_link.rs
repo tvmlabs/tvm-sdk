@@ -364,7 +364,8 @@ impl LinkHandler {
             Ok(message) => match GraphQLMessageFromServer::parse(&message) {
                 Ok(message) => message,
                 _ => {
-                    // Invalid message received, skip it and continue websocket loop
+                    // Invalid message received, skip it and continue websocket
+                    // loop
                     return phase;
                 }
             },
@@ -503,8 +504,8 @@ impl LinkHandler {
         }
         self.state.internal_suspend().await;
 
-        // send resume - it will try to reconnect after internal suspend timer in
-        // NetworkState ends
+        // send resume - it will try to reconnect after internal suspend timer
+        // in NetworkState ends
         HandlerAction::Resume.send(&mut self.internal_action_sender.clone()).await;
         // switch to Suspended phase
         Phase::Suspended

@@ -285,7 +285,8 @@ fn append_bitstring(builder: &mut BuilderData, string: &str) -> ClientResult<()>
     // Check if there is a tagged representation
     if num_str.ends_with('_') {
         num_str = &num_str[0..num_str.len() - 1];
-        // Escape from trailing zeros because of BuilderData doesn't support this
+        // Escape from trailing zeros because of BuilderData doesn't support
+        // this
         while num_str.ends_with('0') {
             num_str = &num_str[0..num_str.len() - 1];
         }
@@ -293,7 +294,8 @@ fn append_bitstring(builder: &mut BuilderData, string: &str) -> ClientResult<()>
         if !num_str.is_empty() && num_str != "8" {
             let mut number = BigUint::from_str_radix(num_str, 16)
                 .map_err(|err| Error::serialization_error(err, string))?;
-            // If hex string has an odd len, we need to pad it with zero bits at the end
+            // If hex string has an odd len, we need to pad it with zero bits at
+            // the end
             if (num_str.len() & 1) != 0 {
                 number.shl_assign(4);
             }

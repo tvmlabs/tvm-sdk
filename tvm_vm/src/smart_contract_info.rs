@@ -112,8 +112,8 @@ impl SmartContractInfo {
         self.mycode = code;
     }
 
-    // The rand_seed field here is initialized deterministically starting from the
-    // rand_seed of the block, and the account address.
+    // The rand_seed field here is initialized deterministically starting from
+    // the rand_seed of the block, and the account address.
     pub fn calc_rand_seed(&mut self, rand_seed_block: UInt256, account_address_anycast: &[u8]) {
         // combine all parameters to vec and calculate hash of them
         self.rand_seed = if !rand_seed_block.is_zero() {
@@ -124,8 +124,8 @@ impl SmartContractInfo {
             let sha256 = hasher.finalize();
             IntegerData::from_unsigned_bytes_be(sha256)
         } else {
-            // if the user forgot to set the rand_seed_block value, then this 0 will be
-            // clearly visible on tests
+            // if the user forgot to set the rand_seed_block value, then this 0
+            // will be clearly visible on tests
             log::warn!(target: "tvm", "Not set rand_seed_block");
             IntegerData::zero()
         };

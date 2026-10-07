@@ -262,12 +262,12 @@ impl Tokenizer {
 
     /// Checks if given number can be fit into given bits count
     fn check_int_size(number: &BigInt, size: usize) -> bool {
-        // `BigInt::bits` returns fewest bits necessary to express the number, not
-        // including the sign and it works well for all values except `-2^n`.
-        // Such values can be encoded using `n` bits, but `bits` function
-        // returns `n` (and plus one bit for sign) so we have to explicitly
-        // check such situation by comparing bits sizes of given number
-        // and increased number
+        // `BigInt::bits` returns fewest bits necessary to express the number,
+        // not including the sign and it works well for all values
+        // except `-2^n`. Such values can be encoded using `n` bits, but
+        // `bits` function returns `n` (and plus one bit for sign) so we
+        // have to explicitly check such situation by comparing bits
+        // sizes of given number and increased number
         if number.sign() == Sign::Minus && number.bits() != (number + BigInt::from(1)).bits() {
             (number.bits() as usize) <= size
         } else {
@@ -511,17 +511,43 @@ impl Tokenizer {
     }
 
     fn tokenize_address(value: &Value, name: &str) -> Result<TokenValue> {
+        let string = value.as_str().ok_or_else(|| AbiError::WrongDataFormat {
+            val: value.clone(),
+            name: name.to_string(),
+            expected: "address string".to_string(),
+        })?;
         let address =
-            MsgAddress::from_str(value.as_str().ok_or_else(|| AbiError::WrongDataFormat {
+            MsgAddress::from_str(string).map_err(|err| AbiError::InvalidParameterValue {
                 val: value.clone(),
                 name: name.to_string(),
-                expected: "address string".to_string(),
-            })?)
-            .map_err(|err| AbiError::InvalidParameterValue {
-                val: value.clone(),
-                name: name.to_string(),
-                err: format!("can not parse address: {}", err),
+                err: address_parse_error(string, &err),
             })?;
         Ok(TokenValue::Address(address))
+    }
+}
+
+/// Either half of a canonical `dapp_id::account_id` address: 64 hex digits.
+fn is_hex64(s: &str) -> bool {
+    s.len() == 64 && s.bytes().all(|b| b.is_ascii_hexdigit())
+}
+
+/// The canonical `dapp_id::account_id` form names a contract. An address
+/// inside ABI arguments is encoded into an on-chain address cell, which has no
+/// room for a Dapp ID, and so stays `<workchain>:<account_id>`. Both appear in
+/// one tvm-cli command line, and reaching for the canonical form here is the
+/// common mistake — one the parser cannot describe, since all it sees is an
+/// empty workchain between two colons. So name the form that belongs here
+/// rather than pass that reason on alone.
+fn address_parse_error(value: &str, reason: &tvm_types::Error) -> String {
+    match value.split_once("::") {
+        Some((dapp, account)) if is_hex64(dapp) && is_hex64(account) => format!(
+            "can not parse address: this is the canonical `dapp_id::account_id` form, which \
+             names a contract for a command to act on. An address inside ABI arguments is the \
+             on-chain form `<workchain>:<account_id>` — pass `0:{account}` here"
+        ),
+        _ => format!(
+            "can not parse address: {reason}; expected the on-chain form \
+             `<workchain>:<account_id>`, for example `0:` followed by 64 hex characters"
+        ),
     }
 }

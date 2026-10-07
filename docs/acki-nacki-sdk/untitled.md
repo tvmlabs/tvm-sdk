@@ -179,7 +179,7 @@ Rebuild `api.json`:
 
 ```shell
 cd tools/tvm_api_gen
-cargo run api -o ../tools
+cargo run -- api -o ..
 ```
 
 Rebuild `docs`:
@@ -188,7 +188,7 @@ Rebuild `docs`:
 cd tools
 npm i
 tsc
-node index docs -o ../docs
+node index docs -o ../docs/acki-nacki-sdk/types-and-methods
 ```
 
 Rebuild `modules.ts`:

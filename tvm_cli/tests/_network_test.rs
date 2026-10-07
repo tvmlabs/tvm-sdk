@@ -6,7 +6,15 @@ use common::GIVER_V2_ADDR;
 use common::GIVER_V2_KEY;
 use common::NETWORK;
 
+/// Ignored: this needs a running Node SE, and running it without one is
+/// destructive. It resets the developer's config -- `config clear` and
+/// `config --global clear`, with no `--config` of its own, so it writes the
+/// real `tvm-cli.conf.json` in the current directory and the global one next
+/// to the binary. It also asserts nothing that can fail any more: the string
+/// it looks for cannot be reached, because the `call` dies on the strict
+/// address parser first.
 #[test]
+#[ignore]
 fn test_network() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
     cmd.arg("config").arg("clear");

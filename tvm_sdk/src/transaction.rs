@@ -207,7 +207,8 @@ impl Transaction {
 
     // Returns message's identifier
     pub fn id(&self) -> TransactionId {
-        // On client side id is ready allways. It is never be calculated, just returned.
+        // On client side id is ready allways. It is never be calculated, just
+        // returned.
         self.id.clone()
     }
 
@@ -229,12 +230,12 @@ impl Transaction {
             total_action_fees = action.total_action_fees;
         }
         // `transaction.total_fees` is calculated as
-        // `transaction.total_fees = inbound_fwd_fees + storage_fees + gas_fees +
-        // total_action_fees` but this total_fees is fees collected the
-        // validators, not the all fees taken from account
+        // `transaction.total_fees = inbound_fwd_fees + storage_fees + gas_fees
+        // + total_action_fees` but this total_fees is fees collected
+        // the validators, not the all fees taken from account
         // because total_action_fees contains only part of all forward fees
-        // to get all fees paid by account we need exchange `total_action_fees part` to
-        // `out_msgs_fwd_fee`
+        // to get all fees paid by account we need exchange `total_action_fees
+        // part` to `out_msgs_fwd_fee`
         let total_account_fees =
             self.total_fees as i128 - total_action_fees as i128 + fees.out_msgs_fwd_fee as i128;
         fees.total_account_fees =

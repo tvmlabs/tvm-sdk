@@ -331,7 +331,8 @@ NOTE: Sync version is available only for `lib-node` binding.
 <br>If this parameter is specified and the message has the<br>`expire` header then expiration time will be checked against<br>the current time to prevent unnecessary sending of already expired<br>message.<br><br>The `message already expired` error will be returned in this<br>case.<br><br>Note, that specifying `abi` for ABI compliant contracts is<br>strongly recommended, so that proper processing strategy can be<br>chosen.
 - `thread_id`?: _string_
 - `send_events`?: _boolean_ – Flag for requesting events sending. Default is `false`.
-- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty (sent as legacy `dst_dapp_id: null`).
+- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x).
+<br>Required.
 - `responseHandler`?: _[ResponseHandler](modules.md#responsehandler)_ – additional responses handler.
 
 ### Result
@@ -346,9 +347,9 @@ NOTE: Sync version is available only for `lib-node` binding.
 - `producers`: _string[]_ – The list (IP addresses) of block producers processing the thread.
 - `current_time`?: _string_ – The timestamp of generating this response.
 - `account_id`?: _string_ – Destination account_id (64-hex, no workchain).
-<br>Always populated: taken from the server response on v>=1.0.0, derived locally<br>from the message destination on v<1.0.0.
+<br>Always populated: from the server response, or derived from the message destination if the<br>server omits it.
 - `dapp_id`?: _string_ – Destination dapp_id (64-hex).
-<br>Always populated: taken from the server response on v>=1.0.0, mirrored from the request on v<1.0.0.
+<br>Always populated: from the server response, or mirrored from the request if the server omits it.
 
 
 ## wait_for_transaction
@@ -480,7 +481,8 @@ NOTE: Sync version is available only for `lib-node` binding.
 ### Parameters
 - `message_encode_params`: _[ParamsOfEncodeMessage](mod\_abi.md#paramsofencodemessage)_ – Message encode parameters.
 - `send_events`?: _boolean_ – Flag for requesting events sending. Default is `false`.
-- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty.
+- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x).
+<br>Required.
 - `responseHandler`?: _[ResponseHandler](modules.md#responsehandler)_ – additional responses handler.
 
 ### Result
@@ -1283,7 +1285,8 @@ type ParamsOfSendMessage = {
 <br>If this parameter is specified and the message has the<br>`expire` header then expiration time will be checked against<br>the current time to prevent unnecessary sending of already expired<br>message.<br><br>The `message already expired` error will be returned in this<br>case.<br><br>Note, that specifying `abi` for ABI compliant contracts is<br>strongly recommended, so that proper processing strategy can be<br>chosen.
 - `thread_id`?: _string_
 - `send_events`?: _boolean_ – Flag for requesting events sending. Default is `false`.
-- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty (sent as legacy `dst_dapp_id: null`).
+- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x).
+<br>Required.
 
 
 ## ResultOfSendMessage
@@ -1312,9 +1315,9 @@ type ResultOfSendMessage = {
 - `producers`: _string[]_ – The list (IP addresses) of block producers processing the thread.
 - `current_time`?: _string_ – The timestamp of generating this response.
 - `account_id`?: _string_ – Destination account_id (64-hex, no workchain).
-<br>Always populated: taken from the server response on v>=1.0.0, derived locally<br>from the message destination on v<1.0.0.
+<br>Always populated: from the server response, or derived from the message destination if the<br>server omits it.
 - `dapp_id`?: _string_ – Destination dapp_id (64-hex).
-<br>Always populated: taken from the server response on v>=1.0.0, mirrored from the request on v<1.0.0.
+<br>Always populated: from the server response, or mirrored from the request if the server omits it.
 
 
 ## ParamsOfWaitForTransaction
@@ -1350,6 +1353,7 @@ type ParamsOfProcessMessage = {
 ```
 - `message_encode_params`: _[ParamsOfEncodeMessage](mod\_abi.md#paramsofencodemessage)_ – Message encode parameters.
 - `send_events`?: _boolean_ – Flag for requesting events sending. Default is `false`.
-- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x). Required for v>=1.0.0 servers; for v<1.0.0 may be empty.
+- `dapp_id`?: _string_ – Destination dapp_id (64-character hex, no 0x).
+<br>Required.
 
 

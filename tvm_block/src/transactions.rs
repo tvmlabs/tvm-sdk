@@ -1805,8 +1805,8 @@ impl AccountBlock {
         if self.transactions.is_empty() {
             fail!(BlockError::InvalidData("No transactions in account block".to_string()))
         } else if let Some(transaction) = self.transactions.single_value()? {
-            // if block has only one transaction for account just copy state update from
-            // transaction
+            // if block has only one transaction for account just copy state
+            // update from transaction
             self.write_state_update(&transaction.0.read_state_update()?)?;
         } else {
             // otherwice it is need to calculate Hash update

@@ -26,3 +26,6 @@ tvm_client = { workspace = true, features = ["std", "rustls-tls-webpki-roots"] }
 tvm_types.workspace = true
 tvm_vm.workspace = true
 serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+testdir = "0.9.3"

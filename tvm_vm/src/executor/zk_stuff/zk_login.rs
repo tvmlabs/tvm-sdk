@@ -292,8 +292,8 @@ impl JWK {
     /// Parse JWK from the reader struct.
     pub fn from_reader(reader: JWKReader) -> ZkCryptoResult<Self> {
         let trimmed_e = trim(reader.e);
-        // Microsoft does not contain alg field in JWK, so here we only check if it
-        // equals to RS256 only if alg field is present.
+        // Microsoft does not contain alg field in JWK, so here we only check if
+        // it equals to RS256 only if alg field is present.
         if (reader.alg.is_some() && reader.alg != Some("RS256".to_string()))
             || reader.kty != "RSA"
             || trimmed_e != "AQAB"

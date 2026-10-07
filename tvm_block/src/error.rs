@@ -53,3 +53,32 @@ pub enum BlockError {
     #[error("External cell read")]
     ExternalCellRead,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::BlockError;
+
+    // A `#[error]` attribute whose trailing argument is a bare `0` interpolates
+    // the integer literal, not the variant's field: it compiles, and every
+    // reason the variant was built with is replaced by a zero on the way out.
+    // These tests pin the payload to the rendered message so that shape cannot
+    // come back.
+
+    #[test]
+    fn invalid_arg_error_carries_its_reason() {
+        let error = BlockError::InvalidArg("workchain_id is not correct number".to_string());
+        assert_eq!(error.to_string(), "Invalid argument: workchain_id is not correct number");
+    }
+
+    #[test]
+    fn other_error_is_exactly_its_message() {
+        let error = BlockError::Other("something went wrong".to_string());
+        assert_eq!(error.to_string(), "something went wrong");
+    }
+
+    #[test]
+    fn not_found_error_names_the_missing_item() {
+        let error = BlockError::NotFound("config param 34".to_string());
+        assert_eq!(error.to_string(), "config param 34 is not found");
+    }
+}

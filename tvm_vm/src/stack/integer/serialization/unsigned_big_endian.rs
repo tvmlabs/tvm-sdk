@@ -38,9 +38,10 @@ impl Serializer<IntegerData> for UnsignedIntegerBigEndianEncoding {
         value.check_neg()?;
         if !value.ufits_in(self.length_in_bits)? {
             // Spec. 3.2.7
-            // * If the integer x to be serialized is not in the range −2^(n−1) <= x <
-            //   2^(n−1) (for signed integer serialization) or 0 <= x < 2^n (for unsigned
-            //   integer serialization), a range check exception is usually generated
+            // * If the integer x to be serialized is not in the range −2^(n−1)
+            //   <= x < 2^(n−1) (for signed integer serialization) or 0 <= x <
+            //   2^n (for unsigned integer serialization), a range check
+            //   exception is usually generated
             return err!(
                 ExceptionCode::RangeCheckError,
                 "{} cannot fit in {}",

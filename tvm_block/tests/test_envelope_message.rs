@@ -278,8 +278,8 @@ fn prepare_test_env_message(
     // let src_prefix = AccountIdPrefixFull::prefix(&src).unwrap();
     // let dst_prefix = AccountIdPrefixFull::prefix(&dst).unwrap();
     // let ia = IntermediateAddress::full_src();
-    // let route_info = src_prefix.perform_hypercube_routing(&dst_prefix, &shard,
-    // ia)?.unwrap(); let cur_prefix  =
+    // let route_info = src_prefix.perform_hypercube_routing(&dst_prefix,
+    // &shard, ia)?.unwrap(); let cur_prefix  =
     // src_prefix.interpolate_addr_intermediate(&dst_prefix, &route_info.0)?;
     // let next_prefix = src_prefix.interpolate_addr_intermediate(&dst_prefix,
     // &route_info.1)?;

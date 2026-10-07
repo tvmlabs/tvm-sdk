@@ -20,6 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      # Deliberately the floating `nightly`, so this job always checks against
+      # the newest rustfmt. rustfmt.toml turns on unstable options whose output
+      # drifts between nightlies (`wrap_comments` re-wraps at `comment_width`
+      # after a change landed around 2026-09-01), so a nightly bump can turn
+      # this job red with no code change. The fix is `rustup update nightly`
+      # locally and `cargo +nightly fmt --all`, not a pin.
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: clippy, rustfmt
@@ -120,3 +126,34 @@ jobs:
             -p tvm_client \
             --no-default-features \
             --features tvm_client/std,tvm_client/rustls-tls-webpki-roots
+
+  test-cli:
+    name: Test / tvm_cli
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TERM_COLOR: always
+      SCCACHE_GHA_ENABLED: "true"
+      SCCACHE_GHA_VERSION: ${{ vars.SCCACHE_GHA_VERSION || 1 }}
+      RUSTC_WRAPPER: sccache
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: rui314/setup-mold@v1
+      - uses: mozilla-actions/sccache-action@v0.0.10
+      - name: Setup cargo cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      # Deliberately a debug build, unlike every other job here. Several of
+      # these tests exist to catch clap's "argument not defined" assertion,
+      # which is `#[cfg(debug_assertions)]`; `[profile.release]` does not turn
+      # debug assertions back on, so under `-r` those tests would pass even
+      # with the bug they guard reintroduced.
+      - name: Run tvm_cli tests
+        run: cargo test --no-fail-fast -p tvm_cli

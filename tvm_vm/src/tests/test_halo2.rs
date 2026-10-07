@@ -266,11 +266,15 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // of **10 real deposit proofs** and asserts ACCEPT for each, plus negative
 // (corrupt-proof / mismatched-public-input) cases.
 //
-// Each proof uses the **11-public-input** deposit layout: [depositId, sender,
-// amount, contractAddress, dappIdHigh, dappIdLow, anAccountHigh, anAccountLow,
-// blockHashHigh, blockHashLow, promiseCommit]. `dappId` (a config-supplied
-// UInt256 AN dApp tag) replaced the single `anWorkchain` slot on 2026-06-02;
-// `anAccount{High,Low}` remain the event-bound AN recipient account.
+// Each proof uses the **12-public-input** deposit layout: [depositId, sender,
+// amount, contractAddress, chainId, dappIdHigh, dappIdLow, anAccountHigh,
+// anAccountLow, blockHashHigh, blockHashLow, promiseCommit]. `dappId` (a
+// config-supplied UInt256 AN dApp tag) replaced the single `anWorkchain` slot
+// on 2026-06-02; `anAccount{High,Low}` remain the event-bound AN recipient
+// account. `chainId` was inserted at index 4 on 2026-07-22 (bridge commit
+// c0da8a3) to bind proofs to a source L1/L2 via the AN-side USDCBridge
+// allowlist — extracted in-circuit from the enclosing EIP-1559 transaction
+// (RLP field 0) via the tx-trie MPT proof, not baked into the VK.
 //
 // Stack ABI (top-of-stack last): push vk_blob, then public_inputs, then proof.
 // fetch_stack then binds var(0)=proof, var(1)=public_inputs, var(2)=vk_blob.
@@ -285,7 +289,7 @@ fn test_verify_w128_pub_input_just_below_modulus_parses() {
 // ---------------------------------------------------------------------------
 
 /// Directory (relative to the `tvm_vm` crate root) holding the committed
-/// 10-real-proof set (11-PI deposit layout).
+/// 10-real-proof set (12-PI deposit layout, chainId at index 4).
 const DEPOSIT_SET_DIR: &str = "halo2_test_data/deposit_10proofs";
 
 /// Number of real proofs in the committed set.
@@ -350,13 +354,23 @@ fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -
 
 #[test]
 fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
+    // Regression guard: catches accidental fixture desync (e.g. a stale sync
+    // against a pre-chainId 11-PI producer). 12 × 32 B = 384 B.
+    const DEPOSIT_PI_BYTES_EXPECTED: u64 = 12 * 32;
     for i in 0..DEPOSIT_PROOF_COUNT {
+        let pi_len =
+            std::fs::metadata(deposit_pubin_path(i)).expect("stat public_inputs.bin").len();
+        assert_eq!(
+            pi_len, DEPOSIT_PI_BYTES_EXPECTED,
+            "proof_{:02}/public_inputs.bin is {} B; expected {} B (12 × 32 LE Fr)",
+            i, pi_len, DEPOSIT_PI_BYTES_EXPECTED
+        );
         let res = run_zkhalo2_with_vk(
             &deposit_vk_blob_path(),
             &deposit_pubin_path(i),
             &deposit_proof_path(i),
         );
-        println!("ZKHALO2VERIFYWITHVK 11-PI deposit proof_{:02}: result={}", i, res);
+        println!("ZKHALO2VERIFYWITHVK 12-PI deposit proof_{:02}: result={}", i, res);
         assert!(res, "expected ACCEPT on real deposit proof_{:02}", i);
     }
     println!("All {} real deposit proofs ACCEPTED.", DEPOSIT_PROOF_COUNT);
