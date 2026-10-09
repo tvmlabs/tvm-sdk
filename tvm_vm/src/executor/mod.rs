@@ -11,6 +11,8 @@
 
 #[macro_use]
 mod microcode;
+#[cfg(feature = "gosh")]
+mod keccak256;
 #[macro_use]
 mod engine;
 mod blockchain;
@@ -78,6 +80,10 @@ mod test_poseidon_bad_args;
 #[cfg(test)]
 #[path = "../tests/test_chk_hist_proof.rs"]
 mod test_chk_hist_proof;
+
+#[cfg(all(test, feature = "gosh"))]
+#[path = "../tests/test_keccak256.rs"]
+mod test_keccak256;
 
 #[cfg(test)]
 #[path = "../tests/test_executor.rs"]
