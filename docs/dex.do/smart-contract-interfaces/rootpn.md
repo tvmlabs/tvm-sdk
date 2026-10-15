@@ -96,7 +96,7 @@ function sendEccShellToPrivateNote(
 
 **Behavior:**
 
-* Verifies the proof using `zkhalo2verify`
+* Verifies the proof using `gosh.zkhalo2VerifyWithVK` against the contract's embedded `VK_BLOB`
 * Mints ECC Shell tokens
 * Deploys a `Nullifier` contract
 * Forwards minted tokens to the corresponding `PrivateNote`
@@ -135,7 +135,7 @@ function deployPrivateNote(
   * more zero padding
   * `token_type` (encoded into 8 bytes)
   * `deposit_identifier_hash` (encoded into 32 bytes)
-* Verifies the proof using `gosh.zkhalo2verify(pub_inputs, zkproof)`
+* Verifies the proof using `gosh.zkhalo2VerifyWithVK(VK_BLOB, pub_inputs, zkproof)`, where `VK_BLOB` is the Dark DEX verifying key embedded in the contract
 * Deploys the `PrivateNote` contract deterministically from `deposit_identifier_hash`
 * Emits `PrivateNoteDeployed`
 

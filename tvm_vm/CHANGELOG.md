@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Breaking Changes
+- Removed the `ZKHALO2VERIFY` instruction (C749). Its handler module `executor::zk_halo2` is gone (`warmup_halo2`, `consume_uint64`, `check_is_u64`), and so is the Dark DEX key it verified against: `zk_halo2_utils::DARK_DEX_W128_VK_BYTES`, `dark_dex_w128_config_params` and `build_dark_dex_w128_vk`. C749 is left unassigned and throws `InvalidOpcode`. Verify with `ZKHALO2VERIFYWITHVK` (C74A) instead, passing the key as a `VkBlob`; the Dark DEX key in that form is `halo2_test_data/dark_dex_w128_vk_blob.bin`, the same bytes `RootPN.sol` embeds.
+
 ## [3.0.6] - 2026-09-03
 
 ### Fixed
