@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Breaking Changes
+- `tvm_vm`: the `ZKHALO2VERIFY` instruction (C749) is removed together with the Dark DEX verifying key the VM hardcoded for it. Halo2 proofs are verified with `ZKHALO2VERIFYWITHVK` (C74A), the contract passing its own key as a `VkBlob`; C749 now throws `InvalidOpcode`. The Dark DEX `RootPN` contract carries its key as `VK_BLOB` — upgrade it before nodes run this release, or its proof checks fail.
+
 ## [3.0.6] - 2026-09-03
 
 Crate-level detail is in the per-crate changelogs — [`tvm_cli`](tvm_cli/CHANGELOG.md),

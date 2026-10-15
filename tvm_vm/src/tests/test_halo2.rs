@@ -1,10 +1,12 @@
 use std::time::Instant;
 
+use tvm_types::ExceptionCode;
 use tvm_types::SliceData;
 
+use crate::error::TvmError;
 use crate::executor::engine::Engine;
 use crate::executor::test_helper::*;
-use crate::executor::zk_halo2::execute_halo2_proof_verification;
+use crate::executor::zk_halo2_with_vk::execute_zkhalo2_verify_with_vk;
 use crate::stack::Stack;
 use crate::stack::StackItem;
 use crate::stack::savelist::SaveList;
@@ -21,6 +23,11 @@ const W128_L2_PROOF_PATH: &str = "halo2_test_data/dark_dex_w128_L2_proof.bin";
 const W128_L2_INSTANCES_PATH: &str = "halo2_test_data/dark_dex_w128_L2_instances.bin";
 const W128_L11_PROOF_PATH: &str = "halo2_test_data/dark_dex_w128_L11_proof.bin";
 const W128_L11_INSTANCES_PATH: &str = "halo2_test_data/dark_dex_w128_L11_instances.bin";
+
+// VkBlob of the Dark DEX circuit (W=128, k=19): the bytes RootPN.sol embeds as
+// `VK_BLOB` and passes to ZKHALO2VERIFYWITHVK. It wraps, unchanged, the VK the
+// VM hardcoded for the retired ZKHALO2VERIFY.
+const W128_VK_BLOB_PATH: &str = "halo2_test_data/dark_dex_w128_vk_blob.bin";
 
 fn setup_engine() -> Engine {
     let elector_code = load_boc("benches/elector-code.boc");
@@ -58,10 +65,18 @@ fn setup_engine() -> Engine {
     )
 }
 
+/// Push the Dark DEX `vk_cell`, the bottom operand of ZKHALO2VERIFYWITHVK;
+/// public inputs and proof go on top of it.
+fn push_w128_vk_blob(engine: &mut Engine) {
+    let vk_blob = std::fs::read(W128_VK_BLOB_PATH).expect("Failed to read VkBlob file");
+    engine.cc.stack.push(StackItem::cell(pack_data_to_cell(&vk_blob, &mut 0).unwrap()));
+}
+
 /// Run halo2 proof verification through the TVM engine and return (result,
 /// elapsed_ms).
 fn verify_proof(proof_path: &str, instances_path: &str) -> (bool, u128) {
     let mut engine = setup_engine();
+    push_w128_vk_blob(&mut engine);
 
     let pub_inputs_bytes = std::fs::read(instances_path).expect("Failed to read instances file");
     let pub_inputs_cell = pack_data_to_cell(&pub_inputs_bytes, &mut 0).unwrap();
@@ -72,7 +87,7 @@ fn verify_proof(proof_path: &str, instances_path: &str) -> (bool, u128) {
     engine.cc.stack.push(StackItem::cell(proof_cell));
 
     let start = Instant::now();
-    let _ = execute_halo2_proof_verification(&mut engine).unwrap();
+    let _ = execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     let elapsed = start.elapsed().as_millis();
 
     let res = engine.cc.stack.get(0).as_bool().unwrap();
@@ -122,6 +137,7 @@ fn test_verify_w128_l11_max_chain_steps() {
 #[test]
 fn test_verify_w128_wrong_instances() {
     let mut engine = setup_engine();
+    push_w128_vk_blob(&mut engine);
 
     // Use valid L0 instances but flip one byte to make them wrong
     let mut pub_inputs_bytes =
@@ -135,7 +151,7 @@ fn test_verify_w128_wrong_instances() {
     engine.cc.stack.push(StackItem::cell(proof_cell));
 
     let start = Instant::now();
-    let _ = execute_halo2_proof_verification(&mut engine).unwrap();
+    let _ = execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     let elapsed = start.elapsed().as_millis();
 
     let res = engine.cc.stack.get(0).as_bool().unwrap();
@@ -146,6 +162,7 @@ fn test_verify_w128_wrong_instances() {
 #[test]
 fn test_verify_w128_bad_proof() {
     let mut engine = setup_engine();
+    push_w128_vk_blob(&mut engine);
 
     let pub_inputs_bytes =
         std::fs::read(W128_L0_INSTANCES_PATH).expect("Failed to read instances file");
@@ -160,7 +177,7 @@ fn test_verify_w128_bad_proof() {
     engine.cc.stack.push(StackItem::cell(proof_cell));
 
     let start = Instant::now();
-    let _ = execute_halo2_proof_verification(&mut engine).unwrap();
+    let _ = execute_zkhalo2_verify_with_vk(&mut engine).unwrap();
     let elapsed = start.elapsed().as_millis();
 
     let res = engine.cc.stack.get(0).as_bool().unwrap();
@@ -176,16 +193,33 @@ fn test_verify_w128_mismatched_proof_and_instances() {
     assert!(!res);
 }
 
+#[test]
+fn test_retired_zkhalo2verify_opcode_is_invalid() {
+    // C7 49 was ZKHALO2VERIFY, with the Dark DEX VK hardcoded in the VM. It is
+    // retired and must stay unassigned: code still calling it has to fail.
+    let code = SliceData::new(vec![0xC7, 0x49, 0x80]);
+    let mut engine = Engine::with_capabilities(DEFAULT_CAPABILITIES).setup_with_libraries(
+        code,
+        None,
+        None,
+        None,
+        vec![],
+    );
+    let err = engine.execute().expect_err("C7 49 must not execute");
+    let Some(TvmError::TvmExceptionFull(exc, _)) = err.downcast_ref::<TvmError>() else {
+        panic!("expected a VM exception, got {err}");
+    };
+    assert_eq!(exc.exception_code(), Some(ExceptionCode::InvalidOpcode));
+}
+
 // ---------------------------------------------------------------------------
 // Security: malformed public-input bytes must NOT panic the executor.
 //
-// `Fr::from_bytes_le` is the default `ScalarField` impl, which calls
-// `Fr::from_repr(repr).unwrap()`. For any 32-byte LE value >= the BN254
-// scalar field modulus p (~2^254), `from_repr` returns `CtOption::None`
-// and `.unwrap()` panics. `pub_input_bytes` originates from attacker-
-// controllable cell data, so this is a DoS vector unless the executor
-// rejects non-canonical encodings explicitly (matching the existing
-// `% 32 != 0` length check).
+// For any 32-byte LE value >= the BN254 scalar field modulus p (~2^254),
+// `Fr::from_repr` returns `CtOption::None`. `pub_input_bytes` originates
+// from attacker-controllable cell data, so unwrapping it would be a DoS
+// vector: the handler must reject non-canonical encodings with an error
+// (matching the `% 32 != 0` length check) instead.
 // ---------------------------------------------------------------------------
 
 /// BN254 Fr modulus p in little-endian (Fr::to_repr() encoding).
@@ -202,6 +236,7 @@ fn run_with_custom_pub_inputs(
     proof_path: &str,
 ) -> tvm_types::Result<bool> {
     let mut engine = setup_engine();
+    push_w128_vk_blob(&mut engine);
     let pub_inputs_cell = pack_data_to_cell(pub_inputs_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(pub_inputs_cell));
 
@@ -209,7 +244,7 @@ fn run_with_custom_pub_inputs(
     let proof_cell = pack_data_to_cell(&proof_bytes, &mut 0).unwrap();
     engine.cc.stack.push(StackItem::cell(proof_cell));
 
-    execute_halo2_proof_verification(&mut engine)?;
+    execute_zkhalo2_verify_with_vk(&mut engine)?;
     Ok(engine.cc.stack.get(0).as_bool().unwrap())
 }
 
@@ -334,7 +369,6 @@ fn parse_vk_blob_chunks(vk_blob: &[u8]) -> (Vec<u8>, Vec<u8>) {
 /// Run `ZKHALO2VERIFYWITHVK` with the three-operand ABI (vk_blob cell,
 /// public_inputs cell, proof cell).
 fn run_zkhalo2_with_vk(vk_blob_path: &str, pubin_path: &str, proof_path: &str) -> bool {
-    use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
     let vk_blob = std::fs::read(vk_blob_path).expect("read vk_blob");
@@ -378,7 +412,6 @@ fn test_zkhalo2_with_vk_deposit_10_real_proofs() {
 
 #[test]
 fn test_zkhalo2_with_vk_corrupt_proof_rejects() {
-    use crate::executor::zk_halo2::execute_zkhalo2_verify_with_vk;
     let mut engine = setup_engine();
 
     let vk_blob = std::fs::read(deposit_vk_blob_path()).expect("read vk_blob");

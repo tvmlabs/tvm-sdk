@@ -4,6 +4,13 @@
 **Owner of this note:** Alina T.
 **Written:** 2026-07-12
 
+> **Update 2026-10-15:** `ZKHALO2VERIFY` (0xC7 0x49) is removed, and with it
+> `DARK_DEX_W128_VK_BYTES` and `dark_dex_w128_config_params.json`. The same
+> Hermez-anchored Dark DEX VK now lives in `RootPN.sol` as `VK_BLOB` and is
+> verified with `ZKHALO2VERIFYWITHVK`; its tvm-sdk copy is
+> `tvm_vm/halo2_test_data/dark_dex_w128_vk_blob.bin`. The note below is kept
+> as written.
+
 ---
 
 ## TL;DR

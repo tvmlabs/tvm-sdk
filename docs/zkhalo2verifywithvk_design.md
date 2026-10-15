@@ -7,6 +7,13 @@ implementation landed 2026-05-22.
 **Parent branch**: [`serhii/node-3406-vergrth16-with-vk`](https://github.com/tvmlabs/tvm-sdk/tree/serhii/node-3406-vergrth16-with-vk) — Serhii's `ZKHALO2VERIFY` (hard-coded DarkDex W=8 VK) + `VERGRTH16WITHVK`.
 **Companion**: bridge-side memo `docs/zk_halo2_an_side_design.md` in [`Pruvendo/acki-nacki-bridge`](https://github.com/Pruvendo/acki-nacki-bridge).
 
+> **Update 2026-10-15: `ZKHALO2VERIFY` (0xC7 0x49) is removed.** The Dark DEX
+> `RootPN` contract now embeds its verifying key as a `VkBlob` constant
+> (`VK_BLOB`) and calls `ZKHALO2VERIFYWITHVK`, so the VM no longer carries a
+> DarkDex VK. The DEX pays the WithVK gas premium described below in exchange
+> for rotating its circuit without a node release. `0x49` stays unassigned.
+> The comparison of the two opcodes below is kept as history.
+
 ## TL;DR
 
 `ZKHALO2VERIFY` (0xC7 0x49) hard-codes the verifying key to the DarkDex
