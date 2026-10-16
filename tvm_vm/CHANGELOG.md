@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-10-16
+
+### Breaking Changes
+- `ZKHALO2VERIFYWITHVK`: VkBlob header byte 11, previously part of the reserved region and ignored, is now `accumulator_limbs`. Only `0` (no accumulator) and `12` (KZG accumulator) are accepted; any other value fails parsing and the opcode throws `FatalError`. The remaining reserved bytes `12..16` are still ignored.
+
+### Added
+- `KECCAK256` (`C74B`, `gosh` feature), stack `c - x`. Takes a cell holding a byte string — a chain of cells with at most one reference each, the layout `pack_data_to_cell` produces and Solidity `bytes` uses — and pushes its Ethereum keccak-256 digest as a 256-bit unsigned integer. Gas: flat `KECCAK256_GAS_PRICE` = 1000, plus the cell loads of the chain. A cell whose data is not a whole number of bytes, or that has more than one reference, throws; an empty stack throws a stack underflow.
+- `Gas::keccak256_price()` (`gosh` feature).
+- `VK_ACCUMULATOR_NONE` (`0`), `VK_ACCUMULATOR_LIMBS_KZG` (`12`) and the public field `VkBlob::accumulator_limbs`.
+
+### Changed
+- `ZKHALO2VERIFYWITHVK`: when the VkBlob carries `accumulator_limbs = 12`, the opcode runs the KZG accumulation decider after the SHPLONK verify: it decodes the snark-verifier accumulator from `instances[0..12]` (`lhs.x ‖ lhs.y ‖ rhs.x ‖ rhs.y`, three little-endian 88-bit limbs each) and checks `e(lhs, [1]G2) == e(rhs, [s]G2)` against the embedded Hermez SRS points. It pushes `true` only when both checks hold; an instance column shorter than 12, an off-curve accumulator point or a failed pairing pushes `false`. Blobs with `accumulator_limbs = 0` verify exactly as before.
+
 ## [3.0.6] - 2026-09-03
 
 ### Fixed

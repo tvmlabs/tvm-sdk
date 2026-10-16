@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-10-16
+
+Crate-level detail is in [`tvm_vm`](tvm_vm/CHANGELOG.md) and [`tvm_assembler`](tvm_assembler/CHANGELOG.md).
+
+### Breaking Changes
+- Consensus: VM behaviour changes on `gosh`-feature builds — a new opcode and a stricter `ZKHALO2VERIFYWITHVK`. Nodes on 3.0.x and 3.1.0 can disagree on the result of a transaction that uses either, so every validator of a network has to move to 3.1.0 together.
+- `ZKHALO2VERIFYWITHVK`: VkBlob header byte 11 (until now reserved and ignored) is the `accumulator_limbs` field. Any value other than `0` or `12` now throws `FatalError` instead of being ignored. Blobs that keep the reserved bytes zeroed are unaffected.
+
+### New / Improvements
+- New VM instruction `KECCAK256` (`C74B`, `gosh` feature): Ethereum's keccak-256 of a byte string held in a chain of cells, as Solidity `bytes` stores it; pushes the digest as a 256-bit unsigned integer. Flat price 1000 gas plus the cell loads of the input. `tvm_assembler` now assembles the mnemonic, so `gosh.keccak256` compiles.
+- `ZKHALO2VERIFYWITHVK`: recursive-aggregation (snark-verifier) proofs are now checked in full. A VkBlob with `accumulator_limbs = 12` makes the opcode also run the KZG accumulator pairing check over `instances[0..12]`; until now such a proof was accepted without verifying the inner proofs it folds.
+
 ## [3.0.6] - 2026-09-03
 
 Crate-level detail is in the per-crate changelogs — [`tvm_cli`](tvm_cli/CHANGELOG.md),
