@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-10-16
+
+### Added
+- `KECCAK256` mnemonic, assembled to `C7 4B`.
+
 ## Version 1.4.12
 
 - Added .library-cell directive
