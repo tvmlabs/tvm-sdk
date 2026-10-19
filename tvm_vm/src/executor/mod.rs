@@ -104,9 +104,6 @@ pub mod zk;
 #[cfg(feature = "gosh")]
 pub mod zk_halo2_utils;
 
-#[cfg(feature = "gosh")]
-pub mod zk_halo2;
-
 pub trait Mask {
     fn bit(&self, bits: Self) -> bool;
     fn mask(&self, mask: Self) -> Self;
