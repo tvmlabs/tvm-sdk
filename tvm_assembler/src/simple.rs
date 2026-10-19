@@ -861,6 +861,7 @@ impl Engine {
         CALCMINERTAPCOEF                     => 0xC7, 0x47
         CALCMINERREWARD                      => 0xC7, 0x48
         ZKHALO2VERIFYWITHVK                  => 0xC7, 0x4A
+        KECCAK256                            => 0xC7, 0x4B
         CHKHISTPROOF                         => 0xC7, 0x50
     }
 

@@ -711,7 +711,7 @@ impl InternalMessageHeader {
 
 impl Serializable for InternalMessageHeader {
     fn write_to(&self, cell: &mut BuilderData) -> Result<()> {
-        cell.append_bit_zero()? //tag
+        cell.append_bit_zero()? // tag
             .append_bit_bool(self.ihr_disabled)?
             .append_bit_bool(self.bounce)?
             .append_bit_bool(self.bounced)?;
@@ -1641,13 +1641,13 @@ impl Message {
             Some(_) => {
                 if !init_to_ref {
                     builder
-                        .append_bit_one()? //mayby bit
+                        .append_bit_one()? // mayby bit
                         .append_bit_zero()?; // either bit
                     builder.append_builder(&init_builder)?;
                 } else {
                     // if not enough space in current cell - append as reference
                     builder
-                        .append_bit_one()? //mayby bit
+                        .append_bit_one()? // mayby bit
                         .append_bit_one()?; // either bit
                     builder.checked_append_reference(init_builder.into_cell()?)?;
                 }

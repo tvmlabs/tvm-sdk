@@ -20,6 +20,8 @@ use crate::error::TvmError;
 #[cfg(feature = "gosh")]
 use crate::executor::chk_hist_proof::CHKHISTPROOF_GAS_PRICE;
 #[cfg(feature = "gosh")]
+use crate::executor::keccak256::KECCAK256_GAS_PRICE;
+#[cfg(feature = "gosh")]
 use crate::executor::zk::POSEIDON_ZK_LOGIN_GAS_PRICE;
 #[cfg(feature = "gosh")]
 use crate::executor::zk::VERGRTH16_GAS_PRICE;
@@ -240,6 +242,11 @@ impl Gas {
     #[cfg(feature = "gosh")]
     pub const fn zkhalo2_verify_with_vk_price() -> i64 {
         ZKHALO2_VERIFY_WITH_VK_GAS_PRICE
+    }
+
+    #[cfg(feature = "gosh")]
+    pub const fn keccak256_price() -> i64 {
+        KECCAK256_GAS_PRICE
     }
 
     #[cfg(feature = "gosh")]

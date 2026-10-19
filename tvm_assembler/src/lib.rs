@@ -475,6 +475,7 @@ mod gosh_zk_opcode_tests {
             ("VERGRTH16", [0xC7u8, 0x31u8]),
             ("POSEIDON", [0xC7, 0x32]),
             ("ZKHALO2VERIFYWITHVK", [0xC7, 0x4A]),
+            ("KECCAK256", [0xC7, 0x4B]),
             ("CHKHISTPROOF", [0xC7, 0x50]),
         ] {
             let compiled =

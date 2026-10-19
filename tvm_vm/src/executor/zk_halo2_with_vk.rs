@@ -50,9 +50,13 @@ use axiom_eth::utils::eth_circuit::EthCircuitInstructions;
 use axiom_eth::utils::eth_circuit::EthCircuitParams;
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
+use halo2_base::halo2_proofs::halo2curves::CurveAffine;
 use halo2_base::halo2_proofs::halo2curves::bn256::Bn256;
+use halo2_base::halo2_proofs::halo2curves::bn256::Fq;
 use halo2_base::halo2_proofs::halo2curves::bn256::Fr;
 use halo2_base::halo2_proofs::halo2curves::bn256::G1Affine;
+use halo2_base::halo2_proofs::halo2curves::bn256::G2Affine;
+use halo2_base::halo2_proofs::halo2curves::bn256::pairing;
 use halo2_base::halo2_proofs::halo2curves::ff::PrimeField;
 use halo2_base::halo2_proofs::plonk::VerifyingKey;
 use halo2_base::halo2_proofs::plonk::verify_proof;
@@ -70,6 +74,7 @@ use tvm_types::fail;
 use crate::executor::Engine;
 use crate::executor::engine::storage::fetch_stack;
 use crate::executor::gas::gas_state::Gas;
+use crate::executor::zk_halo2_with_vk_bundle::VK_ACCUMULATOR_LIMBS_KZG;
 use crate::executor::zk_halo2_with_vk_bundle::VkBlob;
 use crate::executor::zk_halo2_with_vk_bundle::VkBlobConfig;
 use crate::executor::zk_halo2_with_vk_bundle::validate_proof_size;
@@ -315,6 +320,91 @@ fn decode_instances_strict(instances_bytes: &[u8]) -> tvm_types::Result<Vec<Fr>>
     Ok(out)
 }
 
+// ---------------------------------------------------------------------------
+// KZG accumulation decider (recursive-aggregation soundness gate)
+// ---------------------------------------------------------------------------
+//
+// A snark-verifier aggregation proof defers its inner KZG opening checks into a
+// 12-limb accumulator exposed as `instances[0..12]`. A plain SHPLONK
+// `verify_proof` proves the AGGREGATION relation but NOT that accumulator, so
+// the folded inner proofs go unchecked. The decider is the missing pairing
+// `e(lhs, g2) == e(rhs, s_g2)` over the same SRS G2 points the opcode already
+// embeds (`KZG_G2_BYTES` / `KZG_S_G2_BYTES`, i.e. Hermez `[1]G2` / `[s]G2`).
+//
+// Reference validated natively in
+// `acki-nacki-bridge/eth-light-client-prover/examples/rotate_decider_check.rs`
+// (honest PASS; tampered limb + swapped lhs/rhs REJECTED).
+
+/// snark-verifier accumulator encoding: each G1 coordinate is `LIMBS` little-
+/// endian limbs of `BITS` bits (`snark-verifier-sdk` `LIMBS=3`, `BITS=88`).
+/// `BITS` is a multiple of 8 (⇒ 11 bytes/limb, byte-aligned windows), so a
+/// coordinate is the byte-wise OR of the limbs' little-endian reprs at offsets
+/// `0, 11, 22` — no field arithmetic needed (which sidesteps the multi-halo2
+/// `Field`-trait tangle in this crate's dependency graph).
+const ACC_LIMBS: usize = 3;
+const ACC_BITS: usize = 88;
+const ACC_LIMB_BYTES: usize = ACC_BITS / 8; // 11
+
+/// One G1 coordinate (`Fq`) from `ACC_LIMBS` little-endian limbs (each an `Fr`
+/// holding a value `< 2^ACC_BITS`): `Σ limb_i · (2^ACC_BITS)^i`. `None` if a
+/// limb is `≥ 2^88`, the assembled value overruns 32 bytes, or it is `≥ q`.
+fn acc_coord_from_limbs(limbs: &[Fr]) -> Option<Fq> {
+    let mut le = [0u8; 32];
+    for (i, l) in limbs.iter().enumerate() {
+        let repr = l.to_repr(); // 32-byte little-endian
+        let lb = repr.as_ref();
+        // A valid limb is < 2^88, i.e. only its low 11 bytes may be non-zero.
+        if lb[ACC_LIMB_BYTES..].iter().any(|&b| b != 0) {
+            return None;
+        }
+        let off = i * ACC_LIMB_BYTES;
+        for j in 0..ACC_LIMB_BYTES {
+            let byte = lb[j];
+            if off + j < le.len() {
+                le[off + j] = byte; // windows are disjoint ⇒ assignment == OR
+            } else if byte != 0 {
+                return None; // limb pushes the coordinate past 256 bits
+            }
+        }
+    }
+    let mut fq_repr = <Fq as PrimeField>::Repr::default();
+    fq_repr.as_mut().copy_from_slice(&le);
+    Option::<Fq>::from(Fq::from_repr(fq_repr))
+}
+
+/// Decode the KZG accumulator `(lhs, rhs)` from the 12 accumulator instances
+/// (`lhs.x ‖ lhs.y ‖ rhs.x ‖ rhs.y`, each 3 LE limbs). `None` if a decoded pair
+/// is not a valid curve point (itself a tamper signal).
+fn decode_accumulator(acc: &[Fr]) -> Option<(G1Affine, G1Affine)> {
+    debug_assert_eq!(acc.len(), 4 * ACC_LIMBS);
+    let lhs_x = acc_coord_from_limbs(&acc[0..3])?;
+    let lhs_y = acc_coord_from_limbs(&acc[3..6])?;
+    let rhs_x = acc_coord_from_limbs(&acc[6..9])?;
+    let rhs_y = acc_coord_from_limbs(&acc[9..12])?;
+    let lhs = Option::<G1Affine>::from(G1Affine::from_xy(lhs_x, lhs_y))?;
+    let rhs = Option::<G1Affine>::from(G1Affine::from_xy(rhs_x, rhs_y))?;
+    Some((lhs, rhs))
+}
+
+/// The decider pairing: `e(lhs, g2) == e(rhs, s_g2)`.
+fn decide_accumulator(lhs: &G1Affine, rhs: &G1Affine, g2: &G2Affine, s_g2: &G2Affine) -> bool {
+    pairing(lhs, g2) == pairing(rhs, s_g2)
+}
+
+/// Run the KZG accumulation decider over `instances[0..limbs]` using the SRS G2
+/// points embedded in `params`. Returns `false` (cryptographic reject) if the
+/// instance column is too short, a limb-pair is off-curve, or the pairing
+/// fails.
+fn run_accumulator_decider(instances: &[Fr], limbs: usize, params: &ParamsKZG<Bn256>) -> bool {
+    if instances.len() < limbs {
+        return false;
+    }
+    match decode_accumulator(&instances[0..limbs]) {
+        Some((lhs, rhs)) => decide_accumulator(&lhs, &rhs, &params.g2(), &params.s_g2()),
+        None => false,
+    }
+}
+
 /// `ZKHALO2VERIFYWITHVK` handler.
 ///
 /// **Stack** (top → bottom):
@@ -375,7 +465,7 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
     let strategy = SingleStrategy::new(&cached.params);
     let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(proof_bytes.as_slice());
     let instance_refs: &[&[Fr]] = &[&instances];
-    let res = verify_proof::<
+    let verified = verify_proof::<
         KZGCommitmentScheme<Bn256>,
         VerifierSHPLONK<'_, Bn256>,
         Challenge255<G1Affine>,
@@ -384,8 +474,87 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
     >(verifier_params, &cached.vk, strategy, &[instance_refs], &mut transcript)
     .is_ok();
 
+    // Recursive-aggregation soundness gate: if the VkBlob flags a KZG
+    // accumulator, the SHPLONK verify alone is insufficient — additionally
+    // pair-check `instances[0..limbs]` against the embedded SRS `[s]G2`. Both
+    // must hold. A legacy blob (accumulator_limbs = 0) skips this unchanged.
+    let res = verified
+        && if vk_blob.accumulator_limbs == VK_ACCUMULATOR_LIMBS_KZG {
+            run_accumulator_decider(&instances, VK_ACCUMULATOR_LIMBS_KZG as usize, &cached.params)
+        } else {
+            true
+        };
+
     engine.cc.stack.push(boolean!(res));
     Ok(())
+}
+
+#[cfg(test)]
+mod decider_tests {
+    //! KZG accumulation decider coverage on the REAL recursive-rotate fixture
+    //! (`halo2_test_data/rotate_light_client`). Proves the pairing
+    //! `e(lhs, g2) == e(rhs, s_g2)` over the opcode's embedded Hermez `[s]G2`
+    //! is the genuine soundness gate: the honest accumulator decides true;
+    //! a tampered limb and swapped lhs/rhs are rejected. Mirrors
+    //! `acki-nacki-bridge/eth-light-client-prover/examples/
+    //! rotate_decider_check.rs`.
+    use super::*;
+
+    const ROTATE_SET_DIR: &str = "halo2_test_data/rotate_light_client";
+
+    fn rotate_instances() -> Vec<Fr> {
+        let bytes = std::fs::read(format!("{ROTATE_SET_DIR}/rotate_public_inputs.bin"))
+            .expect("rotate_public_inputs.bin must exist");
+        decode_instances_strict(&bytes).expect("rotate instances decode")
+    }
+
+    /// The opcode's embedded (Hermez) SRS G2 points at the rotate root's k=21.
+    fn embedded_params() -> ParamsKZG<Bn256> {
+        crate::executor::zk_halo2_utils::build_kzg_verifier_params(21)
+    }
+
+    #[test]
+    fn honest_rotate_accumulator_decides_true() {
+        let inst = rotate_instances();
+        assert_eq!(inst.len(), 15, "rotate has 12 accumulator limbs + 3 rotate PIs");
+        let params = embedded_params();
+        assert!(
+            run_accumulator_decider(&inst, VK_ACCUMULATOR_LIMBS_KZG as usize, &params),
+            "honest recursive-rotate accumulator must decide true against embedded [s]G2"
+        );
+    }
+
+    #[test]
+    fn tampered_rotate_accumulator_limb_rejected() {
+        let mut inst = rotate_instances();
+        inst[0] += Fr::from(1u64); // perturb the first accumulator limb
+        let params = embedded_params();
+        assert!(
+            !run_accumulator_decider(&inst, VK_ACCUMULATOR_LIMBS_KZG as usize, &params),
+            "tampered accumulator limb must be REJECTED by the decider"
+        );
+    }
+
+    #[test]
+    fn swapped_lhs_rhs_rejected() {
+        let inst = rotate_instances();
+        let (lhs, rhs) = decode_accumulator(&inst[0..VK_ACCUMULATOR_LIMBS_KZG as usize])
+            .expect("honest accumulator decodes to curve points");
+        let params = embedded_params();
+        assert!(decide_accumulator(&lhs, &rhs, &params.g2(), &params.s_g2()), "honest decides");
+        assert!(
+            !decide_accumulator(&rhs, &lhs, &params.g2(), &params.s_g2()),
+            "swapped lhs/rhs (both on-curve) must be REJECTED"
+        );
+    }
+
+    #[test]
+    fn no_accumulator_flag_skips_decider() {
+        // Legacy behaviour: accumulator_limbs = 0 ⇒ decider not run (the caller
+        // gates on the flag; here we assert the flag constants are distinct).
+        assert_eq!(crate::executor::zk_halo2_with_vk_bundle::VK_ACCUMULATOR_NONE, 0);
+        assert_eq!(VK_ACCUMULATOR_LIMBS_KZG, 12);
+    }
 }
 
 #[cfg(test)]

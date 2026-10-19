@@ -35,6 +35,8 @@ use crate::executor::engine::storage::fetch_stack;
 use crate::executor::exceptions::*;
 use crate::executor::gas::*;
 use crate::executor::globals::*;
+#[cfg(feature = "gosh")]
+use crate::executor::keccak256::execute_keccak256;
 use crate::executor::math::*;
 use crate::executor::null::*;
 use crate::executor::rand::*;
@@ -270,7 +272,7 @@ impl Handlers {
             .set(0xAC, execute_lshift::<Signaling>)
             .set(0xAD, execute_rshift::<Signaling>)
             .set(0xAE, execute_pow2::<Signaling>)
-            //0xB0
+            // 0xB0
             .set(0xB0, execute_and::<Signaling>)
             .set(0xB1, execute_or::<Signaling>)
             .set(0xB2, execute_xor::<Signaling>)
@@ -333,7 +335,7 @@ impl Handlers {
                     .set(0xBD, execute_neq::<Quiet>)
                     .set(0xBE, execute_geq::<Quiet>)
                     .set(0xBF, execute_cmp::<Quiet>)
-                    //0xC0
+                    // 0xC0
                     .set(0xC0, execute_eqint::<Quiet>)
                     .set(0xC1, execute_lessint::<Quiet>)
                     .set(0xC2, execute_gtint::<Quiet>)
@@ -350,7 +352,7 @@ impl Handlers {
             .set(0xBD, execute_neq::<Signaling>)
             .set(0xBE, execute_geq::<Signaling>)
             .set(0xBF, execute_cmp::<Signaling>)
-            //0xC0
+            // 0xC0
             .set(0xC0, execute_eqint::<Signaling>)
             .set(0xC1, execute_lessint::<Signaling>)
             .set(0xC2, execute_gtint::<Signaling>)
@@ -420,6 +422,7 @@ impl Handlers {
                 // as a VkBlob cell; see tvm_vm/src/executor/zk_halo2_with_vk.rs
                 // and docs/zkhalo2verifywithvk_design.md.
                 .set(0x4A, execute_zkhalo2_verify_with_vk)
+                .set(0x4B, execute_keccak256)
                 .set(0x50, execute_chk_hist_proof);
             #[cfg(feature = "wasmtime")]
             {
@@ -503,7 +506,7 @@ impl Handlers {
                     .set_range(0x80..0xFF, execute_stsliceconst)
                     .set(0xFF, execute_stsliceconst),
             )
-            //0xD0
+            // 0xD0
             .set(0xD0, execute_ctos)
             .set(0xD1, execute_ends)
             .set(0xD2, execute_ldi)
