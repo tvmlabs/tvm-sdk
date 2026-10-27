@@ -22,9 +22,11 @@ All notable changes to this project will be documented in this file.
 
 - Cross-DApp headers targeting the sender's own DApp now retain incoming
   VMShell. A bounce that cannot pay return forwarding fees now retains ECC on
-  a new Uninit destination when StateInit is absent; flag 16 exchanges retained
-  incoming ECC SHELL after the failed return, and successful returns keep the
-  original currencies.
+  a new Uninit destination even when an attached StateInit cannot deploy.
+  Flag 16 exchanges retained incoming ECC SHELL after the failed return, and
+  successful returns keep the original currencies. Failed deployments with
+  `bounce=false` retain funds according to the DApp boundary and exchange
+  rules. Successful contract activation and legacy execution are unchanged.
 
 - Cross-DApp funding messages with `bounce=false` now discard original incoming
   VMShell before credit and execution. Incoming ECC SHELL is retained, or

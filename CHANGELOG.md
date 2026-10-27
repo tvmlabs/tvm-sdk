@@ -18,8 +18,9 @@ All notable changes to this project will be documented in this file.
   external-message ABI decoder.
 - Cross-DApp headers targeting the sender's own DApp now retain incoming
   VMShell. A bounce that cannot pay return forwarding fees now retains ECC on
-  a new Uninit destination even when an attached StateInit cannot deploy; flag 16 exchanges retained
-  incoming ECC SHELL after the failed return, and successful returns keep the
+  a new Uninit destination even when an attached StateInit cannot deploy.
+  Flag 16 exchanges retained incoming ECC SHELL after the failed return, and
+  successful returns keep the
   original currencies. Failed deployments with `bounce=false` also retain
   incoming ECC on Uninit, applying the same DApp boundary and exchange rules
   as plain funding. Contract activation rules remain unchanged.
