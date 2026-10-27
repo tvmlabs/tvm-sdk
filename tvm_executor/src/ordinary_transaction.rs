@@ -76,6 +76,19 @@ impl OrdinaryTransactionExecutor {
     }
 }
 
+// Exchange only the provided retained currencies, preserving the complete
+// VarUInteger32 remainder above the per-message conversion limit.
+fn exchange_retained_shell(balance: &mut CurrencyCollection) -> Result<()> {
+    if let Some(mut shell) = balance.get_other(2)? {
+        let exchanged = min(shell.clone(), VarUInteger32::from(u64::MAX));
+        let converted = exchanged.value().iter_u64_digits().next().unwrap_or(0);
+        balance.grams += Grams::from(converted);
+        shell.sub(&exchanged)?;
+        balance.set_other_ex(2, &shell)?;
+    }
+    Ok(())
+}
+
 impl TransactionExecutor for OrdinaryTransactionExecutor {
     /// Create and execute transaction from message for account
     fn execute_with_params(
@@ -204,19 +217,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         // untouched.
         if let Some(h) = in_msg.cross_dapp_header() {
             if !h.bounce && !h.bounced {
-                msg_balance.grams = Grams::zero();
+                // Header type alone does not imply a DApp boundary: callers
+                // can explicitly address their own DApp with this header.
+                if Some(&h.src_dapp_id) != params.dapp_id.as_ref() {
+                    msg_balance.grams = Grams::zero();
+                }
                 if h.is_exchange {
-                    if let Some(mut shell) = msg_balance.get_other(2)? {
-                        let exchanged_shell = min(shell.clone(), VarUInteger32::from(u64::MAX));
-                        let converted =
-                            exchanged_shell.value().iter_u64_digits().next().unwrap_or(0);
-                        msg_balance.grams += Grams::from(converted);
-                        shell.sub(&exchanged_shell)?;
-                        // Preserve the complete VarUInteger32 remainder,
-                        // including ECC amounts larger
-                        // than u128::MAX.
-                        msg_balance.set_other_ex(2, &shell)?;
-                    }
+                    exchange_retained_shell(&mut msg_balance)?;
                 }
             }
         }
@@ -585,7 +592,35 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 acc_balance = original_acc_balance;
                 acc_balance.other = ecc;
             } else if original_account_is_none && !acc_balance.is_zero()? {
-                acc_balance = CurrencyCollection::default();
+                // A failed return must not erase ECC. With no StateInit, keep
+                // those currencies on Uninit when no return fee can be paid.
+                // Incoming VM is not retained by this fallback; converted
+                // SHELL below is receiver-local VM and must not be burned.
+                let mut retained = CurrencyCollection::default();
+                retained.other = acc_balance.other.clone();
+                if matches!(description.bounce, Some(TrBouncePhase::Nofunds(_)))
+                    && !in_msg.have_state_init()
+                    && !retained.is_zero()?
+                {
+                    let exchange = in_msg
+                        .int_header()
+                        .map(|h| h.is_exchange)
+                        .or_else(|| in_msg.cross_dapp_header().map(|h| h.is_exchange))
+                        .unwrap_or(false);
+                    if exchange {
+                        exchange_retained_shell(&mut retained)?;
+                    }
+                    *account = Account::uninit(
+                        account_address.clone(),
+                        0,
+                        if is_special { 0 } else { params.block_unixtime },
+                        retained.clone(),
+                    );
+                    acc_balance = retained;
+                    should_burn_need_to_burn = false;
+                } else {
+                    acc_balance = CurrencyCollection::default();
+                }
             }
         } else if description.aborted && !is_ext_msg && !bounce {
             should_burn_need_to_burn = true;

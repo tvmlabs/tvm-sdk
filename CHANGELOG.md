@@ -16,6 +16,11 @@ All notable changes to this project will be documented in this file.
 
 - `tvm-debugger` builds again; outbound contract responses and events use the
   external-message ABI decoder.
+- Cross-DApp headers targeting the sender's own DApp now retain incoming
+  VMShell. A bounce that cannot pay return forwarding fees now retains ECC on
+  a new Uninit destination when StateInit is absent; flag 16 exchanges retained
+  incoming ECC SHELL after the failed return, and successful returns keep the
+  original currencies.
 
 - Cross-DApp funding with `bounce=false` no longer transfers original VMShell
   into the receiving DApp. Incoming ECC SHELL can be exchanged into local
