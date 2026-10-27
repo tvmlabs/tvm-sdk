@@ -592,39 +592,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 acc_balance = original_acc_balance;
                 acc_balance.other = ecc;
             } else if original_account_is_none && !acc_balance.is_zero()? {
-                // A failed return must not erase ECC. With no StateInit, keep
-                // those currencies on Uninit when no return fee can be paid.
-                // Incoming VM is not retained by this fallback; converted
-                // SHELL below is receiver-local VM and must not be burned.
-                let mut retained = CurrencyCollection::default();
-                // No account existed, so all retained ECC comes from this
-                // message. Use the original values, not an intermediate
-                // exchange result that the legacy internal path may cap.
-                retained.other = original_msg_balance.other.clone();
-                if state_v2
-                    && matches!(description.bounce, Some(TrBouncePhase::Nofunds(_)))
-                    && !in_msg.have_state_init()
-                    && !retained.is_zero()?
-                {
-                    let exchange = in_msg
-                        .int_header()
-                        .map(|h| h.is_exchange)
-                        .or_else(|| in_msg.cross_dapp_header().map(|h| h.is_exchange))
-                        .unwrap_or(false);
-                    if exchange {
-                        exchange_retained_shell(&mut retained)?;
-                    }
-                    *account = Account::uninit(
-                        account_address.clone(),
-                        0,
-                        if is_special { 0 } else { params.block_unixtime },
-                        retained.clone(),
-                    );
-                    acc_balance = retained;
-                    should_burn_need_to_burn = false;
-                } else {
-                    acc_balance = CurrencyCollection::default();
-                }
+                acc_balance = CurrencyCollection::default();
             }
         } else if description.aborted && !is_ext_msg && !bounce {
             should_burn_need_to_burn = true;
@@ -638,6 +606,54 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             } else {
                 acc_balance.grams = Grams::zero();
             }
+        }
+        // A skipped computation cannot spend incoming ECC. Settle its value
+        // independently of whether StateInit could activate the destination.
+        // A successful bounce has already returned the original currencies.
+        let bounced = in_msg
+            .int_header()
+            .map(|h| h.bounced)
+            .or_else(|| in_msg.cross_dapp_header().map(|h| h.bounced))
+            .unwrap_or(false);
+        if state_v2
+            && original_account_is_none
+            && !is_ext_msg
+            && !bounced
+            && description.aborted
+            && matches!(description.compute_ph, TrComputePhase::Skipped(_))
+            && (!bounce || matches!(description.bounce, Some(TrBouncePhase::Nofunds(_))))
+        {
+            let same_dapp = in_msg
+                .int_header()
+                .map(|h| h.src_dapp_id() == &params.dapp_id)
+                .or_else(|| {
+                    in_msg
+                        .cross_dapp_header()
+                        .map(|h| Some(&h.src_dapp_id) == params.dapp_id.as_ref())
+                })
+                .unwrap_or(false);
+            let exchange = in_msg
+                .int_header()
+                .map(|h| h.is_exchange)
+                .or_else(|| in_msg.cross_dapp_header().map(|h| h.is_exchange))
+                .unwrap_or(false);
+            let mut retained = original_msg_balance.clone();
+            // Raw VM remains local only for non-bounce funding in the same
+            // DApp. Converted SHELL is receiver-local VM in every route.
+            if bounce || !same_dapp {
+                retained.grams = Grams::zero();
+            } else if !retained.grams.sub(&tr.total_fees().grams)? {
+                retained.grams = Grams::zero();
+            }
+            if exchange {
+                exchange_retained_shell(&mut retained)?;
+            }
+            *account = if retained.is_zero()? {
+                Account::default()
+            } else {
+                Account::uninit(account_address.clone(), 0, last_paid, retained.clone())
+            };
+            acc_balance = retained;
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
             *account = Account::default();
