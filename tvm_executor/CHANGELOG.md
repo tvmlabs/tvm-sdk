@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- ECC settlement after an unfunded bounce applies only to State V2 engine
+  1.0.8 and newer; earlier engines retain their legacy behavior.
+
 - Unfunded bounce settlement preserves full incoming extra-currency amounts,
   including SHELL values above `u128::MAX` in internal and cross-DApp headers.
 

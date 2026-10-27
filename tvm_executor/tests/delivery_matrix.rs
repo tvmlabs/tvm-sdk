@@ -75,6 +75,14 @@ fn message(
 }
 
 fn execute(message: &Message, dapp: UInt256) -> (tvm_block::Transaction, Account) {
+    execute_versioned(message, dapp, tvm_executor::STATE_V2_ENGINE_VERSION)
+}
+
+fn execute_versioned(
+    message: &Message,
+    dapp: UInt256,
+    engine_version: semver::Version,
+) -> (tvm_block::Transaction, Account) {
     let executor = OrdinaryTransactionExecutor::new(config());
     let mut root = Account::default().serialize().unwrap();
     let (tx, minted) = executor
@@ -83,7 +91,7 @@ fn execute(message: &Message, dapp: UInt256) -> (tvm_block::Transaction, Account
             &mut root,
             ExecuteParams {
                 dapp_id: Some(dapp),
-                engine_version: semver::Version::new(1, 0, 8),
+                engine_version,
                 block_unixtime: 1234,
                 ..Default::default()
             },
@@ -224,4 +232,15 @@ fn failed_state_init_does_not_use_plain_funding_fallback() {
     msg.set_state_init(StateInit::default());
     let (_, account) = execute(&msg, dapp);
     assert_eq!(account.status(), AccountStatus::AccStateNonexist);
+}
+
+#[test]
+fn legacy_no_funds_does_not_apply_state_v2_ecc_settlement() {
+    let mut value = CurrencyCollection::default();
+    value.set_other(1, 10 * UNIT as u128).unwrap();
+    let (msg, dapp) = message(false, true, true, false, value);
+    let (tx, account) = execute_versioned(&msg, dapp, semver::Version::new(1, 0, 7));
+    assert_eq!(account.status(), AccountStatus::AccStateNonexist);
+    assert_eq!(tx.end_status, AccountStatus::AccStateNonexist);
+    assert_eq!(tx.msg_count(), 0);
 }
