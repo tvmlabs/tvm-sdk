@@ -199,17 +199,21 @@ fn no_funds_exchange_preserves_large_shell_remainder_and_other_ecc() {
     value.set_other_ex(2, &shell).unwrap();
     value.set_other(1, 10 * UNIT as u128).unwrap();
     value.set_other(3, 777).unwrap();
-    let (msg, dapp) = message(true, false, true, true, value);
-    let (tx, account) = execute(&msg, dapp);
-    assert_eq!(account.status(), AccountStatus::AccStateUninit);
-    let balance = account.balance().unwrap();
-    assert_eq!(balance.grams.as_u128(), u64::MAX as u128);
-    let mut remainder = shell;
-    remainder.sub(&VarUInteger32::from(u64::MAX)).unwrap();
-    assert_eq!(balance.get_other(2).unwrap().unwrap(), remainder);
-    assert_eq!(balance.get_other(1).unwrap().unwrap(), VarUInteger32::from(10 * UNIT));
-    assert_eq!(balance.get_other(3).unwrap().unwrap(), VarUInteger32::from(777u64));
-    assert_eq!(tx.msg_count(), 0);
+    for cross_header in [false, true] {
+        for same_dapp in [false, true] {
+            let (msg, dapp) = message(cross_header, same_dapp, true, true, value.clone());
+            let (tx, account) = execute(&msg, dapp);
+            assert_eq!(account.status(), AccountStatus::AccStateUninit);
+            let balance = account.balance().unwrap();
+            assert_eq!(balance.grams.as_u128(), u64::MAX as u128);
+            let mut remainder = shell.clone();
+            remainder.sub(&VarUInteger32::from(u64::MAX)).unwrap();
+            assert_eq!(balance.get_other(2).unwrap().unwrap(), remainder);
+            assert_eq!(balance.get_other(1).unwrap().unwrap(), VarUInteger32::from(10 * UNIT));
+            assert_eq!(balance.get_other(3).unwrap().unwrap(), VarUInteger32::from(777u64));
+            assert_eq!(tx.msg_count(), 0);
+        }
+    }
 }
 
 #[test]

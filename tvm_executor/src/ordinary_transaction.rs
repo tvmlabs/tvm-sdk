@@ -597,7 +597,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 // Incoming VM is not retained by this fallback; converted
                 // SHELL below is receiver-local VM and must not be burned.
                 let mut retained = CurrencyCollection::default();
-                retained.other = acc_balance.other.clone();
+                // No account existed, so all retained ECC comes from this
+                // message. Use the original values, not an intermediate
+                // exchange result that the legacy internal path may cap.
+                retained.other = original_msg_balance.other.clone();
                 if matches!(description.bounce, Some(TrBouncePhase::Nofunds(_)))
                     && !in_msg.have_state_init()
                     && !retained.is_zero()?

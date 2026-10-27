@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Unfunded bounce settlement preserves full incoming extra-currency amounts,
+  including SHELL values above `u128::MAX` in internal and cross-DApp headers.
+
 - Cross-DApp headers targeting the sender's own DApp now retain incoming
   VMShell. A bounce that cannot pay return forwarding fees now retains ECC on
   a new Uninit destination when StateInit is absent; flag 16 exchanges retained
