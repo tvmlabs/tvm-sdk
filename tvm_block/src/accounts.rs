@@ -579,8 +579,8 @@ impl Serializable for AccountStuff {
 pub enum OptionalAccount {
     Account(ExternalCell<Account>),
 
-    // Note: used for accounts that were moved to the other blockchain thread according to their
-    // non default DApp ID
+    // Note: used for accounts that were moved to the other blockchain thread
+    // according to their non default DApp ID
     AccountRedirect,
 }
 

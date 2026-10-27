@@ -1,14 +1,32 @@
-//! SDK-only delivery matrix: message header type and DApp boundary are independent.
-use tvm_block::{
-    Account, AccountStatus, AddSub, ConfigParam12, ConfigParam18, ConfigParam31, ConfigParamEnum,
-    CrossDappMessageHeader, CurrencyCollection, Deserializable, InternalMessageHeader, Message,
-    MsgAddressInt, MsgAddressIntOrNone, Serializable, StateInit, StoragePrices, TrBouncePhase,
-    TransactionDescr, VarUInteger32, WorkchainDescr,
-};
-use tvm_executor::{
-    BlockchainConfig, ExecuteParams, OrdinaryTransactionExecutor, TransactionExecutor,
-};
-use tvm_types::{SliceData, UInt256};
+//! SDK-only delivery matrix: message header type and DApp boundary are
+//! independent.
+use tvm_block::Account;
+use tvm_block::AccountStatus;
+use tvm_block::AddSub;
+use tvm_block::ConfigParam12;
+use tvm_block::ConfigParam18;
+use tvm_block::ConfigParam31;
+use tvm_block::ConfigParamEnum;
+use tvm_block::CrossDappMessageHeader;
+use tvm_block::CurrencyCollection;
+use tvm_block::Deserializable;
+use tvm_block::InternalMessageHeader;
+use tvm_block::Message;
+use tvm_block::MsgAddressInt;
+use tvm_block::MsgAddressIntOrNone;
+use tvm_block::Serializable;
+use tvm_block::StateInit;
+use tvm_block::StoragePrices;
+use tvm_block::TrBouncePhase;
+use tvm_block::TransactionDescr;
+use tvm_block::VarUInteger32;
+use tvm_block::WorkchainDescr;
+use tvm_executor::BlockchainConfig;
+use tvm_executor::ExecuteParams;
+use tvm_executor::OrdinaryTransactionExecutor;
+use tvm_executor::TransactionExecutor;
+use tvm_types::SliceData;
+use tvm_types::UInt256;
 
 const UNIT: u64 = 1_000_000_000;
 

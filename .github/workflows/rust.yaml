@@ -73,6 +73,7 @@ jobs:
                 -p tvm_executor \
                 --lib \
                 --test node_executor_gosh \
+                --test delivery_matrix \
                 --features tvm_executor/gosh,tvm_executor/signature_with_id,tvm_executor/wasmtime
     env:
       CARGO_TERM_COLOR: always

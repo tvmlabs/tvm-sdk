@@ -88,8 +88,8 @@ pub fn read_type(name: &str) -> Result<ParamType> {
 
     let result = match name {
         "bool" => ParamType::Bool,
-        // a little trick - here we only recognize parameter as a tuple and fill it
-        // with parameters in `Param` type deserialization
+        // a little trick - here we only recognize parameter as a tuple and fill
+        // it with parameters in `Param` type deserialization
         "tuple" => ParamType::Tuple(Vec::new()),
         s if s.starts_with("int") => {
             let len = s[3..]

@@ -796,12 +796,12 @@ pub struct ShardStateUnsplit {
     libraries: Libraries, // currently can be present only in masterchain blocks.
     master_ref: Option<BlkMasterInfo>,
 
-    // This field is present only in the masterchain and contains all the masterchain-specific
-    // data.
+    // This field is present only in the masterchain and contains all the
+    // masterchain-specific data.
     custom: Option<ChildCell<McStateExtra>>,
 
-    // This field is present only in shardchain blocks (in case of fast_finality consensus)
-    // and contains shard blocks this shardchain block refers to.
+    // This field is present only in shardchain blocks (in case of fast_finality
+    // consensus) and contains shard blocks this shardchain block refers to.
     ref_shard_blocks: Option<RefShardBlocks>,
 }
 

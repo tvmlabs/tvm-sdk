@@ -156,8 +156,8 @@ impl BuildActionsExecuteParamsFixture {
         };
 
         ExecuteParams {
-            // Intentionally default: acki-nacki build_actions.rs leaves state libs to
-            // ExecuteParams::default().
+            // Intentionally default: acki-nacki build_actions.rs leaves state
+            // libs to ExecuteParams::default().
             state_libs: HashmapE::with_bit_len(32),
             block_unixtime: self.block_unixtime,
             block_lt: self.block_lt,
@@ -166,9 +166,11 @@ impl BuildActionsExecuteParamsFixture {
             seed_block: self.seed_block,
             debug,
             trace_callback,
-            // Intentionally default: acki-nacki build_actions.rs does not pass behavior modifiers.
+            // Intentionally default: acki-nacki build_actions.rs does not pass
+            // behavior modifiers.
             behavior_modifiers: None,
-            // Intentionally default: acki-nacki build_actions.rs does not pass block version here.
+            // Intentionally default: acki-nacki build_actions.rs does not pass
+            // block version here.
             block_version: 0,
             #[cfg(feature = "signature_with_id")]
             signature_id: self.signature_id,
