@@ -14,6 +14,15 @@ All notable changes to this project will be documented in this file.
 
 ### Fixes
 
+- Bounceable cross-DApp messages no longer leave foreign VMShell spendable
+  at the receiver, including during outbound actions. Attached VMShell may pay
+  compute; its unreturned remainder is burned. Exchange flag 16 applies to
+  incoming SHELL for either header type, and an unfunded return preserves the
+  post-compute balance instead of leaving SHELL unexchanged or losing ECC.
+  Invalid StateInit on existing Uninit accounts and failing constructors also
+  preserve retained funds after actual gas fees. Old receiver ECC is untouched;
+  successful bounces return original currencies and legacy engines are unchanged.
+
 - `tvm-debugger` builds again; outbound contract responses and events use the
   external-message ABI decoder.
 - Cross-DApp headers targeting the sender's own DApp now retain incoming

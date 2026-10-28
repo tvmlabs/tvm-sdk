@@ -814,3 +814,6 @@ fn legacy_failed_constructor_keeps_pre_fix_exchange_behavior() {
     );
     assert_eq!(tx.msg_count(), 0);
 }
+
+#[path = "delivery_matrix/suspicious_cases.rs"]
+mod suspicious_cases;
