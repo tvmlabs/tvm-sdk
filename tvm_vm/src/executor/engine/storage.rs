@@ -278,8 +278,8 @@ pub(in crate::executor) fn copy_to_var(engine: &mut Engine, src: u16) -> Status 
         CTRL => engine.ctrls.get(storage_index!(src)).cloned().unwrap_or_default(),
         // CTRL => match engine.ctrls.get(storage_index!(src)) {
         //     Some(ctrl) => ctrl.clone(),
-        //     None => return err!(ExceptionCode::TypeCheckError, "read empty control register {}",
-        // storage_index!(src)) }
+        //     None => return err!(ExceptionCode::TypeCheckError, "read empty
+        // control register {}", storage_index!(src)) }
         STACK => engine.cc.stack.get(stack_index!(src)).clone(),
         VAR => engine.cmd.var(storage_index!(src)).clone(),
         _ => fail!("copy_to_var: {}", src),

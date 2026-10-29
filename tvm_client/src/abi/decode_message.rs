@@ -103,9 +103,11 @@ pub struct ParamsOfDecodeMessage {
     /// Function name or function id if is known in advance
     pub function_name: Option<String>,
 
-    // For external (inbound and outbound) messages data_layout parameter is ignored.
-    // For internal: by default SDK tries to decode as output and then if decode is not successfull
-    // - tries as input. If explicitly specified then tries only the specified layout.
+    // For external (inbound and outbound) messages data_layout parameter is
+    // ignored. For internal: by default SDK tries to decode as output and then
+    // if decode is not successfull
+    // - tries as input. If explicitly specified then tries only the specified
+    //   layout.
     pub data_layout: Option<DataLayout>,
 }
 
@@ -161,8 +163,9 @@ pub struct ParamsOfDecodeMessageBody {
     /// Function name or function id if is known in advance
     pub function_name: Option<String>,
 
-    // By default SDK tries to decode as output and then if decode is not successfull - tries as
-    // input. If explicitly specified then tries only the specified layout.
+    // By default SDK tries to decode as output and then if decode is not
+    // successfull - tries as input. If explicitly specified then tries only the
+    // specified layout.
     pub data_layout: Option<DataLayout>,
 }
 

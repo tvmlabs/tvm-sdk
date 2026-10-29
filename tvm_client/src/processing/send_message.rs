@@ -82,8 +82,8 @@ pub struct ParamsOfSendMessage {
 
 #[derive(Serialize, Deserialize, ApiType, Default, PartialEq, Debug)]
 pub struct ResultOfSendMessage {
-    // /// The last generated shard block of the message destination account before
-    // the message was sent.
+    // /// The last generated shard block of the message destination account
+    // before the message was sent.
     //
     // This block id must be used as a parameter of the
     // `wait_for_transaction`.

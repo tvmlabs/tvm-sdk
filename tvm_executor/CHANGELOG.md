@@ -14,6 +14,29 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Bounceable cross-DApp messages no longer leave foreign VMShell spendable
+  at the receiver, including during outbound actions. Attached VMShell may pay
+  compute; its unreturned remainder is burned. Exchange flag 16 applies to
+  incoming SHELL for either header type, and an unfunded return preserves the
+  post-compute balance instead of leaving SHELL unexchanged or losing ECC.
+  Invalid StateInit on existing Uninit accounts and failing constructors also
+  preserve retained funds after actual gas fees. Old receiver ECC is untouched;
+  successful bounces return original currencies and legacy engines are unchanged.
+
+- ECC settlement after an unfunded bounce applies only to State V2 engine
+  1.0.8 and newer; earlier engines retain their legacy behavior.
+
+- Unfunded bounce settlement preserves full incoming extra-currency amounts,
+  including SHELL values above `u128::MAX` in internal and cross-DApp headers.
+
+- Cross-DApp headers targeting the sender's own DApp now retain incoming
+  VMShell. A bounce that cannot pay return forwarding fees now retains ECC on
+  a new Uninit destination even when an attached StateInit cannot deploy.
+  Flag 16 exchanges retained incoming ECC SHELL after the failed return, and
+  successful returns keep the original currencies. Failed deployments with
+  `bounce=false` retain funds according to the DApp boundary and exchange
+  rules. Successful contract activation and legacy execution are unchanged.
+
 - Cross-DApp funding messages with `bounce=false` now discard original incoming
   VMShell before credit and execution. Incoming ECC SHELL is retained, or
   converted 1:1 to receiver-local VMShell when exchange flag 16 is set (including

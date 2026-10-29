@@ -752,13 +752,55 @@ mod tests {
 
     #[tokio::test]
     async fn test_decode_body_json() {
-        let body = "te6ccgEBAgEAlgAB4ddyAENPhARLqvYWfcfwyY4fDOfGj88sVFpJjVp9Rh4QN6iL06hBowkex5kc8haTCwWTnugx1OKTuxOumBzdGwLCSzzna0XhE6urkzQv0XbzKbLpZicIiuqBenAdx6nbCkAAAGCSbtgxWLjxbUl77IIgAQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGU=";
+        use tvm_client::abi::CallSet;
+        use tvm_client::abi::FunctionHeader;
+        use tvm_client::abi::ParamsOfEncodeMessageBody;
+        use tvm_client::abi::Signer;
+        use tvm_client::abi::encode_message_body;
+        use tvm_client::crypto::KeyPair;
+
         let config = Config::default();
         let abi_path = format!(
             "{}/../tvm_client/src/tests/contracts/abi_v2/Wallet.abi.json",
             env!("CARGO_MANIFEST_DIR")
         );
-        decode_body(body, &abi_path, true, &config).await.unwrap();
+        let client = create_client_local().unwrap();
+        let input =
+            json!({"dest": format!("0:{}", "11".repeat(32)), "value": "100", "bounce": false});
+        // Build a signed body matching the current ABI instead of retaining a
+        // pre-migration BOC. The signing keys are RFC 8032 test vector 1.
+        let body = encode_message_body(
+            client.clone(),
+            ParamsOfEncodeMessageBody {
+                abi: load_abi(&abi_path, &config).await.unwrap(),
+                call_set: CallSet {
+                    function_name: "sendTransaction".into(),
+                    input: Some(input.clone()),
+                    header: Some(FunctionHeader {
+                        time: Some(1000),
+                        expire: Some(2000000000),
+                        ..Default::default()
+                    }),
+                },
+                is_internal: false,
+                signer: Signer::Keys {
+                    keys: KeyPair {
+                        public: "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"
+                            .into(),
+                        secret: "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60"
+                            .into(),
+                    },
+                },
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap()
+        .body;
+        let decoded = decode_msg_body(client, &abi_path, &body, false, &config).await.unwrap();
+        assert_eq!(decoded.name, "sendTransaction");
+        assert_eq!(decoded.value, Some(input));
+        decode_body(&body, &abi_path, true, &config).await.unwrap();
     }
 
     #[tokio::test]
