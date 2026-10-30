@@ -1,7 +1,7 @@
 # Deposit opcode fixtures (consumer side)
 
 These files exercise `ZKHALO2VERIFYWITHVK` in `tvm_vm` tests. They are the
-**three-operand ABI** only:
+**three-operand ABI** only. The deposit proof:
 
 ```text
 vk_cell              ← deposit_vk_blob.bin (VkBlob v2 RLC, 12 public inputs)
@@ -9,16 +9,28 @@ public_inputs_cell   ← proof_NN/public_inputs.bin (12 × 32 B LE Fr = 384 B)
 proof_cell           ← proof_NN/proof.bin (Blake2b SHPLONK)
 ```
 
+The proof of the keccak table that deposit proof loads, whose one public input
+is the deposit's public input 11 (`promiseCommit`):
+
+```text
+vk_cell              ← keccak_vk_blob.bin (VkBlob v2 KeccakShard: zkevm-hashes
+                       KeccakComponentShardCircuit, k = 18, capacity 128)
+public_inputs_cell   ← proof_NN/public_inputs.bin[352..384] (one 32 B LE Fr)
+proof_cell           ← proof_NN/keccak_proof.bin (Blake2b SHPLONK)
+```
+
 ## KZG ceremony
 
 Keyed on the **Hermez Perpetual Powers of Tau** SRS (`data/kzg_params_18.srs`,
 `s_g2 = 928fafb3…`), matching `KZG_S_G2_BYTES` on
-`feature/hermez-kzg-resurrection`. Regenerated 2026-08-07 via
-`deposit-prover` `export_deposit_proof_set` after the circuit gained a
-`chainId` public input at index 4 (bridge branch
-`pruvendo/pause-chainid-pi-multil2`, commit `c0da8a3`). VkBlob sha256
-`9dacd998af5fd03af8097cb80a571df098c925bba235af61d920cc808360fae3` —
-update this line whenever the fixtures are resynced.
+`feature/hermez-kzg-resurrection`. Synced 2026-10-30 from
+`deposit-prover/fixtures/deposit_10proofs` of the bridge repository
+(`export_deposit_proof_set`, then `export_keccak_shard_set`). Deposit VkBlob
+sha256 `0180ee5af41ba3f408d38bf0c10c005c6618ad379d38da97a7ccc07ab1c3efa1`,
+keccak VkBlob sha256
+`4ccd758c8d0914e7f13aa7e8e45fd74da5b87b122427edf7a7d6755a64c6ad91` — the two
+keys `eccUSDCBridge` embeds. Update these lines whenever the fixtures are
+resynced.
 
 Public-input layout (12 × 32 B LE Fr, in order):
 
@@ -55,10 +67,10 @@ From `acki-nacki-bridge` (sibling repo):
 # Force Hermez (default after hermez-kzg-resurrection); do NOT set DEPOSIT_USE_CHAIN_SRS
 cd deposit-prover
 cargo run --release --example export_deposit_proof_set -- \
-  --set-dir fixtures/deposit_10proofs --count 10 \
-  --degree 18 --max-data-byte-len 256 --max-log-num 20 \
-  --chain-id 11155111    # Sepolia; select source chain for the fetch layer
-../scripts/sync_deposit_opcode_fixtures_to_tvm_sdk.sh
+  --set-dir fixtures/deposit_10proofs --count 10
+cargo run --release --example export_keccak_shard_set -- \
+  --set-dir fixtures/deposit_10proofs --count 10
+TVM_SDK_DIR=<this checkout> ../scripts/sync_deposit_opcode_fixtures_to_tvm_sdk.sh
 ```
 
 Byte-identity with `deposit-prover/fixtures/deposit_10proofs/` is enforced by the

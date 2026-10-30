@@ -3,6 +3,12 @@
 // `ZKHALO2VERIFYWITHVK` opcode handler — native Halo2 SHPLONK verification
 // in TVM with a caller-supplied verifying key, public inputs, and proof.
 //
+// Circuit families a `VkBlob` can name: `BaseCircuitBuilder` (Base),
+// axiom-eth `EthCircuitImpl` (Rlc), and zkevm-hashes
+// `KeccakComponentShardCircuit` (KeccakShard) — the proof of the keccak table
+// an `EthCircuitImpl` circuit loads, whose one public input is that circuit's
+// keccak promise commitment.
+//
 // Designed for the Acki Nacki ↔ Ethereum bridge: each `TokenBridge`
 // deploys with its own immutable Halo2 SHPLONK verifier key, so a single
 // opcode covers every bridge / app circuit anyone ever deploys to AN
@@ -48,6 +54,8 @@ use axiom_eth::rlc::circuit::builder::RlcCircuitBuilder;
 use axiom_eth::utils::eth_circuit::EthCircuitImpl;
 use axiom_eth::utils::eth_circuit::EthCircuitInstructions;
 use axiom_eth::utils::eth_circuit::EthCircuitParams;
+use axiom_eth::zkevm_hashes::keccak::component::circuit::shard::KeccakComponentShardCircuit;
+use axiom_eth::zkevm_hashes::keccak::component::circuit::shard::KeccakComponentShardCircuitParams;
 use halo2_base::gates::circuit::builder::BaseCircuitBuilder;
 use halo2_base::halo2_proofs::SerdeFormat;
 use halo2_base::halo2_proofs::halo2curves::CurveAffine;
@@ -129,7 +137,7 @@ struct CachedVk {
     params: ParamsKZG<Bn256>,
 }
 
-/// Bounded FIFO map keyed by the `VkBlob`'s `vk_bytes` chunk.
+/// Bounded FIFO map keyed by the whole `vk_cell` payload.
 struct VkCache {
     entries: HashMap<Vec<u8>, std::sync::Arc<CachedVk>>,
     insertion_order: VecDeque<Vec<u8>>,
@@ -239,18 +247,70 @@ fn read_rlc_vk(vk_bytes: &[u8], config_json: &[u8]) -> tvm_types::Result<Verifyi
     }
 }
 
+/// Read a keccak shard VK (v2 `circuit_shape = 2`). The `config_json` chunk
+/// is the JSON of zkevm-hashes' `KeccakComponentShardCircuitParams`; every
+/// `k` it carries must be the VK's.
+fn read_keccak_shard_vk(
+    vk_bytes: &[u8],
+    config_json: &[u8],
+) -> tvm_types::Result<VerifyingKey<G1Affine>> {
+    let params: KeccakComponentShardCircuitParams = match serde_json::from_slice(config_json) {
+        Ok(p) => p,
+        Err(e) => fail!(
+            "ZKHALO2VERIFYWITHVK: malformed KeccakShard config_json (cannot parse as \
+             KeccakComponentShardCircuitParams): {}",
+            e
+        ),
+    };
+    let ks = [
+        params.k() as u64,
+        params.keccak_circuit_params.k as u64,
+        params.base_circuit_params.k as u64,
+    ];
+    let mut slice: &[u8] = vk_bytes;
+    let read_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        VerifyingKey::<G1Affine>::read::<_, KeccakComponentShardCircuit<Fr>>(
+            &mut slice,
+            SerdeFormat::RawBytes,
+            params,
+        )
+    }));
+    let vk = match read_result {
+        Ok(Ok(vk)) => vk,
+        Ok(Err(e)) => fail!("ZKHALO2VERIFYWITHVK: KeccakShard VerifyingKey::read failed: {}", e),
+        Err(payload) => fail!(
+            "ZKHALO2VERIFYWITHVK: KeccakShard VK deserialisation panicked: {}",
+            panic_payload_to_str(&payload)
+        ),
+    };
+    let k = vk.get_domain().k() as u64;
+    if ks.iter().any(|&c| c != k) {
+        fail!(
+            "ZKHALO2VERIFYWITHVK: KeccakShard config k = {:?} disagrees with VK domain.k = {}",
+            ks,
+            k
+        );
+    }
+    Ok(vk)
+}
+
 /// Look up `(vk, params)` for the given `VkBlob`, deserialising and
 /// caching on miss. Returns an `Arc` so the lock can be released before
 /// verification runs.
 ///
-/// **Cache key:** `blob.vk_bytes` only — *not* `(vk_bytes, config)`.
-/// This is safe because `VerifyingKey::read` fails deserialisation before
-/// we cache on shape/config mismatch, and the on-disk VK byte representation
-/// is fully determined by the circuit shape.
-fn get_or_insert_vk(blob: &VkBlob) -> tvm_types::Result<std::sync::Arc<CachedVk>> {
+/// **Cache key:** the whole `vk_cell` payload, so the circuit shape and the
+/// config are part of it. `VerifyingKey::read` rebuilds the constraint
+/// system from the config, not from `vk_bytes`, and the same `vk_bytes` can
+/// read under more than one config. Keyed on `vk_bytes` alone, whichever
+/// config reached a node first would decide how every later caller's proof
+/// is checked there.
+fn get_or_insert_vk(
+    blob: &VkBlob,
+    cache_key: &[u8],
+) -> tvm_types::Result<std::sync::Arc<CachedVk>> {
     {
         let cache = vk_cache().lock().expect("VK cache mutex poisoned");
-        if let Some(hit) = cache.get(&blob.vk_bytes) {
+        if let Some(hit) = cache.get(cache_key) {
             if let VkBlobConfig::Base(params) = &blob.config {
                 let cached_k = hit.vk.get_domain().k();
                 if params.k as u32 != cached_k {
@@ -279,6 +339,9 @@ fn get_or_insert_vk(blob: &VkBlob) -> tvm_types::Result<std::sync::Arc<CachedVk>
             vk
         }
         VkBlobConfig::Rlc(config_json) => read_rlc_vk(&blob.vk_bytes, config_json)?,
+        VkBlobConfig::KeccakShard(config_json) => {
+            read_keccak_shard_vk(&blob.vk_bytes, config_json)?
+        }
     };
 
     let k = vk.get_domain().k();
@@ -287,7 +350,7 @@ fn get_or_insert_vk(blob: &VkBlob) -> tvm_types::Result<std::sync::Arc<CachedVk>
     let entry = std::sync::Arc::new(CachedVk { vk, params });
 
     let mut cache = vk_cache().lock().expect("VK cache mutex poisoned");
-    cache.insert(blob.vk_bytes.clone(), entry.clone());
+    cache.insert(cache_key.to_vec(), entry.clone());
     Ok(entry)
 }
 
@@ -458,7 +521,7 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
     let vk_payload = unpack_data_from_cell(vk_slice, engine)?;
     let vk_blob = VkBlob::parse(&vk_payload)?;
 
-    let cached = get_or_insert_vk(&vk_blob)?;
+    let cached = get_or_insert_vk(&vk_blob, &vk_payload)?;
     let instances = decode_instances_strict(&public_inputs_bytes)?;
 
     let verifier_params = cached.params.verifier_params();
@@ -660,5 +723,92 @@ mod rlc_branch_tests {
             err.to_string().contains("EthCircuitParams"),
             "expected EthCircuitParams parse error, got: {err}"
         );
+    }
+}
+
+#[cfg(test)]
+mod keccak_shard_branch_tests {
+    //! The VkBlob-v2 `KeccakShard` shape and the VK cache key. Keygens a small
+    //! keccak shard circuit on the backend the opcode uses.
+    use halo2_base::gates::circuit::BaseCircuitParams;
+    use halo2_base::halo2_proofs::plonk::keygen_vk;
+
+    use super::*;
+
+    fn keygen_shard_vk(k: usize) -> (Vec<u8>, Vec<u8>) {
+        let mut params = KeccakComponentShardCircuitParams::new(k, 109, 1, false);
+        params.base_circuit_params =
+            KeccakComponentShardCircuit::<Fr>::calculate_base_circuit_params(&params);
+        let circuit = KeccakComponentShardCircuit::<Fr>::new(vec![], params.clone(), false);
+        let srs = ParamsKZG::<Bn256>::setup(k as u32, rand::rngs::OsRng);
+        let vk = keygen_vk(&srs, &circuit).expect("keygen_vk KeccakComponentShardCircuit");
+        (vk.to_bytes(SerdeFormat::RawBytes), serde_json::to_vec(&params).unwrap())
+    }
+
+    fn shard_blob(config_json: &[u8], vk: &[u8]) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(b"VKBLOB\x00\x00");
+        out.extend_from_slice(&[2, 0, 2, 0, 0, 0, 0, 0]);
+        for chunk in [config_json, vk] {
+            out.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
+            out.extend_from_slice(chunk);
+        }
+        out
+    }
+
+    #[test]
+    fn keccak_shard_branch_reconstructs_vk() {
+        let (vk_bytes, cfg) = keygen_shard_vk(12);
+        let vk = read_keccak_shard_vk(&vk_bytes, &cfg).expect("KeccakShard VK must read back");
+        assert_eq!(vk.to_bytes(SerdeFormat::RawBytes), vk_bytes, "byte-for-byte round trip");
+        let blob = VkBlob::parse(&shard_blob(&cfg, &vk_bytes)).expect("shape 2 parses");
+        assert!(matches!(blob.config, VkBlobConfig::KeccakShard(_)));
+    }
+
+    #[test]
+    fn keccak_shard_config_k_mismatch_is_refused() {
+        let (vk_bytes, cfg) = keygen_shard_vk(12);
+        let mut json: serde_json::Value = serde_json::from_slice(&cfg).unwrap();
+        json["base_circuit_params"]["k"] = serde_json::json!(13);
+        let err = read_keccak_shard_vk(&vk_bytes, &serde_json::to_vec(&json).unwrap()).unwrap_err();
+        assert!(err.to_string().contains("disagrees with VK domain.k"), "{err}");
+    }
+
+    #[test]
+    fn keccak_shard_branch_rejects_malformed_config_json() {
+        let (vk_bytes, _) = keygen_shard_vk(12);
+        let err = read_keccak_shard_vk(&vk_bytes, b"{ not shard params }").unwrap_err();
+        assert!(err.to_string().contains("KeccakComponentShardCircuitParams"), "{err}");
+    }
+
+    #[test]
+    fn a_cached_vk_is_not_served_to_the_same_vk_bytes_under_another_config() {
+        let (vk_bytes, cfg) = keygen_shard_vk(12);
+        let shard = shard_blob(&cfg, &vk_bytes);
+        get_or_insert_vk(&VkBlob::parse(&shard).unwrap(), &shard).expect("shard VK caches");
+
+        let base = BaseCircuitParams {
+            k: 12,
+            num_advice_per_phase: vec![1],
+            num_fixed: 1,
+            num_lookup_advice_per_phase: vec![0],
+            lookup_bits: None,
+            num_instance_columns: 1,
+        };
+        let mut other = Vec::new();
+        other.extend_from_slice(b"VKBLOB\x00\x00");
+        other.extend_from_slice(&[1, 0, 0, 0, 0, 0, 0, 0]);
+        for chunk in [serde_json::to_vec(&base).unwrap().as_slice(), vk_bytes.as_slice()] {
+            other.extend_from_slice(&(chunk.len() as u32).to_le_bytes());
+            other.extend_from_slice(chunk);
+        }
+        let blob = VkBlob::parse(&other).unwrap();
+        if let Ok(entry) = get_or_insert_vk(&blob, &other) {
+            let cached = get_or_insert_vk(&VkBlob::parse(&shard).unwrap(), &shard).unwrap();
+            assert!(
+                !std::sync::Arc::ptr_eq(&entry, &cached),
+                "a Base blob carrying the shard's vk_bytes must not get the cached shard VK"
+            );
+        }
     }
 }

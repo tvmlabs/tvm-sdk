@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+Crate-level detail is in [`tvm_vm`](tvm_vm/CHANGELOG.md).
+
+### Breaking Changes
+- Consensus: `ZKHALO2VERIFYWITHVK` on `gosh`-feature builds accepts a new VkBlob shape, `KeccakShard` (shape byte `2`), and verifies proofs under it. A node without this change throws on such a blob where an upgraded node verifies it, so every validator of a network has to move together.
+
+### New / Improvements
+- `ZKHALO2VERIFYWITHVK`: VkBlob shape `2`, `KeccakShard`, for proofs of zkevm-hashes' `KeccakComponentShardCircuit` — the keccak table an axiom-eth circuit's promise commitment names. The Acki Nacki deposit bridge verifies one next to every deposit proof.
+
+### Fixed
+- `ZKHALO2VERIFYWITHVK`: the verifying-key cache is keyed on the whole VkBlob payload instead of the verifying-key bytes alone, so the result never depends on which blob a node happened to cache first.
+
 ## [3.1.0] - 2026-10-16
 
 Crate-level detail is in [`tvm_vm`](tvm_vm/CHANGELOG.md) and [`tvm_assembler`](tvm_assembler/CHANGELOG.md).
