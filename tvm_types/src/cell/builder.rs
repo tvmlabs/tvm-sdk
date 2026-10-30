@@ -215,6 +215,15 @@ impl BuilderData {
         Ok(self)
     }
 
+    // append lowest `bits` bits of the `tag`
+    // example: `append_tag(0b010, 3)` will append bitstring `010`
+    pub fn append_tag(&mut self, tag: u8, bits: usize) -> Result<&mut Self> {
+        if bits == 0 || bits > 8 {
+            fail!(ExceptionCode::RangeCheckError);
+        }
+        self.append_raw(&[tag << (8 - bits)], bits)
+    }
+
     // TODO: move it to builder operations to bitstring
     pub(super) fn append_raw_data(
         data: &mut SmallData,

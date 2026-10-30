@@ -76,6 +76,19 @@ impl OrdinaryTransactionExecutor {
     }
 }
 
+// Exchange only the provided retained currencies, preserving the complete
+// VarUInteger32 remainder above the per-message conversion limit.
+fn exchange_retained_shell(balance: &mut CurrencyCollection) -> Result<()> {
+    if let Some(mut shell) = balance.get_other(2)? {
+        let exchanged = min(shell.clone(), VarUInteger32::from(u64::MAX));
+        let converted = exchanged.value().iter_u64_digits().next().unwrap_or(0);
+        balance.grams += Grams::from(converted);
+        shell.sub(&exchanged)?;
+        balance.set_other_ex(2, &shell)?;
+    }
+    Ok(())
+}
+
 impl TransactionExecutor for OrdinaryTransactionExecutor {
     /// Create and execute transaction from message for account
     fn execute_with_params(
@@ -85,6 +98,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         params: ExecuteParams,
         minted_shell: &mut i128,
     ) -> Result<Transaction> {
+        let state_v2 = crate::uses_state_v2_rules(&params.engine_version);
+        if !state_v2 && in_msg.is_some_and(|message| message.is_cross_dapp()) {
+            fail!(ExecutorError::InvalidExtMessage);
+        }
         #[cfg(feature = "timings")]
         let mut now = Instant::now();
         let mut binding = in_msg.cloned();
@@ -110,6 +127,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 fail!(ExecutorError::InvalidExtMessage)
             }
             CommonMsgInfo::IntMsgInfo(ref hdr) => (hdr.bounce, false),
+            CommonMsgInfo::CrossDappMessageInfo(ref hdr) => (hdr.bounce, false),
             CommonMsgInfo::ExtInMsgInfo(_) => (false, true),
         };
 
@@ -136,13 +154,31 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut acc_balance = account.balance().cloned().unwrap_or_default();
         let mut msg_balance = in_msg.get_value().cloned().unwrap_or_default();
         let original_msg_balance = msg_balance.clone();
+        let same_dapp = in_msg
+            .int_header()
+            .map(|h| h.src_dapp_id() == &params.dapp_id)
+            .or_else(|| {
+                in_msg.cross_dapp_header().map(|h| Some(&h.src_dapp_id) == params.dapp_id.as_ref())
+            })
+            .unwrap_or(false);
+        let bounced = in_msg
+            .int_header()
+            .map(|h| h.bounced)
+            .or_else(|| in_msg.cross_dapp_header().map(|h| h.bounced))
+            .unwrap_or(false);
         let gas_config = self.config().get_gas_config(false);
         log::debug!(target: "executor", "address = {:?}, available_credit {:?}", in_msg.int_header(), params.available_credit);
         let mut msg_balance_convert = 0;
         let mut exchanged = false;
         let mut is_cross_dapp_capped = false;
         if let Some(h) = in_msg.int_header() {
-            if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
+            let same_dapp = if state_v2 {
+                h.src_dapp_id() == &params.dapp_id
+            } else {
+                // SDK 3.0.6 treats a missing account as a cross-DApp recipient.
+                Some(h.src_dapp_id()) == account.stuff().is_some().then_some(&params.dapp_id)
+            };
+            if !same_dapp
                 && !(in_msg.have_state_init()
                     && account
                         .state()
@@ -161,29 +197,55 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
             if h.is_exchange && (!is_cross_dapp_capped || is_version_1_0_3) {
-                if let Ok(Some(mut value)) = msg_balance.get_other(2) {
-                    let mut echng = value.clone();
-                    if echng > VarUInteger32::from(u64::MAX) {
-                        echng = VarUInteger32::from(u64::MAX);
+                if state_v2 {
+                    let before = msg_balance.grams.as_u128();
+                    exchange_retained_shell(&mut msg_balance)?;
+                    msg_balance_convert = (msg_balance.grams.as_u128() - before) as u64;
+                    exchanged = msg_balance_convert != 0;
+                } else {
+                    if let Ok(Some(mut value)) = msg_balance.get_other(2) {
+                        let mut echng = value.clone();
+                        if echng > VarUInteger32::from(u64::MAX) {
+                            echng = VarUInteger32::from(u64::MAX);
+                        }
+                        if echng != VarUInteger32::from(0) {
+                            msg_balance_convert =
+                                echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
+                            msg_balance.grams += Grams::from(msg_balance_convert);
+                            value.sub(&echng)?;
+                            let digits = value.value().iter_u64_digits().collect::<Vec<u64>>();
+                            let base = u64::MAX as u128 + 1;
+                            let new_balance =
+                                if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
+                                    u128::MAX
+                                } else {
+                                    let d0 = digits.first().copied().unwrap_or(0) as u128;
+                                    let d1 = digits.get(1).copied().unwrap_or(0) as u128;
+                                    d0 + d1 * base
+                                };
+                            msg_balance.set_other(2, new_balance)?;
+                        }
+                        exchanged = true;
                     }
-                    if echng != VarUInteger32::from(0) {
-                        msg_balance_convert =
-                            echng.value().iter_u64_digits().collect::<Vec<u64>>()[0];
-                        msg_balance.grams += Grams::from(msg_balance_convert);
-                        value.sub(&echng)?;
-                        let digits = value.value().iter_u64_digits().collect::<Vec<u64>>();
-                        let base = u64::MAX as u128 + 1;
-                        let new_balance =
-                            if digits.len() > 2 && digits.iter().skip(2).any(|&d| d != 0) {
-                                u128::MAX
-                            } else {
-                                let d0 = digits.first().copied().unwrap_or(0) as u128;
-                                let d1 = digits.get(1).copied().unwrap_or(0) as u128;
-                                d0 + d1 * base
-                            };
-                        msg_balance.set_other(2, new_balance)?;
-                    }
-                    exchanged = true;
+                }
+            }
+        }
+        // Non-bounce cross-DApp funding cannot buy execution with raw VM.
+        // Bounceable messages may use it for compute/return fees; any
+        // unreturned remainder is removed before local actions or settlement.
+        // Exchange only incoming SHELL, preserving old receiver currencies.
+        if let Some(h) = in_msg.cross_dapp_header() {
+            if !h.bounced {
+                // Header type alone does not imply a DApp boundary: callers
+                // can explicitly address their own DApp with this header.
+                if !h.bounce && !same_dapp {
+                    msg_balance.grams = Grams::zero();
+                }
+                if h.is_exchange {
+                    let before = msg_balance.grams.as_u128();
+                    exchange_retained_shell(&mut msg_balance)?;
+                    msg_balance_convert = (msg_balance.grams.as_u128() - before) as u64;
+                    exchanged = msg_balance_convert != 0;
                 }
             }
         }
@@ -196,6 +258,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
         }
 
+        let imported_vm = msg_balance.grams.as_u128().saturating_sub(msg_balance_convert as u128);
         let is_special = self.config.is_special_account(account_address)?;
         log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}",
             acc_balance.grams, msg_balance.grams, !bounce, is_special);
@@ -328,12 +391,19 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             &account_address.address().get_bytestring(0),
         );
         let mut stack = Stack::new();
+        let msg_type = int!(match in_msg.header() {
+            CommonMsgInfo::ExtOutMsgInfo(_) | CommonMsgInfo::ExtOutMsgInfoV2(_) =>
+                fail!(ExecutorError::InvalidExtMessage),
+            CommonMsgInfo::IntMsgInfo(_) => 0,
+            CommonMsgInfo::CrossDappMessageInfo(_) => -3,
+            CommonMsgInfo::ExtInMsgInfo(_) => -1,
+        });
         stack
             .push(int!(acc_balance.grams.as_u128()))
             .push(int!(msg_balance.grams.as_u128()))
             .push(StackItem::Cell(in_msg_cell.clone()))
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
-            .push(boolean!(is_ext_msg));
+            .push(msg_type);
         log::debug!(target: "executor", "compute_phase");
         let (compute_ph, actions, new_data) = match self.compute_phase(
             Some(in_msg),
@@ -362,6 +432,20 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut compute_phase_gas_fees = Grams::zero();
         let mut copyleft = None;
         description.compute_ph = compute_ph;
+        // Foreign VM may pay compute, but must never become spendable local
+        // balance in the action phase. Successful bounces use original value.
+        let mut foreign_vm_burned = false;
+        if state_v2 && !is_ext_msg && !bounced && !same_dapp {
+            if let TrComputePhase::Vm(ref vm) = description.compute_ph {
+                if vm.success {
+                    let remaining = Grams::new(imported_vm.saturating_sub(vm.gas_fees.as_u128()))?;
+                    if !acc_balance.grams.sub(&remaining)? {
+                        acc_balance.grams = Grams::zero();
+                    }
+                    foreign_vm_burned = true;
+                }
+            }
+        }
         let mut new_acc_balance = acc_balance.clone();
         description.action = match &description.compute_ph {
             TrComputePhase::Vm(phase) => {
@@ -383,13 +467,13 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                                 Some(account.get_id().unwrap().get_bytestring(0).as_slice().into())
                             }
                         } else {
-                            params.dapp_id
+                            params.dapp_id.clone()
                         }
                     } else {
                         None
                     };
                     let minted_shell_orig = *minted_shell;
-                    match self.action_phase_with_copyleft(
+                    match self.action_phase_with_copyleft_versioned(
                         &mut tr,
                         account,
                         &original_acc_balance,
@@ -404,6 +488,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         minted_shell,
                         need_to_burn,
                         message_src_dapp_id,
+                        &params.engine_version,
                     ) {
                         Ok(ActionPhaseResult { phase, messages, copyleft_reward }) => {
                             if !phase.success {
@@ -464,7 +549,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
         };
 
-        if description.aborted {
+        if !state_v2 && description.aborted {
             match &description.compute_ph {
                 TrComputePhase::Vm(vm_phase) if vm_phase.success => {
                     if acc_balance.grams >= need_to_burn {
@@ -483,6 +568,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut should_burn_need_to_burn = false;
 
         if description.aborted && !is_ext_msg && bounce {
+            let retained_before_return = acc_balance.clone();
             msg_balance = original_msg_balance.clone();
             if exchanged {
                 let grams_to_subtract = Grams::from(msg_balance_convert);
@@ -536,6 +622,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
                 should_burn_need_to_burn = false;
+            } else if state_v2 {
+                // Reversing exchange was speculative. If no return was
+                // emitted, retain the post-compute balance, including ECC
+                // and converted SHELL, with gas already charged once.
+                acc_balance = retained_before_return;
             } else if is_version_1_0_3 && account.status() == AccountStatus::AccStateUninit {
                 // Don't leave fwd_fee on uninit accounts after bounce failure,
                 // but preserve ECC
@@ -551,12 +642,36 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
 
         // Apply need_to_burn if bounce failed or bouncing was not attempted
-        if should_burn_need_to_burn && need_to_burn.as_u128() > 0 {
+        if !state_v2 && should_burn_need_to_burn && need_to_burn.as_u128() > 0 {
             log::debug!(target: "executor", "Applying cross-dapp burn: need_to_burn={}", need_to_burn);
             if acc_balance.grams >= need_to_burn {
                 acc_balance.grams -= need_to_burn;
             } else {
                 acc_balance.grams = Grams::zero();
+            }
+        }
+        let returned = matches!(description.bounce, Some(TrBouncePhase::Ok(_)));
+        if state_v2 && !is_ext_msg && !bounced && !returned {
+            let unfunded = matches!(description.bounce, Some(TrBouncePhase::Nofunds(_)));
+            // Uninit and newly attempted deployments do not retain the raw
+            // VM left below a return fee. Active local accounts keep their
+            // normal net VM balance. Exchange affects incoming SHELL only.
+            let discard_vm = !same_dapp
+                || (unfunded
+                    && (original_account_is_none
+                        || account.status() == AccountStatus::AccStateUninit));
+            if discard_vm && !foreign_vm_burned {
+                let remaining =
+                    Grams::new(imported_vm.saturating_sub(compute_phase_gas_fees.as_u128()))?;
+                if !acc_balance.grams.sub(&remaining)? {
+                    acc_balance.grams = Grams::zero();
+                }
+            }
+            // Rejecting StateInit does not reject custody of retained value.
+            // Preserve any account state already produced by the executor.
+            if account.is_none() && !acc_balance.is_zero()? {
+                *account =
+                    Account::uninit(account_address.clone(), 0, last_paid, acc_balance.clone());
             }
         }
         if (account.status() == AccountStatus::AccStateUninit) && acc_balance.is_zero()? {
@@ -573,7 +688,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         #[cfg(feature = "timings")]
         self.timings[2].fetch_add(now.elapsed().as_micros() as u64, Ordering::SeqCst);
         tr.set_copyleft_reward(copyleft);
-        // tr.write_to_new_cell().unwrap().finalize(max_depth)
         Ok(tr)
     }
 
@@ -637,6 +751,66 @@ mod tests {
 
     fn body(byte: u8) -> SliceData {
         SliceData::load_builder(BuilderData::with_raw(vec![byte], 8).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn engine_1_0_7_preserves_source_sdk_funding_hashes() {
+        let mut header = InternalMessageHeader::with_addresses_and_bounce(
+            address(1),
+            address(8),
+            CurrencyCollection::with_grams(1_000_000_000),
+            false,
+        );
+        header.set_src_dapp_id(Some(UInt256::from([9; 32])));
+        let message = Message::with_int_header(header);
+        let mut account = Account::default();
+        let params = crate::ExecuteParams {
+            dapp_id: Some(UInt256::from([9; 32])),
+            engine_version: semver::Version::new(1, 0, 7),
+            ..Default::default()
+        };
+        let tx = OrdinaryTransactionExecutor::new(Default::default())
+            .execute_with_params(Some(&message), &mut account, params, &mut 0)
+            .unwrap();
+        assert_eq!(
+            account.serialize().unwrap().repr_hash().to_hex_string(),
+            "90aec8965afabb16ebc3cb9b408ebae71b618d78788bc80d09843593cac98da4"
+        );
+        assert_eq!(
+            tx.serialize().unwrap().repr_hash().to_hex_string(),
+            "605537b261b2957c49ef6280ec4bc23b7a4260333b5f8ba20541d0bf4efcd171"
+        );
+    }
+
+    #[test]
+    fn cross_dapp_funding_is_accepted_only_by_state_v2_engine() {
+        let mut header = tvm_block::CrossDappMessageHeader::default();
+        header.set_src(address(1));
+        header.set_dst(address(8));
+        header.set_src_dapp_id(UInt256::from([9; 32]));
+        header.set_dst_dapp_id(UInt256::from([10; 32]));
+        header.value.set_other(2, 123).unwrap();
+        let message = Message::with_cross_dapp_header(header);
+        let executor = OrdinaryTransactionExecutor::new(Default::default());
+        for engine_version in [semver::Version::new(1, 0, 7), crate::STATE_V2_ENGINE_VERSION] {
+            let params = crate::ExecuteParams {
+                engine_version: engine_version.clone(),
+                dapp_id: Some(UInt256::from([10; 32])),
+                ..Default::default()
+            };
+            let mut account = Account::default();
+            let result = executor.execute_with_params(Some(&message), &mut account, params, &mut 0);
+            if engine_version == crate::STATE_V2_ENGINE_VERSION {
+                assert!(result.is_ok(), "{result:?}");
+                assert!(!account.is_none());
+            } else {
+                assert!(matches!(
+                    result.unwrap_err().downcast_ref::<LocalExecutorError>(),
+                    Some(LocalExecutorError::InvalidExtMessage)
+                ));
+                assert!(account.is_none());
+            }
+        }
     }
 
     #[test]
@@ -734,26 +908,30 @@ mod tests {
     }
 
     #[test]
-    fn execute_internal_message_to_nonexistent_account_without_state_init_records_aborted_result() {
+    fn execute_internal_message_to_nonexistent_account_without_state_init_creates_uninit() {
         let executor = OrdinaryTransactionExecutor::new(Default::default());
         let mut account = Account::default();
         let dst = address(8);
         let msg_value = CurrencyCollection::with_grams(1_000_000_000);
-        let msg = Message::with_int_header(InternalMessageHeader::with_addresses_and_bounce(
+        let dapp_id = UInt256::from([9; 32]);
+        let mut header = InternalMessageHeader::with_addresses_and_bounce(
             address(1),
             dst.clone(),
             msg_value.clone(),
             false,
-        ));
+        );
+        header.set_src_dapp_id(Some(dapp_id.clone()));
+        let msg = Message::with_int_header(header);
+        let mut params = build_actions_execute_params();
+        params.dapp_id = Some(dapp_id);
 
-        let tx = executor
-            .execute_with_params(Some(&msg), &mut account, build_actions_execute_params(), &mut 0)
-            .unwrap();
+        let tx = executor.execute_with_params(Some(&msg), &mut account, params, &mut 0).unwrap();
 
         assert_eq!(tx.account_id(), &dst.address());
         assert_eq!(tx.orig_status, AccountStatus::AccStateNonexist);
-        assert_eq!(tx.end_status, AccountStatus::AccStateNonexist);
-        assert!(account.is_none());
+        assert_eq!(tx.end_status, AccountStatus::AccStateUninit);
+        assert_eq!(account.status(), AccountStatus::AccStateUninit);
+        assert_eq!(account.balance(), Some(&msg_value));
         assert_eq!(tx.total_fees().grams.as_u128(), 0);
 
         let description = match tx.read_description().unwrap() {

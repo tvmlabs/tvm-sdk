@@ -42,8 +42,8 @@ pub fn set_config(
     config_path: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin(BIN_NAME)?;
-    if config_path.is_some() {
-        cmd.arg("--config").arg(config_path.unwrap());
+    if let Some(config_path) = config_path {
+        cmd.arg("--config").arg(config_path);
     }
     cmd.arg("config");
     for i in 0..config.len() {

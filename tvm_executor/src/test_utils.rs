@@ -133,7 +133,7 @@ impl Default for BuildActionsExecuteParamsFixture {
             #[cfg(feature = "wasmtime")]
             wasm_cache: BuildActionsWasmCache::default(),
             mvconfig: MVConfig::default(),
-            engine_version: semver::Version::new(1, 0, 3),
+            engine_version: crate::STATE_V2_ENGINE_VERSION,
         }
     }
 }
@@ -156,8 +156,8 @@ impl BuildActionsExecuteParamsFixture {
         };
 
         ExecuteParams {
-            // Intentionally default: acki-nacki build_actions.rs leaves state libs to
-            // ExecuteParams::default().
+            // Intentionally default: acki-nacki build_actions.rs leaves state
+            // libs to ExecuteParams::default().
             state_libs: HashmapE::with_bit_len(32),
             block_unixtime: self.block_unixtime,
             block_lt: self.block_lt,
@@ -166,9 +166,11 @@ impl BuildActionsExecuteParamsFixture {
             seed_block: self.seed_block,
             debug,
             trace_callback,
-            // Intentionally default: acki-nacki build_actions.rs does not pass behavior modifiers.
+            // Intentionally default: acki-nacki build_actions.rs does not pass
+            // behavior modifiers.
             behavior_modifiers: None,
-            // Intentionally default: acki-nacki build_actions.rs does not pass block version here.
+            // Intentionally default: acki-nacki build_actions.rs does not pass
+            // block version here.
             block_version: 0,
             #[cfg(feature = "signature_with_id")]
             signature_id: self.signature_id,
@@ -232,7 +234,7 @@ mod tests {
         fixture.termination_deadline = termination_deadline;
         fixture.execution_timeout = execution_timeout;
         fixture.mvconfig = mvconfig.clone();
-        fixture.engine_version = semver::Version::new(1, 0, 3);
+        fixture.engine_version = crate::STATE_V2_ENGINE_VERSION;
 
         let params = fixture.build();
 
@@ -272,7 +274,7 @@ mod tests {
             );
         }
         assert_eq!(params.mvconfig, mvconfig);
-        assert_eq!(params.engine_version, semver::Version::new(1, 0, 3));
+        assert_eq!(params.engine_version, crate::STATE_V2_ENGINE_VERSION);
     }
 
     #[cfg(feature = "wasmtime")]

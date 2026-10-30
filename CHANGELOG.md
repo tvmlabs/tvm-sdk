@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### New / Improvements
+
+- Cross-DApp messages carry an explicit destination DApp ID and allow contracts
+  to send messages between DApps.
+
+- Engine `1.0.9` enables State V2 execution rules. Earlier engines, including
+  `1.0.7`, retain SDK 3.0.6 balance import, outbound internal-message DApp
+  handling and bounceable timeout behavior, and reject new cross-DApp headers.
+  `ExecuteParams::default()` selects `1.0.9`; callers replaying old blocks must
+  supply their source engine version explicitly.
+
+### Fixes
+
+- Bounceable cross-DApp messages no longer leave foreign VMShell spendable
+  at the receiver, including during outbound actions. Attached VMShell may pay
+  compute; its unreturned remainder is burned. Exchange flag 16 applies to
+  incoming SHELL for either header type, and an unfunded return preserves the
+  post-compute balance instead of leaving SHELL unexchanged or losing ECC.
+  Invalid StateInit on existing Uninit accounts and failing constructors also
+  preserve retained funds after actual gas fees. Old receiver ECC is untouched;
+  successful bounces return original currencies and legacy engines are unchanged.
+
+- `tvm-debugger` builds again; outbound contract responses and events use the
+  external-message ABI decoder.
+- Cross-DApp headers targeting the sender's own DApp now retain incoming
+  VMShell. A bounce that cannot pay return forwarding fees now retains ECC on
+  a new Uninit destination even when an attached StateInit cannot deploy.
+  Flag 16 exchanges retained incoming ECC SHELL after the failed return, and
+  successful returns keep the
+  original currencies. Failed deployments with `bounce=false` also retain
+  incoming ECC on Uninit, applying the same DApp boundary and exchange rules
+  as plain funding. Contract activation rules remain unchanged.
+
+- Cross-DApp funding with `bounce=false` no longer transfers original VMShell
+  into the receiving DApp. Incoming ECC SHELL can be exchanged into local
+  VMShell with flag 16; VMShell-only funding leaves missing accounts nonexistent.
+
 ## [3.1.0] - 2026-10-16
 
 Crate-level detail is in [`tvm_vm`](tvm_vm/CHANGELOG.md) and [`tvm_assembler`](tvm_assembler/CHANGELOG.md).

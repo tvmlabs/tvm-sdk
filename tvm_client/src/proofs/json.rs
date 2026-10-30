@@ -250,10 +250,10 @@ pub(crate) fn compare_values(
         (Value::Null, Value::Null) => return Ok(()),
         (Value::Null, _) => return Ok(()),
 
-        (Value::Bool(_), Value::Bool(_)) | (Value::Number(_), Value::Number(_)) => {
-            if actual == expected {
-                return Ok(());
-            }
+        (Value::Bool(_), Value::Bool(_)) | (Value::Number(_), Value::Number(_))
+            if actual == expected =>
+        {
+            return Ok(());
         }
 
         (Value::Number(_), Value::String(_))

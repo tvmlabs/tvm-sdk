@@ -73,7 +73,7 @@ impl ExecutionResult {
         let body = tree_of_cells_into_base64(message.body().map(|s| s.into_cell()).as_ref());
         let boc = base64_encode(message.write_to_bytes().unwrap());
         match message.header() {
-            CommonMsgInfo::IntMsgInfo(_) => {
+            CommonMsgInfo::IntMsgInfo(_) | CommonMsgInfo::CrossDappMessageInfo(_) => {
                 let state_init = message
                     .state_init()
                     .map(|state_init| base64_encode(state_init.write_to_bytes().unwrap()));
@@ -88,8 +88,8 @@ impl ExecutionResult {
                 }));
             }
             // Events and the response of an externally called function both
-            // leave the contract this way, so they are reported side by side and
-            // left for the caller to tell apart by their body.
+            // leave the contract this way, so they are reported side by side
+            // and left for the caller to tell apart by their body.
             CommonMsgInfo::ExtOutMsgInfo(ExtOutMessageHeader { dst, .. })
             | CommonMsgInfo::ExtOutMsgInfoV2(ExtOutMessageHeaderV2 { dst, .. }) => {
                 self.messages.push(json!({

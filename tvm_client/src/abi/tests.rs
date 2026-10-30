@@ -744,8 +744,8 @@ async fn test_encode_internal_message_run(
         )
         .await?;
 
-    if dst.is_some() {
-        assert_eq!(&result.address, dst.as_ref().unwrap());
+    if let Some(dst) = &dst {
+        assert_eq!(&result.address, dst);
     }
     assert_eq!(result.message_id, get_boc_hash(&base64_decode(&result.message)?)?);
     if let Some(expected_boc) = expected_boc {

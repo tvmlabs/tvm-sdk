@@ -103,9 +103,11 @@ pub struct ParamsOfDecodeMessage {
     /// Function name or function id if is known in advance
     pub function_name: Option<String>,
 
-    // For external (inbound and outbound) messages data_layout parameter is ignored.
-    // For internal: by default SDK tries to decode as output and then if decode is not successfull
-    // - tries as input. If explicitly specified then tries only the specified layout.
+    // For external (inbound and outbound) messages data_layout parameter is
+    // ignored. For internal: by default SDK tries to decode as output and then
+    // if decode is not successfull
+    // - tries as input. If explicitly specified then tries only the specified
+    //   layout.
     pub data_layout: Option<DataLayout>,
 }
 
@@ -121,12 +123,13 @@ pub fn decode_message(
             tvm_block::CommonMsgInfo::ExtInMsgInfo(_) => Some(DataLayout::Input),
             tvm_block::CommonMsgInfo::ExtOutMsgInfo(_)
             | tvm_block::CommonMsgInfo::ExtOutMsgInfoV2(_) => Some(DataLayout::Output),
-            tvm_block::CommonMsgInfo::IntMsgInfo(_) => params.data_layout,
+            tvm_block::CommonMsgInfo::IntMsgInfo(_)
+            | tvm_block::CommonMsgInfo::CrossDappMessageInfo(_) => params.data_layout,
         };
         decode_body(
             abi,
             body,
-            message.is_internal(),
+            message.is_internal() || message.is_cross_dapp(),
             params.allow_partial,
             params.function_name,
             data_layout,
@@ -160,8 +163,9 @@ pub struct ParamsOfDecodeMessageBody {
     /// Function name or function id if is known in advance
     pub function_name: Option<String>,
 
-    // By default SDK tries to decode as output and then if decode is not successfull - tries as
-    // input. If explicitly specified then tries only the specified layout.
+    // By default SDK tries to decode as output and then if decode is not
+    // successfull - tries as input. If explicitly specified then tries only the
+    // specified layout.
     pub data_layout: Option<DataLayout>,
 }
 
