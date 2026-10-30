@@ -28,6 +28,8 @@
 //! - **Negative paths**: byte-flipped proof, tweaked instance, bad VkBlob
 //!   magic, corrupted VK, instance ≥ modulus, instance-count mismatch, empty
 //!   proof, malformed config_json, config.k mismatch, cache reuse smoke-test.
+//! - The deposit circuit (v2 Rlc) and the keccak shard proof of its keccak
+//!   table (v2 KeccakShard), on the deposit fixture set.
 
 use tvm_types::SliceData;
 
@@ -476,6 +478,81 @@ fn deposit_rlc_cache_reused_across_two_invocations() {
     for _ in 0..2 {
         run_with_operands(&vk_blob, &instances, &proof)
             .expect("identical deposit RLC operands must verify on every call");
+    }
+}
+
+// Deposit keccak shard (v2 KeccakShard VkBlob, 1 public input) — the proof
+// of the keccak table a deposit proof loads. Its one public input is the
+// deposit's public input 11, the commitment to that table.
+// ---------------------------------------------------------------------------
+
+fn deposit_keccak_operands(proof: &str) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+    let vk_blob = std::fs::read(format!("{}/keccak_vk_blob.bin", DEPOSIT_SET_DIR))
+        .expect("keccak_vk_blob.bin must exist");
+    let deposit_pi = std::fs::read(format!("{}/{}/public_inputs.bin", DEPOSIT_SET_DIR, proof))
+        .expect("deposit public_inputs");
+    assert_eq!(deposit_pi.len(), 12 * 32, "the deposit proof has 12 public inputs");
+    let keccak_proof = std::fs::read(format!("{}/{}/keccak_proof.bin", DEPOSIT_SET_DIR, proof))
+        .expect("keccak_proof.bin must exist");
+    (vk_blob, deposit_pi[11 * 32..].to_vec(), keccak_proof)
+}
+
+fn verifies(vk_blob: &[u8], public_inputs: &[u8], proof: &[u8]) -> bool {
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, vk_blob, public_inputs, proof);
+    execute_zkhalo2_verify_with_vk(&mut engine)
+        .expect("a well-formed keccak shard triple is a cryptographic verdict, not FatalError");
+    engine.cc.stack.get(0).as_bool().unwrap()
+}
+
+#[test]
+fn round_trip_deposit_keccak_shard_real_proof_returns_true() {
+    for i in 0..10 {
+        let (vk_blob, commit, proof) = deposit_keccak_operands(&format!("proof_{i:02}"));
+        assert!(verifies(&vk_blob, &commit, &proof), "proof_{i:02}: keccak shard must verify");
+    }
+}
+
+#[test]
+fn deposit_keccak_shard_flipped_proof_byte_rejected_as_false() {
+    let (vk_blob, commit, mut proof) = deposit_keccak_operands("proof_00");
+    let mid = proof.len() / 2;
+    proof[mid] ^= 0xFF;
+    assert!(!verifies(&vk_blob, &commit, &proof));
+}
+
+#[test]
+fn deposit_keccak_shard_tweaked_commitment_rejected_as_false() {
+    let (vk_blob, mut commit, proof) = deposit_keccak_operands("proof_00");
+    commit[0] ^= 1;
+    assert!(!verifies(&vk_blob, &commit, &proof));
+}
+
+#[test]
+fn deposit_keccak_shard_does_not_prove_another_deposits_table() {
+    let (vk_blob, commit_00, proof_00) = deposit_keccak_operands("proof_00");
+    let (_, commit_01, _) = deposit_keccak_operands("proof_01");
+    assert_ne!(commit_00, commit_01, "the two deposits hash different preimages");
+    assert!(!verifies(&vk_blob, &commit_01, &proof_00));
+}
+
+#[test]
+fn deposit_keccak_shard_proof_does_not_verify_under_the_deposit_vk() {
+    let (_, commit, proof) = deposit_keccak_operands("proof_00");
+    let deposit_vk = std::fs::read(format!("{}/deposit_vk_blob.bin", DEPOSIT_SET_DIR)).unwrap();
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &deposit_vk, &commit, &proof);
+    let res = execute_zkhalo2_verify_with_vk(&mut engine)
+        .ok()
+        .map(|_| engine.cc.stack.get(0).as_bool().unwrap());
+    assert_ne!(res, Some(true));
+}
+
+#[test]
+fn deposit_keccak_shard_cache_reused_across_two_invocations() {
+    let (vk_blob, commit, proof) = deposit_keccak_operands("proof_00");
+    for _ in 0..2 {
+        assert!(verifies(&vk_blob, &commit, &proof));
     }
 }
 

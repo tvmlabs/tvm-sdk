@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Breaking Changes
+- `ZKHALO2VERIFYWITHVK`: VkBlob shape byte `2` (`KeccakShard`) is accepted. Nodes without it throw `FatalError` on such a blob; upgraded nodes verify the proof.
+
+### Added
+- `VK_CIRCUIT_SHAPE_KECCAK_SHARD` (`2`) and `VkBlobConfig::KeccakShard`. The blob's `config_json` is a serialized `KeccakComponentShardCircuitParams`; the verifying key is read for `KeccakComponentShardCircuit<Fr>`, and the params' `k`, `keccak_circuit_params.k` and `base_circuit_params.k` must all equal the key's domain `k`. An empty `config_json` fails parsing. The blob is version 2 like `Rlc`.
+
+### Fixed
+- `ZKHALO2VERIFYWITHVK`: the verifying-key cache is keyed on the whole `vk_cell` payload. It was keyed on `vk_bytes` alone, so two blobs with the same `vk_bytes` and different `config_json` or shape shared one cached key, and which one was verified against depended on which the node had loaded first.
+
 ## [3.1.0] - 2026-10-16
 
 ### Breaking Changes
