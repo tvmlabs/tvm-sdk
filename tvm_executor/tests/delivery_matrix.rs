@@ -6,10 +6,13 @@ use tvm_block::AddSub;
 use tvm_block::ConfigParam12;
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParam31;
+use tvm_block::ConfigParam8;
 use tvm_block::ConfigParamEnum;
 use tvm_block::CrossDappMessageHeader;
 use tvm_block::CurrencyCollection;
 use tvm_block::Deserializable;
+use tvm_block::GlobalCapabilities;
+use tvm_block::GlobalVersion;
 use tvm_block::InternalMessageHeader;
 use tvm_block::Message;
 use tvm_block::MsgAddressInt;
@@ -45,6 +48,14 @@ fn config() -> BlockchainConfig {
     let mut storage = ConfigParam18::default();
     storage.insert(&StoragePrices::default()).unwrap();
     for param in [
+        // Active contracts need nonzero c7 capabilities. The default raw config
+        // omits parameter 8 even though BlockchainConfig caches capabilities.
+        ConfigParamEnum::ConfigParam8(ConfigParam8 {
+            global_version: GlobalVersion {
+                version: 0,
+                capabilities: GlobalCapabilities::CapInitCodeHash as u64,
+            },
+        }),
         ConfigParamEnum::ConfigParam12(workchains),
         ConfigParamEnum::ConfigParam18(storage),
         ConfigParamEnum::ConfigParam20(defaults.get_gas_config(true).clone()),

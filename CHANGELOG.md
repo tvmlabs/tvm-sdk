@@ -6,10 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### New / Improvements
 
-- Engine `1.0.8` enables State V2 execution rules. Earlier engines, including
+- Cross-DApp messages carry an explicit destination DApp ID and allow contracts
+  to send messages between DApps.
+
+- Engine `1.0.9` enables State V2 execution rules. Earlier engines, including
   `1.0.7`, retain SDK 3.0.6 balance import, outbound internal-message DApp
   handling and bounceable timeout behavior, and reject new cross-DApp headers.
-  `ExecuteParams::default()` selects `1.0.8`; callers replaying old blocks must
+  `ExecuteParams::default()` selects `1.0.9`; callers replaying old blocks must
   supply their source engine version explicitly.
 
 ### Fixes
@@ -38,9 +41,17 @@ All notable changes to this project will be documented in this file.
   into the receiving DApp. Incoming ECC SHELL can be exchanged into local
   VMShell with flag 16; VMShell-only funding leaves missing accounts nonexistent.
 
-## [3.1.0] - 2026-XX-XX
-## New
-- Add new type of message - Cross Dapp Message it behaves like internal but requires destination dapp id and could be sent between dapps.
+## [3.1.0] - 2026-10-16
+
+Crate-level detail is in [`tvm_vm`](tvm_vm/CHANGELOG.md) and [`tvm_assembler`](tvm_assembler/CHANGELOG.md).
+
+### Breaking Changes
+- Consensus: VM behaviour changes on `gosh`-feature builds — a new opcode and a stricter `ZKHALO2VERIFYWITHVK`. Nodes on 3.0.x and 3.1.0 can disagree on the result of a transaction that uses either, so every validator of a network has to move to 3.1.0 together.
+- `ZKHALO2VERIFYWITHVK`: VkBlob header byte 11 (until now reserved and ignored) is the `accumulator_limbs` field. Any value other than `0` or `12` now throws `FatalError` instead of being ignored. Blobs that keep the reserved bytes zeroed are unaffected.
+
+### New / Improvements
+- New VM instruction `KECCAK256` (`C74B`, `gosh` feature): Ethereum's keccak-256 of a byte string held in a chain of cells, as Solidity `bytes` stores it; pushes the digest as a 256-bit unsigned integer. Flat price 1000 gas plus the cell loads of the input. `tvm_assembler` now assembles the mnemonic, so `gosh.keccak256` compiles.
+- `ZKHALO2VERIFYWITHVK`: recursive-aggregation (snark-verifier) proofs are now checked in full. A VkBlob with `accumulator_limbs = 12` makes the opcode also run the KZG accumulator pairing check over `instances[0..12]`; until now such a proof was accepted without verifying the inner proofs it folds.
 
 ## [3.0.6] - 2026-09-03
 
