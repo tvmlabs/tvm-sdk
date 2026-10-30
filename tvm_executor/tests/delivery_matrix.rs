@@ -3,10 +3,10 @@
 use tvm_block::Account;
 use tvm_block::AccountStatus;
 use tvm_block::AddSub;
+use tvm_block::ConfigParam8;
 use tvm_block::ConfigParam12;
 use tvm_block::ConfigParam18;
 use tvm_block::ConfigParam31;
-use tvm_block::ConfigParam8;
 use tvm_block::ConfigParamEnum;
 use tvm_block::CrossDappMessageHeader;
 use tvm_block::CurrencyCollection;
