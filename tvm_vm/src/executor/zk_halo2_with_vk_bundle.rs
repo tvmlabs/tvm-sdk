@@ -15,13 +15,14 @@
 //     0     8  magic           = b"VKBLOB\x00\x00"
 //     8     1  version         = 0x01 (Base) | 0x02 (shape-tagged)
 //     9     1  transcript_kind = 0x00 (Blake2b)
-//    10     1  circuit_shape   = 0 Base | 1 Rlc  (v1: reserved 0)
+//    10     1  circuit_shape   = 0 Base | 1 Rlc | 2 KeccakShard  (v1: reserved 0)
 //    11     1  accumulator_limbs = 0 none | 12 KZG accumulator @ instances[0..12]
 //                                (was part of the reserved region; a legacy blob
 //                                carries 0 here and skips the decider)
 //    12     4  reserved        = 0 × 4
 //    16     4  config_len      (u32 LE)
 //    20  cl    config_json     Base: `BaseCircuitParams` | Rlc: `EthCircuitParams`
+//                              | KeccakShard: `KeccakComponentShardCircuitParams`
 //   ...     4  vk_len          (u32 LE)
 //   ...  vl    vk_bytes
 // ```
@@ -77,6 +78,11 @@ pub const VK_BLOB_VERSION_V2: u8 = 2;
 /// `circuit_shape` byte values (offset 10).
 pub const VK_CIRCUIT_SHAPE_BASE: u8 = 0;
 pub const VK_CIRCUIT_SHAPE_RLC: u8 = 1;
+/// zkevm-hashes `KeccakComponentShardCircuit<Fr>`. The deposit circuit does
+/// not compute keccak; it commits to a table of promised hashes. A proof
+/// under this shape, with that commitment as its one public input, shows
+/// the table is real keccak.
+pub const VK_CIRCUIT_SHAPE_KECCAK_SHARD: u8 = 2;
 
 /// Transcript discriminator. Only `Blake2b = 0` is accepted by the opcode
 /// today; `0x01 = Keccak` is reserved for a future format version.
@@ -118,6 +124,9 @@ pub enum VkBlobConfig {
     /// Raw `EthCircuitParams` JSON bytes — VK read with `EthCircuitImpl<Fr,
     /// Noop>`.
     Rlc(Vec<u8>),
+    /// Raw `KeccakComponentShardCircuitParams` JSON — VK read with
+    /// `KeccakComponentShardCircuit<Fr>`.
+    KeccakShard(Vec<u8>),
 }
 
 /// Owned, validated view into a `vk_cell` payload.
@@ -167,10 +176,13 @@ impl VkBlob {
             }
             VK_BLOB_VERSION_V2 => {
                 let shape = bytes[10];
-                if shape != VK_CIRCUIT_SHAPE_BASE && shape != VK_CIRCUIT_SHAPE_RLC {
+                if shape != VK_CIRCUIT_SHAPE_BASE
+                    && shape != VK_CIRCUIT_SHAPE_RLC
+                    && shape != VK_CIRCUIT_SHAPE_KECCAK_SHARD
+                {
                     fail!(
-                        "VkBlob: unsupported circuit_shape byte {shape} (only 0 = Base and 1 = \
-                         Rlc are currently defined)"
+                        "VkBlob: unsupported circuit_shape byte {shape} (only 0 = Base, 1 = Rlc \
+                         and 2 = KeccakShard are currently defined)"
                     );
                 }
                 shape
@@ -234,6 +246,12 @@ impl VkBlob {
                     fail!("VkBlob: Rlc blob carries an empty config_json chunk");
                 }
                 VkBlobConfig::Rlc(config_bytes)
+            }
+            VK_CIRCUIT_SHAPE_KECCAK_SHARD => {
+                if config_bytes.is_empty() {
+                    fail!("VkBlob: KeccakShard blob carries an empty config_json chunk");
+                }
+                VkBlobConfig::KeccakShard(config_bytes)
             }
             _ => unreachable!("circuit_shape validated above"),
         };

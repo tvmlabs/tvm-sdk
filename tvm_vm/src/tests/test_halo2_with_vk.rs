@@ -467,6 +467,41 @@ fn deposit_rlc_flipped_proof_byte_rejected_as_false() {
     assert!(!res, "flipped deposit proof byte must NOT verify as true");
 }
 
+/// The keccak shard proof that goes with deposit `proof_08`. Its one public
+/// input is that deposit's public input 11. Kept beside the older deposit
+/// fixture set: those `public_inputs.bin` files are a previous circuit and
+/// do not match these keccak proofs.
+const DEPOSIT_KECCAK_DIR: &str = "halo2_test_data/deposit_keccak";
+
+#[test]
+fn round_trip_deposit_keccak_shard_returns_true() {
+    let vk_blob = std::fs::read(format!("{}/keccak_vk_blob.bin", DEPOSIT_KECCAK_DIR))
+        .expect("keccak_vk_blob.bin must exist");
+    let instances = std::fs::read(format!("{}/public_inputs.bin", DEPOSIT_KECCAK_DIR))
+        .expect("deposit public_inputs");
+    let commit = instances[instances.len() - 32..].to_vec();
+    assert_eq!(commit.len(), 32);
+    let proof = std::fs::read(format!("{}/keccak_proof.bin", DEPOSIT_KECCAK_DIR))
+        .expect("keccak shard proof");
+    run_with_operands(&vk_blob, &commit, &proof)
+        .expect("keccak shard proof must verify against public input 11");
+}
+
+#[test]
+fn deposit_keccak_shard_wrong_commit_rejected_as_false() {
+    let vk_blob = std::fs::read(format!("{}/keccak_vk_blob.bin", DEPOSIT_KECCAK_DIR)).unwrap();
+    let instances = std::fs::read(format!("{}/public_inputs.bin", DEPOSIT_KECCAK_DIR)).unwrap();
+    let mut commit = instances[instances.len() - 32..].to_vec();
+    commit[0] ^= 0x01;
+    let proof = std::fs::read(format!("{}/keccak_proof.bin", DEPOSIT_KECCAK_DIR)).unwrap();
+    let mut engine = setup_engine();
+    push_three_operands(&mut engine, &vk_blob, &commit, &proof);
+    execute_zkhalo2_verify_with_vk(&mut engine)
+        .expect("a wrong commitment is a cryptographic reject, not FatalError");
+    let res = engine.cc.stack.get(0).as_bool().unwrap();
+    assert!(!res, "keccak proof must not verify under a different commitment");
+}
+
 #[test]
 fn deposit_rlc_cache_reused_across_two_invocations() {
     let vk_blob = std::fs::read(format!("{}/deposit_vk_blob.bin", DEPOSIT_SET_DIR)).unwrap();

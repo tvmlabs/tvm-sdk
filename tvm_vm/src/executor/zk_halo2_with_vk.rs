@@ -218,6 +218,36 @@ fn read_base_vk(
     }
 }
 
+/// Read a `KeccakComponentShardCircuit` VK (v2 `circuit_shape = 2`). The
+/// `config_json` chunk is the JSON of zkevm-hashes'
+/// `KeccakComponentShardCircuitParams`, including the derived base-circuit
+/// params the key was built with — reconstructing them with `new()` would
+/// not match.
+fn read_keccak_shard_vk(
+    vk_bytes: &[u8],
+    config_json: &[u8],
+) -> tvm_types::Result<VerifyingKey<G1Affine>> {
+    use zkevm_hashes::keccak::component::circuit::shard::KeccakComponentShardCircuit;
+    use zkevm_hashes::keccak::component::circuit::shard::KeccakComponentShardCircuitParams;
+    let params: KeccakComponentShardCircuitParams = match serde_json::from_slice(config_json) {
+        Ok(p) => p,
+        Err(e) => fail!(
+            "ZKHALO2VERIFYWITHVK: malformed KeccakShard config_json (cannot parse as \
+             KeccakComponentShardCircuitParams): {}",
+            e
+        ),
+    };
+    let mut slice: &[u8] = vk_bytes;
+    match VerifyingKey::<G1Affine>::read::<_, KeccakComponentShardCircuit<Fr>>(
+        &mut slice,
+        SerdeFormat::RawBytes,
+        params,
+    ) {
+        Ok(vk) => Ok(vk),
+        Err(e) => fail!("ZKHALO2VERIFYWITHVK: KeccakShard VerifyingKey::read failed: {}", e),
+    }
+}
+
 /// Read an `EthCircuitImpl`-shaped (RLC) VK (v2 `circuit_shape = 1`). The
 /// `config_json` chunk is the JSON of axiom-eth's `EthCircuitParams`.
 fn read_rlc_vk(vk_bytes: &[u8], config_json: &[u8]) -> tvm_types::Result<VerifyingKey<G1Affine>> {
@@ -279,6 +309,9 @@ fn get_or_insert_vk(blob: &VkBlob) -> tvm_types::Result<std::sync::Arc<CachedVk>
             vk
         }
         VkBlobConfig::Rlc(config_json) => read_rlc_vk(&blob.vk_bytes, config_json)?,
+        VkBlobConfig::KeccakShard(config_json) => {
+            read_keccak_shard_vk(&blob.vk_bytes, config_json)?
+        }
     };
 
     let k = vk.get_domain().k();
