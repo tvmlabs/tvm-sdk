@@ -74,6 +74,12 @@ gosh-zk-snark-halo2-utils = { git = "https://github.com/gosh-sh/gosh-zk-snark-ha
 axiom-eth = { git = "https://github.com/axiom-crypto/axiom-eth", default-features = false, features = [
   "halo2-axiom",
 ], optional = true }
+# Keccak shard reader for the VkBlob-v2 "KeccakShard" circuit shape (deposit
+# promise table). The workspace [patch] redirects this to the gosh halo2-lib
+# fork, the same one axiom-eth and the deposit prover build against.
+zkevm-hashes = { git = "https://github.com/axiom-crypto/halo2-lib.git", tag = "v0.4.1-git", default-features = false, features = [
+  "halo2-axiom",
+], optional = true }
 
 fastcrypto = { version = "0.1.8", optional = true }
 neptune = { version = "13.0.0", default-features = false, optional = true }
@@ -148,6 +154,7 @@ gosh = [
   "dep:halo2-base",
   "dep:gosh-zk-snark-halo2-utils",
   "dep:axiom-eth",
+  "dep:zkevm-hashes",
   "dep:pse-poseidon",
 ]
 log_file = []
