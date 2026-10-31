@@ -88,8 +88,8 @@ impl ExecutionResult {
                 }));
             }
             // Events and the response of an externally called function both
-            // leave the contract this way, so they are reported side by side and
-            // left for the caller to tell apart by their body.
+            // leave the contract this way, so they are reported side by side
+            // and left for the caller to tell apart by their body.
             CommonMsgInfo::ExtOutMsgInfo(ExtOutMessageHeader { dst, .. })
             | CommonMsgInfo::ExtOutMsgInfoV2(ExtOutMessageHeaderV2 { dst, .. }) => {
                 self.messages.push(json!({

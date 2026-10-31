@@ -17,9 +17,9 @@ pub struct ParamsOfDecodeBoc {
     /// Data BOC or BOC handle
     pub boc: String,
     // Do not check if all BOC data is parsed by provided parameters set
-    // Set it to `true` if don't need to decode the whole BOC data or if you need
-    // to handle conditional parsing (when TLB constructor or flags should be
-    // checked to decide how to parse remaining BOC data)
+    // Set it to `true` if don't need to decode the whole BOC data or if you
+    // need to handle conditional parsing (when TLB constructor or flags should
+    // be checked to decide how to parse remaining BOC data)
     pub allow_partial: bool,
 }
 
