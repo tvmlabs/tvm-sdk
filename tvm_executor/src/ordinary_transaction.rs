@@ -230,16 +230,20 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 }
             }
         }
-        // Non-bounce cross-DApp funding cannot buy execution with raw VM.
-        // Bounceable messages may use it for compute/return fees; any
-        // unreturned remainder is removed before local actions or settlement.
-        // Exchange only incoming SHELL, preserving old receiver currencies.
+        // Foreign VM can unlock compute without becoming local spending
+        // money. Cap the non-bounce bootstrap budget; compute limits its
+        // actual gas spending to receiver-local funds. Burn the imported VM
+        // after compute and before actions. Exchange only incoming SHELL.
         if let Some(h) = in_msg.cross_dapp_header() {
             if !h.bounced {
                 // Header type alone does not imply a DApp boundary: callers
                 // can explicitly address their own DApp with this header.
                 if !h.bounce && !same_dapp {
-                    msg_balance.grams = Grams::zero();
+                    let gas_config = self.config().get_gas_config(is_masterchain);
+                    let gas_budget = (u128::from(gas_config.gas_limit)
+                        * u128::from(gas_config.gas_price))
+                        / 65536;
+                    msg_balance.grams = min(msg_balance.grams, Grams::new(gas_budget)?);
                 }
                 if h.is_exchange {
                     let before = msg_balance.grams.as_u128();
@@ -259,6 +263,8 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
 
         let imported_vm = msg_balance.grams.as_u128().saturating_sub(msg_balance_convert as u128);
+        let receiver_pays_cross_dapp_gas =
+            state_v2 && !same_dapp && !bounce && !bounced && in_msg.cross_dapp_header().is_some();
         let is_special = self.config.is_special_account(account_address)?;
         log::debug!(target: "executor", "acc_balance: {}, msg_balance: {}, credit_first: {}, is_special: {}",
             acc_balance.grams, msg_balance.grams, !bounce, is_special);
@@ -438,7 +444,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if state_v2 && !is_ext_msg && !bounced && !same_dapp {
             if let TrComputePhase::Vm(ref vm) = description.compute_ph {
                 if vm.success {
-                    let remaining = Grams::new(imported_vm.saturating_sub(vm.gas_fees.as_u128()))?;
+                    let remaining = Grams::new(if receiver_pays_cross_dapp_gas {
+                        imported_vm
+                    } else {
+                        imported_vm.saturating_sub(vm.gas_fees.as_u128())
+                    })?;
                     if !acc_balance.grams.sub(&remaining)? {
                         acc_balance.grams = Grams::zero();
                     }
@@ -661,8 +671,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     && (original_account_is_none
                         || account.status() == AccountStatus::AccStateUninit));
             if discard_vm && !foreign_vm_burned {
-                let remaining =
-                    Grams::new(imported_vm.saturating_sub(compute_phase_gas_fees.as_u128()))?;
+                let remaining = Grams::new(if receiver_pays_cross_dapp_gas {
+                    imported_vm
+                } else {
+                    imported_vm.saturating_sub(compute_phase_gas_fees.as_u128())
+                })?;
                 if !acc_balance.grams.sub(&remaining)? {
                     acc_balance.grams = Grams::zero();
                 }

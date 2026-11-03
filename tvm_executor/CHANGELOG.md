@@ -14,6 +14,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Non-bounce cross-DApp messages can now start compute without exchanging
+  attached SHELL. Incoming VMShell supplies a capped initial gas limit;
+  execution and ACCEPT are bounded by receiver-local funds. Gas is paid from
+  those local funds, and incoming VMShell is fully burned after compute before
+  outbound actions can spend it. ECC remains unexchanged unless flag 16 is set.
+
 - Bounceable cross-DApp messages no longer leave foreign VMShell spendable
   at the receiver, including during outbound actions. Attached VMShell may pay
   compute; its unreturned remainder is burned. Exchange flag 16 applies to
@@ -37,11 +43,11 @@ All notable changes to this project will be documented in this file.
   `bounce=false` retain funds according to the DApp boundary and exchange
   rules. Successful contract activation and legacy execution are unchanged.
 
-- Cross-DApp funding messages with `bounce=false` now discard original incoming
-  VMShell before credit and execution. Incoming ECC SHELL is retained, or
+- Cross-DApp funding messages with `bounce=false` do not transfer incoming
+  VMShell into the destination DApp. Incoming ECC SHELL is retained, or
   converted 1:1 to receiver-local VMShell when exchange flag 16 is set (including
-  send flag 17). Existing receiver funds are preserved. VMShell-only funding
-  no longer creates an empty uninitialized destination account.
+  send flag 17). Only incoming SHELL is exchanged. VMShell-only funding leaves
+  a missing destination nonexistent.
 
 - Internal VMShell transfers within the destination DApp can now create an
   uninitialized account instead of treating the missing account as a
