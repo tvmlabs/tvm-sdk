@@ -17,6 +17,12 @@ All notable changes to this project will be documented in this file.
 
 ### Fixes
 
+- Non-bounce cross-DApp messages can now start compute without exchanging
+  attached SHELL. Incoming VMShell supplies a capped initial gas limit;
+  execution and ACCEPT are bounded by receiver-local funds. Gas is paid from
+  those local funds, and incoming VMShell is fully burned after compute before
+  outbound actions can spend it. ECC remains unexchanged unless flag 16 is set.
+
 - Bounceable cross-DApp messages no longer leave foreign VMShell spendable
   at the receiver, including during outbound actions. Attached VMShell may pay
   compute; its unreturned remainder is burned. Exchange flag 16 applies to

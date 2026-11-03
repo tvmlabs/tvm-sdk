@@ -530,8 +530,25 @@ pub trait TransactionExecutor {
             return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
         }
         let gas_config = self.config().get_gas_config(is_masterchain);
+        // Non-bounce foreign VM unlocks the initial gas limit, but neither
+        // that limit nor ACCEPT may spend it as receiver-local currency.
+        let foreign_vm = if crate::uses_state_v2_rules(&params.engine_version) {
+            msg.as_ref()
+                .and_then(|msg| msg.cross_dapp_header())
+                .filter(|h| {
+                    !h.bounce && !h.bounced && Some(&h.src_dapp_id) != params.dapp_id.as_ref()
+                })
+                .map(|h| {
+                    let cap = (u128::from(gas_config.gas_limit) * u128::from(gas_config.gas_price))
+                        / 65536;
+                    min(h.value.grams.as_u128(), cap)
+                })
+                .unwrap_or(0)
+        } else {
+            0
+        };
         let gas = init_gas(
-            acc_balance.grams.as_u128(),
+            acc_balance.grams.as_u128().saturating_sub(foreign_vm),
             msg_balance.grams.as_u128(),
             is_external,
             is_special,
@@ -3339,21 +3356,46 @@ mod tests {
     }
 
     #[test]
-    fn delivery_funding_cross_dapp_native_does_not_buy_active_execution() {
-        let code = tvm_assembler::compile_code_to_cell("PUSHINT 1\n").unwrap();
-        let initial = active_account_with_code(7, code);
-        let original = initial.balance().unwrap().clone();
-        let (tx, account) = execute_delivery_funding(
-            true,
-            initial,
-            CurrencyCollection::with_grams(10_000_000_000),
-            false,
-        );
-        assert!(matches!(tx.read_description().unwrap().compute_phase_ref(),
-            Some(TrComputePhase::Skipped(phase)) if phase.reason == ComputeSkipReason::NoGas));
-        assert_eq!(account.status(), AccountStatus::AccStateActive);
-        assert_eq!(account.balance().unwrap(), &original);
-        assert!(tx.total_fees().is_zero().unwrap());
+    fn delivery_funding_cross_dapp_native_unlocks_accept_with_receiver_paying_gas() {
+        let mut source = String::from("ACCEPT\n");
+        // Execute more gas than the small incoming VM budget permits before
+        // ACCEPT, and commit a marker proving the whole contract ran.
+        source.push_str(&"PUSHINT 1\nDROP\n".repeat(32));
+        source.push_str("PUSHINT 42\nNEWC\nSTU 8\nENDC\nPOP c4\n");
+        let code = tvm_assembler::compile_code_to_cell(&source).unwrap();
+        for native in [500u64, 10_000_000_000] {
+            let mut initial = active_account_with_code(7, code.clone());
+            let mut original = initial.balance().unwrap().clone();
+            original.set_other(2, 7_000_000_000).unwrap();
+            original.set_other(1, 5_000_000_000).unwrap();
+            original.set_other(3, 777).unwrap();
+            initial.set_balance(original.clone());
+            let mut value = CurrencyCollection::with_grams(native);
+            value.set_other(2, 10_000_000_000).unwrap();
+            value.set_other(1, 10_000_000_000).unwrap();
+            let mut incoming_ecc = value.clone();
+            incoming_ecc.grams = Grams::zero();
+            let (tx, account) = execute_delivery_funding(true, initial, value, false);
+            let phase = vm_phase(&tx);
+            assert!(phase.success, "native={native}: {phase:?}");
+            assert!(!phase.gas_fees.is_zero());
+            if native == 500 {
+                assert!(
+                    phase.gas_fees.as_u128() > native as u128,
+                    "ACCEPT must allow spending beyond the initial message gas budget"
+                );
+            }
+            assert!(!ordinary_description(&tx).aborted);
+            assert_eq!(tx.msg_count(), 0);
+            assert_eq!(account.status(), AccountStatus::AccStateActive);
+            assert_eq!(account.get_data(), Some(byte_cell(42)));
+            let mut expected = original;
+            assert!(expected.sub(tx.total_fees()).unwrap());
+            assert!(expected.add(&incoming_ecc).unwrap());
+            // Raw incoming VM is fully burned, gas is paid by the receiver,
+            // and SHELL/NACKL are credited without exchanging old or new ECC.
+            assert_eq!(account.balance(), Some(&expected), "native={native}");
+        }
     }
 
     #[test]
