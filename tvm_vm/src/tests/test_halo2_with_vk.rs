@@ -562,17 +562,20 @@ fn step_light_client_cache_reused_across_two_invocations() {
     }
 }
 
-// ETH light-client recursive `rotate` (v1 Base VkBlob, 15 public inputs) — 3-op
+// ETH light-client committee `rotate` (v1 Base VkBlob, 17 public inputs) — 3-op
 // ABI
 // ---------------------------------------------------------------------------
 //
-// Real Hermez K=21 SHPLONK proof over the recursive committee-rotation root
-// (`acki-nacki-bridge/eth-light-client-prover`, M6). The root is a 2-to-1
-// aggregation tree over 8 committee shards + a step snark, so its 15 public
-// inputs are **12 KZG accumulator limbs** followed by `[current_commit,
-// next_commit, period]`. Like `step`, it is a plain `BaseCircuitBuilder<Fr>` →
-// VkBlob **v1 Base** (`circuit_shape=0`, Blake2b), read by the opcode via
-// `read_base_vk` + `VerifyingKey::read::<_, BaseCircuitBuilder<Fr>>`.
+// Real Hermez K=21 SHPLONK proof of the committee rotation
+// (`acki-nacki-bridge/eth-light-client-prover`,
+// `examples/rotate_committee.rs`): one aggregation over the K=18 committee
+// circuit, so its 17 public inputs are **12 KZG accumulator limbs** followed by
+// `[next_commit, state_root_hi, state_root_lo, attested_slot,
+// gloas_fork_slot]`. The current committee is bound by a separate step proof,
+// which the light client verifies in the same transaction. Like `step`, it is a
+// plain `BaseCircuitBuilder<Fr>` → VkBlob **v1 Base** (`circuit_shape=0`,
+// Blake2b), read by the opcode via `read_base_vk` + `VerifyingKey::read::<_,
+// BaseCircuitBuilder<Fr>>`.
 //
 // The blob's header sets `accumulator_limbs = 12` (byte 11).
 //
@@ -580,7 +583,7 @@ fn step_light_client_cache_reused_across_two_invocations() {
 // BOTH the SHPLONK `verify_proof` AND the KZG accumulation decider
 // `e(lhs, g2) == e(rhs, s_g2)` over `instances[0..12]` against the embedded
 // Hermez `[s]·G2` (see `run_accumulator_decider`). So a `true` here means the
-// folded inner shard/step proofs are cryptographically checked, not just the
+// folded inner committee proof is cryptographically checked, not just the
 // aggregation relation. The decider itself is unit-tested (honest PASS,
 // tampered/swapped REJECT) in `zk_halo2_with_vk::decider_tests`; the native
 // reference is `eth-light-client-prover/examples/rotate_decider_check.rs`.
@@ -596,11 +599,12 @@ fn round_trip_rotate_light_client_real_proof_returns_true() {
     let proof =
         std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).expect("rotate proof");
 
-    // 12 accumulator limbs + [current_commit, next_commit, period] = 15 Fr.
+    // 12 accumulator limbs + [next_commit, state_root_hi, state_root_lo,
+    // attested_slot, gloas_fork_slot] = 17 Fr.
     assert_eq!(
         instances.len(),
-        15 * 32,
-        "rotate fixture has exactly 15 public inputs (= 480 B), got {}",
+        17 * 32,
+        "rotate fixture has exactly 17 public inputs (= 544 B), got {}",
         instances.len()
     );
 
@@ -651,7 +655,7 @@ fn rotate_light_client_tweaked_rotate_pi_rejected_as_false() {
         std::fs::read(format!("{}/rotate_public_inputs.bin", ROTATE_SET_DIR)).unwrap();
     let proof = std::fs::read(format!("{}/rotate_proof.bin", ROTATE_SET_DIR)).unwrap();
 
-    // Flip the low byte of `current_commit` (instance[12], the first non-
+    // Flip the low byte of `next_commit` (instance[12], the first non-
     // accumulator public input). The bound proof must reject the altered PI.
     instances[12 * 32] ^= 0x01;
 
@@ -660,7 +664,7 @@ fn rotate_light_client_tweaked_rotate_pi_rejected_as_false() {
 
     execute_zkhalo2_verify_with_vk(&mut engine).expect("handler must not fatal on valid Fr");
     let res = engine.cc.stack.get(0).as_bool().unwrap();
-    assert!(!res, "tweaked rotate current_commit Fr must NOT verify as true");
+    assert!(!res, "tweaked rotate next_commit Fr must NOT verify as true");
 }
 
 #[test]

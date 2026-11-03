@@ -1,7 +1,7 @@
 {
   "k": 21,
   "num_advice_per_phase": [
-    21
+    10
   ],
   "num_fixed": 1,
   "num_lookup_advice_per_phase": [
