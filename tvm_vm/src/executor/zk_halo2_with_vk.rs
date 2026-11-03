@@ -491,7 +491,7 @@ pub(crate) fn execute_zkhalo2_verify_with_vk(engine: &mut Engine) -> Status {
 
 #[cfg(test)]
 mod decider_tests {
-    //! KZG accumulation decider coverage on the REAL recursive-rotate fixture
+    //! KZG accumulation decider coverage on the REAL committee-rotate fixture
     //! (`halo2_test_data/rotate_light_client`). Proves the pairing
     //! `e(lhs, g2) == e(rhs, s_g2)` over the opcode's embedded Hermez `[s]G2`
     //! is the genuine soundness gate: the honest accumulator decides true;
@@ -516,11 +516,11 @@ mod decider_tests {
     #[test]
     fn honest_rotate_accumulator_decides_true() {
         let inst = rotate_instances();
-        assert_eq!(inst.len(), 15, "rotate has 12 accumulator limbs + 3 rotate PIs");
+        assert_eq!(inst.len(), 17, "rotate has 12 accumulator limbs + 5 rotate PIs");
         let params = embedded_params();
         assert!(
             run_accumulator_decider(&inst, VK_ACCUMULATOR_LIMBS_KZG as usize, &params),
-            "honest recursive-rotate accumulator must decide true against embedded [s]G2"
+            "honest rotate accumulator must decide true against embedded [s]G2"
         );
     }
 
