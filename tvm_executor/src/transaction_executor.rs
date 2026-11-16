@@ -891,7 +891,7 @@ pub trait TransactionExecutor {
                         &mut out_msg,
                         &mut acc_remaining_balance,
                         msg_remaining_balance,
-                        //                        compute_phase_fees,
+                        compute_phase_fees,
                         self.config(),
                         is_special,
                         my_addr,
@@ -904,6 +904,7 @@ pub trait TransactionExecutor {
                             out_msgs0.push((i, mode, out_msg));
                             0
                         }
+                        Err(_) if mode & SENDMSG_IGNORE_ERROR != 0 => 0,
                         Err(code) => code,
                     }
                 }
@@ -1108,7 +1109,7 @@ pub trait TransactionExecutor {
                     &mut out_msg,
                     &mut free_to_send,
                     msg_remaining_balance,
-                    //                    compute_phase_fees,
+                    compute_phase_fees,
                     self.config(),
                     is_special,
                     my_addr,
@@ -1685,7 +1686,7 @@ fn outmsg_action_handler(
     msg: &mut Message,
     acc_balance: &mut CurrencyCollection,
     msg_balance: &mut CurrencyCollection,
-    //    compute_phase_fees: &Grams,
+    compute_phase_fees: &Grams,
     config: &BlockchainConfig,
     is_special: bool,
     my_addr: &MsgAddressInt,
@@ -1776,37 +1777,25 @@ fn outmsg_action_handler(
         }
 
         if (mode & SENDMSG_ALL_BALANCE) != 0 {
-            // send all remaining account balance
             result_value = acc_balance.clone();
-            //    if need_to_reserve != 0 {
-            // match result_value.grams.sub(&Grams::from(need_to_burn)) {
-            // Ok(true) => (),
-            // Ok(false) => {
-            // result_value.grams = Grams::zero();
-            // return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
-            // }
-            // Err(_) => return Err(RESULT_CODE_UNSUPPORTED),
-            // }
-            // }
             int_header.value = result_value.clone();
 
             mode &= !SENDMSG_PAY_FEE_SEPARATELY;
         }
-        /*        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
-                    // send all remainig balance of inbound message
-                    result_value.add(msg_balance).ok();
-                    if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
-                        if &result_value.grams < compute_phase_fees {
-                            return Err(skip.map(|_| RESULT_CODE_NOT_ENOUGH_GRAMS).unwrap_or_default());
-                        }
-                        result_value.grams.sub(compute_phase_fees).map_err(|err| {
-                            log::error!(target: "executor", "cannot subtract msg balance : {}", err);
-                            RESULT_CODE_ACTIONLIST_INVALID
-                        })?;
-                    }
-                    int_header.value = result_value.clone();
+        if (mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 {
+            result_value.add(msg_balance).map_err(|_| RESULT_CODE_INVALID_BALANCE)?;
+            *msg_balance = CurrencyCollection::default();
+            if (mode & SENDMSG_PAY_FEE_SEPARATELY) == 0 {
+                if &result_value.grams < compute_phase_fees {
+                    return Err(RESULT_CODE_NOT_ENOUGH_GRAMS);
                 }
-        */
+                result_value.grams.sub(compute_phase_fees).map_err(|err| {
+                    log::error!(target: "executor", "cannot subtract msg balance : {}", err);
+                    RESULT_CODE_ACTIONLIST_INVALID
+                })?;
+            }
+            int_header.value = result_value.clone();
+        }
         if (mode & SENDMSG_PAY_FEE_SEPARATELY) != 0 {
             // we must pay the fees, sum them with msg value
             result_value.grams += total_fwd_fees;

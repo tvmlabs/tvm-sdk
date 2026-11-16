@@ -8,8 +8,10 @@ All notable changes to this project will be documented in this file.
 - Internal message gas is charged to the incoming value until the contract
   calls `tvm.accept()`. Accepted cross-DApp value is no longer burned a second
   time when the action phase aborts. SHELL exchange is included in the gas
-  budget, failed bounce recovery preserves ECC, and failed constructors no
-  longer leave active accounts.
+  budget, and gas not covered by a cross-DApp message is restored to the
+  account. Remaining inbound value is forwarded for send flag 64, send flag 2
+  skips a failed send action, failed bounce recovery preserves ECC, and failed
+  constructors no longer leave active accounts.
 
 ## [3.0.6] - 2026-09-03
 

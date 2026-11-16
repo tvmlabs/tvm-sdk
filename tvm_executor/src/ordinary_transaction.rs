@@ -46,6 +46,12 @@ use tvm_vm::stack::Stack;
 use tvm_vm::stack::StackItem;
 use tvm_vm::stack::integer::IntegerData;
 
+fn cross_dapp_gas_refund(message_budget: Grams, gas_fees: Grams) -> Grams {
+    Grams::from(
+        gas_fees.as_u128().saturating_sub(message_budget.as_u128()).min(u64::MAX as u128) as u64
+    )
+}
+
 use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
@@ -141,6 +147,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut msg_balance_convert = 0;
         let mut exchanged = false;
         let mut is_cross_dapp_capped = false;
+        let mut is_cross_dapp_message = false;
         if let Some(h) = in_msg.int_header() {
             if Some(h.src_dapp_id()) != account.stuff().is_some().then_some(&params.dapp_id)
                 && !(in_msg.have_state_init()
@@ -157,6 +164,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                     msg_balance.grams,
                 );
                 need_to_burn = msg_balance.grams;
+                is_cross_dapp_message = true;
                 is_cross_dapp_capped = account.stuff().is_some();
                 log::debug!(target: "executor", "final msg balance {}", msg_balance.grams);
             }
@@ -373,13 +381,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             compute_phase_gas_fees = phase.gas_fees;
             if message_accepted {
                 need_to_burn = Grams::zero();
-            } else {
-                need_to_burn = Grams::from(
-                    need_to_burn
-                        .as_u128()
-                        .saturating_sub(compute_phase_gas_fees.as_u128())
-                        .min(u64::MAX as u128) as u64,
-                );
+            } else if is_cross_dapp_message {
+                acc_balance
+                    .grams
+                    .add(&cross_dapp_gas_refund(need_to_burn, compute_phase_gas_fees))?;
+                need_to_burn = Grams::zero();
             }
         }
         description.compute_ph = compute_ph;
@@ -649,6 +655,7 @@ mod tests {
     use tvm_block::CurrencyCollection;
     use tvm_block::ExtOutMessageHeader;
     use tvm_block::ExternalInboundMessageHeader;
+    use tvm_block::Grams;
     use tvm_block::InternalMessageHeader;
     use tvm_block::Message;
     use tvm_block::MsgAddressExt;
@@ -662,12 +669,23 @@ mod tests {
     use tvm_vm::stack::integer::IntegerData;
 
     use super::OrdinaryTransactionExecutor;
+    use super::cross_dapp_gas_refund;
     use crate::TransactionExecutor;
     use crate::error::ExecutorError as LocalExecutorError;
     use crate::test_utils::build_actions_execute_params;
 
     fn address(byte: u8) -> MsgAddressInt {
         MsgAddressInt::with_standart(None, 0, UInt256::with_array([byte; 32]).into()).unwrap()
+    }
+
+    #[test]
+    fn cross_dapp_gas_refunds_fees_not_funded_by_the_message() {
+        assert_eq!(cross_dapp_gas_refund(Grams::zero(), Grams::from(7_u64)), Grams::from(7_u64));
+        assert_eq!(
+            cross_dapp_gas_refund(Grams::from(3_u64), Grams::from(7_u64)),
+            Grams::from(4_u64)
+        );
+        assert_eq!(cross_dapp_gas_refund(Grams::from(9_u64), Grams::from(7_u64)), Grams::zero());
     }
 
     fn body(byte: u8) -> SliceData {

@@ -9,6 +9,7 @@
 // See the License for the specific TON DEV software governing permissions and
 // limitations under the License.
 use std::str::FromStr;
+use std::time::Duration;
 
 use serde_json::Value;
 use serde_json::json;
@@ -21,6 +22,7 @@ use tvm_client::abi::ParamsOfEncodeMessage;
 use tvm_client::abi::decode_message;
 use tvm_client::abi::encode_message;
 use tvm_client::error::ClientError;
+use tvm_client::net::ParamsOfQuery;
 use tvm_client::processing::ParamsOfProcessMessage;
 use tvm_client::processing::ParamsOfSendMessage;
 use tvm_client::processing::ProcessingEvent;
@@ -198,6 +200,12 @@ pub async fn send_message_and_wait(
     .map_err(|e| format!("{:#}", e))?;
 
     require_transaction_hash(result.tx_hash.as_deref(), result.message_hash.as_deref())?;
+    wait_for_transaction_hash(
+        tvm_client,
+        result.tx_hash.as_deref().unwrap_or_default(),
+        result.message_hash.as_deref(),
+    )
+    .await?;
 
     let value = serde_json::to_value(result).map_err(|e| format!("{e:#}"))?;
     Ok(value)
@@ -220,7 +228,7 @@ pub async fn send_message(
         context.clone(),
         ParamsOfSendMessage {
             message: msg.clone(),
-            abi,
+            abi: abi.clone(),
             thread_id: thread_id.map(ToString::to_string),
             dapp_id: dst_dapp_id.map(String::from).unwrap_or_default(),
             ..Default::default()
@@ -231,6 +239,12 @@ pub async fn send_message(
     .map_err(|e| format!("{:#}", e))?;
 
     require_transaction_hash(result.tx_hash.as_deref(), result.message_hash.as_deref())?;
+    wait_for_transaction_hash(
+        context,
+        result.tx_hash.as_deref().unwrap_or_default(),
+        result.message_hash.as_deref(),
+    )
+    .await?;
 
     serde_json::to_value(result).map_err(|e| format!("{e:#}"))
 }
@@ -249,9 +263,46 @@ fn require_transaction_hash(
     }
 }
 
+async fn wait_for_transaction_hash(
+    context: TvmClient,
+    tx_hash: &str,
+    message_hash: Option<&str>,
+) -> Result<(), String> {
+    let start = tokio::time::Instant::now();
+    loop {
+        let response = tvm_client::net::query(
+            context.clone(),
+            ParamsOfQuery {
+                query: "query transaction($hash:String!){blockchain{transaction(hash:$hash){id}}}"
+                    .to_string(),
+                variables: Some(json!({ "hash": tx_hash })),
+            },
+        )
+        .await
+        .map_err(|e| format!("{e:#}"))?;
+        if transaction_is_present(&response.result) {
+            return Ok(());
+        }
+        if start.elapsed() >= Duration::from_secs(15) {
+            return Err(format!(
+                "Message {} was not processed into a transaction",
+                message_hash.unwrap_or("<unknown>")
+            ));
+        }
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
+}
+
+fn transaction_is_present(result: &Value) -> bool {
+    result.pointer("/data/blockchain/transaction").is_some_and(|transaction| !transaction.is_null())
+}
+
 #[cfg(test)]
 mod transaction_result_tests {
+    use serde_json::json;
+
     use super::require_transaction_hash;
+    use super::transaction_is_present;
 
     #[test]
     fn rejects_message_without_transaction_hash() {
@@ -263,6 +314,16 @@ mod transaction_result_tests {
     #[test]
     fn accepts_message_with_transaction_hash() {
         assert!(require_transaction_hash(Some("transaction-id"), Some("message-id")).is_ok());
+    }
+
+    #[test]
+    fn detects_transaction_presence_in_graphql_response() {
+        assert!(transaction_is_present(&json!({
+            "data": { "blockchain": { "transaction": { "id": "tx" } } }
+        })));
+        assert!(!transaction_is_present(&json!({
+            "data": { "blockchain": { "transaction": null } }
+        })));
     }
 }
 

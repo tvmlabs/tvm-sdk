@@ -11,9 +11,10 @@ All notable changes to this project will be documented in this file.
   failed constructor no longer leaves an active account.
 - `tvm_executor`: SHELL exchange value can fund execution gas and is accounted
   for when a bounce cannot be created.
-- `tvm-cli`: `call` and `deploy` report an error when a sent message has no
-  transaction hash, instead of printing `Succeeded.` for a message the node
-  did not execute.
+- `tvm_executor`: send flag 64 forwards the remaining inbound value after gas,
+  and send flag 2 skips a failed send action so later actions can proceed.
+- `tvm-cli`: `call` and `deploy` wait for the transaction and report an error
+  when the node accepts a message but does not process it into a transaction.
 
 ## [3.1.0] - 2026-10-16
 
