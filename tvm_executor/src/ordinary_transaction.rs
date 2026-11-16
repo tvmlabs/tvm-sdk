@@ -198,12 +198,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         msg_balance.set_other(2, new_balance)?;
                     }
                     exchanged = true;
-                    if is_cross_dapp_capped {
-                        need_to_burn = min(
-                            (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
-                            msg_balance.grams,
-                        );
-                    }
                 }
             }
         }
@@ -385,12 +379,6 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut copyleft = None;
         if let TrComputePhase::Vm(phase) = &compute_ph {
             compute_phase_gas_fees = phase.gas_fees;
-            if is_cross_dapp_message && !message_accepted && !phase.success {
-                acc_balance
-                    .grams
-                    .add(&cross_dapp_gas_refund(need_to_burn, compute_phase_gas_fees))?;
-                need_to_burn = cross_dapp_unspent_budget(need_to_burn, compute_phase_gas_fees);
-            }
         }
         description.compute_ph = compute_ph;
         let mut new_acc_balance = acc_balance.clone();
@@ -502,6 +490,10 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             && account.status() == AccountStatus::AccStateActive
         {
             account.uninit_account();
+        }
+        if description.aborted && is_cross_dapp_message && !message_accepted {
+            acc_balance.grams.add(&cross_dapp_gas_refund(need_to_burn, compute_phase_gas_fees))?;
+            need_to_burn = cross_dapp_unspent_budget(need_to_burn, compute_phase_gas_fees);
         }
         if description.aborted {
             match &description.compute_ph {
