@@ -52,6 +52,12 @@ fn cross_dapp_gas_refund(message_budget: Grams, gas_fees: Grams) -> Grams {
     )
 }
 
+fn cross_dapp_unspent_budget(message_budget: Grams, gas_fees: Grams) -> Grams {
+    Grams::from(
+        message_budget.as_u128().saturating_sub(gas_fees.as_u128()).min(u64::MAX as u128) as u64
+    )
+}
+
 use crate::ActionPhaseResult;
 use crate::ExecuteParams;
 use crate::TransactionExecutor;
@@ -379,13 +385,11 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut copyleft = None;
         if let TrComputePhase::Vm(phase) = &compute_ph {
             compute_phase_gas_fees = phase.gas_fees;
-            if message_accepted {
-                need_to_burn = Grams::zero();
-            } else if is_cross_dapp_message {
+            if is_cross_dapp_message && !message_accepted && !phase.success {
                 acc_balance
                     .grams
                     .add(&cross_dapp_gas_refund(need_to_burn, compute_phase_gas_fees))?;
-                need_to_burn = Grams::zero();
+                need_to_burn = cross_dapp_unspent_budget(need_to_burn, compute_phase_gas_fees);
             }
         }
         description.compute_ph = compute_ph;
@@ -670,6 +674,7 @@ mod tests {
 
     use super::OrdinaryTransactionExecutor;
     use super::cross_dapp_gas_refund;
+    use super::cross_dapp_unspent_budget;
     use crate::TransactionExecutor;
     use crate::error::ExecutorError as LocalExecutorError;
     use crate::test_utils::build_actions_execute_params;
@@ -686,6 +691,18 @@ mod tests {
             Grams::from(4_u64)
         );
         assert_eq!(cross_dapp_gas_refund(Grams::from(9_u64), Grams::from(7_u64)), Grams::zero());
+    }
+
+    #[test]
+    fn cross_dapp_failed_call_burns_only_the_unspent_budget() {
+        assert_eq!(
+            cross_dapp_unspent_budget(Grams::from(9_u64), Grams::from(7_u64)),
+            Grams::from(2_u64)
+        );
+        assert_eq!(
+            cross_dapp_unspent_budget(Grams::from(3_u64), Grams::from(7_u64)),
+            Grams::zero()
+        );
     }
 
     fn body(byte: u8) -> SliceData {
