@@ -11,7 +11,8 @@ All notable changes to this project will be documented in this file.
   budget, and gas not covered by a cross-DApp message is restored to the
   account. Remaining inbound value is forwarded for send flag 64, send flag 2
   skips a failed send action, failed bounce recovery preserves ECC, and failed
-  constructors no longer leave active accounts.
+  constructors no longer leave active accounts. The 64 and 128 send modes are
+  rejected together while send flag 2 remains combinable with either mode.
 
 ## [3.0.6] - 2026-09-03
 

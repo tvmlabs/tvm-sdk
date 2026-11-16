@@ -1693,15 +1693,7 @@ fn outmsg_action_handler(
     reserved_value: &CurrencyCollection,
     account_deleted: &mut bool,
 ) -> std::result::Result<CurrencyCollection, i32> {
-    // we cannot send all balance from account and from message simultaneously ?
-    let invalid_flags = SENDMSG_REMAINING_MSG_BALANCE
-        | SENDMSG_ALL_BALANCE
-        | SENDMSG_IGNORE_ERROR
-        | SENDMSG_REMAINING_MSG_BALANCE;
-    if (mode & !SENDMSG_VALID_FLAGS) != 0
-        || (mode & invalid_flags) == invalid_flags
-        || ((mode & SENDMSG_DELETE_IF_EMPTY) != 0 && (mode & SENDMSG_ALL_BALANCE) == 0)
-    {
+    if invalid_send_mode(mode) {
         log::error!(target: "executor", "outmsg mode has unsupported flags");
         return Err(RESULT_CODE_UNSUPPORTED);
     }
@@ -1898,6 +1890,12 @@ fn outmsg_action_handler(
     );
 
     Ok(result_value)
+}
+
+fn invalid_send_mode(mode: u8) -> bool {
+    (mode & !SENDMSG_VALID_FLAGS) != 0
+        || ((mode & SENDMSG_REMAINING_MSG_BALANCE) != 0 && (mode & SENDMSG_ALL_BALANCE) != 0)
+        || ((mode & SENDMSG_DELETE_IF_EMPTY) != 0 && (mode & SENDMSG_ALL_BALANCE) == 0)
 }
 
 /// Reserves some grams from accout balance.
@@ -2181,6 +2179,16 @@ mod tests {
     use crate::OrdinaryTransactionExecutor;
     use crate::blockchain_config::TONDefaultConfig;
     use crate::test_utils::BuildActionsExecuteParamsFixture;
+
+    #[test]
+    fn send_modes_allow_ignore_error_with_balance_modes_but_reject_64_and_128_together() {
+        assert!(invalid_send_mode(SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE));
+        assert!(invalid_send_mode(
+            SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_ALL_BALANCE | SENDMSG_IGNORE_ERROR
+        ));
+        assert!(!invalid_send_mode(SENDMSG_REMAINING_MSG_BALANCE | SENDMSG_IGNORE_ERROR));
+        assert!(!invalid_send_mode(SENDMSG_ALL_BALANCE | SENDMSG_IGNORE_ERROR));
+    }
 
     struct DummyExecutor {
         config: BlockchainConfig,
