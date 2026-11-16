@@ -492,7 +492,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             account.uninit_account();
         }
         if description.aborted && is_cross_dapp_message && !message_accepted {
-            acc_balance.grams.add(&cross_dapp_gas_refund(need_to_burn, compute_phase_gas_fees))?;
+            let message_budget = Grams::from(
+                (need_to_burn.as_u128() + msg_balance_convert as u128).min(u64::MAX as u128) as u64,
+            );
+            acc_balance
+                .grams
+                .add(&cross_dapp_gas_refund(message_budget, compute_phase_gas_fees))?;
             need_to_burn = cross_dapp_unspent_budget(need_to_burn, compute_phase_gas_fees);
         }
         if description.aborted {
