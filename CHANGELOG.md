@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixes
+- `tvm_executor`: internal messages that do not call `tvm.accept()` pay gas
+  from the incoming value; explicitly accepted cross-DApp value is not burned
+  again after an aborted action. Failed bounce recovery preserves ECC, and a
+  failed constructor no longer leaves an active account.
+- `tvm_executor`: SHELL exchange value can fund execution gas and is accounted
+  for when a bounce cannot be created.
+- `tvm-cli`: `call` and `deploy` report an error when a sent message has no
+  transaction hash, instead of printing `Succeeded.` for a message the node
+  did not execute.
+
 ## [3.1.0] - 2026-10-16
 
 Crate-level detail is in [`tvm_vm`](tvm_vm/CHANGELOG.md) and [`tvm_assembler`](tvm_assembler/CHANGELOG.md).

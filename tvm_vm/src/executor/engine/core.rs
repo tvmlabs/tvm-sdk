@@ -1680,6 +1680,10 @@ impl Engine {
         self.gas.new_gas_limit(gas)
     }
 
+    pub fn accept_message(&mut self) {
+        self.gas.accept_message()
+    }
+
     fn check_while_loop_condition(&mut self) -> Result<bool> {
         let x = self.cc.stack.drop(0)?;
         let y = x.as_integer()?;

@@ -46,7 +46,7 @@ fn setgaslimit(engine: &mut Engine, gas_limit: i64) -> Status {
 // ACCEPT - F800
 pub fn execute_accept(engine: &mut Engine) -> Status {
     engine.load_instruction(Instruction::new("ACCEPT"))?;
-    engine.new_gas_limit(i64::MAX);
+    engine.accept_message();
     Ok(())
 }
 // Application-specific primitives - A.11; Gas-related primitives - A.11.2
@@ -132,6 +132,7 @@ mod tests {
         execute_accept(&mut engine).unwrap();
 
         assert_eq!(engine.get_gas().get_gas_limit(), 100);
+        assert!(engine.get_gas().is_accepted());
         assert_eq!(engine.gas_remaining(), 90);
 
         let root = BuilderData::with_raw(vec![0xaa], 8).unwrap().into_cell().unwrap();

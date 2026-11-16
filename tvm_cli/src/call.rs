@@ -197,6 +197,8 @@ pub async fn send_message_and_wait(
     .await
     .map_err(|e| format!("{:#}", e))?;
 
+    require_transaction_hash(result.tx_hash.as_deref(), result.message_hash.as_deref())?;
+
     let value = serde_json::to_value(result).map_err(|e| format!("{e:#}"))?;
     Ok(value)
 }
@@ -228,7 +230,40 @@ pub async fn send_message(
     .await
     .map_err(|e| format!("{:#}", e))?;
 
+    require_transaction_hash(result.tx_hash.as_deref(), result.message_hash.as_deref())?;
+
     serde_json::to_value(result).map_err(|e| format!("{e:#}"))
+}
+
+fn require_transaction_hash(
+    tx_hash: Option<&str>,
+    message_hash: Option<&str>,
+) -> Result<(), String> {
+    if tx_hash.is_some() {
+        Ok(())
+    } else {
+        Err(format!(
+            "Message {} was not processed into a transaction",
+            message_hash.unwrap_or("<unknown>")
+        ))
+    }
+}
+
+#[cfg(test)]
+mod transaction_result_tests {
+    use super::require_transaction_hash;
+
+    #[test]
+    fn rejects_message_without_transaction_hash() {
+        let error = require_transaction_hash(None, Some("message-id")).unwrap_err();
+        assert!(error.contains("message-id"));
+        assert!(error.contains("not processed into a transaction"));
+    }
+
+    #[test]
+    fn accepts_message_with_transaction_hash() {
+        assert!(require_transaction_hash(Some("transaction-id"), Some("message-id")).is_ok());
+    }
 }
 
 pub async fn process_message(

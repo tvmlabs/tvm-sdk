@@ -38,6 +38,7 @@ pub struct Gas {
     gas_remaining: i64,
     gas_price: i64,
     gas_base: i64,
+    accepted: bool,
 }
 
 const CELL_LOAD_GAS_PRICE: i64 = 100;
@@ -77,6 +78,7 @@ impl Gas {
             gas_remaining: 0,
             gas_price: 0,
             gas_base: 0,
+            accepted: false,
         }
     }
 
@@ -89,6 +91,7 @@ impl Gas {
             gas_remaining: 1000000000,
             gas_credit: 0,
             gas_base: 1000000000,
+            accepted: false,
         }
     }
 
@@ -114,6 +117,7 @@ impl Gas {
             gas_remaining: remaining,
             gas_credit,
             gas_base: remaining,
+            accepted: false,
         }
     }
 
@@ -305,6 +309,15 @@ impl Gas {
         self.gas_credit = 0;
         self.gas_remaining += self.gas_limit - self.gas_base;
         self.gas_base = self.gas_limit;
+    }
+
+    pub fn accept_message(&mut self) {
+        self.accepted = true;
+        self.new_gas_limit(i64::MAX);
+    }
+
+    pub const fn is_accepted(&self) -> bool {
+        self.accepted
     }
 
     /// Update remaining gas limit

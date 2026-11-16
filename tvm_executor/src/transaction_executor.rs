@@ -456,7 +456,7 @@ pub trait TransactionExecutor {
         is_masterchain: bool,
         is_special: bool,
         params: &ExecuteParams,
-    ) -> Result<(TrComputePhase, Option<Cell>, Option<Cell>)> {
+    ) -> Result<(TrComputePhase, Option<Cell>, Option<Cell>, bool)> {
         let mut result_acc = acc.clone();
         let mut vm_phase = TrComputePhaseVm::default();
         let init_code_hash = self.config().has_capability(GlobalCapabilities::CapInitCodeHash);
@@ -498,7 +498,7 @@ pub trait TransactionExecutor {
         let is_ordinary = self.ordinary_transaction();
         if acc_balance.grams.is_zero() {
             log::debug!(target: "executor", "skip computing phase no gas");
-            return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
+            return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None, false));
         }
         let gas_config = self.config().get_gas_config(is_masterchain);
         let gas = init_gas(
@@ -511,7 +511,7 @@ pub trait TransactionExecutor {
         );
         if gas.get_gas_limit() == 0 && gas.get_gas_credit() == 0 {
             log::debug!(target: "executor", "skip computing phase no gas");
-            return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None));
+            return Ok((TrComputePhase::skipped(ComputeSkipReason::NoGas), None, None, false));
         }
 
         let mut libs = vec![];
@@ -536,7 +536,7 @@ pub trait TransactionExecutor {
                 if !init_code_hash {
                     *acc = result_acc;
                 }
-                return Ok((TrComputePhase::skipped(reason), None, None));
+                return Ok((TrComputePhase::skipped(reason), None, None, false));
             }
         };
 
@@ -561,7 +561,7 @@ pub trait TransactionExecutor {
                     fail!("can't sub funds: from acc_balance")
                 }
                 *acc = result_acc;
-                return Ok((TrComputePhase::Vm(vm_phase), None, None));
+                return Ok((TrComputePhase::Vm(vm_phase), None, None, false));
             }
         }
         let code = result_acc.get_code().unwrap_or_default();
@@ -632,6 +632,7 @@ pub trait TransactionExecutor {
         }
 
         let result = vm.execute();
+        let accepted = vm.get_gas().is_accepted();
         log::trace!(target: "executor", "execute result: {:?}", result);
         let mut raw_exit_arg = None;
         match result {
@@ -728,7 +729,7 @@ pub trait TransactionExecutor {
         };
 
         *acc = result_acc;
-        Ok((TrComputePhase::Vm(vm_phase), out_actions, new_data))
+        Ok((TrComputePhase::Vm(vm_phase), out_actions, new_data, accepted))
     }
 
     /// Implementation of transaction's action phase.
@@ -2594,7 +2595,7 @@ mod tests {
             stack.push(argument_stack.get(index).clone());
         }
 
-        let (phase, _, _) = executor
+        let (phase, _, _, _) = executor
             .compute_phase(
                 Some(&mut msg),
                 &mut account,
@@ -2932,7 +2933,7 @@ mod tests {
         let mut fixture = BuildActionsExecuteParamsFixture::regular();
         fixture.execution_timeout = Some(Duration::ZERO);
 
-        let (phase, _, _) = executor
+        let (phase, _, _, _) = executor
             .compute_phase(
                 Some(&mut msg),
                 &mut account,

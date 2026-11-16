@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- `call` and `deploy` return a failing status when the node reports no
+  transaction hash, rather than printing `Succeeded.` for a rejected external
+  message.
+
 ## [3.0.6] - 2026-09-03
 
 ### Breaking Changes

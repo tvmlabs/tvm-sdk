@@ -184,6 +184,12 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         msg_balance.set_other(2, new_balance)?;
                     }
                     exchanged = true;
+                    if is_cross_dapp_capped {
+                        need_to_burn = min(
+                            (gas_config.gas_limit * gas_config.gas_price / 65536).into(),
+                            msg_balance.grams,
+                        );
+                    }
                 }
             }
         }
@@ -335,7 +341,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             .push(StackItem::Slice(in_msg.body().unwrap_or_default()))
             .push(boolean!(is_ext_msg));
         log::debug!(target: "executor", "compute_phase");
-        let (compute_ph, actions, new_data) = match self.compute_phase(
+        let (compute_ph, actions, new_data, message_accepted) = match self.compute_phase(
             Some(in_msg),
             account,
             &mut acc_balance,
@@ -347,7 +353,9 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             is_special,
             &params,
         ) {
-            Ok((compute_ph, actions, new_data)) => (compute_ph, actions, new_data),
+            Ok((compute_ph, actions, new_data, message_accepted)) => {
+                (compute_ph, actions, new_data, message_accepted)
+            }
             Err(e) => {
                 log::debug!(target: "executor", "compute_phase error: {}", e);
                 match e.downcast_ref::<ExecutorError>() {
@@ -361,11 +369,23 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         let mut action_phase_processed = false;
         let mut compute_phase_gas_fees = Grams::zero();
         let mut copyleft = None;
+        if let TrComputePhase::Vm(phase) = &compute_ph {
+            compute_phase_gas_fees = phase.gas_fees;
+            if message_accepted {
+                need_to_burn = Grams::zero();
+            } else {
+                need_to_burn = Grams::from(
+                    need_to_burn
+                        .as_u128()
+                        .saturating_sub(compute_phase_gas_fees.as_u128())
+                        .min(u64::MAX as u128) as u64,
+                );
+            }
+        }
         description.compute_ph = compute_ph;
         let mut new_acc_balance = acc_balance.clone();
         description.action = match &description.compute_ph {
             TrComputePhase::Vm(phase) => {
-                compute_phase_gas_fees = phase.gas_fees;
                 tr.add_fee_grams(&phase.gas_fees)?;
                 if phase.success {
                     log::debug!(target: "executor", "compute_phase: success");
@@ -464,6 +484,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
             }
         };
 
+        let mut need_to_burn_was_applied = false;
+        if description.aborted
+            && !is_ext_msg
+            && in_msg.have_state_init()
+            && !is_previous_state_active
+            && account.status() == AccountStatus::AccStateActive
+        {
+            account.uninit_account();
+        }
         if description.aborted {
             match &description.compute_ph {
                 TrComputePhase::Vm(vm_phase) if vm_phase.success => {
@@ -474,6 +503,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                         log::debug!(target: "executor", "Balance insufficient for need_to_burn, zeroing account");
                         acc_balance.grams = Grams::zero();
                     }
+                    need_to_burn_was_applied = need_to_burn.as_u128() > 0;
                 }
                 _ => {}
             }
@@ -485,22 +515,21 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         if description.aborted && !is_ext_msg && bounce {
             msg_balance = original_msg_balance.clone();
             if exchanged {
-                let grams_to_subtract = Grams::from(msg_balance_convert);
+                let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
+                let grams_to_subtract =
+                    Grams::from(msg_balance_convert.saturating_sub(gas_consumed));
                 if grams_to_subtract > acc_balance.grams {
                     log::debug!(target: "executor", "Exchange reversal underflow protected: balance={}, to_subtract={}", acc_balance.grams, grams_to_subtract);
                     acc_balance.grams = Grams::zero();
                 } else {
                     acc_balance.grams -= grams_to_subtract;
                 }
-                let ecc_to_restore = if is_version_1_0_3 {
-                    msg_balance_convert
-                } else {
-                    let gas_consumed = compute_phase_gas_fees.as_u128() as u64;
-                    std::cmp::min(msg_balance_convert, gas_consumed)
-                };
+                let ecc_to_restore = msg_balance_convert.saturating_sub(gas_consumed);
                 let mut add_value = CurrencyCollection::new();
                 add_value.set_other(2, ecc_to_restore.into())?;
                 acc_balance.add(&add_value)?;
+                need_to_burn = Grams::zero();
+                need_to_burn_was_applied = false;
             }
             if !action_phase_processed
                 || self.config().has_capability(GlobalCapabilities::CapBounceAfterFailedAction)
@@ -536,9 +565,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 log::debug!(target: "executor", "restore balance {} => {}", acc_balance.grams, original_acc_balance.grams);
                 acc_balance = original_acc_balance;
                 should_burn_need_to_burn = false;
-            } else if is_version_1_0_3 && account.status() == AccountStatus::AccStateUninit {
-                // Don't leave fwd_fee on uninit accounts after bounce failure,
-                // but preserve ECC
+            } else if account.status() == AccountStatus::AccStateUninit {
                 log::debug!(target: "executor", "Bounce failed on uninit account, restoring grams, preserving ECC");
                 let ecc = acc_balance.other.clone();
                 acc_balance = original_acc_balance;
@@ -551,7 +578,7 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
         }
 
         // Apply need_to_burn if bounce failed or bouncing was not attempted
-        if should_burn_need_to_burn && need_to_burn.as_u128() > 0 {
+        if should_burn_need_to_burn && !need_to_burn_was_applied && need_to_burn.as_u128() > 0 {
             log::debug!(target: "executor", "Applying cross-dapp burn: need_to_burn={}", need_to_burn);
             if acc_balance.grams >= need_to_burn {
                 acc_balance.grams -= need_to_burn;
