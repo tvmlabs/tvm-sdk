@@ -571,7 +571,15 @@ impl TransactionExecutor for OrdinaryTransactionExecutor {
                 acc_balance = original_acc_balance;
                 acc_balance.other = ecc;
             } else if original_account_is_none && !acc_balance.is_zero()? {
-                acc_balance = CurrencyCollection::default();
+                acc_balance.grams = Grams::zero();
+                if !acc_balance.other.is_empty() {
+                    *account = Account::uninit(
+                        account_address.clone(),
+                        lt,
+                        last_paid,
+                        acc_balance.clone(),
+                    );
+                }
             }
         } else if description.aborted && !is_ext_msg && !bounce {
             should_burn_need_to_burn = true;
