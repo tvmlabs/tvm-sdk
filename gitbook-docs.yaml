@@ -1,0 +1,11 @@
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: For Acki Nacki Developers
+  structure:
+    - type: space
+      key: space-1
+      title: For Acki Nacki Developers
+      path: for-developers
+      default: true
+      content:
+        directory: ./docs
