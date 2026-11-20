@@ -27,10 +27,11 @@
 		{
 			"name": "deployPMP",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracleFee","type":"uint128[]"},
 				{"name":"token_type","type":"uint32"},
-				{"name":"names","type":"string[]"}
+				{"name":"names","type":"string[]"},
+				{"name":"index","type":"uint128[]"}
 			],
 			"outputs": [
 			]
@@ -38,10 +39,9 @@
 		{
 			"name": "deleteStake",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
-				{"name":"token_type","type":"uint32"},
-				{"name":"outcome","type":"uint32"}
+				{"name":"token_type","type":"uint32"}
 			],
 			"outputs": [
 			]
@@ -49,10 +49,9 @@
 		{
 			"name": "cancelStake",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
-				{"name":"token_type","type":"uint32"},
-				{"name":"outcome","type":"uint32"}
+				{"name":"token_type","type":"uint32"}
 			],
 			"outputs": [
 			]
@@ -60,10 +59,32 @@
 		{
 			"name": "onStakeCancelled",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
 				{"name":"token_type","type":"uint32"},
-				{"name":"outcome","type":"uint32"}
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdrawFullSet",
+			"inputs": [
+				{"name":"event_id","type":"uint256"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"amount","type":"uint128[]"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onFullSetStakeCancelled",
+			"inputs": [
+				{"name":"event_id","type":"uint256"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"amount","type":"uint128[]"}
 			],
 			"outputs": [
 			]
@@ -71,7 +92,7 @@
 		{
 			"name": "setStake",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
 				{"name":"token_type","type":"uint32"},
 				{"name":"outcome","type":"uint32"},
@@ -81,12 +102,34 @@
 			]
 		},
 		{
-			"name": "onStakeAccepted",
+			"name": "setFullSetStake",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
 				{"name":"token_type","type":"uint32"},
-				{"name":"outcome","type":"uint32"}
+				{"name":"amount","type":"uint128[]"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onStakeAccepted",
+			"inputs": [
+				{"name":"event_id","type":"uint256"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"outcome_count","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onFullSetStakeAccepted",
+			"inputs": [
+				{"name":"event_id","type":"uint256"},
+				{"name":"oracle_list_hash","type":"uint256"},
+				{"name":"token_type","type":"uint32"},
+				{"name":"amount","type":"uint128[]"}
 			],
 			"outputs": [
 			]
@@ -94,10 +137,9 @@
 		{
 			"name": "claim",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
-				{"name":"token_type","type":"uint32"},
-				{"name":"outcome","type":"uint32"}
+				{"name":"token_type","type":"uint32"}
 			],
 			"outputs": [
 			]
@@ -105,11 +147,10 @@
 		{
 			"name": "onClaimAccepted",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
 				{"name":"token_type","type":"uint32"},
 				{"name":"outcome","type":"optional(uint32)"},
-				{"name":"selfOutcome","type":"uint32"},
 				{"name":"payout","type":"uint128"}
 			],
 			"outputs": [
@@ -120,7 +161,6 @@
 			"inputs": [
 				{"name":"flags","type":"uint8"},
 				{"name":"dest_wallet_addr","type":"address"},
-				{"name":"value","type":"uint128"},
 				{"name":"token_type","type":"uint32"}
 			],
 			"outputs": [
@@ -162,7 +202,8 @@
 			"inputs": [
 			],
 			"outputs": [
-				{"name":"value0","type":"string"}
+				{"name":"value0","type":"string"},
+				{"name":"value1","type":"string"}
 			]
 		},
 		{
@@ -178,7 +219,7 @@
 			"inputs": [
 			],
 			"outputs": [
-				{"components":[{"name":"amount","type":"uint128"},{"name":"outcome","type":"uint32"},{"name":"candidate_amount","type":"uint128"},{"name":"token_type","type":"uint32"},{"name":"oracle_list_hash","type":"uint256"}],"name":"_stakes","type":"map(uint256,tuple)"}
+				{"components":[{"name":"amount","type":"uint128[]"},{"name":"candidate_amount","type":"uint128"},{"name":"candidate_outcome","type":"uint32"},{"name":"token_type","type":"uint32"},{"name":"oracle_list_hash","type":"uint256"}],"name":"_stakes","type":"map(uint256,tuple)"}
 			]
 		}
 	],
@@ -206,8 +247,25 @@
 			"name": "StakeCancelled",
 			"inputs": [
 				{"name":"stakeController","type":"address"},
-				{"name":"outcome","type":"uint32"},
-				{"name":"amount","type":"uint128"}
+				{"name":"value","type":"uint128"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "FullSetStakeConfirmed",
+			"inputs": [
+				{"name":"stakeController","type":"address"},
+				{"name":"amount","type":"uint128[]"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "FullSetStakeCancelled",
+			"inputs": [
+				{"name":"stakeController","type":"address"},
+				{"name":"value","type":"uint128"}
 			],
 			"outputs": [
 			]
@@ -225,7 +283,7 @@
 		{
 			"name": "PMPDeployed",
 			"inputs": [
-				{"name":"name","type":"string"},
+				{"name":"event_id","type":"uint256"},
 				{"name":"token_type","type":"uint32"},
 				{"name":"pmpAddress","type":"address"},
 				{"name":"oracleEventLists","type":"address[]"},
@@ -246,7 +304,7 @@
 		{"init":false,"name":"_PrivateNoteCode","type":"cell"},
 		{"init":false,"name":"_oracleCode","type":"cell"},
 		{"init":false,"name":"_oracleEventList","type":"cell"},
-		{"components":[{"name":"amount","type":"uint128"},{"name":"outcome","type":"uint32"},{"name":"candidate_amount","type":"uint128"},{"name":"token_type","type":"uint32"},{"name":"oracle_list_hash","type":"uint256"}],"init":false,"name":"_stakes","type":"map(uint256,tuple)"},
+		{"components":[{"name":"amount","type":"uint128[]"},{"name":"candidate_amount","type":"uint128"},{"name":"candidate_outcome","type":"uint32"},{"name":"token_type","type":"uint32"},{"name":"oracle_list_hash","type":"uint256"}],"init":false,"name":"_stakes","type":"map(uint256,tuple)"},
 		{"init":false,"name":"_busy","type":"optional(address)"},
 		{"init":false,"name":"_lastHash","type":"uint256"},
 		{"init":false,"name":"_balance","type":"map(uint32,uint128)"}

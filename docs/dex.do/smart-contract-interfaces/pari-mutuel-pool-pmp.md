@@ -4,7 +4,7 @@ description: (Work in progress) PMP Contract Interface Documentation
 
 # PARI MUTUEL POOL (PMP)
 
-{% file src="../../.gitbook/assets/PMP.abi (1).json" %}
+{% file src="../../.gitbook/assets/PMP.abi (2).json" %}
 
 ## Overview
 
@@ -119,9 +119,9 @@ event ClaimProcessed(
 );
 ```
 
-* `note`  — `PrivateNote` address (wallet) that claimed.
-* `payout`  — Calculated payout amount (0 if no payout).
-* `win`  — True if the claim is winning and payout > 0.
+* `note` — `PrivateNote` address (wallet) that claimed.
+* `payout` — Calculated payout amount (0 if no payout).
+* `win` — True if the claim is winning and payout > 0.
 
 ***
 
@@ -135,7 +135,7 @@ The shown code does not currently emit this event; it is reserved for future acc
 event NetworkFeeBurned(uint64 amount);
 ```
 
-* `amount`  — Burned fee amount in native units.
+* `amount` — Burned fee amount in native units.
 
 ***
 
@@ -240,10 +240,10 @@ function approveEvent(
     **Where:**
 
     * **`outcomeId`** (key, e.g. `0, 1, 2, …`) — the identifier of a specific outcome
-    * **`name`**  — a description of that outcome
+    * **`name`** — a description of that outcome
 
-    **Example:** \
-    **Sports Event "**&#x52;eal vs Benfica" \
+    **Example:**\
+    **Sports Event "**&#x52;eal vs Benfica"\
     **Outcome band:**
 
     * **0** — Real wins
@@ -257,7 +257,7 @@ function approveEvent(
 
 * Callable only by approved `OracleEventList` contracts
 * The call is ignored (returns immediately) if:
-  * this oracle event list address was already processed (implementation currently checks \
+  * this oracle event list address was already processed (implementation currently checks\
     or
   * the number of approvals already reached.
 
@@ -378,10 +378,10 @@ function cancelStake(
 
 #### Parameters
 
-* `stakeAmount`  — Array of **clean** stake amounts per outcome.
-* `debtAmount`  — Array of **debt** stake amounts per outcome.
-* `couponsAmount`  — Array of **coupon** stake amounts per outcome.
-* `deposit_identifier_hash`  — Deposit identifier hash used to deterministically compute the caller’s `PrivateNote` address.
+* `stakeAmount` — Array of **clean** stake amounts per outcome.
+* `debtAmount` — Array of **debt** stake amounts per outcome.
+* `couponsAmount` — Array of **coupon** stake amounts per outcome.
+* `deposit_identifier_hash` — Deposit identifier hash used to deterministically compute the caller’s `PrivateNote` address.
 
 #### **Access:**
 
@@ -615,7 +615,7 @@ function getDetails() external view returns (
 
 **Pool State**
 
-* **`totalPool`**  - Total amount currently in the pool (after fees and redistributions).
+* **`totalPool`** - Total amount currently in the pool (after fees and redistributions).
 * **`approved`** - Indicates whether the event is approved and staking is enabled.
 * **`isCancelled`** - Indicates whether the event has been cancelled.
 * **`resolvedOutcome`** - Final outcome identifier, if resolved.

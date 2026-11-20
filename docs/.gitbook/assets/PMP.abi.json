@@ -7,6 +7,7 @@
 			"name": "constructor",
 			"inputs": [
 				{"name":"deposit_identifier_hash","type":"uint256"},
+				{"name":"name","type":"string"},
 				{"name":"token_type","type":"uint32"},
 				{"name":"oracle_event_lists","type":"address[]"},
 				{"name":"oracle_fees","type":"uint128[]"}
@@ -27,7 +28,6 @@
 				{"name":"oracle_pubkey","type":"uint256"},
 				{"name":"outcomeNames","type":"map(uint32,string)"},
 				{"name":"describe","type":"string"},
-				{"name":"name","type":"string"},
 				{"name":"trustAddr","type":"optional(uint256)"}
 			],
 			"outputs": [
@@ -47,27 +47,8 @@
 		{
 			"name": "cancelStake",
 			"inputs": [
-				{"name":"stakeAmount","type":"uint128[]"},
-				{"name":"deposit_identifier_hash","type":"uint256"}
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "acceptFullSetStake",
-			"inputs": [
-				{"name":"amount","type":"uint128[]"},
-				{"name":"isInc","type":"bool[]"},
-				{"name":"deposit_identifier_hash","type":"uint256"}
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "withdrawFullSet",
-			"inputs": [
-				{"name":"amount","type":"uint128[]"},
-				{"name":"isDecr","type":"bool[]"},
+				{"name":"outcomeId","type":"uint32"},
+				{"name":"stakeAmount","type":"uint128"},
 				{"name":"deposit_identifier_hash","type":"uint256"}
 			],
 			"outputs": [
@@ -76,7 +57,8 @@
 		{
 			"name": "claim",
 			"inputs": [
-				{"name":"stakeAmount","type":"uint128[]"},
+				{"name":"stakeAmount","type":"uint128"},
+				{"name":"outcomeId","type":"uint32"},
 				{"name":"deposit_identifier_hash","type":"uint256"}
 			],
 			"outputs": [
@@ -109,6 +91,7 @@
 				{"name":"event_id","type":"uint256"},
 				{"name":"oracle_list_hash","type":"uint256"},
 				{"name":"deployer","type":"address"},
+				{"name":"root","type":"address"},
 				{"name":"privateNoteCodeHash","type":"uint256"},
 				{"name":"totalPool","type":"uint128"},
 				{"name":"approved","type":"bool"},
@@ -168,6 +151,7 @@
 			"name": "ClaimProcessed",
 			"inputs": [
 				{"name":"note","type":"address"},
+				{"name":"outcomeId","type":"uint32"},
 				{"name":"payout","type":"uint128"},
 				{"name":"win","type":"bool"}
 			],
@@ -252,6 +236,7 @@
 		{"init":false,"name":"_stakeEnd","type":"uint64"},
 		{"init":false,"name":"_resultStart","type":"uint64"},
 		{"init":false,"name":"_resultEnd","type":"uint64"},
+		{"init":false,"name":"_root","type":"address"},
 		{"init":false,"name":"_isCancelled","type":"bool"},
 		{"init":false,"name":"_oracleEventsConfirmed","type":"map(uint256,bool)"},
 		{"init":false,"name":"_oracleEventsPubkeys","type":"map(uint256,bool)"},

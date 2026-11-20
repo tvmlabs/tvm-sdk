@@ -568,7 +568,7 @@ TVM Cell type.
 
 #### `address`
 
-Contract address in type `address`, can be any of the [existing variants](../arch/40-accounts.md#account-address) (although not all may be supported by the compilator you are using).
+Contract address in type `address`, can be any of the [existing variants](https://github.com/tvmlabs/tvm-sdk/blob/gitbook/docs/arch/40-accounts.md#account-address) (although not all may be supported by the compilator you are using).
 
 **Important notes:**
 
@@ -600,7 +600,7 @@ Internal addresses are serialised as:
 
 Maximum size allocated for address is 591 bits: see [https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb#L107](https://github.com/ton-blockchain/ton/blob/master/crypto/block/block.tlb#L107)
 
-```TL-B
+```tl-b
 anycast_info$_ depth:(#<= 30) { depth >= 1 }
    rewrite_pfx:(bits depth) = Anycast;
 

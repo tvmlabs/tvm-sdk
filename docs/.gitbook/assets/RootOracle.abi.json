@@ -29,15 +29,6 @@
 			]
 		},
 		{
-			"name": "getOracleAddress",
-			"inputs": [
-				{"name":"name","type":"string"}
-			],
-			"outputs": [
-				{"name":"oracleAddress","type":"address"}
-			]
-		},
-		{
 			"name": "getVersion",
 			"inputs": [
 			],

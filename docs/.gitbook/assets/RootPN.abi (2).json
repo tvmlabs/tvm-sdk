@@ -27,7 +27,7 @@
 				{"name":"zkproof","type":"bytes"},
 				{"name":"deposit_identifier_hash","type":"uint256"},
 				{"name":"ethemeral_pubkey","type":"uint256"},
-				{"name":"value","type":"uint128"},
+				{"name":"value","type":"uint64"},
 				{"name":"token_type","type":"uint32"}
 			],
 			"outputs": [
@@ -39,15 +39,6 @@
 				{"name":"deposit_identifier_hash","type":"uint256"},
 				{"name":"token_type","type":"uint32"},
 				{"name":"deployed_value","type":"uint128"}
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "deployOracle",
-			"inputs": [
-				{"name":"oraclePubkey","type":"uint256"},
-				{"name":"oracleName","type":"string"}
 			],
 			"outputs": [
 			]
@@ -71,6 +62,26 @@
 			]
 		},
 		{
+			"name": "getPrivateNoteAddress",
+			"inputs": [
+				{"name":"deposit_identifier_hash","type":"uint256"}
+			],
+			"outputs": [
+				{"name":"privateNoteAddress","type":"address"}
+			]
+		},
+		{
+			"name": "getPMPAddress",
+			"inputs": [
+				{"name":"event_id","type":"uint256"},
+				{"name":"names","type":"string[]"},
+				{"name":"token_type","type":"uint32"}
+			],
+			"outputs": [
+				{"name":"pmpAddress","type":"address"}
+			]
+		},
+		{
 			"name": "getDetails",
 			"inputs": [
 			],
@@ -86,7 +97,8 @@
 			"inputs": [
 			],
 			"outputs": [
-				{"name":"value0","type":"string"}
+				{"name":"value0","type":"string"},
+				{"name":"value1","type":"string"}
 			]
 		}
 	],

@@ -4,12 +4,12 @@ description: (Work in progress) PrivateNote Contract Interface Documentation
 
 # PrivateNote
 
-{% file src="../../.gitbook/assets/PrivateNote.abi (1).json" %}
+{% file src="../../.gitbook/assets/PrivateNote.abi (3).json" %}
 
 ## Overview
 
 **PrivateNote** is a non-custodial wallet contract that stores balances, manages stakes, and interacts with **Pari Mutuel Pool (PMP)** contracts (deployment, staking, cancellation, claiming).\
-It also supports coupons and withdrawals via `RootPN`     contract — all while preserving privacy guarantees.<br>
+It also supports coupons and withdrawals via `RootPN` contract — all while preserving privacy guarantees.<br>
 
 Each `PrivateNote`:
 
@@ -51,7 +51,7 @@ event StakeConfirmed(
 * `stakeController` - Address of the PMP contract that accepted the stake
 * `outcome` - Outcome identifier the stake was placed on
 * `amount` - Amount of tokens added to the stake
-* `bet_type`  — bet type
+* `bet_type` — bet type
   * `0` — clean bet (from balance)
   * `1` — debt bet
   * `2` — coupon bet
@@ -79,8 +79,8 @@ Emitted when a **full-set stake** is confirmed by PMP
 event FullSetStakeConfirmed(address stakeController, uint128[] amount);
 ```
 
-* `stakeController`  — PMP address
-* `amount`  — Confirmed stake amounts per outcome
+* `stakeController` — PMP address
+* `amount` — Confirmed stake amounts per outcome
 
 ***
 
@@ -92,8 +92,8 @@ Emitted when a full-set stake is cancelled and funds returned
 event FullSetStakeCancelled(address stakeController, uint128 value);
 ```
 
-* `stakeController`  — PMP address
-* `value`  — Total returned token value to balance
+* `stakeController` — PMP address
+* `value` — Total returned token value to balance
 
 ***
 
@@ -175,20 +175,20 @@ function deployPMP(
 **Parameters:**
 
 * `event_id` — Identifier of the PMP event
-* `oracleFee` — Array of additional fees (in shell tokens) for each oracle. \
-  &#xNAN;_&#x4D;ust match the length of `names` and `index`._
+* `oracleFee` — Array of additional fees (in shell tokens) for each oracle.\
+  \&#xNAN;_Must match the length of `names` and `index`._
 * `token_type` — Token type used by the PMP contract
 * `names` — Array of oracle names used to compute oracle addresses.
 * `index` — Array of oracle indexes used to compute OracleEventList addresses.
 
-**Deployment flow:**&#x20;
+**Deployment flow:**
 
-1\. Validate input array lengths. \
-2\. Compute oracle addresses from `names`. \
-3\. Compute `OracleEventList` addresses using oracle code and indexes. \
-4\. Aggregate oracle fees and include network fee. \
-5\. Build PMP StateInit and compute deterministic PMP address. \
-6\. Emit `PMPDeployed` event. \
+1\. Validate input array lengths.\
+2\. Compute oracle addresses from `names`.\
+3\. Compute `OracleEventList` addresses using oracle code and indexes.\
+4\. Aggregate oracle fees and include network fee.\
+5\. Build PMP StateInit and compute deterministic PMP address.\
+6\. Emit `PMPDeployed` event.\
 7\. Deploy PMP contract with required currencies.
 
 ***
@@ -219,7 +219,7 @@ function setStake(
   The meaning of the outcome is defined by the `PMP` contract logic.
 * `amount` - Amount of tokens to stake.\
   Must be greater than zero and less than or equal to the available balance for the specified token type.
-* `use_coupon` - Whether to use coupon for this stake \
+* `use_coupon` - Whether to use coupon for this stake\
   If true, amount will be taken from available coupons instead of balance
 
 **Requirements**
@@ -340,8 +340,6 @@ function deleteStake(
 **Effects**
 
 * Removes the local stake record
-
-
 
 ***
 
@@ -501,7 +499,7 @@ function getDetails() external view returns (
 
 * `depositIdentifierHash` - deposit identifier hash
 * `etherealPubkey` - public key
-* `balance` - token balances&#x20;
+* `balance` - token balances
 * `pmpCodeHash` - `PMP` code hash
 * `privateNoteCodeHash` - `PrivateNote` code hash
 * `busyAddress` - busy PMP address (if any)

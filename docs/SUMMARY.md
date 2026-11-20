@@ -30,10 +30,6 @@
 * [Bee Engine Overview](bee-engine/bee-engine-overview.md)
 * [Bee Engine SDK — Integration Documentation](bee-engine/bee-engine-sdk-integration-documentation.md)
 
-## AVM SDK · Rust / WebAssembly
-
-* [Build and Call Your First AVM Contract](avm-sdk/getting-started.md)
-
 ## Acki Nacki SDK
 
 * [About Acki Nacki SDK](acki-nacki-sdk/untitled.md)

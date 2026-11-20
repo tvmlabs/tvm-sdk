@@ -4,7 +4,7 @@ description: (Work in progress) RootPrivateNote Contract Interface Documentation
 
 # RootPN
 
-{% file src="../../.gitbook/assets/RootPN.abi (1).json" %}
+{% file src="../../.gitbook/assets/RootPN.abi (3).json" %}
 
 ## Overview
 
